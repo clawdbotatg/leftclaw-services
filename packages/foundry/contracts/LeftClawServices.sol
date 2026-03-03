@@ -90,6 +90,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice FIX(L-1): Configurable Uniswap V3 swap path so owner can update if liquidity shifts.
     bytes public swapPath;
 
+    address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+
     uint256 public constant DISPUTE_WINDOW = 7 days;
     uint256 public constant MAX_FEE_BPS = 1000; // 10% cap
 
@@ -114,6 +116,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     event ProtocolFeeUpdated(uint256 newFeeBps);
     event FeesWithdrawn(address indexed to, uint256 amount);
     event SwapPathUpdated(bytes newPath);
+    event ConsultationComplete(uint256 indexed jobId, address indexed client, string gistUrl, ServiceType recommendedBuildType);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -270,6 +273,29 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         job.feeSnapshot = (job.paymentClawd * protocolFeeBps) / 10_000;
 
         emit JobCompleted(jobId, msg.sender, resultCID);
+    }
+
+    /// @notice Executor completes a consultation — burns escrowed CLAWD to dead address, records plan gist URL.
+    ///         No dispute window needed — the gist IS the deliverable.
+    function burnConsultation(uint256 jobId, string calldata gistUrl, ServiceType recommendedBuildType) external nonReentrant onlyExecutor {
+        Job storage job = jobs[jobId];
+        require(job.id != 0, "Job does not exist");
+        require(job.serviceType == ServiceType.CONSULT_S || job.serviceType == ServiceType.CONSULT_L, "Not a consultation job");
+        require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
+        require(job.executor == msg.sender, "Not the assigned executor");
+        require(bytes(gistUrl).length > 0, "Gist URL required");
+        require(!job.paymentClaimed, "Already claimed");
+
+        job.paymentClaimed = true;
+        job.status = JobStatus.COMPLETED;
+        job.resultCID = gistUrl;
+        job.completedAt = block.timestamp;
+        totalLockedClawd -= job.paymentClawd;
+
+        clawdToken.safeTransfer(DEAD_ADDRESS, job.paymentClawd);
+
+        emit ConsultationComplete(jobId, job.client, gistUrl, recommendedBuildType);
+        emit JobCompleted(jobId, msg.sender, gistUrl);
     }
 
     /// @notice Executor claims payment after dispute window (or after dispute timeout if unresolved)

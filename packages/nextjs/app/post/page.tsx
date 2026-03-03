@@ -62,6 +62,8 @@ function parseContractError(e: unknown): string {
   if (/Use postJobCustom for CUSTOM/i.test(msg))         return "Use the Custom Amount option for custom jobs";
   if (/Min 1 CLAWD/i.test(msg))                          return "Minimum custom amount is 1 CLAWD";
   if (/USDC amount must be > 0/i.test(msg))              return "USDC amount must be greater than zero";
+  if (/Not a consultation job/i.test(msg))                return "This function is only for consultation jobs";
+  if (/Gist URL required/i.test(msg))                    return "A gist URL is required to complete the consultation";
   if (/Result CID required/i.test(msg))                  return "A result reference is required";
   if (/Fee too high/i.test(msg))                         return "Fee exceeds maximum allowed";
   if (/No tokens to withdraw/i.test(msg))                return "No tokens available to withdraw";
@@ -99,6 +101,7 @@ export default function PostJobPageWrapper() {
 function PostJobPage() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
+  const gistParam = searchParams.get("gist");
   const isCustom = typeParam === "custom";
   const initialType = isCustom ? 9 : (typeParam ? parseInt(typeParam) : 0);
 
@@ -109,7 +112,9 @@ function PostJobPage() {
   const isWrongNetwork = chainId !== targetNetwork.id;
 
   const [serviceType, setServiceType] = useState(initialType);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(
+    gistParam ? `Build plan: ${gistParam}\n\nSee consultation plan for full scope and requirements.` : ""
+  );
   const [customAmount, setCustomAmount] = useState("");
   const [step, setStep] = useState<"form" | "approve" | "approving" | "post" | "posting" | "done">("form");
   const [approveCooldown, setApproveCooldown] = useState(false);
@@ -252,6 +257,13 @@ function PostJobPage() {
       <p className="opacity-70 mb-8">Describe what you need built, audited, or consulted on.</p>
 
       <div className="w-full max-w-lg">
+        {/* Consultation badge */}
+        {gistParam && (
+          <div className="alert alert-info mb-4">
+            <span>📋 Based on your consultation — <a href={gistParam} target="_blank" rel="noopener noreferrer" className="link">view plan</a></span>
+          </div>
+        )}
+
         {/* Service Type */}
         <div className="form-control mb-4">
           <label className="label"><span className="label-text font-bold">Service Type</span></label>
@@ -259,6 +271,7 @@ function PostJobPage() {
             className="select select-bordered w-full rounded-md"
             value={serviceType}
             onChange={e => setServiceType(parseInt(e.target.value))}
+            disabled={!!gistParam}
           >
             {Object.entries(SERVICE_NAMES).map(([id, name]) => (
               <option key={id} value={id}>{name}</option>

@@ -155,7 +155,7 @@ const Home: NextPage = () => {
         {/* Contract Info */}
         <div className="mt-16 text-center text-sm">
           <p className="opacity-60 mb-1">Contract on Base:</p>
-          <Address address="0x3f10B14dF859a26526F7086eF0b121b15Ef92954" />
+          <Address address="0x70BCbd61A797013eDc795408743325323FC2406C" />
           <p className="opacity-50 mt-2">Payments in <a href="https://basescan.org/token/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" target="_blank" rel="noopener" className="underline">CLAWD</a> — USDC auto-swaps via Uniswap V3</p>
         </div>
       </div>

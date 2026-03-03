@@ -34,8 +34,11 @@ function JobRow({ jobId }: { jobId: number }) {
 
   if (!job) return <tr><td colSpan={5} className="text-center opacity-50">Loading...</td></tr>;
 
-  const status = STATUS_LABELS[Number(job.status)] || { label: "Unknown", badge: "" };
   const serviceType = Number(job.serviceType);
+  // Hide consultation jobs from the board
+  if (serviceType <= 1) return null;
+
+  const status = STATUS_LABELS[Number(job.status)] || { label: "Unknown", badge: "" };
   const price = formatUnits(job.paymentClawd, 18);
 
   return (

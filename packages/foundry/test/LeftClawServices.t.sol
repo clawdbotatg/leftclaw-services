@@ -503,6 +503,62 @@ contract LeftClawServicesTest is Test {
         services.claimPayment(1);
     }
 
+    // ─── burnConsultation Tests ──────────────────────────────────────────────
+
+    function test_BurnConsultation_HappyPath() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+        uint256 price = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_S);
+        uint256 deadBefore = IERC20(CLAWD).balanceOf(address(0xdEaD));
+
+        vm.prank(executor);
+        services.burnConsultation(1, "https://gist.github.com/test/123", LeftClawServices.ServiceType.BUILD_S);
+
+        LeftClawServices.Job memory job = services.getJob(1);
+        assertEq(uint8(job.status), uint8(LeftClawServices.JobStatus.COMPLETED));
+        assertTrue(job.paymentClaimed);
+        assertEq(job.resultCID, "https://gist.github.com/test/123");
+        assertEq(services.totalLockedClawd(), 0);
+
+        uint256 deadAfter = IERC20(CLAWD).balanceOf(address(0xdEaD));
+        assertEq(deadAfter - deadBefore, price);
+    }
+
+    function test_BurnConsultation_RevertNonConsultation() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        vm.prank(executor);
+        vm.expectRevert("Not a consultation job");
+        services.burnConsultation(jobId, "https://gist.github.com/test/123", LeftClawServices.ServiceType.BUILD_S);
+    }
+
+    function test_BurnConsultation_RevertNonExecutor() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+
+        vm.prank(nonExecutor);
+        vm.expectRevert("Not an executor");
+        services.burnConsultation(1, "https://gist.github.com/test/123", LeftClawServices.ServiceType.BUILD_S);
+    }
+
+    function test_BurnConsultation_RevertEmptyGist() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+
+        vm.prank(executor);
+        vm.expectRevert("Gist URL required");
+        services.burnConsultation(1, "", LeftClawServices.ServiceType.BUILD_S);
+    }
+
+    function test_BurnConsultation_RevertDoubleClaim() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+
+        vm.prank(executor);
+        services.burnConsultation(1, "https://gist.github.com/test/123", LeftClawServices.ServiceType.BUILD_S);
+
+        vm.prank(executor);
+        vm.expectRevert("Job not IN_PROGRESS");
+        services.burnConsultation(1, "https://gist.github.com/test/456", LeftClawServices.ServiceType.BUILD_M);
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     function _postJob(LeftClawServices.ServiceType serviceType) internal {
