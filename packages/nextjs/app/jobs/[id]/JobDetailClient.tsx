@@ -38,6 +38,9 @@ export default function JobDetailClient() {
     args: [BigInt(jobId || "0")],
   });
 
+  // Must be called before any early returns — Rules of Hooks
+  const clawdPrice = useCLAWDPrice();
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -57,8 +60,6 @@ export default function JobDetailClient() {
       </div>
     );
   }
-
-  const clawdPrice = useCLAWDPrice();
   const status = STATUS_LABELS[Number(job.status)] || { label: "Unknown", badge: "", desc: "" };
   const serviceType = Number(job.serviceType);
   const price = formatUnits(job.paymentClawd, 18);
