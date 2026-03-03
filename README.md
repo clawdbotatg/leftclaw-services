@@ -1,51 +1,59 @@
 # 🦞 LeftClaw Services
 
-AI Ethereum builder for hire. Post a job, pay in CLAWD (or USDC — auto-swapped), get it built.
+Hire an AI Ethereum builder. Pay with CLAWD or USDC on Base.
 
-**Live:** https://services.clawdbotatg.eth.link  
-**Contract:** [`0x8FB713Dc14Bd9d0f32E3b8eA13B4F4b7F4C9D335`](https://basescan.org/address/0x8FB713Dc14Bd9d0f32E3b8eA13B4F4b7F4C9D335) on Base  
-**Token:** [`CLAWD`](https://basescan.org/token/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07)
+## What It Does
+
+Post a job (consultation, build, audit) — pay in CLAWD token. LeftClaw accepts the job, delivers results via IPFS CID, and payment releases automatically after a 7-day dispute window.
+
+USDC payments are auto-swapped to CLAWD via Uniswap V3.
 
 ## Services
 
-| Type | Description | Price |
-|---|---|---|
-| Quick Consult | 15-message consultation | 66,666 CLAWD |
-| Deep Consult | 30-message deep-dive | 100,000 CLAWD |
-| Simple Build | Single contract + basic frontend | 1,666,666 CLAWD |
-| Standard Build | Full dApp — contract + frontend + deploy | 3,333,333 CLAWD |
-| Complex Build | Multi-contract + advanced frontend | 5,000,000 CLAWD |
-| Enterprise Build | Full protocol + testing + audit + deploy | 8,333,333 CLAWD |
-| QA Report | Comprehensive dApp audit | 666,666 CLAWD |
-| Contract Audit | Single contract security review | 1,000,000 CLAWD |
-| Multi-Contract Audit | Full protocol security audit | 2,000,000 CLAWD |
+| Type | Description |
+|---|---|
+| Quick Consult | 15-message Q&A |
+| Deep Consult | 30-message deep-dive |
+| Simple Build | Single contract + basic frontend |
+| Standard Build | Full dApp — contract + frontend + deployment |
+| Complex Build | Multi-contract with advanced integrations |
+| Enterprise Build | Full protocol, testing, audit, deployment |
+| QA Report | Pre-ship dApp audit |
+| Contract Audit | Single contract security review |
+| Multi-Contract Audit | Full protocol security review |
 
-## How It Works
+## Contract
 
-1. **Post a Job** — pick a service, describe what you need, pay in CLAWD or USDC
-2. **LeftClaw Accepts** — executor reviews and accepts the job onchain
-3. **Work Delivered** — result is committed as an IPFS CID onchain
-4. **7-Day Safety** — dispute window; after 7 days payment auto-releases
+- **Address:** `0x8FB713Dc14Bd9d0f32E3b8eA13B4F4b7F4C9D335` on Base
+- **Owner:** Safe multisig `0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0`
+- **Payment token:** [CLAWD](https://basescan.org/token/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07)
+- **Verified:** [Basescan](https://basescan.org/address/0x8FB713Dc14Bd9d0f32E3b8eA13B4F4b7F4C9D335#code)
 
-## Security
+## Live
 
-- `totalLockedClawd` prevents withdrawal of funds backing active jobs
-- Fee snapshot at payment claim prevents fee manipulation mid-job
-- No pause mechanism — owner can never freeze executor funds
-- 30-day dispute timeout — executor can always claim after this period
+[services.clawdbotatg.eth.link](https://services.clawdbotatg.eth.link)
 
-## Development
+## Stack
+
+- Solidity + Foundry
+- Scaffold-ETH 2 + Next.js
+- IPFS via BGIPFS
+- Uniswap V3 for USDC→CLAWD swaps
+
+## Develop
 
 ```bash
 yarn install
 yarn chain          # local anvil
 yarn deploy         # deploy to local
-yarn start          # frontend at localhost:3000
+yarn start          # frontend on localhost:3000
 ```
+
+## Test
 
 ```bash
-yarn test           # 22 Foundry tests on Base fork
-yarn verify --network base
+cd packages/foundry
+forge test --fork-url https://base-mainnet.g.alchemy.com/v2/<KEY> -vv
 ```
 
-Built with [Scaffold-ETH 2](https://github.com/scaffold-eth/scaffold-eth-2).
+22 tests, all passing on Base fork.
