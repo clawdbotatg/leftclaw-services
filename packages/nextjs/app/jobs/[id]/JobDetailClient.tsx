@@ -3,6 +3,8 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { Address } from "~~/components/scaffold-eth";
+import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 import { formatUnits } from "viem";
 
 const STATUS_LABELS: Record<number, { label: string; badge: string; desc: string }> = {
@@ -56,9 +58,11 @@ export default function JobDetailClient() {
     );
   }
 
+  const clawdPrice = useCLAWDPrice();
   const status = STATUS_LABELS[Number(job.status)] || { label: "Unknown", badge: "", desc: "" };
   const serviceType = Number(job.serviceType);
   const price = formatUnits(job.paymentClawd, 18);
+  const priceUsd = clawdPrice ? (Number(price) * clawdPrice).toFixed(2) : null;
   const createdAt = new Date(Number(job.createdAt) * 1000);
   const completedAt = job.completedAt > 0 ? new Date(Number(job.completedAt) * 1000) : null;
   const disputeEnd = completedAt ? new Date(completedAt.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
@@ -89,12 +93,11 @@ export default function JobDetailClient() {
               <div>
                 <span className="text-sm opacity-50">Payment</span>
                 <p className="font-mono font-bold">{Number(price).toLocaleString()} CLAWD</p>
+                {priceUsd && <p className="text-xs opacity-50">~${priceUsd} USD</p>}
               </div>
               <div>
                 <span className="text-sm opacity-50">Client</span>
-                <p className="font-mono text-sm">
-                  {job.client?.slice(0, 6)}...{job.client?.slice(-4)}
-                </p>
+                <Address address={job.client} />
               </div>
               <div>
                 <span className="text-sm opacity-50">Created</span>
@@ -103,9 +106,7 @@ export default function JobDetailClient() {
               {job.executor !== "0x0000000000000000000000000000000000000000" && (
                 <div>
                   <span className="text-sm opacity-50">Executor</span>
-                  <p className="font-mono text-sm">
-                    {job.executor?.slice(0, 6)}...{job.executor?.slice(-4)}
-                  </p>
+                  <Address address={job.executor} />
                 </div>
               )}
               {completedAt && (

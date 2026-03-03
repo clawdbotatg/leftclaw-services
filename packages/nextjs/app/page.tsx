@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { NextPage } from "next";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 import { Address } from "@scaffold-ui/components";
 import { formatUnits } from "viem";
 
@@ -30,14 +31,16 @@ const TIER_BADGES: Record<string, string> = {
   audit: "badge-success",
 };
 
-function ServiceCard({ service }: { service: typeof SERVICE_TYPES[number] }) {
+function ServiceCard({ service, clawdPrice }: { service: typeof SERVICE_TYPES[number]; clawdPrice: number | null }) {
   const { data: priceRaw } = useScaffoldReadContract({
     contractName: "LeftClawServices",
     functionName: "servicePriceInClawd",
     args: [service.id],
   });
 
-  const price = priceRaw ? Number(formatUnits(priceRaw, 18)).toLocaleString() : "...";
+  const priceNum = priceRaw ? Number(formatUnits(priceRaw, 18)) : null;
+  const priceDisplay = priceNum ? priceNum.toLocaleString() : "...";
+  const priceUsd = priceNum && clawdPrice ? `~$${(priceNum * clawdPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : null;
 
   return (
     <div className={`card border-2 ${TIER_COLORS[service.tier]} hover:shadow-lg transition-all duration-200`}>
@@ -51,7 +54,10 @@ function ServiceCard({ service }: { service: typeof SERVICE_TYPES[number] }) {
         <h3 className="card-title text-lg mt-2">{service.name}</h3>
         <p className="text-sm opacity-70">{service.desc}</p>
         <div className="mt-3 flex justify-between items-center">
-          <span className="font-mono text-sm font-bold">{price} CLAWD</span>
+          <div>
+            <span className="font-mono text-sm font-bold">{priceDisplay} CLAWD</span>
+            {priceUsd && <p className="text-xs opacity-50">{priceUsd} USD</p>}
+          </div>
           <Link href={`/post?type=${service.id}`} className="btn btn-sm btn-primary">
             Hire →
           </Link>
@@ -62,6 +68,7 @@ function ServiceCard({ service }: { service: typeof SERVICE_TYPES[number] }) {
 }
 
 const Home: NextPage = () => {
+  const clawdPrice = useCLAWDPrice();
   const { data: totalJobs } = useScaffoldReadContract({
     contractName: "LeftClawServices",
     functionName: "getTotalJobs",
@@ -98,7 +105,7 @@ const Home: NextPage = () => {
         <h3 className="text-lg font-semibold mb-4 opacity-70">💬 Consultations</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {SERVICE_TYPES.filter(s => s.tier === "consult").map(s => (
-            <ServiceCard key={s.id} service={s} />
+            <ServiceCard key={s.id} service={s} clawdPrice={clawdPrice} />
           ))}
         </div>
 
@@ -106,7 +113,7 @@ const Home: NextPage = () => {
         <h3 className="text-lg font-semibold mb-4 opacity-70">⚡ Builds</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {SERVICE_TYPES.filter(s => s.tier === "build").map(s => (
-            <ServiceCard key={s.id} service={s} />
+            <ServiceCard key={s.id} service={s} clawdPrice={clawdPrice} />
           ))}
         </div>
 
@@ -114,7 +121,7 @@ const Home: NextPage = () => {
         <h3 className="text-lg font-semibold mb-4 opacity-70">🛡️ Audits</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {SERVICE_TYPES.filter(s => s.tier === "audit").map(s => (
-            <ServiceCard key={s.id} service={s} />
+            <ServiceCard key={s.id} service={s} clawdPrice={clawdPrice} />
           ))}
         </div>
 

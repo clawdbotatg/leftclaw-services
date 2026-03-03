@@ -18,8 +18,8 @@ const scaffoldConfig = {
   pollingInterval: 3000,
   alchemyApiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || DEFAULT_ALCHEMY_API_KEY,
   rpcOverrides: {
-    [chains.base.id]: "https://base-mainnet.g.alchemy.com/v2/8GVG8WjDs-sGFRr6Rm839",
-    [chains.mainnet.id]: "https://eth-mainnet.g.alchemy.com/v2/8GVG8WjDs-sGFRr6Rm839",
+    [chains.base.id]: process.env.NEXT_PUBLIC_BASE_RPC || "https://base-mainnet.g.alchemy.com/v2/8GVG8WjDs-sGFRr6Rm839",
+    [chains.mainnet.id]: process.env.NEXT_PUBLIC_ETH_RPC || "https://eth-mainnet.g.alchemy.com/v2/8GVG8WjDs-sGFRr6Rm839",
   },
   walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "3a8170812b534d0ff9d794f19a901d64",
   onlyLocalBurnerWallet: true,

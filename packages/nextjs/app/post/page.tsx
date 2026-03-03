@@ -4,6 +4,7 @@ import { Suspense, useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useChainId, useReadContract, useWriteContract } from "wagmi";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
@@ -123,9 +124,13 @@ function PostJobPage() {
     args: [serviceType],
   });
 
+  const clawdPrice = useCLAWDPrice();
   const price = selectedStandard
     ? (priceRaw ? formatUnits(priceRaw, 18) : "0")
     : customAmount;
+  const priceUsd = clawdPrice && Number(price) > 0
+    ? `~$${(Number(price) * clawdPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })} USD`
+    : null;
 
   const priceWei = selectedStandard
     ? (priceRaw || BigInt(0))
@@ -277,9 +282,12 @@ function PostJobPage() {
 
         {/* Price Display */}
         <div className="bg-base-200 rounded-lg p-4 mb-4">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-baseline">
             <span className="opacity-70">Price:</span>
-            <span className="font-mono font-bold">{Number(price).toLocaleString()} CLAWD</span>
+            <div className="text-right">
+              <span className="font-mono font-bold">{Number(price).toLocaleString()} CLAWD</span>
+              {priceUsd && <p className="text-xs opacity-50">{priceUsd}</p>}
+            </div>
           </div>
         </div>
 
