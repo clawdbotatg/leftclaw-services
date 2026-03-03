@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { NextPage } from "next";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { Address } from "~~/components/scaffold-eth";
 import { formatUnits } from "viem";
 
 const SERVICE_TYPES = [
@@ -147,14 +148,7 @@ const Home: NextPage = () => {
         {/* Contract Info */}
         <div className="mt-16 text-center text-sm">
           <p className="opacity-60 mb-1">Contract on Base:</p>
-          <a
-            href="https://basescan.org/address/0x8FB713Dc14Bd9d0f32E3b8eA13B4F4b7F4C9D335"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-xs underline opacity-70 hover:opacity-100"
-          >
-            0x8FB713Dc14Bd9d0f32E3b8eA13B4F4b7F4C9D335
-          </a>
+          <Address address="0x8FB713Dc14Bd9d0f32E3b8eA13B4F4b7F4C9D335" />
           <p className="opacity-50 mt-2">Payments in <a href="https://basescan.org/token/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" target="_blank" rel="noopener" className="underline">CLAWD</a> — USDC auto-swaps via Uniswap V3</p>
         </div>
       </div>
