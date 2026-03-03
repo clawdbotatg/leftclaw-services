@@ -234,7 +234,7 @@ contract LeftClawServicesTest is Test {
     // ─── Test 12: Withdraw Fees ─────────────────────────────────────────────
 
     function test_WithdrawFees() public {
-        // Post and complete two jobs
+        // Post, complete, and claim two jobs — fees accumulate at claimPayment, not completeJob
         _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
         vm.prank(executor);
         services.completeJob(1, "QmResult1");
@@ -245,7 +245,17 @@ contract LeftClawServicesTest is Test {
         vm.prank(executor);
         services.completeJob(2, "QmResult2");
 
-        // Check accumulated fees
+        // fees not yet accumulated — claimPayment hasn't run
+        assertEq(services.accumulatedFees(), 0);
+
+        // warp past dispute window and claim both
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(executor);
+        services.claimPayment(1);
+        vm.prank(executor);
+        services.claimPayment(2);
+
+        // now fees are in
         uint256 price1 = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_S);
         uint256 price2 = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_L);
         uint256 expectedFees = (price1 * 500) / 10_000 + (price2 * 500) / 10_000;
@@ -299,6 +309,113 @@ contract LeftClawServicesTest is Test {
 
         vm.expectRevert("Fee too high");
         services.setProtocolFee(1001);
+    }
+
+    // ─── Test 16 (FIX HIGH): withdrawStuckTokens cannot drain active job escrow ─
+
+    function test_WithdrawStuckTokens_CannotDrainLockedClawd() public {
+        _postJob(LeftClawServices.ServiceType.CONSULT_S);
+
+        // All CLAWD is locked for the job — should revert
+        vm.expectRevert("No surplus CLAWD to withdraw");
+        services.withdrawStuckTokens(address(CLAWD), address(this));
+    }
+
+    function test_WithdrawStuckTokens_AllowsSurplusClawd() public {
+        // Airdrop 1000 extra CLAWD directly into the contract
+        deal(CLAWD, address(services), 1000e18);
+
+        // Also post a job
+        _postJob(LeftClawServices.ServiceType.CONSULT_S);
+
+        // Surplus = balance - locked - fees = (1000e18 + jobPrice) - jobPrice - 0 = 1000e18
+        uint256 balBefore = IERC20(CLAWD).balanceOf(address(this));
+        services.withdrawStuckTokens(address(CLAWD), address(this));
+        uint256 balAfter = IERC20(CLAWD).balanceOf(address(this));
+        assertEq(balAfter - balBefore, 1000e18);
+    }
+
+    // ─── Test 17 (FIX MEDIUM): fee is snapshotted at completeJob, immune to bps change ─
+
+    function test_FeeSnapshot_ImmuneToProtocolFeeChange() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+
+        vm.prank(executor);
+        services.completeJob(1, "QmResultCID");
+
+        // Owner doubles the fee after completion
+        services.setProtocolFee(1000); // 10%
+
+        vm.warp(block.timestamp + 8 days);
+
+        uint256 price = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_S);
+        uint256 feeAt5pct = (price * 500) / 10_000;
+        uint256 expectedPayout = price - feeAt5pct; // 5% was locked, not 10%
+
+        uint256 balBefore = IERC20(CLAWD).balanceOf(executor);
+        vm.prank(executor);
+        services.claimPayment(1);
+        uint256 balAfter = IERC20(CLAWD).balanceOf(executor);
+
+        assertEq(balAfter - balBefore, expectedPayout);
+
+        LeftClawServices.Job memory job = services.getJob(1);
+        assertEq(job.feeSnapshot, feeAt5pct);
+    }
+
+    // ─── Test 18 (FIX WALKAWAY): executor can claim disputed job after timeout ─
+
+    function test_WalkawayTest_ExecutorClaimsAfterDisputeTimeout() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+
+        vm.prank(executor);
+        services.completeJob(1, "QmResultCID");
+
+        // Client disputes
+        vm.prank(client);
+        services.disputeJob(1);
+
+        LeftClawServices.Job memory job = services.getJob(1);
+        assertTrue(job.disputedAt > 0);
+
+        // Owner walks away — never calls resolveDispute
+        // Executor tries to claim before timeout — should revert
+        vm.warp(block.timestamp + 29 days);
+        vm.prank(executor);
+        vm.expectRevert("Dispute timeout not reached");
+        services.claimPayment(1);
+
+        // After DISPUTE_TIMEOUT (30 days), executor can claim regardless of owner
+        vm.warp(block.timestamp + 2 days); // 31 days total from disputedAt
+        uint256 price = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_S);
+        uint256 fee = (price * 500) / 10_000;
+        uint256 expectedPayout = price - fee;
+
+        uint256 balBefore = IERC20(CLAWD).balanceOf(executor);
+        vm.prank(executor);
+        services.claimPayment(1);
+        uint256 balAfter = IERC20(CLAWD).balanceOf(executor);
+
+        assertEq(balAfter - balBefore, expectedPayout);
+    }
+
+    function test_WalkawayTest_NoFundsLockedForever() public {
+        // Verify: after dispute timeout, totalLockedClawd is correctly released
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+        vm.prank(executor);
+        services.completeJob(1, "QmResultCID");
+        vm.prank(client);
+        services.disputeJob(1);
+
+        uint256 price = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_S);
+        assertEq(services.totalLockedClawd(), price);
+
+        vm.warp(block.timestamp + 31 days);
+        vm.prank(executor);
+        services.claimPayment(1);
+
+        // All funds released — nothing locked
+        assertEq(services.totalLockedClawd(), 0);
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
