@@ -418,6 +418,91 @@ contract LeftClawServicesTest is Test {
         assertEq(services.totalLockedClawd(), 0);
     }
 
+    // ─── H-1: postJobWithUsdc enforces service price ─────────────────────────
+
+    function test_PostJobWithUsdc_MinClawdOutBelowPricReverts() public {
+        uint256 price = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_S);
+        deal(USDC, client, 1_000e6); // $1000 USDC
+        vm.startPrank(client);
+        IERC20(USDC).approve(address(services), 1_000e6);
+        // minClawdOut < service price → revert
+        vm.expectRevert("minClawdOut must cover service price");
+        services.postJobWithUsdc(
+            LeftClawServices.ServiceType.CONSULT_S,
+            "QmDescCID",
+            1_000e6,
+            price - 1
+        );
+        vm.stopPrank();
+    }
+
+    function test_PostJobWithUsdc_CustomZeroMinReverts() public {
+        deal(USDC, client, 100e6);
+        vm.startPrank(client);
+        IERC20(USDC).approve(address(services), 100e6);
+        vm.expectRevert("Min 1 CLAWD");
+        services.postJobWithUsdc(
+            LeftClawServices.ServiceType.CUSTOM,
+            "QmDescCID",
+            100e6,
+            0
+        );
+        vm.stopPrank();
+    }
+
+    function test_PostJobWithUsdc_RealSwap() public {
+        uint256 price = services.servicePriceInClawd(LeftClawServices.ServiceType.CONSULT_S);
+        deal(USDC, client, 500e6); // $500 USDC — more than enough for CONSULT_S
+        vm.startPrank(client);
+        IERC20(USDC).approve(address(services), 500e6);
+        // minClawdOut = service price (we're sending plenty of USDC)
+        services.postJobWithUsdc(
+            LeftClawServices.ServiceType.CONSULT_S,
+            "QmDescCID",
+            500e6,
+            price
+        );
+        vm.stopPrank();
+        LeftClawServices.Job memory job = services.getJob(1);
+        assertEq(uint256(job.serviceType), uint256(LeftClawServices.ServiceType.CONSULT_S));
+        assertGe(job.paymentClawd, price, "CLAWD received should cover service price");
+    }
+
+    // ─── L-1: setSwapPath ─────────────────────────────────────────────────────
+
+    function test_SetSwapPath_OwnerCanUpdate() public {
+        bytes memory newPath = abi.encodePacked(
+            USDC, uint24(100), WETH, uint24(3000), CLAWD
+        );
+        services.setSwapPath(newPath);
+        assertEq(services.swapPath(), newPath);
+    }
+
+    function test_SetSwapPath_NonOwnerReverts() public {
+        bytes memory newPath = abi.encodePacked(USDC, uint24(100), WETH, uint24(3000), CLAWD);
+        vm.prank(client);
+        vm.expectRevert();
+        services.setSwapPath(newPath);
+    }
+
+    // ─── L-3: DisputeResolved event on timeout claim ──────────────────────────
+
+    function test_DisputeResolvedEmitted_OnTimeoutClaim() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
+        vm.prank(executor);
+        services.completeJob(1, "QmResultCID");
+        vm.prank(client);
+        services.disputeJob(1);
+
+        vm.warp(block.timestamp + 31 days);
+
+        vm.expectEmit(true, false, false, true);
+        emit LeftClawServices.DisputeResolved(1, false);
+
+        vm.prank(executor);
+        services.claimPayment(1);
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     function _postJob(LeftClawServices.ServiceType serviceType) internal {

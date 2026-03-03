@@ -6,12 +6,11 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @notice Minimal Uniswap V3 SwapRouter interface for multi-hop swaps
+/// @notice Uniswap V3 SwapRouter02 interface (IV3SwapRouter — no deadline field)
 interface ISwapRouter {
     struct ExactInputParams {
         bytes path;
         address recipient;
-        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
     }
@@ -88,6 +87,9 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     ISwapRouter public immutable uniswapRouter;
     address public immutable weth;
 
+    /// @notice FIX(L-1): Configurable Uniswap V3 swap path so owner can update if liquidity shifts.
+    bytes public swapPath;
+
     uint256 public constant DISPUTE_WINDOW = 7 days;
     uint256 public constant MAX_FEE_BPS = 1000; // 10% cap
 
@@ -111,6 +113,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     event ExecutorRemoved(address indexed executor);
     event ProtocolFeeUpdated(uint256 newFeeBps);
     event FeesWithdrawn(address indexed to, uint256 amount);
+    event SwapPathUpdated(bytes newPath);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -152,6 +155,15 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         protocolFeeBps = 500; // 5%
         nextJobId = 1;
 
+        // FIX(L-1): default path — owner can update via setSwapPath if pool liquidity shifts
+        swapPath = abi.encodePacked(
+            _usdcToken,
+            uint24(500),   // USDC/WETH 0.05%
+            _weth,
+            uint24(10000), // WETH/CLAWD 1%
+            _clawdToken
+        );
+
         // Add deployer as initial executor
         isExecutor[msg.sender] = true;
         emit ExecutorAdded(msg.sender);
@@ -182,6 +194,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     }
 
     /// @notice Post a job paying with USDC — auto-swaps to CLAWD via Uniswap V3
+    /// @param minClawdOut For non-CUSTOM types must be >= servicePriceInClawd; prevents underpaying and sandwich attacks.
+    ///                    For CUSTOM must be >= 1e18. Never pass 0.
     function postJobWithUsdc(
         ServiceType serviceType,
         string calldata descriptionCID,
@@ -189,6 +203,16 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         uint256 minClawdOut
     ) external nonReentrant {
         require(usdcAmount > 0, "USDC amount must be > 0");
+        require(bytes(descriptionCID).length > 0, "Description required");
+
+        // FIX(H-1) + FIX(L-5): enforce service price and non-zero slippage guard
+        if (serviceType != ServiceType.CUSTOM) {
+            uint256 price = servicePriceInClawd[serviceType];
+            require(price > 0, "Service price not set");
+            require(minClawdOut >= price, "minClawdOut must cover service price");
+        } else {
+            require(minClawdOut >= 1e18, "Min 1 CLAWD");
+        }
 
         // Pull USDC from sender
         usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
@@ -196,24 +220,20 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         // Approve router to spend USDC
         usdcToken.forceApprove(address(uniswapRouter), usdcAmount);
 
-        // Multi-hop swap: USDC → WETH (0.05% fee) → CLAWD (1% fee)
-        bytes memory path = abi.encodePacked(
-            address(usdcToken),
-            uint24(500),    // USDC/WETH 0.05%
-            weth,
-            uint24(10000),  // WETH/CLAWD 1%
-            address(clawdToken)
-        );
-
+        // FIX(L-1): use configurable path instead of hardcoded fee tiers
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-            path: path,
+            path: swapPath,
             recipient: address(this),
-            deadline: block.timestamp + 300,
             amountIn: usdcAmount,
             amountOutMinimum: minClawdOut
         });
 
         uint256 clawdReceived = uniswapRouter.exactInput(params);
+
+        // FIX(H-1): verify swap output actually meets the service price
+        if (serviceType != ServiceType.CUSTOM) {
+            require(clawdReceived >= servicePriceInClawd[serviceType], "Swap yielded insufficient CLAWD");
+        }
 
         _createJob(msg.sender, serviceType, clawdReceived, usdcAmount, descriptionCID);
     }
@@ -261,10 +281,11 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         require(job.executor == msg.sender, "Not the executor");
         require(!job.paymentClaimed, "Already claimed");
 
+        bool wasDisputed = job.status == JobStatus.DISPUTED;
         if (job.status == JobStatus.COMPLETED) {
             // Normal path: dispute window must have passed
             require(block.timestamp > job.completedAt + DISPUTE_WINDOW, "Dispute window active");
-        } else if (job.status == JobStatus.DISPUTED) {
+        } else if (wasDisputed) {
             // FIX(WALKAWAY): owner didn't resolve — executor claims after timeout
             require(block.timestamp > job.disputedAt + DISPUTE_TIMEOUT, "Dispute timeout not reached");
         } else {
@@ -284,6 +305,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
         clawdToken.safeTransfer(msg.sender, payout);
 
+        // FIX(L-3): emit DisputeResolved when timeout auto-resolution occurs (executor wins by default)
+        if (wasDisputed) emit DisputeResolved(jobId, false);
         emit PaymentClaimed(jobId, msg.sender, payout);
     }
 
@@ -305,7 +328,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     }
 
     /// @notice Client disputes a completed job within dispute window
-    function disputeJob(uint256 jobId) external {
+    function disputeJob(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
         require(job.client == msg.sender, "Not the client");
@@ -371,6 +394,14 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         require(feeBps <= MAX_FEE_BPS, "Fee too high");
         protocolFeeBps = feeBps;
         emit ProtocolFeeUpdated(feeBps);
+    }
+
+    /// @notice FIX(L-1): Update Uniswap V3 swap path if pool liquidity shifts.
+    ///         path is ABI-encoded as: token0 | fee | token1 | fee | token2 ...
+    function setSwapPath(bytes calldata newPath) external onlyOwner {
+        require(newPath.length >= 43, "Invalid path"); // min: 20 + 3 + 20
+        swapPath = newPath;
+        emit SwapPathUpdated(newPath);
     }
 
     /// @notice Withdraw accidentally sent tokens.
