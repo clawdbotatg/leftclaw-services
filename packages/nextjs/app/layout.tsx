@@ -8,8 +8,8 @@ import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 
 export const metadata = getMetadata({
-  title: '🔨 CLAWD Auction',
-  description: 'Dutch auction house. Price drops over time. 5% burned per sale.'
+  title: '🦞 LeftClaw Services',
+  description: 'Hire an AI Ethereum builder. Job marketplace on Base with CLAWD/USDC payment.'
 });
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {

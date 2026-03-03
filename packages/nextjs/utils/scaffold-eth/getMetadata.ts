@@ -5,7 +5,7 @@ const baseUrl = process.env.NEXT_PUBLIC_PRODUCTION_URL
   : process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : `http://localhost:${process.env.PORT || 3000}`;
-const titleTemplate = "%s | CLAWD Auction";
+const titleTemplate = "%s | LeftClaw Services";
 
 export const getMetadata = ({
   title,
