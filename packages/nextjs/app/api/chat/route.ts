@@ -44,12 +44,14 @@ export async function POST(req: NextRequest) {
       "Content-Type": "application/json",
       "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
+      "anthropic-beta": "web-search-2025-03-05",
     },
     body: JSON.stringify({
       model: "claude-opus-4-6",
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
       stream: true,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
       messages: messages.map((m: { role: string; content: string }) => ({
         role: m.role,
         content: m.content,
