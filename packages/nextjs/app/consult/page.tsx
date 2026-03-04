@@ -136,9 +136,13 @@ function ConsultPage() {
     return p;
   }, [openWallet]);
 
-  // After done → redirect to chat (Vercel for IPFS builds, relative for Vercel)
+  // After done → store topic in sessionStorage then redirect to chat
   useEffect(() => {
     if (step === "done" && postedJobIdRef.current !== null) {
+      // Seed the chat with the user's initial context
+      if (topic.trim()) {
+        try { sessionStorage.setItem(`consult-topic-${postedJobIdRef.current}`, topic.trim()); } catch {}
+      }
       const chatBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
       if (chatBaseUrl) {
         window.location.href = `${chatBaseUrl}/chat/${postedJobIdRef.current}`;
@@ -146,6 +150,7 @@ function ConsultPage() {
         router.push(`/chat/${postedJobIdRef.current}`);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, router]);
 
   const handleStart = async () => {

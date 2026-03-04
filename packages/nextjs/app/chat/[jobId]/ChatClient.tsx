@@ -19,6 +19,8 @@ export default function ChatPage() {
 
   const storageKey = `chat-messages-${jobId}`;
   const [messages, setMessages] = useState<Message[]>([]);
+  const [storageLoaded, setStorageLoaded] = useState(false);
+  const autoSentRef = useRef(false);
 
   // Load from sessionStorage after hydration
   useEffect(() => {
@@ -26,6 +28,7 @@ export default function ChatPage() {
       const saved = sessionStorage.getItem(storageKey);
       if (saved) setMessages(JSON.parse(saved));
     } catch {}
+    setStorageLoaded(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
   const [input, setInput] = useState("");
@@ -53,7 +56,7 @@ export default function ChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, opts?: { isOpening?: boolean }) => {
     if (!text.trim() || isStreaming) return;
     setError(null);
     const userMsg: Message = { role: "user", content: text.trim() };
@@ -66,7 +69,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages, jobId }),
+        body: JSON.stringify({ messages: newMessages, jobId, isOpening: opts?.isOpening }),
       });
 
       if (!res.ok) {
@@ -129,6 +132,25 @@ export default function ChatPage() {
     }
   };
 
+  // Auto-send the initial topic from the consult page (kicks off bot's opening question)
+  useEffect(() => {
+    if (!storageLoaded) return;
+    if (jobLoading) return;
+    if (!jobExists) return;
+    if (messages.length > 0) return; // returning user — don't re-trigger
+    if (autoSentRef.current) return;
+
+    const topicKey = `consult-topic-${jobId}`;
+    let savedTopic = "";
+    try { savedTopic = sessionStorage.getItem(topicKey) || ""; } catch {}
+    if (!savedTopic) return;
+
+    autoSentRef.current = true;
+    try { sessionStorage.removeItem(topicKey); } catch {}
+    sendMessage(savedTopic, { isOpening: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageLoaded, jobLoading, jobExists]);
+
   const handleGeneratePlan = () => {
     sendMessage("Please finalize the build plan based on our discussion.");
   };
@@ -175,10 +197,10 @@ export default function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-        {messages.length === 0 && (
+        {messages.length === 0 && !isStreaming && (
           <div className="text-center py-10 opacity-60">
             <p className="text-4xl mb-2">🦞</p>
-            <p>Hi! I&apos;m LeftClaw. Tell me what you want to build.</p>
+            <p>Tell me what you want to build and I&apos;ll help you find the right way to do it.</p>
           </div>
         )}
         {messages.map((msg, i) => (
