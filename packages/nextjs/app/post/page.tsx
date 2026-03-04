@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
@@ -118,6 +118,7 @@ function PostJobPage() {
   );
   const [customAmount, setCustomAmount] = useState("");
   const [step, setStep] = useState<"form" | "approve" | "approving" | "post" | "posting" | "done">("form");
+  const postedJobIdRef = useRef<number | null>(null);
   const [approveCooldown, setApproveCooldown] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
 
@@ -221,6 +222,8 @@ function PostJobPage() {
   const handlePost = async () => {
     if (!description.trim()) return;
     try {
+      // Capture job ID before posting (nextJobId is the ID that will be assigned)
+      postedJobIdRef.current = nextJobId ? Number(nextJobId) : null;
       setStep("posting");
       if (selectedStandard) {
         await writeAndOpen(() => postAsync({
@@ -250,11 +253,10 @@ function PostJobPage() {
 
   // Redirect consultations to chat after posting
   useEffect(() => {
-    if (step === "done" && isConsultation && nextJobId) {
-      const postedJobId = Number(nextJobId) - 1;
-      router.push(`/chat/${postedJobId}`);
+    if (step === "done" && isConsultation && postedJobIdRef.current !== null) {
+      router.push(`/chat/${postedJobIdRef.current}`);
     }
-  }, [step, isConsultation, nextJobId, router]);
+  }, [step, isConsultation, router]);
 
   if (step === "done") {
     return (
