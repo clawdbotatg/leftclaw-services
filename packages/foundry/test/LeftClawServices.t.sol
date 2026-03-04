@@ -599,6 +599,96 @@ contract LeftClawServicesTest is Test {
         services.rejectJob(999);
     }
 
+    // ─── Work Log Tests ──────────────────────────────────────────────────────
+
+    function test_LogWork_Success() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        vm.prank(executor);
+        services.logWork(jobId, "Setting up Scaffold-ETH 2 and deploying contracts to Base Sepolia");
+
+        LeftClawServices.WorkLog[] memory logs = services.getWorkLogs(jobId);
+        assertEq(logs.length, 1);
+        assertEq(logs[0].note, "Setting up Scaffold-ETH 2 and deploying contracts to Base Sepolia");
+        assertEq(logs[0].timestamp, block.timestamp);
+    }
+
+    function test_LogWork_RevertsIfNotInProgress() public {
+        _postJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        vm.prank(executor);
+        vm.expectRevert("Job not IN_PROGRESS");
+        services.logWork(jobId, "This should fail");
+    }
+
+    function test_LogWork_RevertsIfNotExecutor() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        vm.prank(nonExecutor);
+        vm.expectRevert("Not an executor");
+        services.logWork(jobId, "This should fail");
+    }
+
+    function test_LogWork_RevertsIfNotAssignedExecutor() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        address otherExecutor = makeAddr("otherExecutor");
+        services.addExecutor(otherExecutor);
+
+        vm.prank(otherExecutor);
+        vm.expectRevert("Not the assigned executor");
+        services.logWork(jobId, "This should fail");
+    }
+
+    function test_LogWork_RevertsIfNoteTooLong() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        // Build a 501-char string
+        string memory longNote = new string(501);
+        bytes memory b = bytes(longNote);
+        for (uint i = 0; i < 501; i++) b[i] = "a";
+        longNote = string(b);
+
+        vm.prank(executor);
+        vm.expectRevert("Note too long (max 500 chars)");
+        services.logWork(jobId, longNote);
+    }
+
+    function test_LogWork_MultipleEntries() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        vm.startPrank(executor);
+        services.logWork(jobId, "Started: reviewing spec and setting up repo");
+        vm.warp(block.timestamp + 1 hours);
+        services.logWork(jobId, "Contracts deployed to Base Sepolia, tests passing");
+        vm.warp(block.timestamp + 2 hours);
+        services.logWork(jobId, "Frontend complete, IPFS build uploading");
+        vm.stopPrank();
+
+        LeftClawServices.WorkLog[] memory logs = services.getWorkLogs(jobId);
+        assertEq(logs.length, 3);
+        assertEq(logs[0].note, "Started: reviewing spec and setting up repo");
+        assertEq(logs[1].note, "Contracts deployed to Base Sepolia, tests passing");
+        assertEq(logs[2].note, "Frontend complete, IPFS build uploading");
+        assertTrue(logs[1].timestamp > logs[0].timestamp);
+        assertTrue(logs[2].timestamp > logs[1].timestamp);
+    }
+
+    function test_LogWork_EmptyNoteReverts() public {
+        _postAndAcceptJob(LeftClawServices.ServiceType.BUILD_S);
+        uint256 jobId = services.nextJobId() - 1;
+
+        vm.prank(executor);
+        vm.expectRevert("Note required");
+        services.logWork(jobId, "");
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     function _postJob(LeftClawServices.ServiceType serviceType) internal {

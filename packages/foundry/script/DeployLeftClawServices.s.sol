@@ -12,11 +12,15 @@ contract DeployLeftClawServices is Script {
     address constant WETH = 0x4200000000000000000000000000000000000006;
 
     address constant SAFE = 0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0;
+    address constant CLAWDBOTATG = 0x11ce532845cE0eAcdA41f72FDc1C88c335981442;
 
     function run() external {
         vm.startBroadcast();
         LeftClawServices services = new LeftClawServices(CLAWD, USDC, UNISWAP_ROUTER, WETH);
-        console.log("LeftClawServices deployed at:", address(services));
+        console.log("LeftClawServices v5 deployed at:", address(services));
+        // Add clawdbotatg.eth as executor (deployer is already added in constructor)
+        services.addExecutor(CLAWDBOTATG);
+        console.log("Added executor:", CLAWDBOTATG);
         services.transferOwnership(SAFE);
         console.log("Ownership transferred to Safe:", SAFE);
         vm.stopBroadcast();

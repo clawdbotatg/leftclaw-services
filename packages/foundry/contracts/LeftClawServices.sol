@@ -68,6 +68,11 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         uint256 disputedAt;         // FIX(WALKAWAY): timestamp when dispute was filed
     }
 
+    struct WorkLog {
+        string note;
+        uint256 timestamp;
+    }
+
     // ─── State ────────────────────────────────────────────────────────────────
 
     mapping(uint256 => Job) public jobs;
@@ -75,6 +80,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     mapping(ServiceType => uint256) public servicePriceInClawd;
     mapping(address => bool) public isExecutor;
+    mapping(uint256 => WorkLog[]) public workLogs;
 
     uint256 public protocolFeeBps; // basis points (500 = 5%)
     uint256 public accumulatedFees; // CLAWD fees (only from claimed/resolved jobs)
@@ -118,6 +124,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     event SwapPathUpdated(bytes newPath);
     event ConsultationComplete(uint256 indexed jobId, address indexed client, string gistUrl, ServiceType recommendedBuildType);
     event JobRejected(uint256 indexed jobId, address indexed client);
+    event WorkLogged(uint256 indexed jobId, address indexed executor, string note);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -274,6 +281,18 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         job.feeSnapshot = (job.paymentClawd * protocolFeeBps) / 10_000;
 
         emit JobCompleted(jobId, msg.sender, resultCID);
+    }
+
+    /// @notice Executor logs a work update on-chain. Cheap on Base, permanent, readable directly via getWorkLogs.
+    function logWork(uint256 jobId, string calldata note) external nonReentrant onlyExecutor {
+        Job storage job = jobs[jobId];
+        require(job.id != 0, "Job does not exist");
+        require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
+        require(job.executor == msg.sender, "Not the assigned executor");
+        require(bytes(note).length > 0, "Note required");
+        require(bytes(note).length <= 500, "Note too long (max 500 chars)");
+        workLogs[jobId].push(WorkLog({ note: note, timestamp: block.timestamp }));
+        emit WorkLogged(jobId, msg.sender, note);
     }
 
     /// @notice Executor completes a consultation — burns escrowed CLAWD to dead address, records plan gist URL.
@@ -504,6 +523,10 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function getTotalJobs() external view returns (uint256) {
         return nextJobId - 1;
+    }
+
+    function getWorkLogs(uint256 jobId) external view returns (WorkLog[] memory) {
+        return workLogs[jobId];
     }
 
     // ─── Internal ─────────────────────────────────────────────────────────────

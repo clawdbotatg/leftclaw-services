@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   8453: {
     LeftClawServices: {
-      address: "0x70BCbd61A797013eDc795408743325323FC2406C",
+      address: "0xF5d52B881886918cAE5A6bB9E18Ef64AC3F9D18c",
       abi: [
         {
           type: "constructor",
@@ -1173,9 +1173,46 @@ const deployedContracts = {
             },
           ],
         },
+        {
+          type: "function",
+          name: "getWorkLogs",
+          inputs: [{ name: "jobId", type: "uint256", internalType: "uint256" }],
+          outputs: [
+            {
+              name: "",
+              type: "tuple[]",
+              internalType: "struct LeftClawServices.WorkLog[]",
+              components: [
+                { name: "note", type: "string", internalType: "string" },
+                { name: "timestamp", type: "uint256", internalType: "uint256" },
+              ],
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "logWork",
+          inputs: [
+            { name: "jobId", type: "uint256", internalType: "uint256" },
+            { name: "note", type: "string", internalType: "string" },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "WorkLogged",
+          inputs: [
+            { name: "jobId", type: "uint256", internalType: "uint256", indexed: true },
+            { name: "executor", type: "address", internalType: "address", indexed: true },
+            { name: "note", type: "string", internalType: "string", indexed: false },
+          ],
+          anonymous: false,
+        },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 42900717,
+      deployedOnBlock: 43122831,
     },
   },
 } as const;

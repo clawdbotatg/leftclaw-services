@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useWriteContract, useReadContract, usePublicClient } from "wagmi";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { Address } from "@scaffold-ui/components";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
@@ -57,6 +57,8 @@ export default function JobDetailClient() {
   const { address } = useAccount();
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const [logNote, setLogNote] = useState("");
+  const [resultCID, setResultCID] = useState("");
 
   const { data: job, isLoading, refetch } = useScaffoldReadContract({
     contractName: "LeftClawServices",
@@ -64,8 +66,25 @@ export default function JobDetailClient() {
     args: [BigInt(jobId || "0")],
   });
 
+  const { data: isContractExecutorRaw } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI as any,
+    functionName: "isExecutor",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address },
+  });
+  const isContractExecutor = !!isContractExecutorRaw;
+
+  const { data: workLogsData, refetch: refetchWorkLogs } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI as any,
+    functionName: "getWorkLogs",
+    args: [BigInt(jobId || "0")],
+  });
+
   const clawdPrice = useCLAWDPrice();
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
 
   if (isLoading) {
     return (
@@ -95,7 +114,7 @@ export default function JobDetailClient() {
   const disputeEnd = completedAt ? new Date(completedAt.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
 
   const isClient = address?.toLowerCase() === job.client?.toLowerCase();
-  const isExecutor = address?.toLowerCase() === job.executor?.toLowerCase();
+  const isAssignedExecutor = address?.toLowerCase() === job.executor?.toLowerCase();
   const isOpen = jobStatus === 0;
   const isCompleted = jobStatus === 2;
   const isConsult = CONSULT_TYPES.has(serviceType);
@@ -105,12 +124,74 @@ export default function JobDetailClient() {
     setActionError(null);
     setPending(functionName);
     try {
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI as any,
         functionName,
         args: [BigInt(jobId)],
       });
+      await publicClient?.waitForTransactionReceipt({ hash });
+      await refetch();
+    } catch (e) {
+      setActionError(parseError(e));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const handleAccept = async () => {
+    setActionError(null);
+    setPending("acceptJob");
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI as any,
+        functionName: "acceptJob",
+        args: [BigInt(jobId)],
+      });
+      await publicClient?.waitForTransactionReceipt({ hash });
+      await refetch();
+    } catch (e) {
+      setActionError(parseError(e));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const handleLogWork = async () => {
+    if (!logNote.trim()) return;
+    setActionError(null);
+    setPending("logWork");
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI as any,
+        functionName: "logWork",
+        args: [BigInt(jobId), logNote.trim()],
+      });
+      await publicClient?.waitForTransactionReceipt({ hash });
+      setLogNote("");
+      await refetchWorkLogs();
+    } catch (e) {
+      setActionError(parseError(e));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const handleComplete = async () => {
+    if (!resultCID.trim()) return;
+    setActionError(null);
+    setPending("completeJob");
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI as any,
+        functionName: "completeJob",
+        args: [BigInt(jobId), resultCID.trim()],
+      });
+      await publicClient?.waitForTransactionReceipt({ hash });
+      setResultCID("");
       await refetch();
     } catch (e) {
       setActionError(parseError(e));
@@ -201,17 +282,17 @@ export default function JobDetailClient() {
               </div>
             )}
 
-            {/* Action buttons */}
-            {(isClient || isExecutor) && (
+            {/* Client action buttons */}
+            {isClient && (
               <>
                 <div className="divider"></div>
                 <div className="flex flex-wrap gap-3">
-                  {isClient && isConsult && isOpen && (
+                  {isConsult && isOpen && (
                     <Link href={`/chat/${jobId}`} className="btn btn-primary">
                       💬 Continue Consultation
                     </Link>
                   )}
-                  {isClient && isOpen && (
+                  {isOpen && (
                     <button
                       className="btn btn-error btn-outline"
                       onClick={() => call("cancelJob")}
@@ -220,7 +301,7 @@ export default function JobDetailClient() {
                       {pending === "cancelJob" ? <span className="loading loading-spinner loading-sm" /> : "❌ Cancel Job"}
                     </button>
                   )}
-                  {isClient && isCompleted && !job.paymentClaimed && !disputeWindowOver && (
+                  {isCompleted && !job.paymentClaimed && !disputeWindowOver && (
                     <button
                       className="btn btn-warning"
                       onClick={() => call("disputeJob")}
@@ -229,15 +310,78 @@ export default function JobDetailClient() {
                       {pending === "disputeJob" ? <span className="loading loading-spinner loading-sm" /> : "⚠️ Dispute"}
                     </button>
                   )}
-                  {isExecutor && isCompleted && !job.paymentClaimed && disputeWindowOver && (
-                    <button
-                      className="btn btn-success"
-                      onClick={() => call("claimPayment")}
-                      disabled={!!pending}
-                    >
-                      {pending === "claimPayment" ? <span className="loading loading-spinner loading-sm" /> : "💰 Claim Payment"}
-                    </button>
-                  )}
+                </div>
+              </>
+            )}
+
+            {/* Executor controls — only visible to LeftClaw */}
+            {isContractExecutor && (
+              <>
+                <div className="divider"></div>
+                <div className="card bg-base-300">
+                  <div className="card-body py-4 gap-3">
+                    <p className="text-xs font-bold opacity-50 tracking-widest">🦞 EXECUTOR CONTROLS</p>
+
+                    {/* Accept (OPEN jobs) */}
+                    {isOpen && (
+                      <button
+                        className="btn btn-primary w-full"
+                        onClick={handleAccept}
+                        disabled={!!pending}
+                      >
+                        {pending === "acceptJob" ? <span className="loading loading-spinner loading-sm" /> : "Accept Job →"}
+                      </button>
+                    )}
+
+                    {/* Log work + Complete (IN_PROGRESS, assigned to me) */}
+                    {jobStatus === 1 && isAssignedExecutor && (
+                      <>
+                        <textarea
+                          className="textarea textarea-bordered w-full text-sm"
+                          placeholder="What are you working on right now? (max 500 chars)"
+                          rows={2}
+                          maxLength={500}
+                          value={logNote}
+                          onChange={e => setLogNote(e.target.value)}
+                          disabled={!!pending}
+                        />
+                        <button
+                          className="btn btn-primary w-full"
+                          onClick={handleLogWork}
+                          disabled={!!pending || !logNote.trim()}
+                        >
+                          {pending === "logWork" ? <span className="loading loading-spinner loading-sm" /> : "Log Work Update 🦞"}
+                        </button>
+                        <div className="divider my-0" />
+                        <input
+                          type="text"
+                          className="input input-bordered w-full text-sm"
+                          placeholder="Result URL, IPFS CID, or GitHub link"
+                          value={resultCID}
+                          onChange={e => setResultCID(e.target.value)}
+                          disabled={!!pending}
+                        />
+                        <button
+                          className="btn btn-success w-full"
+                          onClick={handleComplete}
+                          disabled={!!pending || !resultCID.trim()}
+                        >
+                          {pending === "completeJob" ? <span className="loading loading-spinner loading-sm" /> : "Mark Complete ✓"}
+                        </button>
+                      </>
+                    )}
+
+                    {/* Claim payment (COMPLETED, dispute window over) */}
+                    {isAssignedExecutor && isCompleted && !job.paymentClaimed && disputeWindowOver && (
+                      <button
+                        className="btn btn-success w-full"
+                        onClick={() => call("claimPayment")}
+                        disabled={!!pending}
+                      >
+                        {pending === "claimPayment" ? <span className="loading loading-spinner loading-sm" /> : "💰 Claim Payment"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -249,6 +393,28 @@ export default function JobDetailClient() {
             )}
           </div>
         </div>
+        {/* Work Log */}
+        {(() => {
+          const logs = workLogsData as {note: string; timestamp: bigint}[] | undefined;
+          if (!logs || logs.length === 0) return null;
+          return (
+          <div className="mt-6">
+            <h3 className="font-bold mb-3 text-lg">📋 Work Log</h3>
+            <div className="space-y-2">
+              {[...logs].reverse().map((log, i) => (
+                <div key={i} className="flex gap-4 bg-base-200 rounded-lg px-4 py-3">
+                  <div className="text-xs opacity-40 whitespace-nowrap pt-0.5 min-w-[90px]">
+                    {new Date(Number(log.timestamp) * 1000).toLocaleDateString(undefined, {
+                      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+                    })}
+                  </div>
+                  <div className="text-sm">{log.note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          );
+        })()}
       </div>
     </div>
   );
