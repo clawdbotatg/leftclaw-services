@@ -11,8 +11,7 @@ const SERVICE_TYPES = [
   { id: 0, name: "Quick Consult", emoji: "💬", desc: "A focused chat session about your idea. Ends with a written build plan.", tier: "consult" },
   { id: 1, name: "Deep Consult", emoji: "🧠", desc: "A longer session for complex architecture, protocol design, or strategy.", tier: "consult" },
   { id: 6, name: "QA Report", emoji: "🔍", desc: "Comprehensive QA audit of your existing dApp.", tier: "audit" },
-  { id: 7, name: "Contract Audit", emoji: "🛡️", desc: "Security review of a single smart contract.", tier: "audit" },
-  { id: 8, name: "Multi-Contract Audit", emoji: "🔐", desc: "Full protocol security audit — multiple contracts.", tier: "audit" },
+  { id: 7, name: "AI Audit", emoji: "🛡️", desc: "$200 per contract. AI-powered security review — vulnerabilities, logic errors, access control.", tier: "audit" },
 ];
 
 const TIER_COLORS: Record<string, string> = {

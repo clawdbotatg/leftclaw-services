@@ -17,8 +17,8 @@ const SERVICE_TYPES = [
   { id: 4, name: "Complex Build", emoji: "⚙️" },
   { id: 5, name: "Enterprise Build", emoji: "🏢" },
   { id: 6, name: "QA Report", emoji: "🔍" },
-  { id: 7, name: "Contract Audit", emoji: "🛡️" },
-  { id: 8, name: "Multi-Contract Audit", emoji: "🔐" },
+  { id: 7, name: "AI Audit", emoji: "🛡️" },
+  { id: 8, name: "AI Audit (Multi-Contract)", emoji: "🔐" },
 ];
 
 function parseError(e: unknown): string {

@@ -41,8 +41,8 @@ const SERVICE_NAMES: Record<number, string> = {
   4: "Complex Build",
   5: "Enterprise Build",
   6: "QA Report",
-  7: "Contract Audit",
-  8: "Multi-Contract Audit",
+  7: "AI Audit",
+  8: "AI Audit (Multi-Contract)",
   9: "Custom",
 };
 

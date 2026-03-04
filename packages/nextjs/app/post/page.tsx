@@ -79,15 +79,14 @@ function parseContractError(e: unknown): string {
 }
 
 const SERVICE_NAMES: Record<number, string> = {
-  0: "Quick Consult (15 messages)",
-  1: "Deep Consult (30 messages)",
+  0: "Quick Consult",
+  1: "Deep Consult",
   2: "Simple Build (~$500)",
   3: "Standard Build (~$1000)",
   4: "Complex Build (~$1500)",
   5: "Enterprise Build (~$2500)",
   6: "QA Report (~$200)",
-  7: "Contract Audit (~$300)",
-  8: "Multi-Contract Audit (~$600)",
+  7: "AI Audit (~$200/contract)",
 };
 
 export default function PostJobPageWrapper() {
