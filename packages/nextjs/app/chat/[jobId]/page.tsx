@@ -18,10 +18,16 @@ export default function ChatPage() {
   const { address } = useAccount();
 
   const storageKey = `chat-messages-${jobId}`;
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { return JSON.parse(sessionStorage.getItem(storageKey) || "[]"); } catch { return []; }
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // Load from sessionStorage after hydration
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) setMessages(JSON.parse(saved));
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +49,8 @@ export default function ChatPage() {
       try { sessionStorage.setItem(storageKey, JSON.stringify(messages)); } catch {}
     }
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, storageKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isStreaming) return;
