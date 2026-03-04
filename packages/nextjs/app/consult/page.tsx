@@ -136,10 +136,15 @@ function ConsultPage() {
     return p;
   }, [openWallet]);
 
-  // After done → redirect to chat
+  // After done → redirect to chat (Vercel for IPFS builds, relative for Vercel)
   useEffect(() => {
     if (step === "done" && postedJobIdRef.current !== null) {
-      router.push(`/chat/${postedJobIdRef.current}`);
+      const chatBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+      if (chatBaseUrl) {
+        window.location.href = `${chatBaseUrl}/chat/${postedJobIdRef.current}`;
+      } else {
+        router.push(`/chat/${postedJobIdRef.current}`);
+      }
     }
   }, [step, router]);
 
