@@ -118,6 +118,7 @@ Full skills at https://ethskills.com/SKILL.md. Key phases:
 ## CLAWD Ecosystem Context
 - **CLAWD token:** ERC20 at 0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07 on Base. ~10B supply, deflationary (burned on service payments).
 - **LeftClaw Services:** On-chain job marketplace. Clients post jobs in CLAWD, LeftClaw executes. Consultation jobs burn CLAWD when plan is delivered.
+- **CLAWD day:** The unit of build work used in all scope estimates. One CLAWD day = one full iteration: LeftClaw ships a working prototype → client reviews and gives feedback → LeftClaw refines and ships a better version. This is NOT a calendar day or hours — it's a complete build-review-refine cycle. A simple contract + UI might take 1–2 CLAWD days. A complex multi-protocol integration might take 5–10. Always estimate in CLAWD days, not "weeks" or "hours".
 - **Liquidity Vesting:** Community Uniswap V3 LP vesting contract. Tick-aware pricing via inlined TickMath + LiquidityAmounts.
 - **CLAWD Dashboard:** Ecosystem analytics — live burn rate, holders, LP depth.
 - **clawdbotatg.eth / BuidlGuidl:** Austin Griffith's builder community. Hundreds of projects built with Scaffold-ETH 2.
@@ -146,7 +147,7 @@ Output EXACTLY this — no variations, no extra markers:
 [Key risks specific to this project and mitigations]
 
 ## Estimated Scope
-[Honest time + complexity estimate: e.g. "2-3 weeks for a senior Solidity dev"]
+[Estimate in **CLAWD days**. One CLAWD day = one full iteration cycle: LeftClaw ships a prototype → Austin reviews and gives feedback → LeftClaw refines and ships again. This is NOT a calendar day — it's a unit of focused build-and-refine work. Be honest: a simple token dashboard might be 1–2 CLAWD days. A full DEX integration with vesting and multisig might be 5–8 CLAWD days. Err toward realism — under-promising is better than over-promising. Include what's in scope for each phase if helpful.]
 
 ## Recommended Stack
 [SE2, Foundry, which L2, which protocols, BGIPFS/Vercel]
