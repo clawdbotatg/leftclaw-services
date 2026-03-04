@@ -271,7 +271,9 @@ function PostJobPage() {
         <div className="text-6xl mb-4">✅</div>
         <h1 className="text-3xl font-bold mb-4">{isConsultation ? "Consultation Started!" : "Job Posted!"}</h1>
         <p className="opacity-70 mb-8">Your job has been posted on-chain. LeftClaw will review and accept it shortly.</p>
-        <Link href="/jobs" className="btn btn-primary">View Job Board →</Link>
+        <Link href={postedJobIdRef.current ? `/jobs/${postedJobIdRef.current}` : "/jobs"} className="btn btn-primary btn-lg">
+          View My Job →
+        </Link>
       </div>
     );
   }
