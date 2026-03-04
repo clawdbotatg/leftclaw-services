@@ -169,14 +169,14 @@ export default function ChatPage() {
             <div className="chat-header text-xs opacity-50 mb-1">
               {msg.role === "user" ? "You" : "🦞 LeftClaw"}
             </div>
-            <div className={`chat-bubble ${msg.role === "user" ? "chat-bubble-primary" : "chat-bubble-neutral"} whitespace-pre-wrap`}>
+            <div className={`chat-bubble ${msg.role === "user" ? "chat-bubble-primary" : "chat-bubble-neutral"} whitespace-pre-wrap !rounded-xl`}>
               {msg.content || (isStreaming && i === messages.length - 1 ? "..." : "")}
             </div>
           </div>
         ))}
         {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="chat chat-start">
-            <div className="chat-bubble chat-bubble-neutral">
+            <div className="chat-bubble chat-bubble-neutral !rounded-xl">
               <span className="loading loading-dots loading-sm" />
             </div>
           </div>
