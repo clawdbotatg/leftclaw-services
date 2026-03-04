@@ -435,7 +435,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     // ─── Admin ────────────────────────────────────────────────────────────────
 
-    function updatePrice(ServiceType serviceType, uint256 priceInClawd) external onlyOwner {
+    function updatePrice(ServiceType serviceType, uint256 priceInClawd) external {
+        require(isExecutor[msg.sender] || msg.sender == owner(), "Not authorized");
         servicePriceInClawd[serviceType] = priceInClawd;
         emit PriceUpdated(serviceType, priceInClawd);
     }
