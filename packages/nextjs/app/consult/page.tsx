@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useState, useRef, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useAccount, useReadContract, useWriteContract, usePublicClient } from "wagmi";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatUnits } from "viem";
+import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import deployedContracts from "~~/contracts/deployedContracts";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
-import deployedContracts from "~~/contracts/deployedContracts";
 import { parseContractError } from "~~/utils/parseContractError";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServices?.address as `0x${string}`;
@@ -16,9 +16,33 @@ const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
 const BASE_CHAIN_ID = 8453;
 
 const ERC20_ABI = [
-  { name: "approve", type: "function", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ type: "bool" }] },
-  { name: "allowance", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], outputs: [{ type: "uint256" }] },
-  { name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  {
+    name: "approve",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    name: "allowance",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
 ] as const;
 
 const CONSULT_INFO = {
@@ -48,7 +72,13 @@ const CONSULT_INFO = {
 
 export default function ConsultPageWrapper() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg"></span></div>}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-20">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      }
+    >
       <ConsultPage />
     </Suspense>
   );
@@ -73,7 +103,7 @@ function ConsultPage() {
 
   const { data: priceRaw } = useScaffoldReadContract({
     contractName: "LeftClawServices",
-    functionName: "servicePriceInClawd",
+    functionName: "servicePriceUsd",
     args: [serviceType],
   });
 
@@ -83,10 +113,12 @@ function ConsultPage() {
   });
 
   const clawdPrice = useCLAWDPrice();
-  const priceWei = priceRaw ?? BigInt(0);
-  const priceNum = Number(formatUnits(priceWei, 18));
-  const priceDisplay = priceNum ? priceNum.toLocaleString() : "...";
-  const priceUsd = clawdPrice && priceNum ? (priceNum * clawdPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }) : null;
+  const priceUsdRaw = priceRaw ?? BigInt(0);
+  const priceUsdNum = Number(formatUnits(priceUsdRaw, 6)); // USDC has 6 decimals
+  const priceDisplay = priceUsdNum ? `$${priceUsdNum.toLocaleString()}` : "...";
+  // Calculate CLAWD amount from USD price
+  const clawdNeeded = clawdPrice && priceUsdNum ? Math.ceil(priceUsdNum / clawdPrice) : 0;
+  const priceWei = BigInt(Math.ceil(clawdNeeded)) * BigInt(10) ** BigInt(18);
 
   const { data: allowanceRaw, refetch: refetchAllowance } = useReadContract({
     address: CLAWD_ADDRESS,
@@ -120,26 +152,37 @@ function ConsultPage() {
       if (wcKey) wcWallet = (localStorage.getItem(wcKey) || "").toLowerCase();
     } catch {}
     const schemes: [string[], string][] = [
-      [["rainbow"], "rainbow://"], [["metamask"], "metamask://"],
-      [["coinbase", "cbwallet"], "cbwallet://"], [["trust"], "trust://"], [["phantom"], "phantom://"],
+      [["rainbow"], "rainbow://"],
+      [["metamask"], "metamask://"],
+      [["coinbase", "cbwallet"], "cbwallet://"],
+      [["trust"], "trust://"],
+      [["phantom"], "phantom://"],
     ];
     for (const [kws, scheme] of schemes) {
-      if (kws.some(k => wcWallet.includes(k))) { window.location.href = scheme; return; }
+      if (kws.some(k => wcWallet.includes(k))) {
+        window.location.href = scheme;
+        return;
+      }
     }
   }, []);
 
-  const writeAndOpen = useCallback(<T,>(fn: () => Promise<T>): Promise<T> => {
-    const p = fn();
-    setTimeout(openWallet, 2000);
-    return p;
-  }, [openWallet]);
+  const writeAndOpen = useCallback(
+    <T,>(fn: () => Promise<T>): Promise<T> => {
+      const p = fn();
+      setTimeout(openWallet, 2000);
+      return p;
+    },
+    [openWallet],
+  );
 
   // After done → store topic in sessionStorage then redirect to chat
   useEffect(() => {
     if (step === "done" && postedJobIdRef.current !== null) {
       // Seed the chat with the user's initial context
       if (topic.trim()) {
-        try { sessionStorage.setItem(`consult-topic-${postedJobIdRef.current}`, topic.trim()); } catch {}
+        try {
+          sessionStorage.setItem(`consult-topic-${postedJobIdRef.current}`, topic.trim());
+        } catch {}
       }
       const chatBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
       if (chatBaseUrl) {
@@ -148,7 +191,7 @@ function ConsultPage() {
         router.push(`/chat/${postedJobIdRef.current}`);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, router]);
 
   const handleStart = async () => {
@@ -159,18 +202,23 @@ function ConsultPage() {
       // Step 1: Approve if needed
       if (needsApproval) {
         setStep("approving");
-        await writeAndOpen(() => writeContractAsync({
-          address: CLAWD_ADDRESS,
-          abi: ERC20_ABI,
-          functionName: "approve",
-          args: [contractAddress, priceWei],
-        }));
+        await writeAndOpen(() =>
+          writeContractAsync({
+            address: CLAWD_ADDRESS,
+            abi: ERC20_ABI,
+            functionName: "approve",
+            args: [contractAddress, priceWei],
+          }),
+        );
         // Poll for allowance
         let ok = false;
         for (let i = 0; i < 12; i++) {
           await new Promise(r => setTimeout(r, 1500));
           const { data } = await refetchAllowance();
-          if (data !== undefined && data >= priceWei) { ok = true; break; }
+          if (data !== undefined && data >= priceWei) {
+            ok = true;
+            break;
+          }
         }
         if (!ok) {
           setTxError("Approval didn't confirm — try again");
@@ -183,12 +231,14 @@ function ConsultPage() {
       postedJobIdRef.current = nextJobId ? Number(nextJobId) : null;
       setStep("posting");
       const description = topic.trim() || `${info.name} session`;
-      const txHash = await writeAndOpen(() => writeContractAsync({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI as any,
-        functionName: "postJob",
-        args: [serviceType, description],
-      }));
+      const txHash = await writeAndOpen(() =>
+        writeContractAsync({
+          address: CONTRACT_ADDRESS,
+          abi: CONTRACT_ABI as any,
+          functionName: "postJob",
+          args: [serviceType, priceWei, description],
+        }),
+      );
       if (!txHash) {
         setTxError("Transaction failed — wallet not connected?");
         setStep("idle");
@@ -219,7 +269,6 @@ function ConsultPage() {
   return (
     <div className="flex flex-col items-center py-10 px-4 min-h-screen">
       <div className="w-full max-w-lg">
-
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-3">{info.emoji}</div>
@@ -246,8 +295,8 @@ function ConsultPage() {
         <div className="flex items-center justify-between bg-base-300 rounded-xl px-5 py-4 mb-6">
           <div>
             <p className="text-sm opacity-60">Total cost</p>
-            <p className="text-2xl font-mono font-bold">{priceDisplay} CLAWD</p>
-            {priceUsd && <p className="text-sm opacity-50">~${priceUsd} USD</p>}
+            <p className="text-2xl font-mono font-bold">{priceDisplay}</p>
+            {clawdNeeded > 0 && <p className="text-sm opacity-50">~{clawdNeeded.toLocaleString()} CLAWD</p>}
           </div>
           <div className="text-right text-sm opacity-60">
             <p>{serviceType === 0 ? "Quick session" : "Deep session"}</p>
@@ -289,7 +338,12 @@ function ConsultPage() {
           <div className="alert alert-error mb-4">
             <span>
               Insufficient CLAWD — you need {priceDisplay} CLAWD.{" "}
-              <a href="https://app.uniswap.org/swap?outputCurrency=0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07&chain=base" target="_blank" rel="noopener" className="underline">
+              <a
+                href="https://app.uniswap.org/swap?outputCurrency=0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07&chain=base"
+                target="_blank"
+                rel="noopener"
+                className="underline"
+              >
                 Get CLAWD →
               </a>
             </span>
@@ -327,7 +381,6 @@ function ConsultPage() {
           <br />
           CLAWD is burned when the plan is delivered. No refunds after chat begins.
         </p>
-
       </div>
     </div>
   );

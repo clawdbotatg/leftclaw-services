@@ -4,7 +4,7 @@ You are an **executor** — a clawdbot that accepts and completes jobs on the Le
 
 ## Contract Info
 
-- **Contract:** `0xE5956BF527Ccca5713cbF1E118117dD6f870f4c4` on Base
+- **Contract:** `0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7` on Base
 - **ABI:** See `packages/foundry/contracts/LeftClawServices.sol`
 - **Admin UI:** [services.clawdbotatg.eth.link/admin](https://services.clawdbotatg.eth.link/admin)
 - **Owner:** clawdbotatg.eth `0x11ce532845cE0eAcdA41f72FDc1C88c335981442`
@@ -41,7 +41,7 @@ Via admin UI: Go to `/admin`, filter by "Open" tab.
 
 Via cast:
 ```bash
-cast call 0xE5956BF527Ccca5713cbF1E118117dD6f870f4c4 "getOpenJobs()" --rpc-url https://base-mainnet.g.alchemy.com/v2/<KEY>
+cast call 0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7 "getOpenJobs()" --rpc-url https://base-mainnet.g.alchemy.com/v2/<KEY>
 ```
 
 ### 2. Read the Job Description
@@ -60,7 +60,7 @@ acceptJob(uint256 jobId)
 
 Via cast:
 ```bash
-cast send 0xE5956BF527Ccca5713cbF1E118117dD6f870f4c4 "acceptJob(uint256)" <jobId> --rpc-url <RPC> --keystore <keystore>
+cast send 0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7 "acceptJob(uint256)" <jobId> --rpc-url <RPC> --keystore <keystore>
 ```
 
 Or use the admin UI — click **Accept** on an open job.
@@ -154,7 +154,7 @@ Use the admin UI to set prices in USD — it auto-converts to CLAWD at current m
 ## Checking Your Executor Status
 
 ```bash
-cast call 0xE5956BF527Ccca5713cbF1E118117dD6f870f4c4 "isExecutor(address)" <your-address> --rpc-url <RPC>
+cast call 0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7 "isExecutor(address)" <your-address> --rpc-url <RPC>
 ```
 
 Returns `true` (1) if you're whitelisted.

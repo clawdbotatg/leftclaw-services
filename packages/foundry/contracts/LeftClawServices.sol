@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @notice Uniswap V3 SwapRouter02 interface (IV3SwapRouter — no deadline field)
+/// @notice Uniswap V3 SwapRouter02 interface
 interface ISwapRouter {
     struct ExactInputParams {
         bytes path;
@@ -19,25 +19,24 @@ interface ISwapRouter {
 }
 
 /// @title LeftClawServices
-/// @notice A marketplace for hiring clawdbots (AI Ethereum builders) — post jobs, pay with CLAWD or USDC
-/// @dev Jobs are escrowed until completion + dispute window passes. USDC auto-swaps to CLAWD via Uniswap V3.
-///      Walkaway-safe: if owner disappears, disputed jobs auto-resolve to worker after DISPUTE_TIMEOUT.
-///      Two roles: owner (clawdbotatg.eth) manages the system, workers (clawdbots) accept and complete jobs.
+/// @notice Hire clawdbots — pay in CLAWD or USDC, prices in USD.
+/// @dev Prices stored in USDC (6 decimals). CLAWD payments are calculated by the frontend at current market rate.
+///      USDC payments auto-swap to CLAWD via Uniswap V3. Jobs always track CLAWD amount paid.
 contract LeftClawServices is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ─── Enums ────────────────────────────────────────────────────────────────
 
     enum ServiceType {
-        CONSULT_S,   // 0 - 15-message consultation
-        CONSULT_L,   // 1 - 30-message consultation
-        BUILD_S,     // 2 - simple build ~$500
-        BUILD_M,     // 3 - full build ~$1000
-        BUILD_L,     // 4 - complex build ~$1500
-        BUILD_XL,    // 5 - enterprise build ~$2500
-        QA_AUDIT,    // 6 - QA report ~$200
-        AUDIT_S,     // 7 - single contract audit ~$300
-        AUDIT_L,     // 8 - multi-contract audit ~$600
+        CONSULT_S,   // 0 - Quick Consult ($20)
+        CONSULT_L,   // 1 - Deep Consult ($30)
+        BUILD_DAILY, // 2 - Daily Build ($1000)
+        BUILD_M,     // 3 - reserved
+        BUILD_L,     // 4 - reserved
+        BUILD_XL,    // 5 - reserved
+        QA_REPORT,   // 6 - QA Report ($50)
+        AUDIT_S,     // 7 - Quick Audit ($200)
+        AUDIT_L,     // 8 - reserved
         CUSTOM       // 9 - custom amount set by poster
     }
 
@@ -55,18 +54,18 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         uint256 id;
         address client;
         ServiceType serviceType;
-        uint256 paymentClawd;       // CLAWD amount (18 decimals)
-        uint256 paymentUsdcApprox;  // Informational: USDC cents value at posting time
+        uint256 paymentClawd;       // CLAWD amount (18 decimals) — always in CLAWD
+        uint256 priceUsd;           // USD price at time of posting (USDC 6 decimals)
         string descriptionCID;      // IPFS CID of job brief
         JobStatus status;
         uint256 createdAt;
         uint256 startedAt;
         uint256 completedAt;
         string resultCID;           // IPFS CID of result
-        address worker;             // assigned worker
-        bool paymentClaimed;        // Whether worker claimed payment
-        uint256 feeSnapshot;        // fee locked at completeJob, immune to bps drift
-        uint256 disputedAt;         // timestamp when dispute was filed
+        address worker;
+        bool paymentClaimed;
+        uint256 feeSnapshot;        // fee locked at completeJob
+        uint256 disputedAt;
     }
 
     struct WorkLog {
@@ -79,14 +78,13 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     mapping(uint256 => Job) public jobs;
     uint256 public nextJobId;
 
-    mapping(ServiceType => uint256) public servicePriceInClawd;
+    /// @notice Prices in USDC (6 decimals). $20 = 20_000_000.
+    mapping(ServiceType => uint256) public servicePriceUsd;
     mapping(address => bool) public isWorker;
     mapping(uint256 => WorkLog[]) public workLogs;
 
-    uint256 public protocolFeeBps; // basis points (500 = 5%)
-    uint256 public accumulatedFees; // CLAWD fees (only from claimed/resolved jobs)
-
-    /// @notice Total CLAWD locked in active job escrow. withdrawStuckTokens cannot touch this.
+    uint256 public protocolFeeBps;
+    uint256 public accumulatedFees;
     uint256 public totalLockedClawd;
 
     IERC20 public immutable clawdToken;
@@ -94,29 +92,24 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     ISwapRouter public immutable uniswapRouter;
     address public immutable weth;
 
-    /// @notice Configurable Uniswap V3 swap path so owner can update if liquidity shifts.
     bytes public swapPath;
 
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     uint256 public constant DISPUTE_WINDOW = 7 days;
-    uint256 public constant MAX_FEE_BPS = 1000; // 10% cap
-
-    /// @notice If owner never resolves a dispute, worker can claim after this timeout.
+    uint256 public constant MAX_FEE_BPS = 1000;
     uint256 public constant DISPUTE_TIMEOUT = 30 days;
 
     // ─── Events ───────────────────────────────────────────────────────────────
 
-    event JobPosted(
-        uint256 indexed jobId, address indexed client, ServiceType serviceType, uint256 paymentClawd, string descriptionCID
-    );
+    event JobPosted(uint256 indexed jobId, address indexed client, ServiceType serviceType, uint256 paymentClawd, uint256 priceUsd, string descriptionCID);
     event JobAccepted(uint256 indexed jobId, address indexed worker);
     event JobCompleted(uint256 indexed jobId, address indexed worker, string resultCID);
     event JobCancelled(uint256 indexed jobId, address indexed client);
     event JobDisputed(uint256 indexed jobId, address indexed client);
     event DisputeResolved(uint256 indexed jobId, bool refundedClient);
     event PaymentClaimed(uint256 indexed jobId, address indexed worker, uint256 amount);
-    event PriceUpdated(ServiceType indexed serviceType, uint256 newPrice);
+    event PriceUpdated(ServiceType indexed serviceType, uint256 newPriceUsd);
     event WorkerAdded(address indexed worker);
     event WorkerRemoved(address indexed worker);
     event ProtocolFeeUpdated(uint256 newFeeBps);
@@ -151,22 +144,16 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         uniswapRouter = ISwapRouter(_uniswapRouter);
         weth = _weth;
 
-        // Initial prices in CLAWD (at ~$0.000077/CLAWD targeting $20/$30 USD)
-        servicePriceInClawd[ServiceType.CONSULT_S] = 260_000e18;
-        servicePriceInClawd[ServiceType.CONSULT_L] = 390_000e18;
-        servicePriceInClawd[ServiceType.BUILD_S] = 1_666_666e18;
-        servicePriceInClawd[ServiceType.BUILD_M] = 3_333_333e18;
-        servicePriceInClawd[ServiceType.BUILD_L] = 5_000_000e18;
-        servicePriceInClawd[ServiceType.BUILD_XL] = 8_333_333e18;
-        servicePriceInClawd[ServiceType.QA_AUDIT] = 666_666e18;
-        servicePriceInClawd[ServiceType.AUDIT_S] = 1_000_000e18;
-        servicePriceInClawd[ServiceType.AUDIT_L] = 2_000_000e18;
-        // CUSTOM price is 0 (set by poster)
+        // Prices in USDC (6 decimals)
+        servicePriceUsd[ServiceType.CONSULT_S]   = 20_000_000;   // $20
+        servicePriceUsd[ServiceType.CONSULT_L]   = 30_000_000;   // $30
+        servicePriceUsd[ServiceType.BUILD_DAILY] = 1_000_000_000; // $1,000
+        servicePriceUsd[ServiceType.QA_REPORT]   = 50_000_000;   // $50
+        servicePriceUsd[ServiceType.AUDIT_S]     = 200_000_000;  // $200
 
         protocolFeeBps = 500; // 5%
         nextJobId = 1;
 
-        // Default swap path — owner can update via setSwapPath if pool liquidity shifts
         swapPath = abi.encodePacked(
             _usdcToken,
             uint24(500),   // USDC/WETH 0.05%
@@ -178,68 +165,75 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     // ─── Job Posting ──────────────────────────────────────────────────────────
 
-    /// @notice Post a job with CLAWD payment (standard service types)
-    function postJob(ServiceType serviceType, string calldata descriptionCID) external nonReentrant {
+    /// @notice Post a job paying with CLAWD. Frontend calculates clawdAmount from USD price / CLAWD market price.
+    function postJob(ServiceType serviceType, uint256 clawdAmount, string calldata descriptionCID) external nonReentrant {
         require(serviceType != ServiceType.CUSTOM, "Use postJobCustom for CUSTOM");
         require(bytes(descriptionCID).length > 0, "Description required");
-        uint256 price = servicePriceInClawd[serviceType];
-        require(price > 0, "Service price not set");
+        uint256 priceUsd = servicePriceUsd[serviceType];
+        require(priceUsd > 0, "Service not available");
+        require(clawdAmount >= 1e18, "Min 1 CLAWD");
 
-        clawdToken.safeTransferFrom(msg.sender, address(this), price);
+        clawdToken.safeTransferFrom(msg.sender, address(this), clawdAmount);
 
-        _createJob(msg.sender, serviceType, price, 0, descriptionCID);
+        _createJob(msg.sender, serviceType, clawdAmount, priceUsd, descriptionCID);
     }
 
-    /// @notice Post a CUSTOM job with any CLAWD amount
-    function postJobCustom(uint256 clawdAmount, string calldata descriptionCID) external nonReentrant {
+    /// @notice Post a CUSTOM job with any CLAWD amount and custom USD value
+    function postJobCustom(uint256 clawdAmount, uint256 customPriceUsd, string calldata descriptionCID) external nonReentrant {
         require(clawdAmount >= 1e18, "Min 1 CLAWD");
         require(bytes(descriptionCID).length > 0, "Description required");
 
         clawdToken.safeTransferFrom(msg.sender, address(this), clawdAmount);
 
-        _createJob(msg.sender, ServiceType.CUSTOM, clawdAmount, 0, descriptionCID);
+        _createJob(msg.sender, ServiceType.CUSTOM, clawdAmount, customPriceUsd, descriptionCID);
     }
 
-    /// @notice Post a job paying with USDC — auto-swaps to CLAWD via Uniswap V3
-    function postJobWithUsdc(
-        ServiceType serviceType,
-        string calldata descriptionCID,
-        uint256 usdcAmount,
-        uint256 minClawdOut
-    ) external nonReentrant {
+    /// @notice Post a job paying with USDC — exact USD price charged, auto-swaps to CLAWD
+    function postJobWithUsdc(ServiceType serviceType, string calldata descriptionCID, uint256 minClawdOut) external nonReentrant {
+        require(serviceType != ServiceType.CUSTOM, "Use postJobCustomUsdc for CUSTOM");
+        require(bytes(descriptionCID).length > 0, "Description required");
+        uint256 priceUsd = servicePriceUsd[serviceType];
+        require(priceUsd > 0, "Service not available");
+        require(minClawdOut >= 1e18, "Min 1 CLAWD out");
+
+        usdcToken.safeTransferFrom(msg.sender, address(this), priceUsd);
+        usdcToken.forceApprove(address(uniswapRouter), priceUsd);
+
+        uint256 clawdReceived = uniswapRouter.exactInput(
+            ISwapRouter.ExactInputParams({
+                path: swapPath,
+                recipient: address(this),
+                amountIn: priceUsd,
+                amountOutMinimum: minClawdOut
+            })
+        );
+
+        _createJob(msg.sender, serviceType, clawdReceived, priceUsd, descriptionCID);
+    }
+
+    /// @notice Post a CUSTOM job paying with USDC
+    function postJobCustomUsdc(uint256 usdcAmount, string calldata descriptionCID, uint256 minClawdOut) external nonReentrant {
         require(usdcAmount > 0, "USDC amount must be > 0");
         require(bytes(descriptionCID).length > 0, "Description required");
-
-        if (serviceType != ServiceType.CUSTOM) {
-            uint256 price = servicePriceInClawd[serviceType];
-            require(price > 0, "Service price not set");
-            require(minClawdOut >= price, "minClawdOut must cover service price");
-        } else {
-            require(minClawdOut >= 1e18, "Min 1 CLAWD");
-        }
+        require(minClawdOut >= 1e18, "Min 1 CLAWD out");
 
         usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
         usdcToken.forceApprove(address(uniswapRouter), usdcAmount);
 
-        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-            path: swapPath,
-            recipient: address(this),
-            amountIn: usdcAmount,
-            amountOutMinimum: minClawdOut
-        });
+        uint256 clawdReceived = uniswapRouter.exactInput(
+            ISwapRouter.ExactInputParams({
+                path: swapPath,
+                recipient: address(this),
+                amountIn: usdcAmount,
+                amountOutMinimum: minClawdOut
+            })
+        );
 
-        uint256 clawdReceived = uniswapRouter.exactInput(params);
-
-        if (serviceType != ServiceType.CUSTOM) {
-            require(clawdReceived >= servicePriceInClawd[serviceType], "Swap yielded insufficient CLAWD");
-        }
-
-        _createJob(msg.sender, serviceType, clawdReceived, usdcAmount, descriptionCID);
+        _createJob(msg.sender, ServiceType.CUSTOM, clawdReceived, usdcAmount, descriptionCID);
     }
 
     // ─── Job Lifecycle ────────────────────────────────────────────────────────
 
-    /// @notice Worker accepts an open job
     function acceptJob(uint256 jobId) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -252,7 +246,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobAccepted(jobId, msg.sender);
     }
 
-    /// @notice Worker marks job as complete with result CID
     function completeJob(uint256 jobId, string calldata resultCID) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -268,7 +261,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobCompleted(jobId, msg.sender, resultCID);
     }
 
-    /// @notice Worker logs a work update on-chain
     function logWork(uint256 jobId, string calldata note) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -280,7 +272,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit WorkLogged(jobId, msg.sender, note);
     }
 
-    /// @notice Worker completes a consultation — burns escrowed CLAWD to dead address
     function burnConsultation(uint256 jobId, string calldata gistUrl, ServiceType recommendedBuildType) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -302,7 +293,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobCompleted(jobId, msg.sender, gistUrl);
     }
 
-    /// @notice Worker claims payment after dispute window
     function claimPayment(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -333,7 +323,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit PaymentClaimed(jobId, msg.sender, payout);
     }
 
-    /// @notice Worker rejects an OPEN job — refunds client in full
     function rejectJob(uint256 jobId) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -347,7 +336,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobRejected(jobId, job.client);
     }
 
-    /// @notice Client cancels an OPEN job (full refund)
     function cancelJob(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -362,7 +350,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobCancelled(jobId, msg.sender);
     }
 
-    /// @notice Client disputes a completed job within dispute window
     function disputeJob(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -377,7 +364,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobDisputed(jobId, msg.sender);
     }
 
-    /// @notice Owner resolves a dispute
     function resolveDispute(uint256 jobId, bool refundClient) external onlyOwner nonReentrant {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
@@ -402,9 +388,9 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     // ─── Admin (Owner Only) ───────────────────────────────────────────────────
 
-    function updatePrice(ServiceType serviceType, uint256 priceInClawd) external onlyOwner {
-        servicePriceInClawd[serviceType] = priceInClawd;
-        emit PriceUpdated(serviceType, priceInClawd);
+    function updatePrice(ServiceType serviceType, uint256 priceUsd) external onlyOwner {
+        servicePriceUsd[serviceType] = priceUsd;
+        emit PriceUpdated(serviceType, priceUsd);
     }
 
     function addWorker(address worker) external onlyOwner {
@@ -497,7 +483,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         address client,
         ServiceType serviceType,
         uint256 clawdAmount,
-        uint256 usdcApprox,
+        uint256 priceUsd,
         string calldata descriptionCID
     ) internal {
         uint256 jobId = nextJobId++;
@@ -509,7 +495,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
             client: client,
             serviceType: serviceType,
             paymentClawd: clawdAmount,
-            paymentUsdcApprox: usdcApprox,
+            priceUsd: priceUsd,
             descriptionCID: descriptionCID,
             status: JobStatus.OPEN,
             createdAt: block.timestamp,
@@ -522,7 +508,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
             disputedAt: 0
         });
 
-        emit JobPosted(jobId, client, serviceType, clawdAmount, descriptionCID);
+        emit JobPosted(jobId, client, serviceType, clawdAmount, priceUsd, descriptionCID);
     }
 
     function _getJobsByStatus(JobStatus status) internal view returns (uint256[] memory) {

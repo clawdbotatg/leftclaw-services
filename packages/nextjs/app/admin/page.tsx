@@ -12,12 +12,12 @@ const CONTRACT_ABI = deployedContracts[8453]?.LeftClawServices?.abi;
 const SERVICE_TYPES = [
   { id: 0, name: "Quick Consult", emoji: "💬" },
   { id: 1, name: "Deep Consult", emoji: "🧠" },
-  { id: 2, name: "Simple Build", emoji: "🔨" },
-  { id: 3, name: "Standard Build", emoji: "🏗️" },
-  { id: 4, name: "Complex Build", emoji: "⚙️" },
-  { id: 5, name: "Enterprise Build", emoji: "🏢" },
+  { id: 2, name: "Daily Build", emoji: "🔨" },
+  { id: 3, name: "Build M (reserved)", emoji: "🏗️" },
+  { id: 4, name: "Build L (reserved)", emoji: "⚙️" },
+  { id: 5, name: "Build XL (reserved)", emoji: "🏢" },
   { id: 6, name: "QA Report", emoji: "🔍" },
-  { id: 7, name: "AI Audit", emoji: "🛡️" },
+  { id: 7, name: "Quick Audit", emoji: "🛡️" },
   { id: 8, name: "AI Audit (Multi-Contract)", emoji: "🔐" },
   { id: 9, name: "Custom", emoji: "✨" },
 ];
@@ -78,7 +78,7 @@ interface JobData {
   client: string;
   serviceType: number;
   paymentClawd: bigint;
-  paymentUsdcApprox: bigint;
+  priceUsd: bigint;
   descriptionCID: string;
   status: number;
   createdAt: bigint;
@@ -110,7 +110,8 @@ function JobCard({
   const [successMsg, setSuccessMsg] = useState("");
 
   const clawdAmount = Number(formatUnits(job.paymentClawd, 18));
-  const usdValue = clawdPrice ? clawdAmount * clawdPrice : null;
+  const usdValue =
+    job.priceUsd > 0n ? Number(formatUnits(job.priceUsd, 6)) : clawdPrice ? clawdAmount * clawdPrice : null;
   const isConsult = job.serviceType === 0 || job.serviceType === 1;
   const statusInfo = STATUS_LABELS[job.status] || { text: "UNKNOWN", badge: "badge-ghost" };
 
@@ -170,8 +171,10 @@ function JobCard({
           <span className="opacity-60">{timeAgo(Number(job.createdAt))}</span>
         </div>
         <div className="text-right">
-          <span className="font-mono font-bold">{clawdAmount.toLocaleString()} CLAWD</span>
-          {usdValue && <span className="text-xs opacity-50 ml-2">~${usdValue.toFixed(0)}</span>}
+          <span className="font-mono font-bold">
+            {usdValue ? `$${usdValue.toLocaleString()}` : `${clawdAmount.toLocaleString()} CLAWD`}
+          </span>
+          <span className="text-xs opacity-50 ml-2">{clawdAmount.toLocaleString()} CLAWD</span>
         </div>
       </div>
 
@@ -417,7 +420,7 @@ export default function AdminPage() {
     contracts: SERVICE_TYPES.filter(s => s.id < 9).map(s => ({
       address: CONTRACT_ADDRESS,
       abi: CONTRACT_ABI as any,
-      functionName: "servicePriceInClawd",
+      functionName: "servicePriceUsd",
       args: [s.id],
     })),
   });
@@ -492,8 +495,8 @@ export default function AdminPage() {
       return;
     }
 
-    const clawdAmount = usdValue / clawdPrice;
-    const clawdWei = parseUnits(Math.round(clawdAmount).toString(), 18);
+    // Convert USD to USDC (6 decimals)
+    const usdcAmount = parseUnits(usdValue.toString(), 6);
 
     setErrors(e => ({ ...e, [serviceId]: "" }));
     setSuccess(s => ({ ...s, [serviceId]: false }));
@@ -504,7 +507,7 @@ export default function AdminPage() {
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI as any,
         functionName: "updatePrice",
-        args: [serviceId, clawdWei],
+        args: [serviceId, usdcAmount],
       });
       await publicClient?.waitForTransactionReceipt({ hash });
       await refetchPrices();
@@ -587,9 +590,8 @@ export default function AdminPage() {
             <h2 className="font-bold mb-4">Service Prices</h2>
             <div className="space-y-4">
               {SERVICE_TYPES.filter(s => s.id < 9).map((service, i) => {
-                const priceWei = pricesData?.[i]?.result as bigint | undefined;
-                const priceClawd = priceWei ? Number(formatUnits(priceWei, 18)) : null;
-                const priceUsd = priceClawd && clawdPrice ? priceClawd * clawdPrice : null;
+                const priceRaw = pricesData?.[i]?.result as bigint | undefined;
+                const priceUsd = priceRaw ? Number(formatUnits(priceRaw, 6)) : null;
                 const isBusy = pending === service.id;
 
                 return (
@@ -600,9 +602,13 @@ export default function AdminPage() {
                       </span>
                       <div className="text-right">
                         <p className="font-mono text-sm font-bold">
-                          {priceClawd ? priceClawd.toLocaleString() : "..."} CLAWD
+                          {priceUsd !== null ? `$${priceUsd.toLocaleString()}` : "..."}
                         </p>
-                        <p className="text-xs opacity-50">{priceUsd ? `~$${priceUsd.toFixed(2)}` : "..."}</p>
+                        {priceUsd !== null && clawdPrice && (
+                          <p className="text-xs opacity-50">
+                            ~{Math.round(priceUsd / clawdPrice).toLocaleString()} CLAWD
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -620,11 +626,6 @@ export default function AdminPage() {
                           step="1"
                         />
                       </div>
-                      {inputs[service.id] && clawdPrice && (
-                        <span className="text-xs opacity-40 whitespace-nowrap">
-                          = {Math.round(parseFloat(inputs[service.id]) / clawdPrice).toLocaleString()} CLAWD
-                        </span>
-                      )}
                       <button
                         className={`btn btn-sm ${success[service.id] ? "btn-success" : "btn-primary"}`}
                         onClick={() => handlePriceUpdate(service.id)}

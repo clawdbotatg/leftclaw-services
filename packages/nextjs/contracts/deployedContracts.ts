@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   8453: {
     LeftClawServices: {
-      address: "0xE5956BF527Ccca5713cbF1E118117dD6f870f4c4",
+      address: "0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7",
       abi: [
         {
           type: "constructor",
@@ -256,7 +256,7 @@ const deployedContracts = {
                   internalType: "uint256",
                 },
                 {
-                  name: "paymentUsdcApprox",
+                  name: "priceUsd",
                   type: "uint256",
                   internalType: "uint256",
                 },
@@ -461,7 +461,7 @@ const deployedContracts = {
               internalType: "uint256",
             },
             {
-              name: "paymentUsdcApprox",
+              name: "priceUsd",
               type: "uint256",
               internalType: "uint256",
             },
@@ -572,6 +572,11 @@ const deployedContracts = {
               internalType: "enum LeftClawServices.ServiceType",
             },
             {
+              name: "clawdAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
               name: "descriptionCID",
               type: "string",
               internalType: "string",
@@ -590,9 +595,37 @@ const deployedContracts = {
               internalType: "uint256",
             },
             {
+              name: "customPriceUsd",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
               name: "descriptionCID",
               type: "string",
               internalType: "string",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "postJobCustomUsdc",
+          inputs: [
+            {
+              name: "usdcAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "descriptionCID",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "minClawdOut",
+              type: "uint256",
+              internalType: "uint256",
             },
           ],
           outputs: [],
@@ -611,11 +644,6 @@ const deployedContracts = {
               name: "descriptionCID",
               type: "string",
               internalType: "string",
-            },
-            {
-              name: "usdcAmount",
-              type: "uint256",
-              internalType: "uint256",
             },
             {
               name: "minClawdOut",
@@ -692,7 +720,7 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "servicePriceInClawd",
+          name: "servicePriceUsd",
           inputs: [
             {
               name: "",
@@ -797,7 +825,7 @@ const deployedContracts = {
               internalType: "enum LeftClawServices.ServiceType",
             },
             {
-              name: "priceInClawd",
+              name: "priceUsd",
               type: "uint256",
               internalType: "uint256",
             },
@@ -1071,6 +1099,12 @@ const deployedContracts = {
               internalType: "uint256",
             },
             {
+              name: "priceUsd",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
               name: "descriptionCID",
               type: "string",
               indexed: false,
@@ -1153,7 +1187,7 @@ const deployedContracts = {
               internalType: "enum LeftClawServices.ServiceType",
             },
             {
-              name: "newPrice",
+              name: "newPriceUsd",
               type: "uint256",
               indexed: false,
               internalType: "uint256",

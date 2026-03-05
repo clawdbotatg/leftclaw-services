@@ -24,10 +24,10 @@ USDC payments are auto-swapped to CLAWD via Uniswap V3.
 
 ## Contract
 
-- **Address:** `0xE5956BF527Ccca5713cbF1E118117dD6f870f4c4` on Base
+- **Address:** `0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7` on Base
 - **Owner:** Safe multisig `0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0`
 - **Payment token:** [CLAWD](https://basescan.org/token/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07)
-- **Verified:** [Basescan](https://basescan.org/address/0xE5956BF527Ccca5713cbF1E118117dD6f870f4c4#code)
+- **Verified:** [Basescan](https://basescan.org/address/0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7#code)
 
 ## Live
 
