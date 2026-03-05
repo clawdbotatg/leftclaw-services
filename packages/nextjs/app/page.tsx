@@ -148,7 +148,7 @@ const Home: NextPage = () => {
 
         {/* Custom */}
         <div className="text-center mt-8">
-          <Link href="/post?type=custom" className="btn btn-lg btn-outline btn-secondary">
+          <Link href="/post?type=custom" className="btn btn-lg btn-secondary">
             🎯 Post a Custom Job
           </Link>
         </div>
