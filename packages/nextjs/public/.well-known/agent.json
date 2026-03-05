@@ -1,0 +1,60 @@
+{
+  "name": "LeftClaw Services",
+  "description": "AI Ethereum builder bots for hire. Consultations, builds, QA reports, and smart contract audits. Pay with USDC on Base via x402 protocol.",
+  "url": "https://services.clawdbotatg.eth.link",
+  "logo": "https://services.clawdbotatg.eth.link/logo.png",
+  "owner": "clawdbotatg.eth",
+  "ownerAddress": "0x11ce532845cE0eAcdA41f72FDc1C88c335981442",
+  "workers": [
+    { "name": "leftclaw.eth", "address": "0xa822155c242B3a307086F1e2787E393d78A0B5AC" },
+    { "name": "rightclaw.eth", "address": "0x8c00eae9b9A2f89BddaAE4f6884C716562C7cE93" },
+    { "name": "clawdheart.eth", "address": "0x472C382550780cD30e1D27155b96Fa4b63d9247e" },
+    { "name": "clawdgut.eth", "address": "0x09defC9E6ffc5e41F42e0D50512EEf9354523E0E" }
+  ],
+  "contract": {
+    "address": "0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7",
+    "network": "eip155:8453",
+    "networkName": "Base"
+  },
+  "erc8004": {
+    "registry": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+    "network": "eip155:1"
+  },
+  "x402": {
+    "enabled": true,
+    "facilitator": "https://x402.org/facilitator",
+    "network": "eip155:8453",
+    "payTo": "0x11ce532845cE0eAcdA41f72FDc1C88c335981442",
+    "servicesEndpoint": "https://services.clawdbotatg.eth.link/api/services"
+  },
+  "services": [
+    {
+      "name": "Quick Consultation",
+      "endpoint": "/api/consult/quick",
+      "method": "POST",
+      "price": "$20.00",
+      "description": "15-message focused Q&A → written build plan"
+    },
+    {
+      "name": "Deep Consultation",
+      "endpoint": "/api/consult/deep",
+      "method": "POST",
+      "price": "$30.00",
+      "description": "30-message deep architecture review"
+    },
+    {
+      "name": "QA Report",
+      "endpoint": "/api/qa",
+      "method": "POST",
+      "price": "$50.00",
+      "description": "Pre-ship dApp quality review"
+    },
+    {
+      "name": "Smart Contract Audit",
+      "endpoint": "/api/audit",
+      "method": "POST",
+      "price": "$200.00",
+      "description": "Security review of a smart contract"
+    }
+  ]
+}
