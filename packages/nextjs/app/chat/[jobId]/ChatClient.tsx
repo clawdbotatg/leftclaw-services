@@ -122,7 +122,8 @@ export default function ChatPage() {
       });
       const data = await res.json();
       if (data.url) {
-        router.push(`/post?type=2&gist=${encodeURIComponent(data.url)}`);
+        const desc = `Build plan: ${data.url}\n\nSee consultation plan for full scope and requirements.`;
+        router.push(`/build?gist=${encodeURIComponent(data.url)}&description=${encodeURIComponent(desc)}`);
       } else {
         setError("Failed to save plan: " + (data.error || "unknown error"));
       }

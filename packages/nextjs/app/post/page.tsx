@@ -82,8 +82,8 @@ const SERVICE_NAMES: Record<number, string> = {
   0: "Quick Consult",
   1: "Deep Consult",
   // 2-5: Build tiers deprecated — use /build page (daily rate model)
-  6: "QA Report (~$200)",
-  7: "AI Audit (~$200/contract)",
+  6: "QA Report",
+  7: "AI Audit",
 };
 
 export default function PostJobPageWrapper() {

@@ -35,6 +35,7 @@ function BuildPage() {
   const searchParams = useSearchParams();
   const { address, chainId } = useAccount();
 
+  const gistParam = searchParams.get("gist");
   const [days, setDays] = useState(1);
   const [description, setDescription] = useState(searchParams.get("description") ?? "");
   const [step, setStep] = useState<"idle" | "approving" | "posting" | "done">("idle");
@@ -184,8 +185,15 @@ function BuildPage() {
           <p className="text-base opacity-60 mt-2">$1,000 of CLAWD per day. Live prototype, every day.</p>
         </div>
 
+        {/* Consultation plan banner */}
+        {gistParam && (
+          <div className="alert alert-info mb-6">
+            <span>📋 Based on your consultation — <a href={gistParam} target="_blank" rel="noopener noreferrer" className="link font-semibold">view build plan</a></span>
+          </div>
+        )}
+
         {/* How it works */}
-        <div className="card bg-base-200 mb-6">
+        {!gistParam && <div className="card bg-base-200 mb-6">
           <div className="card-body py-5">
             <h2 className="font-semibold mb-3">How it works</h2>
             <ul className="space-y-2">
@@ -202,7 +210,7 @@ function BuildPage() {
               ))}
             </ul>
           </div>
-        </div>
+        </div>}
 
         {/* Day selector */}
         <div className="mb-6">
