@@ -19,9 +19,10 @@ interface ISwapRouter {
 }
 
 /// @title LeftClawServices
-/// @notice A marketplace for hiring LeftClaw (AI Ethereum builder) — post jobs, pay with CLAWD or USDC
+/// @notice A marketplace for hiring clawdbots (AI Ethereum builders) — post jobs, pay with CLAWD or USDC
 /// @dev Jobs are escrowed until completion + dispute window passes. USDC auto-swaps to CLAWD via Uniswap V3.
-///      Walkaway-safe: if owner disappears, disputed jobs auto-resolve to executor after DISPUTE_TIMEOUT.
+///      Walkaway-safe: if owner disappears, disputed jobs auto-resolve to worker after DISPUTE_TIMEOUT.
+///      Two roles: owner (clawdbotatg.eth) manages the system, workers (clawdbots) accept and complete jobs.
 contract LeftClawServices is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -41,8 +42,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     }
 
     enum JobStatus {
-        OPEN,        // 0 - posted, waiting for executor
-        IN_PROGRESS, // 1 - executor working
+        OPEN,        // 0 - posted, waiting for worker
+        IN_PROGRESS, // 1 - worker working
         COMPLETED,   // 2 - work done, in dispute window
         CANCELLED,   // 3 - cancelled by client, refunded
         DISPUTED     // 4 - client disputed result
@@ -62,10 +63,10 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         uint256 startedAt;
         uint256 completedAt;
         string resultCID;           // IPFS CID of result
-        address executor;
-        bool paymentClaimed;        // Whether executor claimed payment
-        uint256 feeSnapshot;        // FIX(MEDIUM): fee locked at completeJob, immune to bps drift
-        uint256 disputedAt;         // FIX(WALKAWAY): timestamp when dispute was filed
+        address worker;             // assigned worker
+        bool paymentClaimed;        // Whether worker claimed payment
+        uint256 feeSnapshot;        // fee locked at completeJob, immune to bps drift
+        uint256 disputedAt;         // timestamp when dispute was filed
     }
 
     struct WorkLog {
@@ -79,13 +80,13 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     uint256 public nextJobId;
 
     mapping(ServiceType => uint256) public servicePriceInClawd;
-    mapping(address => bool) public isExecutor;
+    mapping(address => bool) public isWorker;
     mapping(uint256 => WorkLog[]) public workLogs;
 
     uint256 public protocolFeeBps; // basis points (500 = 5%)
     uint256 public accumulatedFees; // CLAWD fees (only from claimed/resolved jobs)
 
-    /// @notice FIX(HIGH): Total CLAWD locked in active job escrow. withdrawStuckTokens cannot touch this.
+    /// @notice Total CLAWD locked in active job escrow. withdrawStuckTokens cannot touch this.
     uint256 public totalLockedClawd;
 
     IERC20 public immutable clawdToken;
@@ -93,7 +94,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     ISwapRouter public immutable uniswapRouter;
     address public immutable weth;
 
-    /// @notice FIX(L-1): Configurable Uniswap V3 swap path so owner can update if liquidity shifts.
+    /// @notice Configurable Uniswap V3 swap path so owner can update if liquidity shifts.
     bytes public swapPath;
 
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
@@ -101,8 +102,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     uint256 public constant DISPUTE_WINDOW = 7 days;
     uint256 public constant MAX_FEE_BPS = 1000; // 10% cap
 
-    /// @notice FIX(WALKAWAY): If owner never resolves a dispute, executor can claim after this timeout.
-    ///         No one can freeze funds forever — contract works even if owner walks away.
+    /// @notice If owner never resolves a dispute, worker can claim after this timeout.
     uint256 public constant DISPUTE_TIMEOUT = 30 days;
 
     // ─── Events ───────────────────────────────────────────────────────────────
@@ -110,26 +110,26 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     event JobPosted(
         uint256 indexed jobId, address indexed client, ServiceType serviceType, uint256 paymentClawd, string descriptionCID
     );
-    event JobAccepted(uint256 indexed jobId, address indexed executor);
-    event JobCompleted(uint256 indexed jobId, address indexed executor, string resultCID);
+    event JobAccepted(uint256 indexed jobId, address indexed worker);
+    event JobCompleted(uint256 indexed jobId, address indexed worker, string resultCID);
     event JobCancelled(uint256 indexed jobId, address indexed client);
     event JobDisputed(uint256 indexed jobId, address indexed client);
     event DisputeResolved(uint256 indexed jobId, bool refundedClient);
-    event PaymentClaimed(uint256 indexed jobId, address indexed executor, uint256 amount);
+    event PaymentClaimed(uint256 indexed jobId, address indexed worker, uint256 amount);
     event PriceUpdated(ServiceType indexed serviceType, uint256 newPrice);
-    event ExecutorAdded(address indexed executor);
-    event ExecutorRemoved(address indexed executor);
+    event WorkerAdded(address indexed worker);
+    event WorkerRemoved(address indexed worker);
     event ProtocolFeeUpdated(uint256 newFeeBps);
     event FeesWithdrawn(address indexed to, uint256 amount);
     event SwapPathUpdated(bytes newPath);
     event ConsultationComplete(uint256 indexed jobId, address indexed client, string gistUrl, ServiceType recommendedBuildType);
     event JobRejected(uint256 indexed jobId, address indexed client);
-    event WorkLogged(uint256 indexed jobId, address indexed executor, string note);
+    event WorkLogged(uint256 indexed jobId, address indexed worker, string note);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
-    modifier onlyExecutor() {
-        require(isExecutor[msg.sender], "Not an executor");
+    modifier onlyWorker() {
+        require(isWorker[msg.sender], "Not a worker");
         _;
     }
 
@@ -166,7 +166,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         protocolFeeBps = 500; // 5%
         nextJobId = 1;
 
-        // FIX(L-1): default path — owner can update via setSwapPath if pool liquidity shifts
+        // Default swap path — owner can update via setSwapPath if pool liquidity shifts
         swapPath = abi.encodePacked(
             _usdcToken,
             uint24(500),   // USDC/WETH 0.05%
@@ -174,10 +174,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
             uint24(10000), // WETH/CLAWD 1%
             _clawdToken
         );
-
-        // Add deployer as initial executor
-        isExecutor[msg.sender] = true;
-        emit ExecutorAdded(msg.sender);
     }
 
     // ─── Job Posting ──────────────────────────────────────────────────────────
@@ -205,8 +201,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     }
 
     /// @notice Post a job paying with USDC — auto-swaps to CLAWD via Uniswap V3
-    /// @param minClawdOut For non-CUSTOM types must be >= servicePriceInClawd; prevents underpaying and sandwich attacks.
-    ///                    For CUSTOM must be >= 1e18. Never pass 0.
     function postJobWithUsdc(
         ServiceType serviceType,
         string calldata descriptionCID,
@@ -216,7 +210,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         require(usdcAmount > 0, "USDC amount must be > 0");
         require(bytes(descriptionCID).length > 0, "Description required");
 
-        // FIX(H-1) + FIX(L-5): enforce service price and non-zero slippage guard
         if (serviceType != ServiceType.CUSTOM) {
             uint256 price = servicePriceInClawd[serviceType];
             require(price > 0, "Service price not set");
@@ -225,13 +218,9 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
             require(minClawdOut >= 1e18, "Min 1 CLAWD");
         }
 
-        // Pull USDC from sender
         usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
-
-        // Approve router to spend USDC
         usdcToken.forceApprove(address(uniswapRouter), usdcAmount);
 
-        // FIX(L-1): use configurable path instead of hardcoded fee tiers
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
             path: swapPath,
             recipient: address(this),
@@ -241,7 +230,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
         uint256 clawdReceived = uniswapRouter.exactInput(params);
 
-        // FIX(H-1): verify swap output actually meets the service price
         if (serviceType != ServiceType.CUSTOM) {
             require(clawdReceived >= servicePriceInClawd[serviceType], "Swap yielded insufficient CLAWD");
         }
@@ -251,58 +239,54 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     // ─── Job Lifecycle ────────────────────────────────────────────────────────
 
-    /// @notice Executor accepts an open job
-    function acceptJob(uint256 jobId) external nonReentrant onlyExecutor {
+    /// @notice Worker accepts an open job
+    function acceptJob(uint256 jobId) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
         require(job.status == JobStatus.OPEN, "Job not OPEN");
 
         job.status = JobStatus.IN_PROGRESS;
-        job.executor = msg.sender;
+        job.worker = msg.sender;
         job.startedAt = block.timestamp;
 
         emit JobAccepted(jobId, msg.sender);
     }
 
-    /// @notice Executor marks job as complete with result CID
-    /// @dev FIX(MEDIUM): fee is snapshotted here so claimPayment is immune to future protocolFeeBps changes.
-    function completeJob(uint256 jobId, string calldata resultCID) external nonReentrant onlyExecutor {
+    /// @notice Worker marks job as complete with result CID
+    function completeJob(uint256 jobId, string calldata resultCID) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
         require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
-        require(job.executor == msg.sender, "Not the assigned executor");
+        require(job.worker == msg.sender, "Not the assigned worker");
         require(bytes(resultCID).length > 0, "Result CID required");
 
         job.status = JobStatus.COMPLETED;
         job.resultCID = resultCID;
         job.completedAt = block.timestamp;
-
-        // FIX(MEDIUM): snapshot fee at completion time — claimPayment uses this, not current protocolFeeBps
         job.feeSnapshot = (job.paymentClawd * protocolFeeBps) / 10_000;
 
         emit JobCompleted(jobId, msg.sender, resultCID);
     }
 
-    /// @notice Executor logs a work update on-chain. Cheap on Base, permanent, readable directly via getWorkLogs.
-    function logWork(uint256 jobId, string calldata note) external nonReentrant onlyExecutor {
+    /// @notice Worker logs a work update on-chain
+    function logWork(uint256 jobId, string calldata note) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
         require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
-        require(job.executor == msg.sender, "Not the assigned executor");
+        require(job.worker == msg.sender, "Not the assigned worker");
         require(bytes(note).length > 0, "Note required");
         require(bytes(note).length <= 500, "Note too long (max 500 chars)");
         workLogs[jobId].push(WorkLog({ note: note, timestamp: block.timestamp }));
         emit WorkLogged(jobId, msg.sender, note);
     }
 
-    /// @notice Executor completes a consultation — burns escrowed CLAWD to dead address, records plan gist URL.
-    ///         No dispute window needed — the gist IS the deliverable.
-    function burnConsultation(uint256 jobId, string calldata gistUrl, ServiceType recommendedBuildType) external nonReentrant onlyExecutor {
+    /// @notice Worker completes a consultation — burns escrowed CLAWD to dead address
+    function burnConsultation(uint256 jobId, string calldata gistUrl, ServiceType recommendedBuildType) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
         require(job.serviceType == ServiceType.CONSULT_S || job.serviceType == ServiceType.CONSULT_L, "Not a consultation job");
         require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
-        require(job.executor == msg.sender, "Not the assigned executor");
+        require(job.worker == msg.sender, "Not the assigned worker");
         require(bytes(gistUrl).length > 0, "Gist URL required");
         require(!job.paymentClaimed, "Already claimed");
 
@@ -318,47 +302,39 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobCompleted(jobId, msg.sender, gistUrl);
     }
 
-    /// @notice Executor claims payment after dispute window (or after dispute timeout if unresolved)
-    /// @dev FIX(WALKAWAY): also allows claim on DISPUTED jobs after DISPUTE_TIMEOUT elapses.
-    ///      If owner never resolves, executor can always recover their payment — no funds locked forever.
+    /// @notice Worker claims payment after dispute window
     function claimPayment(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
-        require(job.executor == msg.sender, "Not the executor");
+        require(job.worker == msg.sender, "Not the worker");
         require(!job.paymentClaimed, "Already claimed");
 
         bool wasDisputed = job.status == JobStatus.DISPUTED;
         if (job.status == JobStatus.COMPLETED) {
-            // Normal path: dispute window must have passed
             require(block.timestamp > job.completedAt + DISPUTE_WINDOW, "Dispute window active");
         } else if (wasDisputed) {
-            // FIX(WALKAWAY): owner didn't resolve — executor claims after timeout
             require(block.timestamp > job.disputedAt + DISPUTE_TIMEOUT, "Dispute timeout not reached");
         } else {
             revert("Job not claimable");
         }
 
         job.paymentClaimed = true;
-        job.status = JobStatus.COMPLETED; // normalize status
+        job.status = JobStatus.COMPLETED;
 
-        // FIX(MEDIUM): use snapshotted fee
         uint256 fee = job.feeSnapshot;
         uint256 payout = job.paymentClawd - fee;
 
-        // FIX(HIGH): release escrow, accumulate fee
         totalLockedClawd -= job.paymentClawd;
         accumulatedFees += fee;
 
         clawdToken.safeTransfer(msg.sender, payout);
 
-        // FIX(L-3): emit DisputeResolved when timeout auto-resolution occurs (executor wins by default)
         if (wasDisputed) emit DisputeResolved(jobId, false);
         emit PaymentClaimed(jobId, msg.sender, payout);
     }
 
-    /// @notice Executor rejects an OPEN job — refunds client in full
-    function rejectJob(uint256 jobId) external nonReentrant {
-        require(isExecutor[msg.sender], "Not an executor");
+    /// @notice Worker rejects an OPEN job — refunds client in full
+    function rejectJob(uint256 jobId) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
         require(job.status == JobStatus.OPEN, "Can only reject OPEN jobs");
@@ -379,8 +355,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         require(job.status == JobStatus.OPEN, "Can only cancel OPEN jobs");
 
         job.status = JobStatus.CANCELLED;
-
-        // FIX(HIGH): release escrow lock
         totalLockedClawd -= job.paymentClawd;
 
         clawdToken.safeTransfer(msg.sender, job.paymentClawd);
@@ -398,58 +372,50 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         require(block.timestamp <= job.completedAt + DISPUTE_WINDOW, "Dispute window expired");
 
         job.status = JobStatus.DISPUTED;
-        job.disputedAt = block.timestamp; // FIX(WALKAWAY): start the dispute timeout clock
+        job.disputedAt = block.timestamp;
 
         emit JobDisputed(jobId, msg.sender);
     }
 
     /// @notice Owner resolves a dispute
-    /// @dev FIX(MEDIUM): uses feeSnapshot — no recalculation against current protocolFeeBps.
-    ///      FIX(WALKAWAY): if owner never calls this, executor can claim after DISPUTE_TIMEOUT.
     function resolveDispute(uint256 jobId, bool refundClient) external onlyOwner nonReentrant {
         Job storage job = jobs[jobId];
         require(job.id != 0, "Job does not exist");
         require(job.status == JobStatus.DISPUTED, "Job not DISPUTED");
 
-        // FIX(HIGH): release escrow lock in all branches
         totalLockedClawd -= job.paymentClawd;
 
         if (refundClient) {
-            // Client wins: full refund, no fee taken
-            // FIX(MEDIUM): fee was snapshotted but never accumulated, nothing to reverse
             job.status = JobStatus.CANCELLED;
             clawdToken.safeTransfer(job.client, job.paymentClawd);
         } else {
-            // Executor wins: pay out minus fee
-            // FIX(MEDIUM): use snapshotted fee
             uint256 fee = job.feeSnapshot;
             uint256 payout = job.paymentClawd - fee;
             accumulatedFees += fee;
             job.status = JobStatus.COMPLETED;
             job.paymentClaimed = true;
-            clawdToken.safeTransfer(job.executor, payout);
+            clawdToken.safeTransfer(job.worker, payout);
         }
 
         emit DisputeResolved(jobId, refundClient);
     }
 
-    // ─── Admin ────────────────────────────────────────────────────────────────
+    // ─── Admin (Owner Only) ───────────────────────────────────────────────────
 
-    function updatePrice(ServiceType serviceType, uint256 priceInClawd) external {
-        require(isExecutor[msg.sender] || msg.sender == owner(), "Not authorized");
+    function updatePrice(ServiceType serviceType, uint256 priceInClawd) external onlyOwner {
         servicePriceInClawd[serviceType] = priceInClawd;
         emit PriceUpdated(serviceType, priceInClawd);
     }
 
-    function addExecutor(address executor) external onlyOwner {
-        require(executor != address(0), "Zero address");
-        isExecutor[executor] = true;
-        emit ExecutorAdded(executor);
+    function addWorker(address worker) external onlyOwner {
+        require(worker != address(0), "Zero address");
+        isWorker[worker] = true;
+        emit WorkerAdded(worker);
     }
 
-    function removeExecutor(address executor) external onlyOwner {
-        isExecutor[executor] = false;
-        emit ExecutorRemoved(executor);
+    function removeWorker(address worker) external onlyOwner {
+        isWorker[worker] = false;
+        emit WorkerRemoved(worker);
     }
 
     function setProtocolFee(uint256 feeBps) external onlyOwner {
@@ -458,17 +424,12 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit ProtocolFeeUpdated(feeBps);
     }
 
-    /// @notice FIX(L-1): Update Uniswap V3 swap path if pool liquidity shifts.
-    ///         path is ABI-encoded as: token0 | fee | token1 | fee | token2 ...
     function setSwapPath(bytes calldata newPath) external onlyOwner {
-        require(newPath.length >= 43, "Invalid path"); // min: 20 + 3 + 20
+        require(newPath.length >= 43, "Invalid path");
         swapPath = newPath;
         emit SwapPathUpdated(newPath);
     }
 
-    /// @notice Withdraw accidentally sent tokens.
-    /// @dev FIX(HIGH): For CLAWD, only allows surplus above locked escrow + unwithdrawm fees.
-    ///      Cannot drain active job funds or protocol fees.
     function withdrawStuckTokens(address token, address to) external onlyOwner nonReentrant {
         require(to != address(0), "Zero address");
         uint256 balance = IERC20(token).balanceOf(address(this));
@@ -541,7 +502,6 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     ) internal {
         uint256 jobId = nextJobId++;
 
-        // FIX(HIGH): track escrowed CLAWD so withdrawStuckTokens cannot drain it
         totalLockedClawd += clawdAmount;
 
         jobs[jobId] = Job({
@@ -556,7 +516,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
             startedAt: 0,
             completedAt: 0,
             resultCID: "",
-            executor: address(0),
+            worker: address(0),
             paymentClaimed: false,
             feeSnapshot: 0,
             disputedAt: 0

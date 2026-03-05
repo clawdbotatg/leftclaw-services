@@ -27,7 +27,7 @@ contract LeftClawServicesTest is Test {
         services = new LeftClawServices(CLAWD, USDC, UNISWAP_ROUTER, WETH);
 
         // Add executor
-        services.addExecutor(executor);
+        services.addWorker(executor);
 
         // Deal CLAWD to client (use deal cheat to set balance)
         deal(CLAWD, client, 100_000_000e18);
@@ -64,7 +64,7 @@ contract LeftClawServicesTest is Test {
 
         LeftClawServices.Job memory job = services.getJob(1);
         assertEq(uint8(job.status), uint8(LeftClawServices.JobStatus.IN_PROGRESS));
-        assertEq(job.executor, executor);
+        assertEq(job.worker, executor);
         assertTrue(job.startedAt > 0);
     }
 
@@ -72,7 +72,7 @@ contract LeftClawServicesTest is Test {
         _postJob(LeftClawServices.ServiceType.CONSULT_S);
 
         vm.prank(nonExecutor);
-        vm.expectRevert("Not an executor");
+        vm.expectRevert("Not a worker");
         services.acceptJob(1);
     }
 
@@ -292,13 +292,13 @@ contract LeftClawServicesTest is Test {
 
     function test_AddRemoveExecutor() public {
         address newExec = makeAddr("newExec");
-        assertFalse(services.isExecutor(newExec));
+        assertFalse(services.isWorker(newExec));
 
-        services.addExecutor(newExec);
-        assertTrue(services.isExecutor(newExec));
+        services.addWorker(newExec);
+        assertTrue(services.isWorker(newExec));
 
-        services.removeExecutor(newExec);
-        assertFalse(services.isExecutor(newExec));
+        services.removeWorker(newExec);
+        assertFalse(services.isWorker(newExec));
     }
 
     // ─── Test 15: Protocol Fee Cap ──────────────────────────────────────────
@@ -536,7 +536,7 @@ contract LeftClawServicesTest is Test {
         _postAndAcceptJob(LeftClawServices.ServiceType.CONSULT_S);
 
         vm.prank(nonExecutor);
-        vm.expectRevert("Not an executor");
+        vm.expectRevert("Not a worker");
         services.burnConsultation(1, "https://gist.github.com/test/123", LeftClawServices.ServiceType.BUILD_S);
     }
 
@@ -581,7 +581,7 @@ contract LeftClawServicesTest is Test {
         _postJob(LeftClawServices.ServiceType.CONSULT_S);
 
         vm.prank(nonExecutor);
-        vm.expectRevert("Not an executor");
+        vm.expectRevert("Not a worker");
         services.rejectJob(1);
     }
 
@@ -628,7 +628,7 @@ contract LeftClawServicesTest is Test {
         uint256 jobId = services.nextJobId() - 1;
 
         vm.prank(nonExecutor);
-        vm.expectRevert("Not an executor");
+        vm.expectRevert("Not a worker");
         services.logWork(jobId, "This should fail");
     }
 
@@ -637,10 +637,10 @@ contract LeftClawServicesTest is Test {
         uint256 jobId = services.nextJobId() - 1;
 
         address otherExecutor = makeAddr("otherExecutor");
-        services.addExecutor(otherExecutor);
+        services.addWorker(otherExecutor);
 
         vm.prank(otherExecutor);
-        vm.expectRevert("Not the assigned executor");
+        vm.expectRevert("Not the assigned worker");
         services.logWork(jobId, "This should fail");
     }
 

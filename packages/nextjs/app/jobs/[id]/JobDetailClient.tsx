@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useAccount, useWriteContract, useReadContract, usePublicClient } from "wagmi";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useParams } from "next/navigation";
 import { Address } from "@scaffold-ui/components";
-import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 import { formatUnits } from "viem";
+import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 
 function parseError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
@@ -60,7 +60,11 @@ export default function JobDetailClient() {
   const [logNote, setLogNote] = useState("");
   const [resultCID, setResultCID] = useState("");
 
-  const { data: job, isLoading, refetch } = useScaffoldReadContract({
+  const {
+    data: job,
+    isLoading,
+    refetch,
+  } = useScaffoldReadContract({
     contractName: "LeftClawServices",
     functionName: "getJob",
     args: [BigInt(jobId || "0")],
@@ -69,7 +73,7 @@ export default function JobDetailClient() {
   const { data: isContractExecutorRaw } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI as any,
-    functionName: "isExecutor",
+    functionName: "isWorker",
     args: address ? [address] : undefined,
     query: { enabled: !!address },
   });
@@ -99,7 +103,9 @@ export default function JobDetailClient() {
       <div className="flex flex-col items-center py-20">
         <div className="text-6xl mb-4">❌</div>
         <p>Job not found</p>
-        <Link href="/jobs" className="btn btn-primary mt-4">← Back to Jobs</Link>
+        <Link href="/jobs" className="btn btn-primary mt-4">
+          ← Back to Jobs
+        </Link>
       </div>
     );
   }
@@ -114,7 +120,7 @@ export default function JobDetailClient() {
   const disputeEnd = completedAt ? new Date(completedAt.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
 
   const isClient = address?.toLowerCase() === job.client?.toLowerCase();
-  const isAssignedExecutor = address?.toLowerCase() === job.executor?.toLowerCase();
+  const isAssignedWorker = address?.toLowerCase() === job.worker?.toLowerCase();
   const isOpen = jobStatus === 0;
   const isCompleted = jobStatus === 2;
   const isConsult = CONSULT_TYPES.has(serviceType);
@@ -203,7 +209,9 @@ export default function JobDetailClient() {
   return (
     <div className="flex flex-col items-center py-10 px-4">
       <div className="w-full max-w-2xl">
-        <Link href="/jobs" className="btn btn-ghost btn-sm mb-4">← Back to Jobs</Link>
+        <Link href="/jobs" className="btn btn-ghost btn-sm mb-4">
+          ← Back to Jobs
+        </Link>
 
         <div className="card bg-base-200">
           <div className="card-body">
@@ -233,10 +241,10 @@ export default function JobDetailClient() {
                 <span className="text-sm opacity-50">Created</span>
                 <p className="text-sm">{createdAt.toLocaleString()}</p>
               </div>
-              {job.executor !== "0x0000000000000000000000000000000000000000" && (
+              {job.worker !== "0x0000000000000000000000000000000000000000" && (
                 <div>
                   <span className="text-sm opacity-50">Executor</span>
-                  <Address address={job.executor} />
+                  <Address address={job.worker} />
                 </div>
               )}
               {completedAt && (
@@ -298,16 +306,20 @@ export default function JobDetailClient() {
                       onClick={() => call("cancelJob")}
                       disabled={!!pending}
                     >
-                      {pending === "cancelJob" ? <span className="loading loading-spinner loading-sm" /> : "❌ Cancel Job"}
+                      {pending === "cancelJob" ? (
+                        <span className="loading loading-spinner loading-sm" />
+                      ) : (
+                        "❌ Cancel Job"
+                      )}
                     </button>
                   )}
                   {isCompleted && !job.paymentClaimed && !disputeWindowOver && (
-                    <button
-                      className="btn btn-warning"
-                      onClick={() => call("disputeJob")}
-                      disabled={!!pending}
-                    >
-                      {pending === "disputeJob" ? <span className="loading loading-spinner loading-sm" /> : "⚠️ Dispute"}
+                    <button className="btn btn-warning" onClick={() => call("disputeJob")} disabled={!!pending}>
+                      {pending === "disputeJob" ? (
+                        <span className="loading loading-spinner loading-sm" />
+                      ) : (
+                        "⚠️ Dispute"
+                      )}
                     </button>
                   )}
                 </div>
@@ -324,17 +336,17 @@ export default function JobDetailClient() {
 
                     {/* Accept (OPEN jobs) */}
                     {isOpen && (
-                      <button
-                        className="btn btn-primary w-full"
-                        onClick={handleAccept}
-                        disabled={!!pending}
-                      >
-                        {pending === "acceptJob" ? <span className="loading loading-spinner loading-sm" /> : "Accept Job →"}
+                      <button className="btn btn-primary w-full" onClick={handleAccept} disabled={!!pending}>
+                        {pending === "acceptJob" ? (
+                          <span className="loading loading-spinner loading-sm" />
+                        ) : (
+                          "Accept Job →"
+                        )}
                       </button>
                     )}
 
                     {/* Log work + Complete (IN_PROGRESS, assigned to me) */}
-                    {jobStatus === 1 && isAssignedExecutor && (
+                    {jobStatus === 1 && isAssignedWorker && (
                       <>
                         <textarea
                           className="textarea textarea-bordered w-full text-sm"
@@ -350,7 +362,11 @@ export default function JobDetailClient() {
                           onClick={handleLogWork}
                           disabled={!!pending || !logNote.trim()}
                         >
-                          {pending === "logWork" ? <span className="loading loading-spinner loading-sm" /> : "Log Work Update 🦞"}
+                          {pending === "logWork" ? (
+                            <span className="loading loading-spinner loading-sm" />
+                          ) : (
+                            "Log Work Update 🦞"
+                          )}
                         </button>
                         <div className="divider my-0" />
                         <input
@@ -366,19 +382,27 @@ export default function JobDetailClient() {
                           onClick={handleComplete}
                           disabled={!!pending || !resultCID.trim()}
                         >
-                          {pending === "completeJob" ? <span className="loading loading-spinner loading-sm" /> : "Mark Complete ✓"}
+                          {pending === "completeJob" ? (
+                            <span className="loading loading-spinner loading-sm" />
+                          ) : (
+                            "Mark Complete ✓"
+                          )}
                         </button>
                       </>
                     )}
 
                     {/* Claim payment (COMPLETED, dispute window over) */}
-                    {isAssignedExecutor && isCompleted && !job.paymentClaimed && disputeWindowOver && (
+                    {isAssignedWorker && isCompleted && !job.paymentClaimed && disputeWindowOver && (
                       <button
                         className="btn btn-success w-full"
                         onClick={() => call("claimPayment")}
                         disabled={!!pending}
                       >
-                        {pending === "claimPayment" ? <span className="loading loading-spinner loading-sm" /> : "💰 Claim Payment"}
+                        {pending === "claimPayment" ? (
+                          <span className="loading loading-spinner loading-sm" />
+                        ) : (
+                          "💰 Claim Payment"
+                        )}
                       </button>
                     )}
                   </div>
@@ -395,24 +419,27 @@ export default function JobDetailClient() {
         </div>
         {/* Work Log */}
         {(() => {
-          const logs = workLogsData as {note: string; timestamp: bigint}[] | undefined;
+          const logs = workLogsData as { note: string; timestamp: bigint }[] | undefined;
           if (!logs || logs.length === 0) return null;
           return (
-          <div className="mt-6">
-            <h3 className="font-bold mb-3 text-lg">📋 Work Log</h3>
-            <div className="space-y-2">
-              {[...logs].reverse().map((log, i) => (
-                <div key={i} className="flex gap-4 bg-base-200 rounded-lg px-4 py-3">
-                  <div className="text-xs opacity-40 whitespace-nowrap pt-0.5 min-w-[90px]">
-                    {new Date(Number(log.timestamp) * 1000).toLocaleDateString(undefined, {
-                      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
-                    })}
+            <div className="mt-6">
+              <h3 className="font-bold mb-3 text-lg">📋 Work Log</h3>
+              <div className="space-y-2">
+                {[...logs].reverse().map((log, i) => (
+                  <div key={i} className="flex gap-4 bg-base-200 rounded-lg px-4 py-3">
+                    <div className="text-xs opacity-40 whitespace-nowrap pt-0.5 min-w-[90px]">
+                      {new Date(Number(log.timestamp) * 1000).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                    <div className="text-sm">{log.note}</div>
                   </div>
-                  <div className="text-sm">{log.note}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
           );
         })()}
       </div>

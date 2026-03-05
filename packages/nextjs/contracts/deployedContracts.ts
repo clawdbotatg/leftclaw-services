@@ -115,10 +115,10 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "addExecutor",
+          name: "addWorker",
           inputs: [
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               internalType: "address",
             },
@@ -291,7 +291,7 @@ const deployedContracts = {
                   internalType: "string",
                 },
                 {
-                  name: "executor",
+                  name: "worker",
                   type: "address",
                   internalType: "address",
                 },
@@ -381,7 +381,7 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "isExecutor",
+          name: "isWorker",
           inputs: [
             {
               name: "",
@@ -465,7 +465,7 @@ const deployedContracts = {
               internalType: "string",
             },
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               internalType: "address",
             },
@@ -605,10 +605,10 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "removeExecutor",
+          name: "removeWorker",
           inputs: [
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               internalType: "address",
             },
@@ -865,10 +865,10 @@ const deployedContracts = {
         },
         {
           type: "event",
-          name: "ExecutorAdded",
+          name: "WorkerAdded",
           inputs: [
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               indexed: true,
               internalType: "address",
@@ -878,10 +878,10 @@ const deployedContracts = {
         },
         {
           type: "event",
-          name: "ExecutorRemoved",
+          name: "WorkerRemoved",
           inputs: [
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               indexed: true,
               internalType: "address",
@@ -919,7 +919,7 @@ const deployedContracts = {
               internalType: "uint256",
             },
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               indexed: true,
               internalType: "address",
@@ -957,7 +957,7 @@ const deployedContracts = {
               internalType: "uint256",
             },
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               indexed: true,
               internalType: "address",
@@ -1076,7 +1076,7 @@ const deployedContracts = {
               internalType: "uint256",
             },
             {
-              name: "executor",
+              name: "worker",
               type: "address",
               indexed: true,
               internalType: "address",
@@ -1205,7 +1205,7 @@ const deployedContracts = {
           name: "WorkLogged",
           inputs: [
             { name: "jobId", type: "uint256", internalType: "uint256", indexed: true },
-            { name: "executor", type: "address", internalType: "address", indexed: true },
+            { name: "worker", type: "address", internalType: "address", indexed: true },
             { name: "note", type: "string", internalType: "string", indexed: false },
           ],
           anonymous: false,

@@ -52,7 +52,7 @@ const BUILD_TYPES = [
 function parseError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
   if (/user rejected|user denied/i.test(msg)) return "Cancelled";
-  if (/Not authorized/i.test(msg)) return "Not authorized — executor only";
+  if (/Not authorized/i.test(msg)) return "Not authorized — worker only";
   const m = msg.match(/reverted[^"']*["']([^"']{3,80})["']/i);
   if (m) return m[1];
   return "Transaction failed";
@@ -85,7 +85,7 @@ interface JobData {
   startedAt: bigint;
   completedAt: bigint;
   resultCID: string;
-  executor: string;
+  worker: string;
   paymentClaimed: boolean;
   feeSnapshot: bigint;
   disputedAt: bigint;
@@ -234,11 +234,11 @@ function JobCard({
             </div>
           )}
 
-          {/* Executor */}
-          {job.executor !== "0x0000000000000000000000000000000000000000" && (
+          {/* Worker */}
+          {job.worker !== "0x0000000000000000000000000000000000000000" && (
             <div className="text-xs">
-              <span className="opacity-50">Executor: </span>
-              <span className="font-mono">{truncAddr(job.executor)}</span>
+              <span className="opacity-50">Worker: </span>
+              <span className="font-mono">{truncAddr(job.worker)}</span>
             </div>
           )}
 
@@ -375,14 +375,14 @@ export default function AdminPage() {
   // Job management state
   const [statusFilter, setStatusFilter] = useState(-1);
 
-  // Check executor status
-  const { data: isExecutorData } = useReadContracts({
+  // Check worker status
+  const { data: isWorkerData } = useReadContracts({
     contracts: address
-      ? [{ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any, functionName: "isExecutor", args: [address] }]
+      ? [{ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any, functionName: "isWorker", args: [address] }]
       : [],
     query: { enabled: !!address },
   });
-  const isExecutor = !!isExecutorData?.[0]?.result;
+  const isWorker = !!isWorkerData?.[0]?.result;
 
   // Total jobs count
   const { data: totalJobsData } = useReadContract({
@@ -526,10 +526,10 @@ export default function AdminPage() {
     );
   }
 
-  if (!isExecutor) {
+  if (!isWorker) {
     return (
       <div className="flex justify-center py-20">
-        <p className="opacity-60">🚫 Executor access only</p>
+        <p className="opacity-60">🚫 Worker access only</p>
       </div>
     );
   }
