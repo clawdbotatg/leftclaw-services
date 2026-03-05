@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAccount, useReadContracts, useReadContract, useWriteContract, usePublicClient } from "wagmi";
+import { useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
+import { useAccount, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
+import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServices?.address as `0x${string}`;
 const CONTRACT_ABI = deployedContracts[8453]?.LeftClawServices?.abi;
@@ -163,7 +163,9 @@ function JobCard({
       {/* Summary row */}
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-3">
-          <span className="opacity-60">Client: <span className="font-mono">{truncAddr(job.client)}</span></span>
+          <span className="opacity-60">
+            Client: <span className="font-mono">{truncAddr(job.client)}</span>
+          </span>
           <span className="opacity-40">·</span>
           <span className="opacity-60">{timeAgo(Number(job.createdAt))}</span>
         </div>
@@ -177,11 +179,7 @@ function JobCard({
       <div className="flex flex-wrap gap-2 mt-3">
         {job.status === 0 && (
           <>
-            <button
-              className="btn btn-sm btn-primary"
-              disabled={busy !== null}
-              onClick={() => doAction("accept")}
-            >
+            <button className="btn btn-sm btn-primary" disabled={busy !== null} onClick={() => doAction("accept")}>
               {busy === "accept" ? <span className="loading loading-spinner loading-xs" /> : "Accept"}
             </button>
             <button
@@ -195,11 +193,7 @@ function JobCard({
         )}
 
         {job.status === 2 && !job.paymentClaimed && disputeExpired && (
-          <button
-            className="btn btn-sm btn-success"
-            disabled={busy !== null}
-            onClick={() => doAction("claim")}
-          >
+          <button className="btn btn-sm btn-success" disabled={busy !== null} onClick={() => doAction("claim")}>
             {busy === "claim" ? <span className="loading loading-spinner loading-xs" /> : "Claim Payment"}
           </button>
         )}
@@ -217,7 +211,11 @@ function JobCard({
           {/* Description CID */}
           <div className="text-xs">
             <span className="opacity-50">Description CID: </span>
-            <a href={`https://ipfs.io/ipfs/${job.descriptionCID}`} target="_blank" className="link link-primary font-mono break-all">
+            <a
+              href={`https://ipfs.io/ipfs/${job.descriptionCID}`}
+              target="_blank"
+              className="link link-primary font-mono break-all"
+            >
               {job.descriptionCID}
             </a>
           </div>
@@ -226,7 +224,11 @@ function JobCard({
           {job.resultCID && (
             <div className="text-xs">
               <span className="opacity-50">Result: </span>
-              <a href={job.resultCID.startsWith("http") ? job.resultCID : `https://ipfs.io/ipfs/${job.resultCID}`} target="_blank" className="link link-primary font-mono break-all">
+              <a
+                href={job.resultCID.startsWith("http") ? job.resultCID : `https://ipfs.io/ipfs/${job.resultCID}`}
+                target="_blank"
+                className="link link-primary font-mono break-all"
+              >
                 {job.resultCID}
               </a>
             </div>
@@ -288,7 +290,9 @@ function JobCard({
                       onChange={e => setRecommendedBuild(Number(e.target.value))}
                     >
                       {BUILD_TYPES.map(b => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -297,7 +301,11 @@ function JobCard({
                     disabled={busy !== null || !gistUrl}
                     onClick={() => doAction("burnConsultation", { gistUrl, recommendedBuildType: recommendedBuild })}
                   >
-                    {busy === "burnConsultation" ? <span className="loading loading-spinner loading-xs" /> : "🔥 Burn & Complete"}
+                    {busy === "burnConsultation" ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      "🔥 Burn & Complete"
+                    )}
                   </button>
                 </div>
               )}
@@ -369,10 +377,12 @@ export default function AdminPage() {
 
   // Check executor status
   const { data: isExecutorData } = useReadContracts({
-    contracts: address ? [{ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any, functionName: "isExecutor", args: [address] }] : [],
+    contracts: address
+      ? [{ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any, functionName: "isExecutor", args: [address] }]
+      : [],
     query: { enabled: !!address },
   });
-  const isExecutor = !!(isExecutorData?.[0]?.result);
+  const isExecutor = !!isExecutorData?.[0]?.result;
 
   // Total jobs count
   const { data: totalJobsData } = useReadContract({
@@ -397,9 +407,7 @@ export default function AdminPage() {
     .map(d => d.result as JobData | undefined)
     .filter((j): j is JobData => !!j);
 
-  const filteredJobs = statusFilter === -1
-    ? allJobs
-    : allJobs.filter(j => j.status === statusFilter);
+  const filteredJobs = statusFilter === -1 ? allJobs : allJobs.filter(j => j.status === statusFilter);
 
   // Sort: most recent first
   const sortedJobs = [...filteredJobs].sort((a, b) => Number(b.id) - Number(a.id));
@@ -539,7 +547,9 @@ export default function AdminPage() {
           <div className="card-body">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold">Jobs ({totalJobs})</h2>
-              <button className="btn btn-ghost btn-xs" onClick={() => refetchJobs()}>↻ Refresh</button>
+              <button className="btn btn-ghost btn-xs" onClick={() => refetchJobs()}>
+                ↻ Refresh
+              </button>
             </div>
 
             {/* Status filter tabs */}
@@ -552,9 +562,7 @@ export default function AdminPage() {
                 >
                   {f.label}
                   {f.value >= 0 && (
-                    <span className="ml-1 opacity-50">
-                      ({allJobs.filter(j => j.status === f.value).length})
-                    </span>
+                    <span className="ml-1 opacity-50">({allJobs.filter(j => j.status === f.value).length})</span>
                   )}
                 </button>
               ))}
@@ -566,12 +574,7 @@ export default function AdminPage() {
                 <p className="text-sm opacity-50 text-center py-4">No jobs</p>
               ) : (
                 sortedJobs.map(job => (
-                  <JobCard
-                    key={Number(job.id)}
-                    job={job}
-                    clawdPrice={clawdPrice}
-                    onAction={handleJobAction}
-                  />
+                  <JobCard key={Number(job.id)} job={job} clawdPrice={clawdPrice} onAction={handleJobAction} />
                 ))
               )}
             </div>
@@ -592,14 +595,14 @@ export default function AdminPage() {
                 return (
                   <div key={service.id} className="flex flex-col gap-1.5 bg-base-300 rounded-lg px-4 py-3">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">{service.emoji} {service.name}</span>
+                      <span className="font-medium text-sm">
+                        {service.emoji} {service.name}
+                      </span>
                       <div className="text-right">
                         <p className="font-mono text-sm font-bold">
                           {priceClawd ? priceClawd.toLocaleString() : "..."} CLAWD
                         </p>
-                        <p className="text-xs opacity-50">
-                          {priceUsd ? `~$${priceUsd.toFixed(2)}` : "..."}
-                        </p>
+                        <p className="text-xs opacity-50">{priceUsd ? `~$${priceUsd.toFixed(2)}` : "..."}</p>
                       </div>
                     </div>
 
@@ -627,15 +630,17 @@ export default function AdminPage() {
                         onClick={() => handlePriceUpdate(service.id)}
                         disabled={isBusy || !inputs[service.id]}
                       >
-                        {isBusy
-                          ? <span className="loading loading-spinner loading-xs" />
-                          : success[service.id] ? "✓" : "Update"}
+                        {isBusy ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : success[service.id] ? (
+                          "✓"
+                        ) : (
+                          "Update"
+                        )}
                       </button>
                     </div>
 
-                    {errors[service.id] && (
-                      <p className="text-xs text-error">{errors[service.id]}</p>
-                    )}
+                    {errors[service.id] && <p className="text-xs text-error">{errors[service.id]}</p>}
                   </div>
                 );
               })}
