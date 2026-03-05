@@ -100,14 +100,14 @@ function PostJobPage() {
   const typeParam = searchParams.get("type");
   const gistParam = searchParams.get("gist");
   const isCustom = typeParam === "custom";
-  const initialType = isCustom ? 9 : (typeParam ? parseInt(typeParam) : 6);
+  const rawType = typeParam ? parseInt(typeParam) : 6;
+  // Build tiers (2-5) no longer exist — default to QA Report
+  const initialType = isCustom ? 9 : (rawType >= 2 && rawType <= 5 ? 6 : rawType);
 
-  // Consult and Build types have their own pages — redirect
+  // Consult types have their own page — redirect
   useEffect(() => {
     if (initialType === 0 || initialType === 1) {
       router.replace(`/consult?type=${initialType}`);
-    } else if (initialType >= 2 && initialType <= 5) {
-      router.replace("/build");
     }
   }, [initialType, router]);
 
