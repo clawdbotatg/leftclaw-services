@@ -106,7 +106,7 @@ const Home: NextPage = () => {
 
         {/* Consults */}
         <h3 className="text-lg font-semibold mb-4 opacity-70">💬 Consultations</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           {SERVICE_TYPES.filter(s => s.tier === "consult").map(s => (
             <ServiceCard key={s.id} service={s} clawdPrice={clawdPrice} />
           ))}
