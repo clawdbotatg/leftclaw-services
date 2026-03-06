@@ -39,7 +39,7 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
     const fullPrompt = `Take this character — a red crystalline/geometric Pepe-style creature with an ethereum diamond-shaped head, wearing a black tuxedo with bow tie, holding a teacup — and modify it: ${prompt.trim()}. Keep the same art style (clean anime/cartoon illustration, white/light background, bold outlines). Keep the character recognizable but apply the requested changes. Square format, profile picture crop.`;
 
     const result = await openai.images.edit({
-      model: "gpt-image-1",
+      model: "gpt-image-1.5",
       image: `data:image/jpeg;base64,${baseImageBase64}`,
       prompt: fullPrompt,
       n: 1,
