@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { addMessage, getSession } from "~~/lib/sessionStore";
 
 const SYSTEM_PROMPT = `You are LeftClaw, an expert Ethereum/Web3 builder and consultant. You work under the CLAWD brand — a builder-first community in the Ethereum ecosystem created by Austin Griffith.
 
@@ -156,10 +157,34 @@ Output EXACTLY this — no variations, no extra markers:
 The ---PLAN START--- and ---PLAN END--- markers must be EXACTLY on their own lines, unchanged.`;
 
 export async function POST(req: NextRequest) {
-  const { messages, isOpening, isGreeting } = await req.json();
+  const { messages, isOpening, isGreeting, jobId, sessionId } = await req.json();
 
   if (!messages || !Array.isArray(messages)) {
     return new Response(JSON.stringify({ error: "messages required" }), { status: 400 });
+  }
+
+  // x402 session validation
+  if (sessionId) {
+    const session = await getSession(sessionId);
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Session not found or expired" }), { status: 404 });
+    }
+    if (session.status !== "active") {
+      return new Response(JSON.stringify({ error: "Session is no longer active" }), { status: 403 });
+    }
+    if (new Date(session.expiresAt) < new Date()) {
+      return new Response(JSON.stringify({ error: "Session expired" }), { status: 403 });
+    }
+    const userMsgCount = session.messages.filter(m => m.role === "user").length;
+    if (userMsgCount >= session.maxMessages) {
+      return new Response(JSON.stringify({ error: "Message limit reached" }), { status: 403 });
+    }
+
+    // Save user message to KV
+    const lastUserMsg = messages[messages.length - 1];
+    if (lastUserMsg?.role === "user" && lastUserMsg.content !== "__GREET__") {
+      await addMessage(sessionId, { role: "user", content: lastUserMsg.content });
+    }
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -210,10 +235,12 @@ export async function POST(req: NextRequest) {
   }
 
   const decoder = new TextDecoder();
+  const capturedSessionId = sessionId;
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
       let buffer = "";
+      let fullResponse = "";
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -228,6 +255,7 @@ export async function POST(req: NextRequest) {
             try {
               const parsed = JSON.parse(data);
               if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                fullResponse += parsed.delta.text;
                 controller.enqueue(encoder.encode(parsed.delta.text));
               }
             } catch {
@@ -238,6 +266,10 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         console.error("Stream error:", e);
       } finally {
+        // Save assistant response to KV for x402 sessions
+        if (capturedSessionId && fullResponse) {
+          addMessage(capturedSessionId, { role: "assistant", content: fullResponse }).catch(console.error);
+        }
         controller.close();
       }
     },

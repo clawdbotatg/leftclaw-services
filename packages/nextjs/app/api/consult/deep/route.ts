@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
-import { createJob } from "~~/lib/jobStore";
+import { createSession } from "~~/lib/sessionStore";
 import { BASE_NETWORK, PAYMENT_ADDRESS, SERVICE_PRICES, x402Server } from "~~/lib/x402";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
 
 const handler = async (req: NextRequest): Promise<NextResponse> => {
   try {
@@ -13,7 +15,7 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
       return NextResponse.json({ error: "Description required (minimum 10 characters)" }, { status: 400 });
     }
 
-    const job = createJob({
+    const session = await createSession({
       serviceType: "CONSULT_DEEP",
       description: description.trim(),
       context: context?.trim(),
@@ -21,11 +23,12 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
     });
 
     return NextResponse.json({
-      jobId: job.id,
-      status: "queued",
-      message: "Deep consultation queued. A worker bot will process it shortly.",
-      poll: `/api/job/${job.id}`,
-      estimatedTime: "15-30 minutes",
+      sessionId: session.id,
+      chatUrl: `${APP_URL}/chat/x402/${session.id}`,
+      status: "active",
+      expiresAt: session.expiresAt,
+      maxMessages: session.maxMessages,
+      message: "Deep consultation session created. Follow the chatUrl to begin.",
     });
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
@@ -55,10 +58,11 @@ export const POST = withX402(
         bodyType: "json",
         output: {
           example: {
-            jobId: "job_abc123",
-            status: "queued",
-            poll: "/api/job/job_abc123",
-            estimatedTime: "15-30 minutes",
+            sessionId: "x402_abc123",
+            chatUrl: "https://leftclaw-services-nextjs.vercel.app/chat/x402/x402_abc123",
+            status: "active",
+            expiresAt: "2026-03-06T10:00:00.000Z",
+            maxMessages: 30,
           },
         },
       }),

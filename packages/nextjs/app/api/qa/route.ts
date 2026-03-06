@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
-import { createJob } from "~~/lib/jobStore";
+import { createSession } from "~~/lib/sessionStore";
 import { BASE_NETWORK, PAYMENT_ADDRESS, SERVICE_PRICES, x402Server } from "~~/lib/x402";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
 
 const handler = async (req: NextRequest): Promise<NextResponse> => {
   try {
@@ -16,7 +18,7 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
       );
     }
 
-    const job = createJob({
+    const session = await createSession({
       serviceType: "QA_REPORT",
       description: description.trim(),
       context: context?.trim(),
@@ -24,11 +26,12 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
     });
 
     return NextResponse.json({
-      jobId: job.id,
-      status: "queued",
-      message: "QA report queued. A worker bot will review your dApp.",
-      poll: `/api/job/${job.id}`,
-      estimatedTime: "30-60 minutes",
+      sessionId: session.id,
+      chatUrl: `${APP_URL}/chat/x402/${session.id}`,
+      status: "active",
+      expiresAt: session.expiresAt,
+      maxMessages: session.maxMessages,
+      message: "QA session created. Follow the chatUrl to discuss your dApp review.",
     });
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
@@ -61,10 +64,11 @@ export const POST = withX402(
         bodyType: "json",
         output: {
           example: {
-            jobId: "job_abc123",
-            status: "queued",
-            poll: "/api/job/job_abc123",
-            estimatedTime: "30-60 minutes",
+            sessionId: "x402_abc123",
+            chatUrl: "https://leftclaw-services-nextjs.vercel.app/chat/x402/x402_abc123",
+            status: "active",
+            expiresAt: "2026-03-06T14:00:00.000Z",
+            maxMessages: 20,
           },
         },
       }),
