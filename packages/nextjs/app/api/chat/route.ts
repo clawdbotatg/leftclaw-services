@@ -157,7 +157,7 @@ Output EXACTLY this — no variations, no extra markers:
 The ---PLAN START--- and ---PLAN END--- markers must be EXACTLY on their own lines, unchanged.`;
 
 export async function POST(req: NextRequest) {
-  const { messages, isOpening, isGreeting, jobId, sessionId } = await req.json();
+  const { messages, isOpening, isGreeting, sessionId } = await req.json();
 
   if (!messages || !Array.isArray(messages)) {
     return new Response(JSON.stringify({ error: "messages required" }), { status: 400 });

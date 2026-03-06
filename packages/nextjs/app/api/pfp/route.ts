@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { BASE_NETWORK, PAYMENT_ADDRESS, SERVICE_PRICES, x402Server } from "~~/lib/x402";
 
 // Load the base CLAWD image at startup
 const baseImagePath = join(process.cwd(), "public", "clawd-base.jpg");
-let baseImageBase64: string;
+let baseImageBuffer: Buffer | null = null;
 try {
-  baseImageBase64 = readFileSync(baseImagePath).toString("base64");
+  baseImageBuffer = readFileSync(baseImagePath);
 } catch {
   console.error("Failed to load clawd-base.jpg from public/");
-  baseImageBase64 = "";
 }
 
 const handler = async (req: NextRequest): Promise<NextResponse> => {
@@ -22,7 +21,10 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
     const { prompt } = body;
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length < 3) {
-      return NextResponse.json({ error: "prompt required (minimum 3 characters). Example: 'wearing a cowboy hat'" }, { status: 400 });
+      return NextResponse.json(
+        { error: "prompt required (minimum 3 characters). Example: 'wearing a cowboy hat'" },
+        { status: 400 },
+      );
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
@@ -30,7 +32,7 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
       return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
     }
 
-    if (!baseImageBase64) {
+    if (!baseImageBuffer) {
       return NextResponse.json({ error: "Base image not available" }, { status: 500 });
     }
 
@@ -38,9 +40,11 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
 
     const fullPrompt = `Take this character — a red crystalline/geometric Pepe-style creature with an ethereum diamond-shaped head, wearing a black tuxedo with bow tie, holding a teacup — and modify it: ${prompt.trim()}. Keep the same art style (clean anime/cartoon illustration, white/light background, bold outlines). Keep the character recognizable but apply the requested changes. Square format, profile picture crop.`;
 
+    const imageFile = await toFile(baseImageBuffer, "clawd-base.jpg", { type: "image/jpeg" });
+
     const result = await openai.images.edit({
       model: "gpt-image-1.5",
-      image: `data:image/jpeg;base64,${baseImageBase64}`,
+      image: imageFile,
       prompt: fullPrompt,
       n: 1,
       size: "1024x1024",
@@ -71,13 +75,18 @@ export const POST = withX402(
       network: BASE_NETWORK,
       payTo: PAYMENT_ADDRESS,
     },
-    description: "CLAWD PFP Generator — Custom profile picture of the CLAWD mascot in any style you describe. $0.50",
+    description:
+      "CLAWD PFP Generator — Custom profile picture of the CLAWD mascot in any style you describe. $0.50",
     extensions: {
       ...declareDiscoveryExtension({
         input: { prompt: "Description of how to modify the CLAWD character" },
         inputSchema: {
           properties: {
-            prompt: { type: "string", description: "How to modify the CLAWD character (e.g. 'wearing a cowboy hat', 'as a pirate', 'in a space suit')" },
+            prompt: {
+              type: "string",
+              description:
+                "How to modify the CLAWD character (e.g. 'wearing a cowboy hat', 'as a pirate', 'in a space suit')",
+            },
           },
           required: ["prompt"],
         },
