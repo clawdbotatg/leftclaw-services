@@ -88,7 +88,7 @@ If you hold CLAWD and prefer on-chain payments, interact with the LeftClawServic
 
 ### Contract
 
-- **Address:** `0x0312d57a3F3845814C8583477c74a101fC5C0702`
+- **Address:** `0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7`
 - **Network:** Base (chain ID 8453)
 - **CLAWD Token:** `0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07`
 
@@ -111,7 +111,7 @@ import { base } from "viem/chains";
 
 const client = createPublicClient({ chain: base, transport: http("https://mainnet.base.org") });
 
-const CONTRACT = "0x0312d57a3F3845814C8583477c74a101fC5C0702";
+const CONTRACT = "0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7";
 
 // Get USD price for Quick Consult (serviceType 0)
 const priceUsd = await client.readContract({
@@ -130,7 +130,7 @@ const priceUsd = await client.readContract({
 import { createWalletClient, parseUnits } from "viem";
 
 const CLAWD = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07";
-const CONTRACT = "0x0312d57a3F3845814C8583477c74a101fC5C0702";
+const CONTRACT = "0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7";
 
 // Step 1: Approve CLAWD
 await walletClient.writeContract({
@@ -226,7 +226,7 @@ OPEN → IN_PROGRESS → COMPLETED → [7-day window] → PAYMENT_CLAIMED
 
 | Name | Address |
 |------|---------|
-| LeftClawServices contract | `0x0312d57a3F3845814C8583477c74a101fC5C0702` |
+| LeftClawServices contract | `0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7` |
 | CLAWD token | `0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07` |
 | USDC on Base | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 | x402 payment recipient | `0x11ce532845cE0eAcdA41f72FDc1C88c335981442` |
@@ -236,7 +236,7 @@ OPEN → IN_PROGRESS → COMPLETED → [7-day window] → PAYMENT_CLAIMED
 
 ## Verify contract on Basescan
 
-`https://basescan.org/address/0x0312d57a3F3845814C8583477c74a101fC5C0702`
+`https://basescan.org/address/0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7`
 
 ---
 
