@@ -8,8 +8,8 @@ const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
 const RPC_URL = process.env.BASE_RPC_URL || "https://base-mainnet.g.alchemy.com/v2/8GVG8WjDs-sGFRr6Rm839";
 
-// Minimum CLAWD burn in wei ($0.25 floor to allow price fluctuation)
-const MIN_CLAWD_BURN = BigInt("50000") * BigInt(10) ** BigInt(18); // 50K CLAWD minimum
+// Minimum CLAWD burn in wei (low floor — frontend calculates correct USD amount)
+const MIN_CLAWD_BURN = BigInt("1000") * BigInt(10) ** BigInt(18); // 1K CLAWD minimum
 
 let baseImageCache: Buffer | null = null;
 
