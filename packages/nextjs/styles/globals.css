@@ -19,22 +19,23 @@
 @plugin "daisyui/theme" {
   name: "light";
 
-  --color-primary: #93bbfb;
-  --color-primary-content: #212638;
-  --color-secondary: #dae8ff;
-  --color-secondary-content: #212638;
-  --color-accent: #93bbfb;
-  --color-accent-content: #212638;
-  --color-neutral: #212638;
+  /* Lobster red as primary, burnt orange secondary, amber accent */
+  --color-primary: #c93a1e;
+  --color-primary-content: #ffffff;
+  --color-secondary: #c2631a;
+  --color-secondary-content: #ffffff;
+  --color-accent: #d97c0a;
+  --color-accent-content: #1a0800;
+  --color-neutral: #2c1408;
   --color-neutral-content: #ffffff;
-  --color-base-100: #ffffff;
-  --color-base-200: #f4f8ff;
-  --color-base-300: #dae8ff;
-  --color-base-content: #212638;
-  --color-info: #93bbfb;
-  --color-success: #34eeb6;
-  --color-warning: #ffcf72;
-  --color-error: #ff8863;
+  --color-base-100: #fffdf9;
+  --color-base-200: #fdf3e8;
+  --color-base-300: #f9e2c8;
+  --color-base-content: #2c1408;
+  --color-info: #4a90d9;
+  --color-success: #2cb87a;
+  --color-warning: #e8a020;
+  --color-error: #e03030;
 
   --radius-field: 0.375rem;
   --radius-box: 0.5rem;
@@ -44,22 +45,23 @@
 @plugin "daisyui/theme" {
   name: "dark";
 
-  --color-primary: #212638;
-  --color-primary-content: #f9fbff;
-  --color-secondary: #323f61;
-  --color-secondary-content: #f9fbff;
-  --color-accent: #4969a6;
-  --color-accent-content: #f9fbff;
-  --color-neutral: #f9fbff;
-  --color-neutral-content: #385183;
-  --color-base-100: #385183;
-  --color-base-200: #2a3655;
-  --color-base-300: #212638;
-  --color-base-content: #f9fbff;
-  --color-info: #385183;
-  --color-success: #34eeb6;
-  --color-warning: #ffcf72;
-  --color-error: #ff8863;
+  /* Dark charcoal base, bright lobster red primary */
+  --color-primary: #e8431f;
+  --color-primary-content: #ffffff;
+  --color-secondary: #8c3a14;
+  --color-secondary-content: #ffe8d8;
+  --color-accent: #d97c0a;
+  --color-accent-content: #1a0800;
+  --color-neutral: #ffe8d8;
+  --color-neutral-content: #2c1408;
+  --color-base-100: #1e1410;
+  --color-base-200: #150e0a;
+  --color-base-300: #0e0906;
+  --color-base-content: #ffe8d8;
+  --color-info: #4a90d9;
+  --color-success: #2cb87a;
+  --color-warning: #e8a020;
+  --color-error: #e05050;
 
   --radius-field: 0.375rem;
   --radius-box: 0.5rem;
