@@ -2,17 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import OpenAI, { toFile } from "openai";
-import { readFileSync } from "fs";
-import { join } from "path";
 import { BASE_NETWORK, PAYMENT_ADDRESS, SERVICE_PRICES, x402Server } from "~~/lib/x402";
 
-// Load the base CLAWD image at startup
-const baseImagePath = join(process.cwd(), "public", "clawd-base.jpg");
-let baseImageBuffer: Buffer | null = null;
-try {
-  baseImageBuffer = readFileSync(baseImagePath);
-} catch {
-  console.error("Failed to load clawd-base.jpg from public/");
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
+
+// Cache the base image buffer in memory after first fetch
+let baseImageCache: Buffer | null = null;
+
+async function getBaseImage(): Promise<Buffer> {
+  if (baseImageCache) return baseImageCache;
+
+  // Try filesystem first (works in dev), fall back to HTTP fetch (works on Vercel)
+  try {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+    baseImageCache = readFileSync(join(process.cwd(), "public", "clawd-base.jpg"));
+    return baseImageCache;
+  } catch {
+    // Fetch from public URL on Vercel
+    const res = await fetch(`${APP_URL}/clawd-base.jpg`);
+    if (!res.ok) throw new Error("Failed to fetch base image");
+    baseImageCache = Buffer.from(await res.arrayBuffer());
+    return baseImageCache;
+  }
 }
 
 const handler = async (req: NextRequest): Promise<NextResponse> => {
@@ -32,10 +44,7 @@ const handler = async (req: NextRequest): Promise<NextResponse> => {
       return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
     }
 
-    if (!baseImageBuffer) {
-      return NextResponse.json({ error: "Base image not available" }, { status: 500 });
-    }
-
+    const baseImageBuffer = await getBaseImage();
     const openai = new OpenAI({ apiKey });
 
     const fullPrompt = `Take this character — a red crystalline/geometric Pepe-style creature with an ethereum diamond-shaped head, wearing a black tuxedo with bow tie, holding a teacup — and modify it: ${prompt.trim()}. Keep the same art style (clean anime/cartoon illustration, white/light background, bold outlines). Keep the character recognizable but apply the requested changes. Square format, profile picture crop.`;

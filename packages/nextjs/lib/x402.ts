@@ -8,7 +8,7 @@ export const PAYMENT_ADDRESS = "0x11ce532845cE0eAcdA41f72FDc1C88c335981442";
 export const BASE_NETWORK = "eip155:8453";
 
 // Self-hosted facilitator — Base mainnet (eip155:8453)
-const facilitatorClient = new HTTPFacilitatorClient({ url: "https://clawd-facilitator.vercel.app" });
+const facilitatorClient = new HTTPFacilitatorClient({ url: "https://clawd-facilitator.vercel.app/api" });
 
 export const x402Server = new x402ResourceServer(facilitatorClient)
   .register(BASE_NETWORK, new ExactEvmScheme())
