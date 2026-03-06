@@ -21,4 +21,5 @@ export const SERVICE_PRICES = {
   BUILD_DAILY: "$1000.00",
   QA_REPORT: "$50.00",
   AUDIT_QUICK: "$200.00",
+  PFP_GENERATE: "$0.50",
 } as const;

@@ -37,6 +37,7 @@
     "next": "~15.2.8",
     "next-nprogress-bar": "~2.3.13",
     "next-themes": "~0.3.0",
+    "openai": "^6.27.0",
     "qrcode.react": "~4.0.1",
     "react": "~19.2.3",
     "react-dom": "~19.2.3",
