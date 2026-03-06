@@ -107,7 +107,7 @@ const Home: NextPage = () => {
       {/* Beta disclaimer */}
       {!bannerDismissed && (
         <div className="w-full bg-red-600 flex items-center justify-center gap-4 py-5 px-6">
-          <span className="text-white font-bold text-lg">⚠️ Built entirely by an AI — still in beta testing. Expect rough edges.</span>
+          <span className="text-white font-bold text-lg">⚠️ THIS IS NOT READY FOR PRODUCTION. JOBS WILL FAIL. Built entirely by an AI — still in beta testing.</span>
           <button
             onClick={dismissBanner}
             className="text-white/70 hover:text-white transition-colors text-xl font-bold leading-none ml-2"
