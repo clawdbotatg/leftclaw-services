@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useAccount, usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
+import { parseEther, parseUnits } from "viem";
+import { useAccount, usePublicClient, useReadContract, useWalletClient, useWriteContract, useSendTransaction } from "wagmi";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
+const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD" as const;
+const PAY_TO = "0x11ce532845cE0eAcdA41f72FDc1C88c335981442" as const;
 const BASE_CHAIN_ID = 8453;
 const PFP_PRICE_USD = 0.5;
 const PFP_CV_COST = 500_000;
@@ -45,7 +48,14 @@ const EXAMPLE_PROMPTS = [
   "as a wizard casting a spell",
 ];
 
-type PaymentMethod = "burn" | "cv";
+type PaymentMethod = "cv" | "clawd" | "usdc" | "eth";
+
+const PAYMENT_LABELS: Record<PaymentMethod, { icon: string; label: string; desc: string }> = {
+  cv: { icon: "⚡", label: "ClawdViction", desc: "Earned by staking" },
+  clawd: { icon: "🔥", label: "Burn CLAWD", desc: "Deflationary" },
+  usdc: { icon: "💵", label: "USDC", desc: "Stablecoin" },
+  eth: { icon: "⟠", label: "ETH", desc: "Native token" },
+};
 
 export default function PfpPage() {
   const { address, chainId } = useAccount();
@@ -53,24 +63,25 @@ export default function PfpPage() {
   const { data: walletClient } = useWalletClient();
   const clawdPrice = useCLAWDPrice();
   const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
 
   const [prompt, setPrompt] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cv");
-  const [step, setStep] = useState<"idle" | "signing" | "burning" | "spending" | "generating" | "done" | "error">(
-    "idle",
-  );
+  const [step, setStep] = useState<"idle" | "signing" | "paying" | "generating" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [burnInfo, setBurnInfo] = useState<{ clawdAmount: number; txHash: string } | null>(null);
-  const [cvInfo, setCvInfo] = useState<{ cvSpent: number; newBalance: number } | null>(null);
+  const [paymentInfo, setPaymentInfo] = useState<Record<string, any> | null>(null);
   const [cvBalance, setCvBalance] = useState<number | null>(null);
   const [cvLoading, setCvLoading] = useState(false);
+  const [ethPrice, setEthPrice] = useState<number | null>(null);
 
   const isWrongNetwork = !!address && chainId !== BASE_CHAIN_ID;
   const clawdNeeded = clawdPrice ? Math.ceil(PFP_PRICE_USD / clawdPrice) : 0;
   const priceWei = BigInt(clawdNeeded) * BigInt(10) ** BigInt(18);
+  const usdcAmount = parseUnits(PFP_PRICE_USD.toString(), 6); // 6 decimals
+  const ethNeeded = ethPrice ? PFP_PRICE_USD / ethPrice : 0;
 
-  const { data: balanceRaw } = useReadContract({
+  const { data: clawdBalance } = useReadContract({
     address: CLAWD_ADDRESS,
     abi: ERC20_ABI,
     functionName: "balanceOf",
@@ -78,105 +89,122 @@ export default function PfpPage() {
     query: { enabled: !!address },
   });
 
-  const insufficientClawd = !!address && balanceRaw !== undefined && balanceRaw < priceWei;
-  const insufficientCv = cvBalance !== null && cvBalance < PFP_CV_COST;
+  const { data: usdcBalance } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address },
+  });
 
-  // Fetch CV balance when wallet connects
+  // Fetch CV balance
   useEffect(() => {
-    if (!address) {
-      setCvBalance(null);
-      return;
-    }
+    if (!address) { setCvBalance(null); return; }
     setCvLoading(true);
     fetch(`https://clawdviction.vercel.app/api/clawdviction/${address}`)
       .then(r => r.json())
-      .then(data => {
-        setCvBalance(Number(data.clawdviction) || 0);
-      })
+      .then(data => setCvBalance(Number(data.clawdviction) || 0))
       .catch(() => setCvBalance(null))
       .finally(() => setCvLoading(false));
   }, [address]);
 
-  // CLAWD burn flow
-  const handleBurnGenerate = async () => {
-    if (!address || !publicClient || !prompt.trim() || priceWei === BigInt(0)) return;
+  // Fetch ETH price
+  useEffect(() => {
+    fetch("https://api.dexscreener.com/latest/dex/tokens/0x4200000000000000000000000000000000000006")
+      .then(r => r.json())
+      .then(data => setEthPrice(parseFloat(data.pairs?.[0]?.priceUsd || "0")))
+      .catch(() => {});
+  }, []);
+
+  const isInsufficient = (() => {
+    if (!address) return false;
+    switch (paymentMethod) {
+      case "cv": return cvBalance !== null && cvBalance < PFP_CV_COST;
+      case "clawd": return clawdBalance !== undefined && clawdBalance < priceWei;
+      case "usdc": return usdcBalance !== undefined && usdcBalance < usdcAmount;
+      case "eth": return false; // checked at tx time
+      default: return false;
+    }
+  })();
+
+  const handleGenerate = async () => {
+    if (!address || !publicClient || !prompt.trim()) return;
     setError(null);
     setGeneratedImage(null);
-    setBurnInfo(null);
+    setPaymentInfo(null);
 
     try {
-      setStep("burning");
-      const txHash = await writeContractAsync({
-        address: CLAWD_ADDRESS,
-        abi: ERC20_ABI,
-        functionName: "transfer",
-        args: [DEAD_ADDRESS, priceWei],
-      });
-      if (!txHash) throw new Error("Transaction failed");
-      await publicClient.waitForTransactionReceipt({ hash: txHash });
-      setBurnInfo({ clawdAmount: clawdNeeded, txHash });
+      let txHash: string | undefined;
+      let signature: string | undefined;
 
+      if (paymentMethod === "cv") {
+        if (!walletClient) throw new Error("Wallet not connected");
+        setStep("signing");
+        signature = await walletClient.signMessage({ message: CV_SIGN_MESSAGE });
+      } else if (paymentMethod === "clawd") {
+        if (priceWei === BigInt(0)) throw new Error("Price not loaded");
+        setStep("paying");
+        const hash = await writeContractAsync({
+          address: CLAWD_ADDRESS,
+          abi: ERC20_ABI,
+          functionName: "transfer",
+          args: [DEAD_ADDRESS, priceWei],
+        });
+        if (!hash) throw new Error("Transaction failed");
+        await publicClient.waitForTransactionReceipt({ hash });
+        txHash = hash;
+      } else if (paymentMethod === "usdc") {
+        setStep("paying");
+        const hash = await writeContractAsync({
+          address: USDC_ADDRESS,
+          abi: ERC20_ABI,
+          functionName: "transfer",
+          args: [PAY_TO, usdcAmount],
+        });
+        if (!hash) throw new Error("Transaction failed");
+        await publicClient.waitForTransactionReceipt({ hash });
+        txHash = hash;
+      } else if (paymentMethod === "eth") {
+        if (!ethPrice || ethNeeded <= 0) throw new Error("ETH price not loaded");
+        setStep("paying");
+        const ethWei = parseEther((ethNeeded * 1.05).toFixed(18)); // 5% buffer
+        const hash = await sendTransactionAsync({
+          to: PAY_TO,
+          value: ethWei,
+        });
+        if (!hash) throw new Error("Transaction failed");
+        await publicClient.waitForTransactionReceipt({ hash });
+        txHash = hash;
+      }
+
+      // Call the unified generate endpoint
       setStep("generating");
-      const res = await fetch("/api/pfp/generate", {
+      const res = await fetch("/api/pfp/generate-cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), txHash, address }),
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          method: paymentMethod,
+          wallet: address,
+          signature,
+          txHash,
+        }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed");
 
       setGeneratedImage(data.image);
+      setPaymentInfo(data.payment);
       setStep("done");
-    } catch (e: any) {
-      setError(e?.shortMessage || e?.message || "Something went wrong");
-      setStep("error");
-    }
-  };
 
-  // ClawdViction flow
-  const handleCvGenerate = async () => {
-    if (!address || !walletClient || !prompt.trim()) return;
-    setError(null);
-    setGeneratedImage(null);
-    setCvInfo(null);
-
-    try {
-      // Sign the static message
-      setStep("signing");
-      const signature = await walletClient.signMessage({ message: CV_SIGN_MESSAGE });
-
-      // Spend CV + generate
-      setStep("spending");
-      const res = await fetch("/api/pfp/generate-cv", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), wallet: address, signature }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 402) {
-          throw new Error(`Not enough ClawdViction. You have ${(data.currentBalance || 0).toLocaleString()} CV, need ${PFP_CV_COST.toLocaleString()}.`);
-        }
-        throw new Error(data.error || "Generation failed");
+      // Refresh CV balance
+      if (paymentMethod === "cv") {
+        setCvBalance(data.payment?.newBalance ?? (cvBalance ? cvBalance - PFP_CV_COST : null));
       }
-
-      // Update local CV balance
-      setCvInfo({ cvSpent: data.cvSpent, newBalance: data.newBalance });
-      setCvBalance(data.newBalance);
-      setGeneratedImage(data.image);
-      setStep("done");
     } catch (e: any) {
       setError(e?.shortMessage || e?.message || "Something went wrong");
       setStep("error");
-    }
-  };
-
-  const handleGenerate = () => {
-    if (paymentMethod === "cv") {
-      handleCvGenerate();
-    } else {
-      handleBurnGenerate();
     }
   };
 
@@ -192,104 +220,92 @@ export default function PfpPage() {
     setStep("idle");
     setError(null);
     setGeneratedImage(null);
-    setBurnInfo(null);
-    setCvInfo(null);
+    setPaymentInfo(null);
     setPrompt("");
   };
 
-  const randomPrompt = () => {
-    const p = EXAMPLE_PROMPTS[Math.floor(Math.random() * EXAMPLE_PROMPTS.length)];
-    setPrompt(p);
+  const randomPrompt = () => setPrompt(EXAMPLE_PROMPTS[Math.floor(Math.random() * EXAMPLE_PROMPTS.length)]);
+  const busy = step === "signing" || step === "paying" || step === "generating";
+
+  const priceDisplay = () => {
+    switch (paymentMethod) {
+      case "cv": return `${PFP_CV_COST.toLocaleString()} CV`;
+      case "clawd": return clawdNeeded > 0 ? `${clawdNeeded.toLocaleString()} CLAWD` : "...";
+      case "usdc": return `$${PFP_PRICE_USD.toFixed(2)} USDC`;
+      case "eth": return ethNeeded > 0 ? `~${ethNeeded.toFixed(6)} ETH` : "...";
+    }
   };
 
-  const busy = step === "burning" || step === "generating" || step === "signing" || step === "spending";
-  const isInsufficient = paymentMethod === "burn" ? insufficientClawd : insufficientCv;
+  const balanceDisplay = () => {
+    switch (paymentMethod) {
+      case "cv": return cvLoading ? "Loading..." : cvBalance !== null ? `${cvBalance.toLocaleString()} CV` : "—";
+      case "clawd": return clawdBalance !== undefined ? `${Number(clawdBalance / BigInt(10) ** BigInt(18)).toLocaleString()} CLAWD` : "—";
+      case "usdc": return usdcBalance !== undefined ? `$${(Number(usdcBalance) / 1e6).toFixed(2)} USDC` : "—";
+      case "eth": return "Check wallet";
+    }
+  };
 
   return (
     <div className="flex flex-col items-center py-10 px-4 min-h-screen">
       <div className="w-full max-w-lg">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-3">🎨</div>
           <h1 className="text-3xl font-bold">CLAWD PFP Generator</h1>
           <p className="text-base opacity-60 mt-2">Custom profile pictures of the CLAWD mascot</p>
         </div>
 
-        {/* Preview / Result */}
+        {/* Preview */}
         <div className="flex justify-center mb-6">
           <div className="relative w-64 h-64 rounded-2xl overflow-hidden border-2 border-base-300 bg-base-200">
             {generatedImage ? (
               <Image src={generatedImage} alt="Generated CLAWD PFP" fill className="object-cover" />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                <Image
-                  src="/clawd-base.jpg"
-                  alt="CLAWD base"
-                  width={180}
-                  height={180}
-                  className="rounded-xl opacity-40"
-                />
+                <Image src="/clawd-base.jpg" alt="CLAWD base" width={180} height={180} className="rounded-xl opacity-40" />
                 <p className="text-xs opacity-40 mt-2">Your custom PFP will appear here</p>
               </div>
             )}
-            {(step === "generating" || step === "spending") && (
+            {step === "generating" && (
               <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                 <span className="loading loading-spinner loading-lg text-primary"></span>
-                <p className="text-white text-sm mt-3">
-                  {step === "spending" ? "Spending CV & generating..." : "Generating your PFP..."}
-                </p>
+                <p className="text-white text-sm mt-3">Generating your PFP...</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Done state */}
+        {/* Done */}
         {step === "done" && generatedImage && (
           <div className="mb-6 space-y-3">
             <div className="flex gap-2">
-              <button className="btn btn-primary flex-1" onClick={handleDownload}>
-                💾 Download PFP
-              </button>
-              <button className="btn btn-outline flex-1" onClick={handleReset}>
-                🎨 Make Another
-              </button>
+              <button className="btn btn-primary flex-1" onClick={handleDownload}>💾 Download PFP</button>
+              <button className="btn btn-outline flex-1" onClick={handleReset}>🎨 Make Another</button>
             </div>
-            {burnInfo && (
+            {paymentInfo && (
               <div className="text-center text-sm opacity-50">
-                Burned {burnInfo.clawdAmount.toLocaleString()} CLAWD 🔥{" "}
-                <a
-                  href={`https://basescan.org/tx/${burnInfo.txHash}`}
-                  target="_blank"
-                  rel="noopener"
-                  className="underline"
-                >
-                  View tx →
-                </a>
-              </div>
-            )}
-            {cvInfo && (
-              <div className="text-center text-sm opacity-50">
-                Spent {cvInfo.cvSpent.toLocaleString()} ClawdViction ⚡ — {cvInfo.newBalance.toLocaleString()} CV
-                remaining
+                {paymentInfo.cvSpent && `Spent ${paymentInfo.cvSpent.toLocaleString()} CV ⚡`}
+                {paymentInfo.burnAmount && `Burned CLAWD 🔥`}
+                {paymentInfo.usdcAmount && `Paid USDC 💵`}
+                {paymentInfo.ethAmount && `Paid ETH ⟠`}
+                {paymentInfo.txHash && (
+                  <>{" "}<a href={`https://basescan.org/tx/${paymentInfo.txHash}`} target="_blank" rel="noopener" className="underline">View tx →</a></>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* Input form */}
+        {/* Form */}
         {step !== "done" && (
           <>
-            {/* Prompt input */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">
                 Describe your CLAWD{" "}
-                <button className="text-primary text-xs ml-2 opacity-70 hover:opacity-100" onClick={randomPrompt}>
-                  🎲 random
-                </button>
+                <button className="text-primary text-xs ml-2 opacity-70 hover:opacity-100" onClick={randomPrompt}>🎲 random</button>
               </label>
               <textarea
                 className="textarea textarea-bordered w-full h-20 text-sm"
-                placeholder='e.g. "wearing a cowboy hat and boots" or "as a pirate captain"'
+                placeholder='e.g. "wearing a cowboy hat and boots"'
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
                 disabled={busy}
@@ -297,152 +313,78 @@ export default function PfpPage() {
               />
             </div>
 
-            {/* Payment method toggle */}
+            {/* Payment method */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Payment method</label>
-              <div className="flex gap-2">
-                <button
-                  className={`btn btn-sm flex-1 ${paymentMethod === "cv" ? "btn-primary" : "btn-outline"}`}
-                  onClick={() => setPaymentMethod("cv")}
-                  disabled={busy}
-                >
-                  ⚡ ClawdViction
-                </button>
-                <button
-                  className={`btn btn-sm flex-1 ${paymentMethod === "burn" ? "btn-primary" : "btn-outline"}`}
-                  onClick={() => setPaymentMethod("burn")}
-                  disabled={busy}
-                >
-                  🔥 Burn CLAWD
-                </button>
+              <label className="block text-sm font-medium mb-2">Pay with</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {(["cv", "clawd", "usdc", "eth"] as PaymentMethod[]).map(m => (
+                  <button
+                    key={m}
+                    className={`btn btn-sm ${paymentMethod === m ? "btn-primary" : "btn-outline"}`}
+                    onClick={() => setPaymentMethod(m)}
+                    disabled={busy}
+                  >
+                    {PAYMENT_LABELS[m].icon} {PAYMENT_LABELS[m].label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Price display */}
+            {/* Price + balance */}
             <div className="flex items-center justify-between bg-base-300 rounded-xl px-5 py-4 mb-6">
-              {paymentMethod === "burn" ? (
-                <>
-                  <div>
-                    <p className="text-sm opacity-60">Cost</p>
-                    <p className="text-2xl font-mono font-bold">${PFP_PRICE_USD.toFixed(2)}</p>
-                    {clawdNeeded > 0 && (
-                      <p className="text-sm opacity-50">~{clawdNeeded.toLocaleString()} CLAWD burned</p>
-                    )}
-                  </div>
-                  <div className="text-right text-sm opacity-60">
-                    <p>🔥 Deflationary</p>
-                    <p>CLAWD → 0xdead</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <p className="text-sm opacity-60">Cost</p>
-                    <p className="text-2xl font-mono font-bold">{PFP_CV_COST.toLocaleString()} CV</p>
-                    <p className="text-sm opacity-50">
-                      {cvLoading
-                        ? "Loading balance..."
-                        : cvBalance !== null
-                          ? `You have ${cvBalance.toLocaleString()} CV`
-                          : "Connect wallet to check"}
-                    </p>
-                  </div>
-                  <div className="text-right text-sm opacity-60">
-                    <p>⚡ ClawdViction</p>
-                    <p>Earned by staking</p>
-                  </div>
-                </>
-              )}
+              <div>
+                <p className="text-sm opacity-60">Cost</p>
+                <p className="text-2xl font-mono font-bold">{priceDisplay()}</p>
+                <p className="text-sm opacity-50">Balance: {balanceDisplay()}</p>
+              </div>
+              <div className="text-right text-sm opacity-60">
+                <p>{PAYMENT_LABELS[paymentMethod].icon} {PAYMENT_LABELS[paymentMethod].desc}</p>
+                <p className="text-xs">${PFP_PRICE_USD.toFixed(2)}</p>
+              </div>
             </div>
 
             {/* Warnings */}
-            {!address && (
-              <div className="alert alert-warning mb-4">
-                <span>Connect your wallet to start</span>
-              </div>
-            )}
-            {isWrongNetwork && (
-              <div className="alert alert-error mb-4">
-                <span>Switch to Base network</span>
-              </div>
-            )}
-            {paymentMethod === "burn" && insufficientClawd && (
+            {!address && <div className="alert alert-warning mb-4"><span>Connect your wallet to start</span></div>}
+            {isWrongNetwork && <div className="alert alert-error mb-4"><span>Switch to Base network</span></div>}
+            {isInsufficient && (
               <div className="alert alert-error mb-4">
                 <span>
-                  Not enough CLAWD.{" "}
-                  <a
-                    href="https://app.uniswap.org/swap?outputCurrency=0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07&chain=base"
-                    target="_blank"
-                    rel="noopener"
-                    className="underline"
-                  >
-                    Get CLAWD →
-                  </a>
-                </span>
-              </div>
-            )}
-            {paymentMethod === "cv" && insufficientCv && (
-              <div className="alert alert-error mb-4">
-                <span>
-                  Not enough ClawdViction. You have {(cvBalance || 0).toLocaleString()} CV, need{" "}
-                  {PFP_CV_COST.toLocaleString()}.{" "}
-                  <a href="https://clawdviction.vercel.app/stake" target="_blank" rel="noopener" className="underline">
-                    Stake CLAWD →
-                  </a>
+                  Insufficient {PAYMENT_LABELS[paymentMethod].label} balance.{" "}
+                  {paymentMethod === "cv" && <a href="https://clawdviction.vercel.app/stake" target="_blank" rel="noopener" className="underline">Stake CLAWD →</a>}
+                  {paymentMethod === "clawd" && <a href="https://app.uniswap.org/swap?outputCurrency=0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07&chain=base" target="_blank" rel="noopener" className="underline">Get CLAWD →</a>}
                 </span>
               </div>
             )}
 
-            {/* Generate button */}
             <button
               className="btn btn-primary btn-lg w-full text-base"
               onClick={handleGenerate}
-              disabled={!address || isWrongNetwork || isInsufficient || busy || !prompt.trim() || (paymentMethod === "burn" && priceWei === BigInt(0))}
+              disabled={!address || isWrongNetwork || isInsufficient || busy || !prompt.trim()}
             >
               {busy && <span className="loading loading-spinner loading-sm mr-2" />}
-              {step === "signing"
-                ? "Sign message in wallet..."
-                : step === "burning"
-                  ? "Burning CLAWD..."
-                  : step === "spending"
-                    ? "Generating PFP..."
-                    : step === "generating"
-                      ? "Generating PFP..."
-                      : paymentMethod === "cv"
-                        ? `⚡ Spend ${PFP_CV_COST.toLocaleString()} CV & Generate`
-                        : `🔥 Burn ${clawdNeeded > 0 ? clawdNeeded.toLocaleString() + " CLAWD" : "..."} & Generate`}
+              {step === "signing" ? "Sign message in wallet..."
+                : step === "paying" ? "Confirm payment in wallet..."
+                : step === "generating" ? "Generating PFP..."
+                : `${PAYMENT_LABELS[paymentMethod].icon} Pay ${priceDisplay()} & Generate`}
             </button>
 
             {busy && (
               <div className="mt-4 text-center text-sm opacity-60">
                 {step === "signing" && "Sign the message to prove wallet ownership"}
-                {step === "burning" && "Step 1/2 — Confirm the burn in your wallet"}
-                {step === "spending" && "Spending CV and generating your PFP (~30s)"}
-                {step === "generating" && "Step 2/2 — AI is creating your PFP (~30s)"}
+                {step === "paying" && "Confirm the transaction in your wallet"}
+                {step === "generating" && "AI is creating your PFP (~30s)"}
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <div className="alert alert-error mt-4">
                 <div className="flex flex-col gap-1">
                   <span>{error}</span>
-                  {step === "error" && burnInfo && (
-                    <span className="text-xs opacity-70">
-                      Your CLAWD was burned but generation failed. Contact @leftclaw for help.
-                      <br />
-                      TX: {burnInfo.txHash.slice(0, 10)}...
-                    </span>
-                  )}
                 </div>
               </div>
             )}
 
             <p className="text-center text-xs opacity-40 mt-6">
-              {paymentMethod === "burn"
-                ? "CLAWD is burned (sent to 0xdead) — deflationary and non-refundable."
-                : "ClawdViction is earned by staking CLAWD. No tokens are burned."}
-              <br />
               Images generated by AI (gpt-image-1.5) based on the CLAWD mascot.
             </p>
           </>
