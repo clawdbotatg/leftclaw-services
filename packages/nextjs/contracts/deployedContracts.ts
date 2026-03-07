@@ -3,7 +3,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   8453: {
     LeftClawServices: {
-      address: "0x85249b1493D6a994e991F631B9c5a81621a78257",
+      address: "0x5CEa089366cc1de99762Bd22c72b63fa29Cd7df4",
       abi: [
         {
                 "type": "constructor",
@@ -623,6 +623,47 @@ const deployedContracts = {
                 ],
                 "outputs": [],
                 "stateMutability": "nonpayable"
+        },
+        {
+                "type": "function",
+                "name": "postJobCustomCV",
+                "inputs": [
+                        {
+                                "name": "cvAmount",
+                                "type": "uint256",
+                                "internalType": "uint256"
+                        },
+                        {
+                                "name": "customPriceUsd",
+                                "type": "uint256",
+                                "internalType": "uint256"
+                        },
+                        {
+                                "name": "descriptionCID",
+                                "type": "string",
+                                "internalType": "string"
+                        }
+                ],
+                "outputs": [],
+                "stateMutability": "nonpayable"
+        },
+        {
+                "type": "function",
+                "name": "postJobCustomETH",
+                "inputs": [
+                        {
+                                "name": "customPriceUsd",
+                                "type": "uint256",
+                                "internalType": "uint256"
+                        },
+                        {
+                                "name": "descriptionCID",
+                                "type": "string",
+                                "internalType": "string"
+                        }
+                ],
+                "outputs": [],
+                "stateMutability": "payable"
         },
         {
                 "type": "function",
@@ -1395,6 +1436,6 @@ const deployedContracts = {
 ],
     },
   },
-} as const satisfies GenericContractsDeclaration;
+} as const;
 
-export default deployedContracts;
+export default deployedContracts satisfies GenericContractsDeclaration;

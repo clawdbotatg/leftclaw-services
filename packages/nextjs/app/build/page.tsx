@@ -67,10 +67,7 @@ function BuildPage() {
   const ethNeeded = ethPrice && totalUsd ? totalUsd / ethPrice : 0;
   const cvCost = CV_PER_DAY * days;
 
-  // For multi-day CLAWD/USDC we use postJobCustom/postJobCustomUsdc
-  // For 1-day or ETH/CV we use standard postJob/postJobWithETH/postJobWithCV
   const isMultiDay = days > 1;
-  const isCustomJob = isMultiDay && (paymentMethod === "clawd" || paymentMethod === "usdc");
 
   const { data: nextJobId } = useScaffoldReadContract({
     contractName: "LeftClawServices",
@@ -130,12 +127,6 @@ function BuildPage() {
       default: return false;
     }
   })();
-
-  // ETH/CV can only do 1 day (no custom contract function)
-  const methodLimitedTo1Day = paymentMethod === "eth" || paymentMethod === "cv";
-  useEffect(() => {
-    if (methodLimitedTo1Day && days > 1) setDays(1);
-  }, [methodLimitedTo1Day, days]);
 
   // Mobile wallet deep-link
   const openWallet = useCallback(() => {
@@ -199,10 +190,20 @@ function BuildPage() {
 
         postedJobIdRef.current = nextJobId ? Number(nextJobId) : null;
         setStep("posting");
-        const txHash = await writeAndOpen(() => writeContractAsync({
-          address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithCV", args: [BUILD_DAILY_TYPE, BigInt(cvCost), jobDesc],
-        }));
+
+        let txHash;
+        if (isMultiDay) {
+          const customPriceUsd = parseUnits(totalUsd.toString(), 6);
+          txHash = await writeAndOpen(() => writeContractAsync({
+            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
+            functionName: "postJobCustomCV", args: [BigInt(cvCost), customPriceUsd, jobDesc],
+          }));
+        } else {
+          txHash = await writeAndOpen(() => writeContractAsync({
+            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
+            functionName: "postJobWithCV", args: [BUILD_DAILY_TYPE, BigInt(cvCost), jobDesc],
+          }));
+        }
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
         if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
         setStep("done");
@@ -282,16 +283,27 @@ function BuildPage() {
         setStep("done");
 
       } else if (paymentMethod === "eth") {
-        // ETH: single day only
+        // ETH: wraps to WETH, swaps to CLAWD on-chain
         if (!ethPrice || ethNeeded <= 0) throw new Error("ETH price not loaded");
         postedJobIdRef.current = nextJobId ? Number(nextJobId) : null;
         setStep("paying");
         const ethWei = parseEther((ethNeeded * 1.05).toFixed(18)); // 5% buffer for price movement
-        const txHash = await writeAndOpen(() => writeContractAsync({
-          address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithETH", args: [BUILD_DAILY_TYPE, jobDesc],
-          value: ethWei,
-        }));
+
+        let txHash;
+        if (isMultiDay) {
+          const customPriceUsd = parseUnits(totalUsd.toString(), 6);
+          txHash = await writeAndOpen(() => writeContractAsync({
+            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
+            functionName: "postJobCustomETH", args: [customPriceUsd, jobDesc],
+            value: ethWei,
+          }));
+        } else {
+          txHash = await writeAndOpen(() => writeContractAsync({
+            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
+            functionName: "postJobWithETH", args: [BUILD_DAILY_TYPE, jobDesc],
+            value: ethWei,
+          }));
+        }
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
         if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
         setStep("done");
@@ -392,16 +404,14 @@ function BuildPage() {
                 key={d}
                 className={`flex-1 btn ${days === d ? "btn-primary" : "btn-outline"}`}
                 onClick={() => setDays(d)}
-                disabled={busy || (methodLimitedTo1Day && d > 1)}
+                disabled={busy}
               >
                 {d}
               </button>
             ))}
           </div>
           <p className="text-xs opacity-40 mt-2 text-center">
-            {methodLimitedTo1Day
-              ? "Multi-day available with CLAWD or USDC"
-              : "Start with 1 day — you can always add more later"}
+            Start with 1 day — you can always add more later
           </p>
         </div>
 

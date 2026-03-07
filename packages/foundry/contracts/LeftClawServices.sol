@@ -18,6 +18,12 @@ interface ISwapRouter {
     function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
 }
 
+/// @notice WETH interface for wrapping ETH
+interface IWETH {
+    function deposit() external payable;
+    function approve(address spender, uint256 amount) external returns (bool);
+}
+
 /// @title LeftClawServices
 /// @notice Hire clawdbots — pay in CLAWD or USDC, prices in USD.
 /// @dev Prices stored in USDC (6 decimals). CLAWD payments are calculated by the frontend at current market rate.
@@ -241,7 +247,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         _createJob(msg.sender, ServiceType.CUSTOM, clawdReceived, usdcAmount, descriptionCID, PaymentMethod.USDC, 0);
     }
 
-    /// @notice Post a job paying with ETH — sent as msg.value
+    /// @notice Post a job paying with ETH — wraps to WETH, swaps to CLAWD, locks CLAWD
     function postJobWithETH(ServiceType serviceType, string calldata descriptionCID) external payable nonReentrant {
         require(serviceType != ServiceType.CUSTOM, "Use postJobCustomETH for CUSTOM");
         require(bytes(descriptionCID).length > 0, "Description required");
@@ -249,7 +255,18 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         uint256 priceUsd = servicePriceUsd[serviceType];
         require(priceUsd > 0, "Service not available");
 
-        _createJob(msg.sender, serviceType, 0, priceUsd, descriptionCID, PaymentMethod.ETH, 0);
+        uint256 clawdReceived = _swapETHToClawd(msg.value);
+        _createJob(msg.sender, serviceType, clawdReceived, priceUsd, descriptionCID, PaymentMethod.ETH, 0);
+    }
+
+    /// @notice Post a CUSTOM job paying with ETH — wraps to WETH, swaps to CLAWD, locks CLAWD
+    function postJobCustomETH(uint256 customPriceUsd, string calldata descriptionCID) external payable nonReentrant {
+        require(msg.value > 0, "Must send ETH");
+        require(bytes(descriptionCID).length > 0, "Description required");
+        require(customPriceUsd > 0, "Price required");
+
+        uint256 clawdReceived = _swapETHToClawd(msg.value);
+        _createJob(msg.sender, ServiceType.CUSTOM, clawdReceived, customPriceUsd, descriptionCID, PaymentMethod.ETH, 0);
     }
 
     /// @notice Post a job paying with ClawdViction (CV) — just gas, cvAmount is informational
@@ -261,6 +278,15 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         require(priceUsd > 0, "Service not available");
 
         _createJob(msg.sender, serviceType, 0, priceUsd, descriptionCID, PaymentMethod.CV, cvAmount);
+    }
+
+    /// @notice Post a CUSTOM job paying with CV — cvAmount is informational
+    function postJobCustomCV(uint256 cvAmount, uint256 customPriceUsd, string calldata descriptionCID) external nonReentrant {
+        require(cvAmount > 0, "CV amount required");
+        require(bytes(descriptionCID).length > 0, "Description required");
+        require(customPriceUsd > 0, "Price required");
+
+        _createJob(msg.sender, ServiceType.CUSTOM, 0, customPriceUsd, descriptionCID, PaymentMethod.CV, cvAmount);
     }
 
     // ─── Job Lifecycle ────────────────────────────────────────────────────────
@@ -531,6 +557,24 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     }
 
     // ─── Internal ─────────────────────────────────────────────────────────────
+
+    /// @dev Wraps ETH to WETH, swaps WETH → CLAWD via Uniswap
+    function _swapETHToClawd(uint256 ethAmount) internal returns (uint256 clawdReceived) {
+        // Wrap ETH → WETH
+        IWETH(weth).deposit{value: ethAmount}();
+        IWETH(weth).approve(address(uniswapRouter), ethAmount);
+
+        // Swap WETH → CLAWD (single hop, 1% pool)
+        bytes memory ethSwapPath = abi.encodePacked(weth, uint24(10000), address(clawdToken));
+        clawdReceived = uniswapRouter.exactInput(
+            ISwapRouter.ExactInputParams({
+                path: ethSwapPath,
+                recipient: address(this),
+                amountIn: ethAmount,
+                amountOutMinimum: 1 // caller sends buffer via msg.value
+            })
+        );
+    }
 
     function _createJob(
         address client,
