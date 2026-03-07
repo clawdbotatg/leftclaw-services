@@ -31,13 +31,13 @@ function getClient() {
   return createPublicClient({ chain: base, transport: http(getRpcUrl()) });
 }
 
-// CV pricing: ~1M CV ≈ $1
+// CV pricing — cheap for now to encourage usage
 export const CV_PRICES: Record<string, number> = {
-  PFP_GENERATE: 50_000, // $0.50
-  CONSULT_QUICK: 20_000_000, // $20
-  CONSULT_DEEP: 30_000_000, // $30
-  QA_REPORT: 50_000_000, // $50
-  AUDIT_QUICK: 200_000_000, // $200
+  PFP_GENERATE: 50_000,
+  CONSULT_QUICK: 200_000,
+  CONSULT_DEEP: 300_000,
+  QA_REPORT: 500_000,
+  AUDIT_QUICK: 2_000_000,
 };
 
 // USD prices (for USDC/ETH verification)

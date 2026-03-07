@@ -43,7 +43,7 @@ const ERC20_ABI = [
 
 type PaymentMethod = "cv" | "contract" | "usdc" | "eth";
 
-const CV_PRICES: Record<number, number> = { 0: 20_000_000, 1: 30_000_000 };
+const CV_PRICES: Record<number, number> = { 0: 200_000, 1: 300_000 };
 const SERVICE_KEYS: Record<number, string> = { 0: "CONSULT_QUICK", 1: "CONSULT_DEEP" };
 
 const CONSULT_INFO = {
@@ -322,6 +322,15 @@ function ConsultPage() {
     }
   };
 
+  const balanceDisplay = () => {
+    switch (paymentMethod) {
+      case "cv": return cvBalance !== null ? `${cvBalance.toLocaleString()} CV` : "—";
+      case "contract": return clawdBalance !== undefined ? `${Number(clawdBalance / BigInt(10) ** BigInt(18)).toLocaleString()} CLAWD` : "—";
+      case "usdc": return usdcBalance !== undefined ? `$${(Number(usdcBalance) / 1e6).toFixed(2)} USDC` : "—";
+      case "eth": return "Check wallet";
+    }
+  };
+
   const buttonLabel = () => {
     if (step === "signing") return "Sign message in wallet...";
     if (step === "approving") return "Approving CLAWD...";
@@ -370,16 +379,16 @@ function ConsultPage() {
           </div>
         </div>
 
-        {/* Price */}
+        {/* Price & Balance */}
         <div className="flex items-center justify-between bg-base-300 rounded-xl px-5 py-4 mb-6">
           <div>
             <p className="text-sm opacity-60">Total cost</p>
-            <p className="text-2xl font-mono font-bold">{priceDisplay}</p>
-            <p className="text-sm opacity-50">{costDisplay()}</p>
+            <p className="text-2xl font-mono font-bold">{costDisplay()}</p>
+            <p className="text-sm opacity-50">Balance: {balanceDisplay()}</p>
           </div>
           <div className="text-right text-sm opacity-60">
             <p>{serviceType === 0 ? "Quick session" : "Deep session"}</p>
-            <p>on Base</p>
+            <p className="text-xs">{priceDisplay}</p>
           </div>
         </div>
 
