@@ -1,7 +1,7 @@
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { bazaarResourceServerExtension } from "@x402/extensions/bazaar";
-import { x402ResourceServer } from "@x402/next";
+import { x402ResourceServer } from "~~/lib/x402-next-adapter";
 
 // clawdbotatg.eth receives USDC payments on Base
 export const PAYMENT_ADDRESS = "0x11ce532845cE0eAcdA41f72FDc1C88c335981442";

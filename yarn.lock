@@ -205,7 +205,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@coinbase/cdp-sdk@npm:^1.0.0, @coinbase/cdp-sdk@npm:^1.22.0":
+"@coinbase/cdp-sdk@npm:^1.0.0":
   version: 1.44.1
   resolution: "@coinbase/cdp-sdk@npm:1.44.1"
   dependencies:
@@ -3181,7 +3181,6 @@ __metadata:
     "@x402/core": ^2.5.0
     "@x402/evm": ^2.5.0
     "@x402/extensions": ^2.5.0
-    "@x402/next": ^2.5.0
     abitype: 1.0.6
     autoprefixer: ~10.4.20
     bgipfs: ~0.0.12
@@ -5714,24 +5713,6 @@ __metadata:
     viem: ^2.39.3
     zod: ^3.24.2
   checksum: a32a4126948e42354f7573ba4b2dac3c5bc65754224a4822a8d7de194823b9b94623f6ae809a452eb301e96bb7bcea37fbb51b2d701e9f0eb6d73fd0b46dbfa3
-  languageName: node
-  linkType: hard
-
-"@x402/next@npm:^2.5.0":
-  version: 2.5.0
-  resolution: "@x402/next@npm:2.5.0"
-  dependencies:
-    "@coinbase/cdp-sdk": ^1.22.0
-    "@x402/core": ~2.5.0
-    "@x402/extensions": ~2.5.0
-    zod: ^3.24.2
-  peerDependencies:
-    "@x402/paywall": 2.5.0
-    next: ^16.0.10
-  peerDependenciesMeta:
-    "@x402/paywall":
-      optional: true
-  checksum: b6ed6fcc2c3926df17717ca4c7ea3fa94b1826b9776918af24746341183fdacaa2ed58474c20e17e7a2f5cc9ad375d5689d268cd5e03ff7f86362f58789472c5
   languageName: node
   linkType: hard
 

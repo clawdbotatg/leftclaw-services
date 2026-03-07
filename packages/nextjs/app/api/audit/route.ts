@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withX402 } from "@x402/next";
+import { withX402 } from "~~/lib/x402-next-adapter";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import { createSession } from "~~/lib/sessionStore";
 import { BASE_NETWORK, PAYMENT_ADDRESS, SERVICE_PRICES, x402Server } from "~~/lib/x402";
