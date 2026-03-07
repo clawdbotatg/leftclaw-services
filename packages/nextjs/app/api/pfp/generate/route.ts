@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI, { toFile } from "openai";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
+import { getKV } from "~~/lib/kv";
 
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07";
 const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
-const RPC_URL = process.env.BASE_RPC_URL || "https://base-mainnet.g.alchemy.com/v2/8GVG8WjDs-sGFRr6Rm839";
 
 // Minimum CLAWD burn in wei (low floor — frontend calculates correct USD amount)
 const MIN_CLAWD_BURN = BigInt("1000") * BigInt(10) ** BigInt(18); // 1K CLAWD minimum
@@ -28,43 +28,83 @@ async function getBaseImage(): Promise<Buffer> {
   }
 }
 
-const client = createPublicClient({
-  chain: base,
-  transport: http(RPC_URL),
-});
+function getRpcUrl(): string {
+  const url = process.env.BASE_RPC_URL;
+  if (!url) throw new Error("BASE_RPC_URL not configured");
+  return url;
+}
 
-// Track used tx hashes to prevent replay
-const usedTxHashes = new Set<string>();
+// In-memory fallback for replay protection (used when KV unavailable)
+const usedTxHashesFallback = new Set<string>();
+
+// Check if tx hash has been used (KV-backed with in-memory fallback)
+async function isTxUsed(txHash: string): Promise<boolean> {
+  const key = `pfp-tx:${txHash}`;
+  const kv = getKV();
+  if (kv) {
+    const used = await kv.get(key);
+    return !!used;
+  }
+  return usedTxHashesFallback.has(txHash);
+}
+
+// Mark tx hash as used
+async function markTxUsed(txHash: string): Promise<void> {
+  const key = `pfp-tx:${txHash}`;
+  const kv = getKV();
+  if (kv) {
+    await kv.set(key, "1", { ex: 86400 * 365 }); // 1 year TTL
+  }
+  // Always add to in-memory set too (belt + suspenders)
+  usedTxHashesFallback.add(txHash);
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { prompt, txHash } = body;
+    const { prompt, txHash, address: requesterAddress } = body;
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length < 3) {
       return NextResponse.json({ error: "prompt required (minimum 3 characters)" }, { status: 400 });
     }
-    if (!txHash || typeof txHash !== "string" || !txHash.startsWith("0x")) {
-      return NextResponse.json({ error: "txHash required — burn CLAWD first" }, { status: 400 });
+    if (!txHash || typeof txHash !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+      return NextResponse.json({ error: "Valid txHash required (0x + 64 hex chars)" }, { status: 400 });
+    }
+    if (!requesterAddress || typeof requesterAddress !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(requesterAddress)) {
+      return NextResponse.json({ error: "address required — must match the burn tx sender" }, { status: 400 });
     }
 
-    // Prevent replay
-    if (usedTxHashes.has(txHash.toLowerCase())) {
+    const txHashLower = txHash.toLowerCase();
+
+    // Prevent replay (KV-backed, survives restarts)
+    if (await isTxUsed(txHashLower)) {
       return NextResponse.json({ error: "This transaction has already been used" }, { status: 400 });
     }
 
     // Verify the burn tx on-chain
-    const receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
+    const client = createPublicClient({
+      chain: base,
+      transport: http(getRpcUrl()),
+    });
+
+    const [receipt, tx] = await Promise.all([
+      client.getTransactionReceipt({ hash: txHash as `0x${string}` }),
+      client.getTransaction({ hash: txHash as `0x${string}` }),
+    ]);
 
     if (!receipt || receipt.status !== "success") {
       return NextResponse.json({ error: "Transaction failed or not found" }, { status: 400 });
+    }
+
+    // Verify sender matches requester (#20 fix)
+    if (tx.from.toLowerCase() !== requesterAddress.toLowerCase()) {
+      return NextResponse.json({ error: "Transaction sender does not match your address" }, { status: 403 });
     }
 
     // Check for ERC20 Transfer to dead address
     const burnLog = receipt.logs.find(log => {
       if (log.address.toLowerCase() !== CLAWD_ADDRESS.toLowerCase()) return false;
       if (log.topics.length < 3) return false;
-      // topics[2] is the 'to' address
       const toAddr = "0x" + log.topics[2]!.slice(26);
       return toAddr.toLowerCase() === DEAD_ADDRESS.toLowerCase();
     });
@@ -82,8 +122,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Mark tx as used
-    usedTxHashes.add(txHash.toLowerCase());
+    // Mark tx as used BEFORE generation (prevent race condition)
+    await markTxUsed(txHashLower);
 
     // Generate the PFP
     const apiKey = process.env.OPENAI_API_KEY;

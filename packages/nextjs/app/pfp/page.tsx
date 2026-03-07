@@ -98,7 +98,7 @@ export default function PfpPage() {
       const res = await fetch("/api/pfp/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), txHash }),
+        body: JSON.stringify({ prompt: prompt.trim(), txHash, address }),
       });
 
       const data = await res.json();
