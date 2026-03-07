@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatUnits, parseEther, parseUnits } from "viem";
-import { useAccount, usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
+import { useAccount, useBalance, usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
@@ -98,7 +98,28 @@ function BuildPage() {
     query: { enabled: !!address },
   });
 
+  const { data: ethBalanceData } = useBalance({ address, chainId: BASE_CHAIN_ID });
+  const ethBalance = ethBalanceData?.value;
+
   const needsApproval = paymentMethod === "clawd" && !!address && priceWei > BigInt(0) && (allowanceRaw === undefined || allowanceRaw < priceWei);
+
+  // Auto-select payment method with highest USD-equivalent balance
+  const hasAutoSelected = useRef(false);
+  useEffect(() => {
+    if (hasAutoSelected.current || !address || !ethPrice || !clawdPrice) return;
+    if (clawdBalance === undefined && usdcBalance === undefined && ethBalance === undefined && cvBalance === null) return;
+    hasAutoSelected.current = true;
+
+    const balancesUsd: { method: PaymentMethod; usd: number }[] = [
+      { method: "cv", usd: cvBalance !== null ? (cvBalance / cvCost) * totalUsd : 0 },
+      { method: "clawd", usd: clawdBalance !== undefined ? Number(clawdBalance / BigInt(10) ** BigInt(18)) * clawdPrice : 0 },
+      { method: "usdc", usd: usdcBalance !== undefined ? Number(usdcBalance) / 1e6 : 0 },
+      { method: "eth", usd: ethBalance !== undefined ? Number(ethBalance) / 1e18 * ethPrice : 0 },
+    ];
+
+    const best = balancesUsd.sort((a, b) => b.usd - a.usd)[0];
+    if (best && best.usd > 0) setPaymentMethod(best.method);
+  }, [address, ethPrice, clawdPrice, clawdBalance, usdcBalance, ethBalance, cvBalance, cvCost, totalUsd]);
 
   // Fetch CV balance
   useEffect(() => {

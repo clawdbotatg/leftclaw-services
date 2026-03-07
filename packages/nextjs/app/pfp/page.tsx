@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { parseEther, parseUnits } from "viem";
-import { useAccount, usePublicClient, useReadContract, useSignMessage, useWalletClient, useWriteContract, useSendTransaction } from "wagmi";
+import { useAccount, useBalance, usePublicClient, useReadContract, useSignMessage, useWalletClient, useWriteContract, useSendTransaction } from "wagmi";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
@@ -97,6 +97,27 @@ export default function PfpPage() {
     args: address ? [address] : undefined,
     query: { enabled: !!address },
   });
+
+  const { data: ethBalanceData } = useBalance({ address, chainId: 8453 });
+  const ethBalance = ethBalanceData?.value;
+
+  // Auto-select payment method with highest USD-equivalent balance
+  const hasAutoSelected = useRef(false);
+  useEffect(() => {
+    if (hasAutoSelected.current || !address || !ethPrice || !clawdPrice) return;
+    if (clawdBalance === undefined && usdcBalance === undefined && ethBalance === undefined && cvBalance === null) return;
+    hasAutoSelected.current = true;
+
+    const balancesUsd: { method: PaymentMethod; usd: number }[] = [
+      { method: "cv", usd: cvBalance !== null ? (cvBalance / PFP_CV_COST) * PFP_PRICE_USD : 0 },
+      { method: "clawd", usd: clawdBalance !== undefined ? Number(clawdBalance / BigInt(10) ** BigInt(18)) * clawdPrice : 0 },
+      { method: "usdc", usd: usdcBalance !== undefined ? Number(usdcBalance) / 1e6 : 0 },
+      { method: "eth", usd: ethBalance !== undefined ? Number(ethBalance) / 1e18 * ethPrice : 0 },
+    ];
+
+    const best = balancesUsd.sort((a, b) => b.usd - a.usd)[0];
+    if (best && best.usd > 0) setPaymentMethod(best.method);
+  }, [address, ethPrice, clawdPrice, clawdBalance, usdcBalance, ethBalance, cvBalance]);
 
   // Fetch CV balance
   useEffect(() => {
