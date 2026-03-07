@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { parseEther, parseUnits } from "viem";
-import { useAccount, usePublicClient, useReadContract, useWalletClient, useWriteContract, useSendTransaction } from "wagmi";
+import { useAccount, usePublicClient, useReadContract, useSignMessage, useWalletClient, useWriteContract, useSendTransaction } from "wagmi";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
@@ -61,6 +61,7 @@ export default function PfpPage() {
   const { address, chainId } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
+  const { signMessageAsync } = useSignMessage();
   const clawdPrice = useCLAWDPrice();
   const { writeContractAsync } = useWriteContract();
   const { sendTransactionAsync } = useSendTransaction();
@@ -138,9 +139,8 @@ export default function PfpPage() {
       let signature: string | undefined;
 
       if (paymentMethod === "cv") {
-        if (!walletClient) throw new Error("Wallet not connected");
         setStep("signing");
-        signature = await walletClient.signMessage({ message: CV_SIGN_MESSAGE });
+        signature = await signMessageAsync({ message: CV_SIGN_MESSAGE });
       } else if (paymentMethod === "clawd") {
         if (priceWei === BigInt(0)) throw new Error("Price not loaded");
         setStep("paying");
