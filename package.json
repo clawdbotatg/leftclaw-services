@@ -55,7 +55,7 @@
   },
   "packageManager": "yarn@3.2.3",
   "engines": {
-    "node": ">=20.18.3 <24"
+    "node": "22.x"
   },
   "dependencies": {
     "@x402/fetch": "^2.6.0"
