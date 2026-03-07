@@ -139,8 +139,16 @@ export default function PfpPage() {
       let signature: string | undefined;
 
       if (paymentMethod === "cv") {
-        setStep("signing");
-        signature = await signMessageAsync({ message: CV_SIGN_MESSAGE });
+        // Cache CV signature per wallet in localStorage
+        const sigKey = `cv-sig-${address.toLowerCase()}`;
+        const cached = localStorage.getItem(sigKey);
+        if (cached) {
+          signature = cached;
+        } else {
+          setStep("signing");
+          signature = await signMessageAsync({ message: CV_SIGN_MESSAGE });
+          localStorage.setItem(sigKey, signature);
+        }
       } else if (paymentMethod === "clawd") {
         if (priceWei === BigInt(0)) throw new Error("Price not loaded");
         setStep("paying");
