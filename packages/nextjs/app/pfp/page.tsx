@@ -12,7 +12,7 @@ const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD" as const;
 const PAY_TO = "0x11ce532845cE0eAcdA41f72FDc1C88c335981442" as const;
 const BASE_CHAIN_ID = 8453;
 const PFP_PRICE_USD = 0.5;
-const PFP_CV_COST = 500_000;
+const PFP_CV_COST = 50_000;
 const CV_SIGN_MESSAGE = "ClawdViction CV Spend";
 
 const ERC20_ABI = [
@@ -101,7 +101,7 @@ export default function PfpPage() {
   useEffect(() => {
     if (!address) { setCvBalance(null); return; }
     setCvLoading(true);
-    fetch(`https://clawdviction.vercel.app/api/clawdviction/${address}`)
+    fetch(`/api/cv-balance/${address}`)
       .then(r => r.json())
       .then(data => setCvBalance(Number(data.clawdviction) || 0))
       .catch(() => setCvBalance(null))

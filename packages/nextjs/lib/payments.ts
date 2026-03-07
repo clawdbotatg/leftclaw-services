@@ -33,7 +33,7 @@ function getClient() {
 
 // CV pricing: ~1M CV ≈ $1
 export const CV_PRICES: Record<string, number> = {
-  PFP_GENERATE: 500_000, // $0.50
+  PFP_GENERATE: 50_000, // $0.50
   CONSULT_QUICK: 20_000_000, // $20
   CONSULT_DEEP: 30_000_000, // $30
   QA_REPORT: 50_000_000, // $50

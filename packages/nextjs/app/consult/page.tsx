@@ -155,7 +155,7 @@ function ConsultPage() {
   useEffect(() => {
     if (!address) { setCvBalance(null); return; }
     
-    fetch(`https://clawdviction.vercel.app/api/clawdviction/${address}`)
+    fetch(`/api/cv-balance/${address}`)
       .then(r => r.json())
       .then(data => setCvBalance(Number(data.clawdviction) || 0))
       .catch(() => setCvBalance(null))
