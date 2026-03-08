@@ -228,7 +228,8 @@ export default function X402ChatClient() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col justify-end">
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col">
+       <div className="flex-1" />
        <div className="space-y-2">
         {messages.length === 0 && !isStreaming && (
           <div className="text-center py-10 opacity-60">
