@@ -235,7 +235,8 @@ export default function ChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col justify-end">
+       <div className="space-y-2">
         {messages.length === 0 && !isStreaming && (
           <div className="text-center py-10 opacity-60">
             <p className="text-4xl mb-2">🦞</p>
@@ -262,6 +263,7 @@ export default function ChatPage() {
           </div>
         )}
         <div ref={bottomRef} />
+       </div>
       </div>
 
       {/* Input */}
