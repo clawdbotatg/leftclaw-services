@@ -221,14 +221,24 @@ export async function POST(req: NextRequest) {
         : messages.map((m: { role: string; content: string }) => ({
             role: m.role,
             content: m.content,
-          })),
+          })).reduce((acc: { role: string; content: string }[], msg) => {
+            // Merge consecutive same-role messages (Anthropic requires alternating roles)
+            if (acc.length > 0 && acc[acc.length - 1].role === msg.role) {
+              acc[acc.length - 1].content += "\n\n" + msg.content;
+            } else {
+              acc.push({ ...msg });
+            }
+            return acc;
+          }, []),
     }),
   });
 
   if (!anthropicRes.ok) {
     const err = await anthropicRes.text();
-    console.error("Anthropic error:", err);
-    return new Response(JSON.stringify({ error: "Anthropic API error" }), { status: 500 });
+    console.error("Anthropic error:", anthropicRes.status, err);
+    let detail = "Anthropic API error";
+    try { detail = JSON.parse(err)?.error?.message || detail; } catch {}
+    return new Response(JSON.stringify({ error: detail }), { status: 500 });
   }
 
   const reader = anthropicRes.body?.getReader();
