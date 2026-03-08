@@ -7,5 +7,9 @@ export function generateStaticParams() {
 }
 
 export default function ChatPage() {
-  return <ChatClient />;
+  return (
+    <div className="fixed inset-0 top-[64px] z-10 bg-base-100">
+      <ChatClient />
+    </div>
+  );
 }

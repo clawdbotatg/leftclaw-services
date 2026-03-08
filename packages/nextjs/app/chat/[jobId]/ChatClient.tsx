@@ -220,7 +220,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] max-w-3xl mx-auto overflow-x-hidden">
+    <div className="flex flex-col h-full max-w-3xl mx-auto overflow-x-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-base-300 flex items-center justify-between">
         <div>
@@ -265,38 +265,35 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 border-t border-base-300">
+      <div className="px-3 sm:px-4 py-2 border-t border-base-300">
         {error && (
           <div className="alert alert-error mb-2 py-2 text-sm">{error}</div>
         )}
-        <div className="flex flex-col gap-1">
-          <div className="flex gap-2 items-end">
-            <textarea
-              ref={inputRef}
-              className="textarea textarea-bordered flex-1 rounded-md resize-none text-sm"
-              placeholder="Describe what you want to build... (Enter to send, Shift+Enter for new line)"
-              autoFocus
-              rows={3}
-              maxLength={MAX_CHARS}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              disabled={isStreaming}
-              onKeyDown={e => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (input.trim() && !isStreaming) sendMessage(input);
-                }
-              }}
-            />
-            <button
-              className="btn btn-primary"
-              disabled={isStreaming || !input.trim()}
-              onClick={() => sendMessage(input)}
-            >
-              {isStreaming ? <span className="loading loading-spinner loading-sm" /> : "Send"}
-            </button>
-          </div>
-          <div className="text-xs opacity-40 text-right">{input.length}/{MAX_CHARS}</div>
+        <div className="flex gap-2 items-end">
+          <textarea
+            ref={inputRef}
+            className="textarea textarea-bordered flex-1 rounded-md resize-none text-sm leading-snug py-2 min-h-0"
+            placeholder="What do you want to build?"
+            autoFocus
+            rows={1}
+            maxLength={MAX_CHARS}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            disabled={isStreaming}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (input.trim() && !isStreaming) sendMessage(input);
+              }
+            }}
+          />
+          <button
+            className="btn btn-primary btn-sm sm:btn-md"
+            disabled={isStreaming || !input.trim()}
+            onClick={() => sendMessage(input)}
+          >
+            {isStreaming ? <span className="loading loading-spinner loading-sm" /> : "Send"}
+          </button>
         </div>
       </div>
     </div>

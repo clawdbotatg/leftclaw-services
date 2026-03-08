@@ -215,7 +215,7 @@ export default function X402ChatClient() {
   const minsLeft = Math.ceil(timeLeft / 60000);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] max-w-3xl mx-auto overflow-x-hidden">
+    <div className="flex flex-col h-full max-w-3xl mx-auto overflow-x-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-base-300 flex items-center justify-between">
         <div>
