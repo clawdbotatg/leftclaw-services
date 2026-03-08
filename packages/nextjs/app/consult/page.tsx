@@ -293,8 +293,10 @@ function ConsultPage() {
       }
     } catch (e: any) {
       console.error("Payment error:", e);
+      const raw = e?.shortMessage || e?.message || String(e);
       const parsed = parseContractError(e);
-      setTxError(parsed || e?.shortMessage || e?.message || "Something went wrong");
+      // Show parsed + raw so we can debug
+      setTxError(parsed !== "Transaction failed — please try again" ? parsed : `Error: ${raw.slice(0, 200)}`);
       setStep("idle");
     }
   };
