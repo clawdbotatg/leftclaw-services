@@ -6,6 +6,14 @@ html, body {
   max-width: 100vw;
 }
 
+/* Hide ALL fixed footer elements on chat pages */
+body:has([data-chat-page]) [data-footer] {
+  display: none !important;
+}
+body:has([data-chat-page]) .fixed.bottom-0 {
+  display: none !important;
+}
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
