@@ -34,6 +34,8 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planGistUrl, setPlanGistUrl] = useState<string | null>(null);
+  const [planDescription, setPlanDescription] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const MAX_CHARS = 1000;
@@ -124,7 +126,8 @@ export default function ChatPage() {
       const data = await res.json();
       if (data.url) {
         const desc = `Build plan: ${data.url}\n\nSee consultation plan for full scope and requirements.`;
-        router.push(`/build?gist=${encodeURIComponent(data.url)}&description=${encodeURIComponent(desc)}`);
+        setPlanGistUrl(data.url);
+        setPlanDescription(desc);
       } else {
         setError("Failed to save plan: " + (data.error || "unknown error"));
       }
@@ -267,6 +270,29 @@ export default function ChatPage() {
         <div ref={bottomRef} />
        </div>
       </div>
+
+      {/* Plan buttons */}
+      {planGistUrl && (
+        <div className="px-3 sm:px-4 py-3 border-t border-base-300 flex gap-2">
+          <button
+            className="btn btn-outline btn-sm flex-1"
+            onClick={() => {
+              navigator.clipboard.writeText(planGistUrl);
+              const btn = document.activeElement as HTMLButtonElement;
+              const orig = btn?.textContent;
+              if (btn) { btn.textContent = "✓ Copied!"; setTimeout(() => { btn.textContent = orig || ""; }, 1500); }
+            }}
+          >
+            🔗 Copy Plan Link
+          </button>
+          <button
+            className="btn btn-primary btn-sm flex-1"
+            onClick={() => router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(planDescription || "")}`)}
+          >
+            🚀 Start Build Job
+          </button>
+        </div>
+      )}
 
       {/* Input */}
       <div className="px-3 sm:px-4 py-2 border-t border-base-300">
