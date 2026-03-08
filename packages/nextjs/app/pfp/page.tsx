@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { parseEther, parseUnits } from "viem";
 import { useAccount, usePublicClient, useSignMessage, useWalletClient, useWriteContract, useSendTransaction } from "wagmi";
+import { PaymentMethodSelector, formatBalance } from "~~/components/payment";
 import { usePaymentContext, PaymentMethod } from "~~/hooks/scaffold-eth/usePaymentContext";
 
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
@@ -197,14 +198,7 @@ export default function PfpPage() {
     }
   };
 
-  const balanceDisplay = () => {
-    switch (paymentMethod) {
-      case "cv": return displayCvBalance !== null ? `${displayCvBalance.toLocaleString()} CV` : "—";
-      case "clawd": return clawdBalance !== undefined ? `${Number(clawdBalance / BigInt(10) ** BigInt(18)).toLocaleString()} CLAWD` : "—";
-      case "usdc": return usdcBalance !== undefined ? `$${(Number(usdcBalance) / 1e6).toFixed(2)} USDC` : "—";
-      case "eth": return ethBalance !== undefined ? `${(Number(ethBalance) / 1e18).toFixed(4)} ETH` : "—";
-    }
-  };
+  const balanceStr = () => formatBalance({ method: paymentMethod, clawdBalance, usdcBalance, ethBalance, cvBalance: displayCvBalance });
 
   return (
     <div className="flex flex-col items-center py-10 px-4 min-h-screen">
@@ -271,29 +265,14 @@ export default function PfpPage() {
               />
             </div>
 
-            {/* Payment method */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Pay with</label>
-              <div className="grid grid-cols-4 gap-1">
-                {(["cv", "clawd", "usdc", "eth"] as PaymentMethod[]).map(m => (
-                  <button
-                    key={m}
-                    className={`btn btn-xs text-xs ${paymentMethod === m ? "btn-primary" : "btn-outline"}`}
-                    onClick={() => setPaymentMethod(m)}
-                    disabled={busy}
-                  >
-                    {PAYMENT_LABELS[m].icon} {PAYMENT_LABELS[m].label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} disabled={busy} />
 
             {/* Price + balance */}
             <div className="flex items-center justify-between bg-base-300 rounded-xl px-5 py-4 mb-6">
               <div>
                 <p className="text-sm opacity-60">Cost</p>
                 <p className="text-2xl font-mono font-bold">{priceDisplay()}</p>
-                <p className="text-sm opacity-50">Balance: {balanceDisplay()}</p>
+                <p className="text-sm opacity-50">Balance: {balanceStr()}</p>
               </div>
               <div className="text-right text-sm opacity-60">
                 <p>{PAYMENT_LABELS[paymentMethod].icon} {PAYMENT_LABELS[paymentMethod].desc}</p>

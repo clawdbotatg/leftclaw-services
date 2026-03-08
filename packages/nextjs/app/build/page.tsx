@@ -6,6 +6,7 @@ import { parseEther, parseUnits } from "viem";
 import { useAccount, usePublicClient, useWalletClient, useWriteContract } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { PaymentMethodSelector, formatBalance } from "~~/components/payment";
 import { usePaymentContext, PaymentMethod } from "~~/hooks/scaffold-eth/usePaymentContext";
 import { parseContractError } from "~~/utils/parseContractError";
 
@@ -284,14 +285,7 @@ function BuildPage() {
     }
   };
 
-  const balanceDisplay = () => {
-    switch (paymentMethod) {
-      case "cv": return cvBalance !== null ? `${cvBalance.toLocaleString()} CV` : "—";
-      case "clawd": return clawdBalance !== undefined ? `${Number(clawdBalance / BigInt(10) ** BigInt(18)).toLocaleString()} CLAWD` : "—";
-      case "usdc": return usdcBalance !== undefined ? `$${(Number(usdcBalance) / 1e6).toFixed(2)} USDC` : "—";
-      case "eth": return ethBalance !== undefined ? `${(Number(ethBalance) / 1e18).toFixed(4)} ETH` : "—";
-    }
-  };
+  const balanceStr = () => formatBalance({ method: paymentMethod, clawdBalance, usdcBalance, ethBalance, cvBalance });
 
   const buttonLabel = () => {
     if (step === "signing") return "Sign message in wallet...";
@@ -343,16 +337,7 @@ function BuildPage() {
           </div>
         )}
 
-        {/* Payment method */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Pay with</label>
-          <div className="grid grid-cols-4 gap-1">
-            <button className={`btn btn-xs text-xs ${paymentMethod === "cv" ? "btn-primary" : "btn-outline"}`} onClick={() => setPaymentMethod("cv")} disabled={busy}>⚡ CV</button>
-            <button className={`btn btn-xs text-xs ${paymentMethod === "clawd" ? "btn-primary" : "btn-outline"}`} onClick={() => setPaymentMethod("clawd")} disabled={busy}>🔥 CLAWD</button>
-            <button className={`btn btn-xs text-xs ${paymentMethod === "usdc" ? "btn-primary" : "btn-outline"}`} onClick={() => setPaymentMethod("usdc")} disabled={busy}>💵 USDC</button>
-            <button className={`btn btn-xs text-xs ${paymentMethod === "eth" ? "btn-primary" : "btn-outline"}`} onClick={() => setPaymentMethod("eth")} disabled={busy}>⟠ ETH</button>
-          </div>
-        </div>
+        <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} disabled={busy} />
 
         {/* Day selector */}
         <div className="mb-6">
@@ -373,7 +358,7 @@ function BuildPage() {
             <p className="text-sm opacity-60">Total to lock</p>
             <p className="text-3xl font-bold">${totalUsd.toLocaleString()}</p>
             <p className="text-sm opacity-50 font-mono mt-0.5">{costDisplay()}</p>
-            <p className="text-sm opacity-50">Balance: {balanceDisplay()}</p>
+            <p className="text-sm opacity-50">Balance: {balanceStr()}</p>
           </div>
           <div className="text-right text-sm opacity-60">
             <p className="text-lg font-bold">{days} {days === 1 ? "day" : "days"}</p>
