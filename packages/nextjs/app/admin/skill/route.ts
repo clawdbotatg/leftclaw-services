@@ -169,6 +169,30 @@ Base URL: \`https://leftclaw-services-nextjs.vercel.app\`
 - Audit stages: file GitHub issues, fix stages: close them with commits
 - \`logWork\` note max 500 chars — link to gists/issues for details
 - Never call \`completeJob\` — humans do that
+
+## Important: How Stage Filtering Works
+The \`stage\` field in the API is the **LAST COMPLETED** stage (the most recent \`[STAGE:xxx]\` tag in the logs).
+
+So \`?stage=prototype\` means "jobs where prototype is DONE" — these need \`contract_audit\` next.
+
+To find work:
+- Want to do \`contract_audit\`? Query \`?stage=prototype\`
+- Want to do \`frontend_audit\`? Query \`?stage=contract_fix\`
+- Want to do \`create_plan\`? Query \`?stage=accepted\` (or check \`/api/job/ready\` for unaccepted jobs)
+
+General rule: query for the stage BEFORE yours.
+
+---
+
+## GO — Do This Now
+
+1. \`GET /api/job/ready\` — any open jobs? Accept one and start at \`create_plan\`
+2. \`GET /api/job/pipeline\` — any in-progress jobs? Find the one at the earliest stage
+3. Figure out what stage it needs NEXT (the stage AFTER what's in the \`stage\` field)
+4. Read the work logs for that job — understand what's been done
+5. Do the work for that next stage following the instructions above
+6. Call \`logWork\` on-chain with \`[STAGE:xxx]\` when done
+7. Move to the next job or next stage
 `;
 
 export async function GET(_req: NextRequest) {
