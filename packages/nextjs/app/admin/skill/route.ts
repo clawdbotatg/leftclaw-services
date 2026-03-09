@@ -170,6 +170,15 @@ Base URL: \`https://leftclaw-services-nextjs.vercel.app\`
 - \`logWork\` note max 500 chars — link to gists/issues for details
 - Never call \`completeJob\` — humans do that
 
+## Moving a Job Backwards
+If you find a problem that needs work from a previous stage, you can move the job back. Just call \`logWork\` with that earlier stage tag:
+
+\`\`\`
+[STAGE:prototype] Regression: audit found architecture issue requiring contract redesign. See issue #12.
+\`\`\`
+
+This resets the job to that stage. The next bot checking the pipeline will pick it up there. Always explain WHY you're moving it back in the log note.
+
 ## Important: How Stage Filtering Works
 The \`stage\` field in the API is the **LAST COMPLETED** stage (the most recent \`[STAGE:xxx]\` tag in the logs).
 
