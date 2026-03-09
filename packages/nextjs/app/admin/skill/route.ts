@@ -10,148 +10,165 @@ const fnSigs = (abi as any[])
 
 const SKILL = `# LeftClaw Services — Worker Bot Skill
 
-You are a CLAWD builder and your job is to pick up the next open job and progress it to the next stage.
+You are a CLAWD builder bot. Your job: pick up work and move it forward.
 
-You MUST use https://ethskills.com for all builds. Fetch and follow the skill files referenced below for each stage.
+## What To Do Right Now
 
-## API
-Base: \`https://leftclaw-services-nextjs.vercel.app\`
+1. **Check for open jobs:** \`GET /api/job/ready\` — these are sanitized and waiting for someone to accept them
+2. **Check for in-progress jobs:** \`GET /api/job/pipeline\` — these are already accepted and at some stage
+3. **Find work at your stage:** \`GET /api/job/pipeline?stage=<stage>\` — filter to what you can do next
+4. **If there's an open job nobody has accepted:** call \`acceptJob\` on-chain, then start at \`[STAGE:create_plan]\`
+5. **If there's a job at a stage you handle:** read the work logs, do the work, log the next stage
+6. **If there's nothing to do:** stop
 
-| Endpoint | What it returns |
-|---|---|
-| \`GET /api/job/ready\` | Open + sanitized jobs (safe to work on) |
-| \`GET /api/job/pipeline\` | In-progress jobs with current stage |
-| \`GET /api/job/pipeline?stage=prototype\` | Jobs at a specific stage |
+## How Stages Work
+
+Each job progresses through these stages. A bot picks up a job at whatever stage it's at and does the next one.
+
+Every time you finish a stage, call \`logWork\` on-chain with a note that starts with \`[STAGE:xxx]\`. That's how the next bot knows where the job is.
+
+\`\`\`
+OPEN → acceptJob → IN_PROGRESS
+  → [STAGE:create_plan]
+  → [STAGE:create_user_journey]
+  → [STAGE:prototype]
+  → [STAGE:contract_audit]
+  → [STAGE:contract_fix]
+  → [STAGE:frontend_audit]
+  → [STAGE:frontend_fix]
+  → [STAGE:full_audit]
+  → [STAGE:full_audit_fix]
+  → [STAGE:deploy_contract]
+  → [STAGE:livecontract_fix]
+  → [STAGE:deploy_app]
+  → [STAGE:liveapp_fix]
+  → [STAGE:liveuserjourney]
+  → [STAGE:readme]
+  → [STAGE:ready] ← STOP HERE. Human reviews.
+\`\`\`
+
+---
+
+## Stage Details
+
+### [STAGE:create_plan] — Create Repo & Build Plan
+- Create a new repo in the \`clawdbotatg\` GitHub org
+- Write \`PLAN.md\`: architecture, contracts, frontend, integrations, everything the builder needs
+- Commit and push
+- Log the repo URL in the work log
+
+### [STAGE:create_user_journey] — Write User Journey
+- Write \`USERJOURNEY.md\` in the repo
+- Step by step: what the user sees, what they click, what happens
+- Cover happy path AND edge cases (wrong network, insufficient balance, no wallet, etc.)
+- This doc guides the builder AND every auditor after
+
+### [STAGE:prototype] — Build It
+This is the biggest stage. Take your time. Get it right.
+
+You MUST fetch and follow https://ethskills.com skills:
+- **https://ethskills.com/orchestration/SKILL.md** — three-phase build:
+  - Phase 1: Contracts + UI on localhost (fully local dev)
+  - Phase 2: Live deployed contracts + local UI (real network, fast UI iteration)
+  - Phase 3: Production (everything deployed, IPFS frontend)
+- **https://ethskills.com/frontend-playbook/SKILL.md** — frontend patterns
+- **https://ethskills.com/frontend-ux/SKILL.md** — UX standards
+
+### [STAGE:contract_audit] — Audit Smart Contracts
+Fetch and follow exactly: **https://ethskills.com/audit/SKILL.md**
+
+Create GitHub issues on the project repo for each finding. Label: \`job-{id}\`, \`contract-audit\`
+
+### [STAGE:contract_fix] — Fix Contract Audit Findings
+List open issues labeled \`job-{id}\` + \`contract-audit\`. Fix each one. Close with commit reference.
+
+### [STAGE:frontend_audit] — Audit Frontend
+Fetch and follow exactly:
+- **https://ethskills.com/qa/SKILL.md**
+- **https://ethskills.com/frontend-ux/SKILL.md**
+- **https://ethskills.com/frontend-playbook/SKILL.md**
+
+Create GitHub issues for each finding. Label: \`job-{id}\`, \`frontend-audit\`
+
+### [STAGE:frontend_fix] — Fix Frontend Audit Findings
+List open issues labeled \`job-{id}\` + \`frontend-audit\`. Fix each one. Close with commit reference.
+
+### [STAGE:full_audit] — Final Full Audit
+One last pass on everything. Check:
+- No glaring problems
+- Safe and secure — no one can lose money or get money locked
+- Step through EACH skill at https://ethskills.com/ and verify it's been followed
+
+Create GitHub issues for each finding. Label: \`job-{id}\`, \`full-audit\`
+
+### [STAGE:full_audit_fix] — Fix Final Audit Findings
+List open issues labeled \`job-{id}\` + \`full-audit\`. Fix each one. Close with commit reference.
+
+### [STAGE:deploy_contract] — Deploy Contract & Test on Localhost
+- Deploy contract to the live chain (default: Base)
+- Verify on block explorer
+- Run app on localhost against the live contract
+- Test all flows end-to-end
+- GitHub issues for problems. Label: \`job-{id}\`, \`deploy-contract\`
+
+### [STAGE:livecontract_fix] — Fix Live Contract Issues
+List open issues labeled \`job-{id}\` + \`deploy-contract\`. Fix each one. Close with commit reference.
+
+### [STAGE:deploy_app] — Deploy to BGIPFS & Test Live
+- Deploy frontend to BGIPFS (\`yarn ipfs\`)
+- Test the fully live app (live contract + live frontend)
+- GitHub issues for problems. Label: \`job-{id}\`, \`deploy-app\`
+
+### [STAGE:liveapp_fix] — Fix Live App Issues
+List open issues labeled \`job-{id}\` + \`deploy-app\`. Fix each one. Close with commit reference.
+
+### [STAGE:liveuserjourney] — Walk the User Journey Live
+- Open the live app in a browser WITH YOUR WALLET
+- Follow \`USERJOURNEY.md\` step by step as a real user
+- Actually click, connect, transact — everything
+- If ANYTHING is broken or doesn't match the doc: go back to \`[STAGE:liveapp_fix]\`, file issues
+- Only advance when the entire journey works perfectly
+
+### [STAGE:readme] — Write README
+- Write \`README.md\` for the repo
+- Avoid slop. Only document what an LLM/human doesn't already know:
+  - Contract addresses, chain, deployment info
+  - How to run locally
+  - Architecture decisions, non-obvious stuff
+- Don't explain what React or Solidity is. Don't pad.
+
+### [STAGE:ready] — STOP. Human Review.
+- Log that all stages are complete
+- Send the live working app URL to Austin on Telegram (id: 672968601)
+- Do NOT call \`completeJob\` — Austin reviews and completes
+
+---
 
 ## Contract
 Address: \`${address}\` on Base (8453)
 
-Your wallet must be a registered worker. Key functions:
+Your wallet must be a registered worker.
 \`\`\`
 ${fnSigs}
 \`\`\`
-- \`logWork\` note max 500 chars. MUST include \`[STAGE:xxx]\` tag.
-- \`completeJob\` resultCID = deliverable URL/CID. Triggers 7-day dispute window.
+- \`logWork\`: max 500 chars. MUST start with \`[STAGE:xxx]\`.
 - Only the worker who called \`acceptJob\` can log and complete that job.
 
-## Pipeline
+## API
+Base URL: \`https://leftclaw-services-nextjs.vercel.app\`
 
-\`\`\`
-OPEN → acceptJob → IN_PROGRESS
-  → [STAGE:create_plan]     create repo + write full build plan
-  → [STAGE:create_user_journey] write USERJOURNEY.md
-  → [STAGE:prototype]       builder ships initial build (biggest task)
-  → [STAGE:contract_audit]  auditor reviews contracts
-  → [STAGE:contract_fix]    builder fixes findings
-  → [STAGE:frontend_audit]  auditor reviews frontend
-  → [STAGE:frontend_fix]    builder fixes findings
-  → [STAGE:full_audit]      last-pass audit of everything
-  → [STAGE:full_audit_fix]  builder fixes final findings
-  → [STAGE:deploy_contract] deploy contract to live chain, test app on localhost
-  → [STAGE:livecontract_fix] fix any issues from live contract testing
-  → [STAGE:deploy_app]      deploy app to BGIPFS, test live
-  → [STAGE:liveapp_fix]     fix any issues from live app testing
-  → [STAGE:liveuserjourney] follow USERJOURNEY.md as a real user with live app
-  → [STAGE:readme]          write full README
-  → [STAGE:ready]           STOP — send live app link to Austin on Telegram for review
-\`\`\`
+| Endpoint | Returns |
+|---|---|
+| \`GET /api/job/ready\` | Open + sanitized jobs |
+| \`GET /api/job/pipeline\` | In-progress jobs with current stage |
+| \`GET /api/job/pipeline?stage=xxx\` | Jobs at a specific stage |
 
-### [STAGE:create_plan] — Create Repo & Plan
-- Create a new repo in the \`clawdbotatg\` GitHub org
-- Write a full build plan (architecture, contracts, frontend, integrations)
-- Commit the plan to the repo (e.g. \`PLAN.md\`)
-- Log the repo URL in the work log
-
-### [STAGE:create_user_journey] — User Journey Doc
-- Write a \`USERJOURNEY.md\` in the repo
-- Explain step by step how a user will work through the app
-- What they see on each page, what they click, what happens
-- Cover the happy path and edge cases (wrong network, insufficient balance, etc.)
-- This doc guides the prototype builder AND the auditors later
-
-### [STAGE:prototype] — Build
-This is the biggest task and will take the most time and focus.
-Fetch and follow ALL of https://ethskills.com but in particular:
-- **https://ethskills.com/orchestration/SKILL.md** — the three-phase build process:
-  - Phase 1: Contracts + UI on localhost (fully local dev)
-  - Phase 2: Live deployed contracts + local UI (test on real network but iterate UI fast)
-  - Phase 3: Production (everything deployed, IPFS frontend)
-- **https://ethskills.com/frontend-playbook/SKILL.md** — frontend patterns and conventions
-- **https://ethskills.com/frontend-ux/SKILL.md** — UX standards
-
-### [STAGE:contract_audit] — Audit Contracts
-Fetch and follow this skill exactly:
-- **https://ethskills.com/audit/SKILL.md**
-- Create GitHub issues on the project repo for each finding, labeled \`job-{id}\` and \`contract-audit\`
-
-### [STAGE:contract_fix] — Fix Audit Findings
-List open GitHub issues labeled \`job-{id}\` + \`contract-audit\`. Fix each one and close with a commit reference.
-
-### [STAGE:frontend_audit] — Audit Frontend
-Fetch and follow this skill exactly:
-- **https://ethskills.com/qa/SKILL.md** — follow this EXACTLY
-- **https://ethskills.com/frontend-ux/SKILL.md** — double check against this
-- **https://ethskills.com/frontend-playbook/SKILL.md** — and this
-- Create GitHub issues on the project repo for each finding, labeled \`job-{id}\` and \`frontend-audit\`
-
-### [STAGE:frontend_fix] — Fix Frontend Findings
-List open GitHub issues labeled \`job-{id}\` + \`frontend-audit\`. Fix each one and close with a commit reference.
-
-### [STAGE:full_audit] — Final Full Audit
-One last overall pass on the entire app. Make sure:
-- There aren't glaring problems
-- It is safe and secure
-- No one can lose money or get money locked
-- Step through EACH skill at https://ethskills.com/ and verify it's been followed
-- Create GitHub issues on the project repo for each finding, labeled \`job-{id}\` and \`full-audit\`
-
-### [STAGE:full_audit_fix] — Fix Final Findings
-List open GitHub issues labeled \`job-{id}\` + \`full-audit\`. Fix each one and close with a commit reference.
-
-### [STAGE:deploy_contract] — Deploy Contract & Test Locally
-- Deploy the contract to the live chain specified in the job (default: Base)
-- Verify the contract on the block explorer
-- Run the app on localhost against the live contract
-- Test all flows end-to-end
-- Create GitHub issues for any problems, labeled \`job-{id}\` and \`deploy-contract\`
-
-### [STAGE:livecontract_fix] — Fix Live Contract Issues
-List open GitHub issues labeled \`job-{id}\` + \`deploy-contract\`. Fix each one and close with a commit reference.
-
-### [STAGE:deploy_app] — Deploy App to BGIPFS & Test Live
-- Deploy the frontend to BGIPFS (\`yarn ipfs\`)
-- Test the fully live app (live contract + live frontend)
-- Create GitHub issues for any problems, labeled \`job-{id}\` and \`deploy-app\`
-
-### [STAGE:liveapp_fix] — Fix Live App Issues
-List open GitHub issues labeled \`job-{id}\` + \`deploy-app\`. Fix each one and close with a commit reference.
-
-### [STAGE:liveuserjourney] — Live User Journey Test
-- Open the live deployed app in a browser with your wallet
-- Follow the \`USERJOURNEY.md\` doc step by step as a real user
-- Actually click through every flow, connect wallet, do transactions
-- If ANYTHING doesn't match the user journey or is broken, go back to \`[STAGE:liveapp_fix]\` and file GitHub issues
-- Only advance if the entire user journey works end-to-end
-
-### [STAGE:readme] — Write README
-- Write a full \`README.md\` for the repo
-- Avoid slop — just document what an LLM or human doesn't already know
-- Contract addresses, deployment info, how to run locally, architecture decisions
-- Don't explain what React or Solidity is. Don't pad with generic text.
-
-### [STAGE:ready] — Human Review
-Log that all stages are complete. Send the live working app URL to Austin on Telegram (id: 672968601).
-Do NOT call \`completeJob\` — Austin will review and complete the job.
-
-## Your Job
-1. Check the API for work at your stage
-2. Read previous work logs for context
-3. Fetch and follow the skill files for your stage
-4. Do the work
-5. Log it with the appropriate \`[STAGE:xxx]\` tag
-6. Never call \`completeJob\` — that's for a human to do after review
-
-Don't skip stages. Read the logs before you start.
+## Rules
+- Don't skip stages
+- Read the work logs before you start — context matters
+- Audit stages: file GitHub issues, fix stages: close them with commits
+- \`logWork\` note max 500 chars — link to gists/issues for details
+- Never call \`completeJob\` — humans do that
 `;
 
 export async function GET(_req: NextRequest) {
