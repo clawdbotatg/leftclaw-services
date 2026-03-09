@@ -64,11 +64,8 @@ export default function ChatPage() {
     fetch(`/api/job/sanitize?jobId=${jobId}`)
       .then(res => {
         if (res.ok) return res.json().then(d => { setSanitized(d.safe); if (!d.safe) setSanitizeError(d.reason); });
-        // Not yet sanitized — trigger check with description from the topic
-        const topicKey = `consult-topic-${jobId}`;
-        let desc = "";
-        try { desc = localStorage.getItem(topicKey) || ""; } catch {}
-        if (!desc) desc = job?.descriptionCID || `Job #${jobId}`;
+        // Not yet sanitized — trigger check with on-chain description
+        const desc = job?.descriptionCID || `Job #${jobId}`;
         return fetch("/api/job/sanitize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
