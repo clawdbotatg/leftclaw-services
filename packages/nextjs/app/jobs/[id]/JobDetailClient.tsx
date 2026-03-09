@@ -308,19 +308,7 @@ export default function JobDetailClient() {
                       💬 Continue Consultation
                     </Link>
                   )}
-                  {isOpen && (
-                    <button
-                      className="btn btn-error btn-outline"
-                      onClick={() => call("cancelJob")}
-                      disabled={!!pending}
-                    >
-                      {pending === "cancelJob" ? (
-                        <span className="loading loading-spinner loading-sm" />
-                      ) : (
-                        "❌ Cancel Job"
-                      )}
-                    </button>
-                  )}
+                  {/* Cancel button hidden — jobs should not be cancelled by users */}
                   {isCompleted && !job.paymentClaimed && !disputeWindowOver && (
                     <button className="btn btn-warning" onClick={() => call("disputeJob")} disabled={!!pending}>
                       {pending === "disputeJob" ? (
