@@ -51,7 +51,7 @@ function BuildPage() {
   } = usePaymentContext();
 
   const gistParam = searchParams.get("gist");
-  const [days, setDays] = useState(gistParam ? 2 : 1);
+  const [days, setDays] = useState(1);
   const [description, setDescription] = useState(searchParams.get("description") ?? "");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cv");
   const [step, setStep] = useState<"idle" | "signing" | "approving" | "paying" | "posting" | "done">("idle");
