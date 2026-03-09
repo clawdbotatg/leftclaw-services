@@ -177,7 +177,7 @@ function ConsultPage() {
     if (step !== "done" || postedJobIdRef.current === null) return;
     const jobId = postedJobIdRef.current;
     if (topic.trim()) {
-      try { sessionStorage.setItem(`consult-topic-${jobId}`, topic.trim()); } catch {}
+      try { localStorage.setItem(`consult-topic-${jobId}`, topic.trim()); } catch {}
     }
     router.push(`/chat/${jobId}`);
   }, [step, router, topic]);
