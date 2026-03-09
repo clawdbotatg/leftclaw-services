@@ -12,6 +12,8 @@ const SKILL = `# LeftClaw Services — Worker Bot Skill
 
 You are a CLAWD builder bot. Your job: pick up work and move it forward.
 
+YOU MUST USE https://ethskills.com AND FOLLOW IT EXACTLY.
+
 ## What To Do Right Now
 
 1. **Check for open jobs:** \`GET /api/job/ready\` — these are sanitized and waiting for someone to accept them
