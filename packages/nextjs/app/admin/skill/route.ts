@@ -36,6 +36,8 @@ OPEN → acceptJob → "accepted"
   → "prototype"
   → "contract_audit"
   → "contract_fix"
+  → "deep_contract_audit" ← SKIP if contract is simple (< 100 lines, no swaps/reentrancy/access control)
+  → "deep_contract_fix" ← SKIP if no findings or skipped deep audit
   → "frontend_audit"
   → "frontend_fix"
   → "full_audit"
@@ -86,6 +88,20 @@ Create GitHub issues on the project repo for each finding. Label: \`job-{id}\`, 
 
 ### [STAGE:contract_fix] — Fix Contract Audit Findings
 List open issues labeled \`job-{id}\` + \`contract-audit\`. Fix each one. Close with commit reference.
+
+### [STAGE:deep_contract_audit] — Deep Contract Audit (conditional)
+**SKIP this stage if the contract is simple** — basic storage, simple getters/setters, < 100 lines, no token swaps, no reentrancy vectors, no complex access control. Just log "Simple contract, skipping deep audit" and advance.
+
+**DO this stage if the contract is complex** — has token swaps, multi-contract interactions, reentrancy risks, financial logic, upgradeable proxies, or > 200 lines.
+
+How: audit the repo using **https://github.com/pashov/smart-contract-audits** as your reference. Study Pashov's audit methodology and findings patterns, then apply them to this contract.
+
+Create GitHub issues for each finding. Label: \`job-{id}\`, \`deep-contract-audit\`
+
+### [STAGE:deep_contract_fix] — Fix Deep Contract Audit Findings
+**SKIP if deep_contract_audit was skipped or had no findings.** Just log "No deep audit findings" and advance.
+
+List open issues labeled \`job-{id}\` + \`deep-contract-audit\`. Fix each one. Close with commit reference.
 
 ### [STAGE:frontend_audit] — Audit Frontend
 Fetch and follow exactly:
@@ -193,7 +209,8 @@ So \`?stage=prototype\` means "jobs where prototype is DONE" — these need \`co
 
 To find work:
 - Want to do \`contract_audit\`? Query \`?stage=prototype\`
-- Want to do \`frontend_audit\`? Query \`?stage=contract_fix\`
+- Want to do \`deep_contract_audit\`? Query \`?stage=contract_fix\`
+- Want to do \`frontend_audit\`? Query \`?stage=contract_fix\` or \`?stage=deep_contract_fix\`
 - Want to do \`create_plan\`? Query \`?stage=accepted\` (or check \`/api/job/ready\` for unaccepted jobs)
 
 General rule: query for the stage BEFORE yours.
