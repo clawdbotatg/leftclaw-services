@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 
-const CV_SIGN_MESSAGE = "ClawdViction CV Spend";
+// Must match larv.ai's CV_SPEND_MESSAGE exactly — "larv.ai CV Spend"
+const CV_SIGN_MESSAGE = "larv.ai CV Spend";
 const CV_SPEND_URL = "https://larv.ai/api/cv/spend";
 
 const rpcUrl = process.env.BASE_RPC_URL?.trim();
