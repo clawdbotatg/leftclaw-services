@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest) {
     // Scan WorkerAdded/WorkerRemoved events to build current worker set
     // Get contract creation block (approximate — scan last 1M blocks)
     const latestBlock = await client.getBlockNumber();
-    const fromBlock = latestBlock > 1_000_000n ? latestBlock - 1_000_000n : 0n;
+    const fromBlock = latestBlock > 100_000n ? latestBlock - 100_000n : 0n;
 
     const addedLogs = await client.getLogs({
       address,
