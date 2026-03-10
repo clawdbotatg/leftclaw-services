@@ -12,15 +12,7 @@ const client = createPublicClient({
     : undefined),
 });
 
-const STAGES = ["accepted", "create_plan", "create_user_journey", "prototype", "contract_audit", "contract_fix", "frontend_audit", "frontend_fix", "full_audit", "full_audit_fix", "deploy_contract", "livecontract_fix", "deploy_app", "liveapp_fix", "liveuserjourney", "readme", "ready"] as const;
-
-function parseStage(logs: readonly { note: string; timestamp: bigint }[]): string {
-  for (let i = logs.length - 1; i >= 0; i--) {
-    const match = logs[i].note.match(/\[STAGE:(\w+)\]/i);
-    if (match) return match[1].toLowerCase();
-  }
-  return "accepted"; // in-progress but no stage tag yet
-}
+const STAGES = ["create_plan", "create_user_journey", "prototype", "contract_audit", "contract_fix", "frontend_audit", "frontend_fix", "full_audit", "full_audit_fix", "deploy_contract", "livecontract_fix", "deploy_app", "liveapp_fix", "liveuserjourney", "readme", "ready"] as const;
 
 export async function GET(req: NextRequest) {
   const filterStage = req.nextUrl.searchParams.get("stage")?.toLowerCase();
@@ -35,14 +27,16 @@ export async function GET(req: NextRequest) {
       // Status 1 = IN_PROGRESS
       if (Number(job.status) !== 1) continue;
 
-      const logs = await client.readContract({ address, abi, functionName: "getWorkLogs", args: [i] }) as readonly { note: string; timestamp: bigint }[];
-      const stage = parseStage(logs);
+      const stage = job.currentStage || "accepted";
 
       if (filterStage && stage !== filterStage) continue;
+
+      const logs = await client.readContract({ address, abi, functionName: "getWorkLogs", args: [i] }) as readonly { note: string; timestamp: bigint }[];
 
       jobs.push({
         id: Number(job.id),
         client: job.client,
+        worker: job.worker,
         serviceType: Number(job.serviceType),
         description: job.descriptionCID,
         priceUsd: Number(job.priceUsd),

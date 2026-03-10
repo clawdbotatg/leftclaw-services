@@ -81,6 +81,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         uint256 disputedAt;
         PaymentMethod paymentMethod; // how the job was paid for
         uint256 cvAmount;           // CV spent (only for CV payments, informational)
+        string currentStage;        // current pipeline stage (e.g. "prototype", "contract_audit")
     }
 
     struct WorkLog {
@@ -137,7 +138,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
     modifier onlyWorker() {
-        require(isWorker[msg.sender], "Not a worker");
+        require(isWorker[msg.sender], "!worker");
         _;
     }
 
@@ -183,7 +184,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a job paying with CLAWD. Frontend calculates clawdAmount from USD price / CLAWD market price.
     function postJob(ServiceType serviceType, uint256 clawdAmount, string calldata descriptionCID) external nonReentrant {
         require(serviceType != ServiceType.CUSTOM, "Use postJobCustom for CUSTOM");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
         uint256 priceUsd = servicePriceUsd[serviceType];
         require(priceUsd > 0, "Service not available");
         require(clawdAmount >= 1e18, "Min 1 CLAWD");
@@ -196,7 +197,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a CUSTOM job with any CLAWD amount and custom USD value
     function postJobCustom(uint256 clawdAmount, uint256 customPriceUsd, string calldata descriptionCID) external nonReentrant {
         require(clawdAmount >= 1e18, "Min 1 CLAWD");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
 
         clawdToken.safeTransferFrom(msg.sender, address(this), clawdAmount);
 
@@ -206,7 +207,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a job paying with USDC — exact USD price charged, auto-swaps to CLAWD
     function postJobWithUsdc(ServiceType serviceType, string calldata descriptionCID, uint256 minClawdOut) external nonReentrant {
         require(serviceType != ServiceType.CUSTOM, "Use postJobCustomUsdc for CUSTOM");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
         uint256 priceUsd = servicePriceUsd[serviceType];
         require(priceUsd > 0, "Service not available");
         require(minClawdOut >= 1e18, "Min 1 CLAWD out");
@@ -229,7 +230,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a CUSTOM job paying with USDC
     function postJobCustomUsdc(uint256 usdcAmount, string calldata descriptionCID, uint256 minClawdOut) external nonReentrant {
         require(usdcAmount > 0, "USDC amount must be > 0");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
         require(minClawdOut >= 1e18, "Min 1 CLAWD out");
 
         usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
@@ -250,7 +251,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a job paying with ETH — wraps to WETH, swaps to CLAWD, locks CLAWD
     function postJobWithETH(ServiceType serviceType, string calldata descriptionCID) external payable nonReentrant {
         require(serviceType != ServiceType.CUSTOM, "Use postJobCustomETH for CUSTOM");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
         require(msg.value > 0, "Must send ETH");
         uint256 priceUsd = servicePriceUsd[serviceType];
         require(priceUsd > 0, "Service not available");
@@ -262,7 +263,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a CUSTOM job paying with ETH — wraps to WETH, swaps to CLAWD, locks CLAWD
     function postJobCustomETH(uint256 customPriceUsd, string calldata descriptionCID) external payable nonReentrant {
         require(msg.value > 0, "Must send ETH");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
         require(customPriceUsd > 0, "Price required");
 
         uint256 clawdReceived = _swapETHToClawd(msg.value);
@@ -272,7 +273,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a job paying with ClawdViction (CV) — just gas, cvAmount is informational
     function postJobWithCV(ServiceType serviceType, uint256 cvAmount, string calldata descriptionCID) external nonReentrant {
         require(serviceType != ServiceType.CUSTOM, "Use postJobCustomCV for CUSTOM");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
         require(cvAmount > 0, "CV amount required");
         uint256 priceUsd = servicePriceUsd[serviceType];
         require(priceUsd > 0, "Service not available");
@@ -283,7 +284,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     /// @notice Post a CUSTOM job paying with CV — cvAmount is informational
     function postJobCustomCV(uint256 cvAmount, uint256 customPriceUsd, string calldata descriptionCID) external nonReentrant {
         require(cvAmount > 0, "CV amount required");
-        require(bytes(descriptionCID).length > 0, "Description required");
+        require(bytes(descriptionCID).length > 0, "No desc");
         require(customPriceUsd > 0, "Price required");
 
         _createJob(msg.sender, ServiceType.CUSTOM, 0, customPriceUsd, descriptionCID, PaymentMethod.CV, cvAmount);
@@ -293,8 +294,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function acceptJob(uint256 jobId) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
-        require(job.status == JobStatus.OPEN, "Job not OPEN");
+        require(job.id != 0, "No job");
+        require(job.status == JobStatus.OPEN, "Not open");
 
         job.status = JobStatus.IN_PROGRESS;
         job.worker = msg.sender;
@@ -305,10 +306,10 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function completeJob(uint256 jobId, string calldata resultCID) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
-        require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
+        require(job.id != 0, "No job");
+        require(job.status == JobStatus.IN_PROGRESS, "Not active");
         
-        require(bytes(resultCID).length > 0, "Result CID required");
+        require(bytes(resultCID).length > 0, "No result");
 
         job.status = JobStatus.COMPLETED;
         job.resultCID = resultCID;
@@ -318,24 +319,27 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
         emit JobCompleted(jobId, msg.sender, resultCID);
     }
 
-    function logWork(uint256 jobId, string calldata note) external nonReentrant onlyWorker {
+    function logWork(uint256 jobId, string calldata note, string calldata stage) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
-        require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
+        require(job.id != 0, "No job");
+        require(job.status == JobStatus.IN_PROGRESS, "Not active");
         
-        require(bytes(note).length > 0, "Note required");
-        require(bytes(note).length <= 500, "Note too long (max 500 chars)");
+        require(bytes(note).length > 0, "No note");
+        require(bytes(note).length <= 500, "Too long");
+        if (bytes(stage).length > 0) {
+            job.currentStage = stage;
+        }
         workLogs[jobId].push(WorkLog({ note: note, timestamp: block.timestamp }));
         emit WorkLogged(jobId, msg.sender, note);
     }
 
     function burnConsultation(uint256 jobId, string calldata gistUrl, ServiceType recommendedBuildType) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
+        require(job.id != 0, "No job");
         require(job.serviceType == ServiceType.CONSULT_S || job.serviceType == ServiceType.CONSULT_L, "Not a consultation job");
-        require(job.status == JobStatus.IN_PROGRESS, "Job not IN_PROGRESS");
+        require(job.status == JobStatus.IN_PROGRESS, "Not active");
         
-        require(bytes(gistUrl).length > 0, "Gist URL required");
+        require(bytes(gistUrl).length > 0, "No gist");
         require(!job.paymentClaimed, "Already claimed");
 
         job.paymentClaimed = true;
@@ -354,7 +358,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function claimPayment(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
+        require(job.id != 0, "No job");
         
         require(!job.paymentClaimed, "Already claimed");
 
@@ -388,8 +392,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function rejectJob(uint256 jobId) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
-        require(job.status == JobStatus.OPEN, "Can only reject OPEN jobs");
+        require(job.id != 0, "No job");
+        require(job.status == JobStatus.OPEN, "Not open");
 
         job.status = JobStatus.CANCELLED;
 
@@ -403,9 +407,9 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function cancelJob(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
-        require(job.client == msg.sender, "Not the client");
-        require(job.status == JobStatus.OPEN, "Can only cancel OPEN jobs");
+        require(job.id != 0, "No job");
+        require(job.client == msg.sender, "!client");
+        require(job.status == JobStatus.OPEN, "Not open");
 
         job.status = JobStatus.CANCELLED;
 
@@ -419,11 +423,11 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function disputeJob(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
-        require(job.client == msg.sender, "Not the client");
-        require(job.status == JobStatus.COMPLETED, "Job not COMPLETED");
-        require(!job.paymentClaimed, "Payment already claimed");
-        require(block.timestamp <= job.completedAt + DISPUTE_WINDOW, "Dispute window expired");
+        require(job.id != 0, "No job");
+        require(job.client == msg.sender, "!client");
+        require(job.status == JobStatus.COMPLETED, "Not done");
+        require(!job.paymentClaimed, "Claimed");
+        require(block.timestamp <= job.completedAt + DISPUTE_WINDOW, "Window closed");
 
         job.status = JobStatus.DISPUTED;
         job.disputedAt = block.timestamp;
@@ -433,8 +437,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
 
     function resolveDispute(uint256 jobId, bool refundClient) external onlyOwner nonReentrant {
         Job storage job = jobs[jobId];
-        require(job.id != 0, "Job does not exist");
-        require(job.status == JobStatus.DISPUTED, "Job not DISPUTED");
+        require(job.id != 0, "No job");
+        require(job.status == JobStatus.DISPUTED, "Not disputed");
 
         if (refundClient) {
             job.status = JobStatus.CANCELLED;
@@ -521,7 +525,7 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
     // ─── View Functions ───────────────────────────────────────────────────────
 
     function getJob(uint256 jobId) external view returns (Job memory) {
-        require(jobs[jobId].id != 0, "Job does not exist");
+        require(jobs[jobId].id != 0, "No job");
         return jobs[jobId];
     }
 
@@ -606,7 +610,8 @@ contract LeftClawServices is Ownable, ReentrancyGuard {
             feeSnapshot: 0,
             disputedAt: 0,
             paymentMethod: method,
-            cvAmount: cvAmount
+            cvAmount: cvAmount,
+            currentStage: ""
         });
 
         emit JobPosted(jobId, client, serviceType, clawdAmount, priceUsd, descriptionCID, method, cvAmount);

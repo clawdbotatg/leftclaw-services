@@ -477,7 +477,7 @@ contract LeftClawServicesTest is Test {
         uint256 jobId = services.nextJobId() - 1;
 
         vm.prank(worker);
-        services.logWork(jobId, "Setting up SE2 and deploying contracts");
+        services.logWork(jobId, "Setting up SE2 and deploying contracts", "prototype");
 
         LeftClawServices.WorkLog[] memory logs = services.getWorkLogs(jobId);
         assertEq(logs.length, 1);
@@ -489,7 +489,7 @@ contract LeftClawServicesTest is Test {
 
         vm.prank(nonWorker);
         vm.expectRevert("Not a worker");
-        services.logWork(jobId, "This should fail");
+        services.logWork(jobId, "This should fail", "");
     }
 
     function test_LogWork_RevertsIfNotAssignedWorker() public {
@@ -501,7 +501,7 @@ contract LeftClawServicesTest is Test {
 
         vm.prank(otherWorker);
         vm.expectRevert("Not the assigned worker");
-        services.logWork(jobId, "This should fail");
+        services.logWork(jobId, "This should fail", "");
     }
 
     // ─── DisputeResolved event on timeout ────────────────────────────────────

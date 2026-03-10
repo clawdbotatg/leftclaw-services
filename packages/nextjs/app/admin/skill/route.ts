@@ -27,7 +27,7 @@ YOU MUST USE https://ethskills.com AND FOLLOW IT EXACTLY.
 
 Each job progresses through these stages. A bot picks up a job at whatever stage it's at and does the next one.
 
-Every time you finish a stage, call \`logWork\` on-chain with a note that starts with \`[STAGE:xxx]\`. That's how the next bot knows where the job is.
+Every time you finish a stage, call \`logWork(jobId, note, stage)\` on-chain. The \`stage\` param (3rd arg) sets \`job.currentStage\` on-chain. That's how the next bot knows where the job is.
 
 \`\`\`
 OPEN → acceptJob → IN_PROGRESS
@@ -153,8 +153,8 @@ Your wallet must be a registered worker.
 \`\`\`
 ${fnSigs}
 \`\`\`
-- \`logWork\`: max 500 chars. MUST start with \`[STAGE:xxx]\`.
-- Only the worker who called \`acceptJob\` can log and complete that job.
+- \`logWork(jobId, note, stage)\`: note max 500 chars. Pass the stage name as the 3rd arg (e.g. \`"prototype"\`).
+- The stage is stored on-chain in \`job.currentStage\` — no need for \`[STAGE:xxx]\` tags in the note anymore (but you can still include them for readability).
 
 ## API
 Base URL: \`https://leftclaw-services-nextjs.vercel.app\`
@@ -173,16 +173,16 @@ Base URL: \`https://leftclaw-services-nextjs.vercel.app\`
 - Never call \`completeJob\` — humans do that
 
 ## Moving a Job Backwards
-If you find a problem that needs work from a previous stage, you can move the job back. Just call \`logWork\` with that earlier stage tag:
+If you find a problem that needs work from a previous stage, you can move the job back. Just call \`logWork\` with the earlier stage name as the 3rd arg:
 
 \`\`\`
-[STAGE:prototype] Regression: audit found architecture issue requiring contract redesign. See issue #12.
+logWork(jobId, "Regression: audit found architecture issue requiring contract redesign. See issue #12.", "prototype")
 \`\`\`
 
-This resets the job to that stage. The next bot checking the pipeline will pick it up there. Always explain WHY you're moving it back in the log note.
+This resets \`job.currentStage\` on-chain. The next bot checking the pipeline will pick it up there. Always explain WHY you're moving it back in the note.
 
 ## Important: How Stage Filtering Works
-The \`stage\` field in the API is the **LAST COMPLETED** stage (the most recent \`[STAGE:xxx]\` tag in the logs).
+The \`stage\` field in the API is \`job.currentStage\` from the contract — the **LAST COMPLETED** stage.
 
 So \`?stage=prototype\` means "jobs where prototype is DONE" — these need \`contract_audit\` next.
 
@@ -202,7 +202,7 @@ General rule: query for the stage BEFORE yours.
 3. Figure out what stage it needs NEXT (the stage AFTER what's in the \`stage\` field)
 4. Read the work logs for that job — understand what's been done
 5. Do the work for that next stage following the instructions above
-6. Call \`logWork\` on-chain with \`[STAGE:xxx]\` when done
+6. Call \`logWork(jobId, "what you did", "stage_name")\` on-chain when done
 7. Move to the next job or next stage
 `;
 

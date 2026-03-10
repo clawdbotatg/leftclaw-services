@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   8453: {
     LeftClawServices: {
-      address: "0x88669802d73049aae7ceedc4653bea961af40f81",
+      address: "0x44315218749392d8e1cf3728995c2de152899860",
       abi: [
         {
           type: "constructor",
@@ -320,6 +320,11 @@ const deployedContracts = {
                   type: "uint256",
                   internalType: "uint256",
                 },
+                {
+                  name: "currentStage",
+                  type: "string",
+                  internalType: "string",
+                },
               ],
             },
           ],
@@ -535,6 +540,11 @@ const deployedContracts = {
               type: "uint256",
               internalType: "uint256",
             },
+            {
+              name: "currentStage",
+              type: "string",
+              internalType: "string",
+            },
           ],
           stateMutability: "view",
         },
@@ -549,6 +559,11 @@ const deployedContracts = {
             },
             {
               name: "note",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "stage",
               type: "string",
               internalType: "string",
             },
@@ -1439,7 +1454,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 43155165,
+      deployedOnBlock: 43156959,
     },
   },
 } as const;
