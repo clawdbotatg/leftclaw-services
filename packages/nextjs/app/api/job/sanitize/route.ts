@@ -74,18 +74,33 @@ export async function GET(req: NextRequest) {
 
   // CV jobs are off-chain — check KV store instead of on-chain
   if (jobId.startsWith("cv-")) {
-    const { getSanitization } = await import("~~/lib/sanitize");
+    const { getSanitization, deleteSanitization } = await import("~~/lib/sanitize");
     const result = await getSanitization(jobId);
     if (result) {
+      // If cached result is a stale error (fail-open artifacts from old code), clear it
+      if (!result.safe && result.reason && /error|fail open|skipped|failed/i.test(result.reason)) {
+        await deleteSanitization(jobId);
+        return Response.json({ error: "Pending recheck", safe: null, pending: true }, { status: 404 });
+      }
       return Response.json({ jobId, safe: result.safe, reason: result.reason, onChain: false });
     }
-    return Response.json({ error: "CV job not found", safe: false }, { status: 404 });
+    return Response.json({ error: "CV job not found", safe: null, pending: true }, { status: 404 });
   }
 
   try {
     const job = await client.readContract({ address, abi, functionName: "getJob", args: [BigInt(jobId)] }) as any;
-    return Response.json({ jobId, safe: job.sanitized, onChain: true });
+    // If not yet sanitized on-chain, also check KV for error artifacts and clean them
+    if (!job.sanitized) {
+      const { getSanitization, deleteSanitization } = await import("~~/lib/sanitize");
+      const cached = await getSanitization(jobId);
+      if (cached && !cached.safe && cached.reason && /error|fail open|skipped|failed/i.test(cached.reason)) {
+        await deleteSanitization(jobId);
+      }
+      // Return pending state — frontend should poll/retry
+      return Response.json({ jobId, safe: null, pending: true, onChain: true });
+    }
+    return Response.json({ jobId, safe: true, onChain: true });
   } catch {
-    return Response.json({ error: "Job not found", safe: false }, { status: 404 });
+    return Response.json({ error: "Job not found", safe: null, pending: true }, { status: 404 });
   }
 }

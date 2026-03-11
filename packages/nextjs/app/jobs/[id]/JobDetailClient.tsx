@@ -87,21 +87,29 @@ export default function JobDetailClient() {
   });
 
   // Sanitization status — check first, trigger if missing (for pre-existing jobs)
-  const [sanitization, setSanitization] = useState<{ safe: boolean; reason: string; checkedAt: string } | null>(null);
+  const [sanitization, setSanitization] = useState<{ safe: boolean | null; reason?: string; checkedAt?: string; pending?: boolean } | null>(null);
   useEffect(() => {
     if (!jobId || !job) return;
+
+    const triggerCheck = () => {
+      const desc = job.descriptionCID || `Job #${jobId}`;
+      return fetch("/api/job/sanitize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: String(jobId), description: desc }),
+      }).then(r2 => r2.json()).then(d => setSanitization(d));
+    };
+
     fetch(`/api/job/sanitize?jobId=${jobId}`)
-      .then(r => {
-        if (r.ok) return r.json().then(d => setSanitization(d));
-        // Not yet sanitized — trigger it (covers pre-existing jobs)
-        const desc = job.descriptionCID || `Job #${jobId}`;
-        return fetch("/api/job/sanitize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jobId: String(jobId), description: desc }),
-        }).then(r2 => r2.json()).then(d => setSanitization(d));
+      .then(r => r.json())
+      .then(d => {
+        // If pending or not found, trigger a check
+        if (d.pending || d.safe === null || d.error) {
+          return triggerCheck();
+        }
+        setSanitization(d);
       })
-      .catch(() => {});
+      .catch(() => triggerCheck());
   }, [jobId, job]);
 
   const clawdPrice = useCLAWDPrice();
@@ -238,9 +246,11 @@ export default function JobDetailClient() {
               <div className="flex gap-2 items-center">
                 <span className={`badge ${status.badge}`}>{status.label}</span>
                 {sanitization ? (
-                  sanitization.safe
-                    ? <span className="badge badge-success badge-outline" title={`Checked ${new Date(sanitization.checkedAt).toLocaleString()}`}>🛡️ Sanitized</span>
-                    : <span className="badge badge-error badge-outline" title={sanitization.reason}>⚠️ Flagged</span>
+                  sanitization.safe === null || sanitization.pending
+                    ? <span className="badge badge-warning badge-outline">🔄 Checking...</span>
+                    : sanitization.safe
+                    ? <span className="badge badge-success badge-outline" title={`Checked ${sanitization.checkedAt ? new Date(sanitization.checkedAt).toLocaleString() : ""}`}>🛡️ Sanitized</span>
+                    : <span className="badge badge-error badge-outline" title={sanitization.reason || ""}>⚠️ Flagged</span>
                 ) : (
                   <span className="badge badge-ghost badge-outline">⏳ Pending review</span>
                 )}

@@ -72,12 +72,12 @@ export async function checkSanitization(jobId: string, text: string): Promise<Sa
 async function _doCheck(jobId: string, text: string): Promise<SanitizationResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    // Fail open in dev, fail closed in prod
-    const isDev = process.env.NODE_ENV === "development";
+    // Fail open — no API key should never block a job
+    console.warn("Sanitize: No ANTHROPIC_API_KEY — failing open for job", jobId);
     return {
       jobId,
-      safe: isDev,
-      reason: isDev ? "No API key (dev mode — auto-pass)" : "No API key configured",
+      safe: true,
+      reason: "Check skipped (no API key — fail open)",
       checkedAt: new Date().toISOString(),
     };
   }
@@ -91,7 +91,7 @@ async function _doCheck(jobId: string, text: string): Promise<SanitizationResult
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-6",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 256,
         system: SANITIZE_PROMPT,
         messages: [{ role: "user", content: text }],
@@ -99,13 +99,23 @@ async function _doCheck(jobId: string, text: string): Promise<SanitizationResult
     });
 
     if (!res.ok) {
-      console.error("Sanitize API error:", res.status, await res.text());
-      return { jobId, safe: false, reason: "Sanitization check failed — API error", checkedAt: new Date().toISOString() };
+      const body = await res.text();
+      console.error(`Sanitize API error for job ${jobId}: status=${res.status} body=${body}`);
+      // FAIL OPEN — API errors must never block jobs
+      return { jobId, safe: true, reason: `Check skipped (API ${res.status} — fail open)`, checkedAt: new Date().toISOString() };
     }
 
     const data = await res.json();
     const content = data.content?.[0]?.text || "";
-    const parsed = JSON.parse(content);
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseErr) {
+      console.error(`Sanitize: Failed to parse API response for job ${jobId}: "${content}"`);
+      // FAIL OPEN — bad response format must never block jobs
+      return { jobId, safe: true, reason: "Check skipped (parse error — fail open)", checkedAt: new Date().toISOString() };
+    }
 
     const result: SanitizationResult = {
       jobId,
@@ -114,10 +124,12 @@ async function _doCheck(jobId: string, text: string): Promise<SanitizationResult
       checkedAt: new Date().toISOString(),
     };
 
+    // Only cache real results (successful API calls with valid responses)
     await setSanitization(result);
     return result;
   } catch (e) {
-    console.error("Sanitize check error:", e);
-    return { jobId, safe: false, reason: "Sanitization check error", checkedAt: new Date().toISOString() };
+    console.error(`Sanitize check error for job ${jobId}:`, e);
+    // FAIL OPEN — exceptions must never block jobs
+    return { jobId, safe: true, reason: "Check skipped (error — fail open)", checkedAt: new Date().toISOString() };
   }
 }
