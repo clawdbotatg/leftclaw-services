@@ -3,7 +3,7 @@ import deployedContracts from "~~/contracts/deployedContracts";
 
 const { address, abi } = deployedContracts[8453].LeftClawServices;
 
-const fnSigs = (abi as any[])
+const fnSigs = ([...abi] as any[])
   .filter(a => a.type === "function" && ["acceptJob", "logWork", "completeJob", "getJob", "getWorkLogs", "getJobsByStatus"].includes(a.name))
   .map(a => `${a.name}(${(a.inputs || []).map((i: any) => `${i.type} ${i.name}`).join(", ")})${a.outputs?.length ? ` → ${a.outputs.map((o: any) => o.type).join(", ")}` : ""}`)
   .join("\n");
