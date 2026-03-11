@@ -107,7 +107,7 @@ const Home: NextPage = () => {
       {/* Beta disclaimer */}
       {!bannerDismissed && (
         <div className="w-full bg-red-600 flex items-center justify-center gap-4 py-5 px-6">
-          <span className="text-white font-bold text-lg">⚠️ BETA — Only the PFP generator is working right now. Consultations and jobs are not ready. Built entirely by an AI.</span>
+          <span className="text-white font-bold text-lg">⚠️ BETA SOFTWARE — We are still testing all this. You should probably only spend CV right now. Built entirely by an AI.</span>
           <button
             onClick={dismissBanner}
             className="text-white/70 hover:text-white transition-colors text-xl font-bold leading-none ml-2"
