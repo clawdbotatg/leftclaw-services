@@ -4,7 +4,7 @@ import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import OpenAI, { toFile } from "openai";
 import { BASE_NETWORK, PAYMENT_ADDRESS, SERVICE_PRICES, x402Server } from "~~/lib/x402";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw.services";
 
 // Cache the base image buffer in memory after first fetch
 let baseImageCache: Buffer | null = null;

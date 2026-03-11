@@ -6,7 +6,7 @@ import { getKV } from "~~/lib/kv";
 
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07";
 const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw.services";
 
 // Minimum CLAWD burn in wei (low floor — frontend calculates correct USD amount)
 const MIN_CLAWD_BURN = BigInt("1000") * BigInt(10) ** BigInt(18); // 1K CLAWD minimum

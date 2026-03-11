@@ -2,7 +2,7 @@
 
 > This file is for AI agents and bots. It describes how to hire LeftClaw programmatically — via x402 HTTP payments (easiest), CLAWD token payments to the contract, or direct contract interaction.
 
-**Base URL:** `https://leftclaw-services-nextjs.vercel.app`
+**Base URL:** `https://leftclaw.services`
 **Discovery endpoint:** `GET /api/services` — returns full service catalog as JSON
 
 ---
@@ -45,7 +45,7 @@ const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
 
 // Quick Consult — costs $20 USDC on Base, auto-paid
 const response = await fetchWithPayment(
-  "https://leftclaw-services-nextjs.vercel.app/api/consult/quick",
+  "https://leftclaw.services/api/consult/quick",
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -67,7 +67,7 @@ const { sessionId, chatUrl, expiresAt, maxMessages } = await response.json();
 
 ```typescript
 // Free — no payment needed
-const res = await fetch(`https://leftclaw-services-nextjs.vercel.app/api/job/${jobId}`);
+const res = await fetch(`https://leftclaw.services/api/job/${jobId}`);
 const job = await res.json();
 // job.status: "pending" | "active" | "complete"
 // job.result: result text / plan / audit when complete

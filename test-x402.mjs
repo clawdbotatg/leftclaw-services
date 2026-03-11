@@ -26,7 +26,7 @@ console.log(`Testing Quick Consult ($20 USDC)...\n`);
 const fetchWithPayment = wrapFetch(walletClient);
 
 const res = await fetchWithPayment(
-  "https://leftclaw-services-nextjs.vercel.app/api/consult/quick",
+  "https://leftclaw.services/api/consult/quick",
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },

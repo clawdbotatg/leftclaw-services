@@ -4,7 +4,7 @@ import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import { createSession } from "~~/lib/sessionStore";
 import { BASE_NETWORK, PAYMENT_ADDRESS, SERVICE_PRICES, x402Server } from "~~/lib/x402";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw.services";
 
 const handler = async (req: NextRequest): Promise<NextResponse> => {
   try {
@@ -68,7 +68,7 @@ export const POST = withX402(
         output: {
           example: {
             sessionId: "x402_abc123",
-            chatUrl: "https://leftclaw-services-nextjs.vercel.app/chat/x402/x402_abc123",
+            chatUrl: "https://leftclaw.services/chat/x402/x402_abc123",
             status: "active",
             expiresAt: "2026-03-06T18:00:00.000Z",
             maxMessages: 20,

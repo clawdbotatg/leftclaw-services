@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI, { toFile } from "openai";
 import { verifyPayment, PaymentMethod } from "~~/lib/payments";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw.services";
 
 let baseImageCache: Buffer | null = null;
 

@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     console.log("[cv-spend] signature verified OK, calling larv.ai...");
 
-    // Spend CV via clawdviction API
+    // Spend CV via larv.ai API
     const secret = process.env.CV_SPEND_SECRET;
     if (!secret) {
       console.error("[cv-spend] CV_SPEND_SECRET not configured!");

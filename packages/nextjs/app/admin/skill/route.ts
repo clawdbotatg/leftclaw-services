@@ -178,7 +178,7 @@ ${fnSigs}
 - The stage is stored on-chain in \`job.currentStage\` — no need for \`[STAGE:xxx]\` tags in the note anymore (but you can still include them for readability).
 
 ## API
-Base URL: \`https://leftclaw-services-nextjs.vercel.app\`
+Base URL: \`https://leftclaw.services\`
 
 | Endpoint | Returns |
 |---|---|

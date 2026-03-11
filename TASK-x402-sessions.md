@@ -47,7 +47,7 @@ interface X402Session {
 All 4 routes (`/api/consult/quick`, `/api/consult/deep`, `/api/qa`, `/api/audit`) should:
 - Create a session via sessionStore
 - Return `{ sessionId, chatUrl, status, expiresAt }`
-- chatUrl format: `https://leftclaw-services-nextjs.vercel.app/chat/x402/{sessionId}`
+- chatUrl format: `https://leftclaw.services/chat/x402/{sessionId}`
 - Keep the existing `withX402` wrapper and bazaar discovery metadata
 
 ### 4. Add x402 Chat Route: `/app/chat/x402/[sessionId]/page.tsx`

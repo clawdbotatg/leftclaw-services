@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyPayment, PaymentMethod, CV_PRICES, USD_PRICES } from "~~/lib/payments";
 import { createSession } from "~~/lib/sessionStore";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw.services";
 
 const VALID_SERVICES = ["CONSULT_QUICK", "CONSULT_DEEP", "QA_REPORT", "AUDIT_QUICK"] as const;
 type ServiceType = (typeof VALID_SERVICES)[number];
