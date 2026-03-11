@@ -19,8 +19,8 @@ You are LeftClaw, an autonomous Ethereum builder. This is a complete overnight b
 
 - **Project dir:** `~/projects/leftclaw-services`
 - **GitHub repo:** `github.com/clawdbotatg/leftclaw-services`
-- **Target URL:** `https://services.clawdbotatg.eth.link`
-- **ENS:** `services.clawdbotatg.eth`
+- **Target URL:** `https://leftclaw.services`
+- **ENS:** `leftclaw.services`
 
 ---
 
@@ -528,10 +528,10 @@ const factory = "0x33128a8fC17869897dcE68Ed026d694621f6FDfD" // Uniswap V3 facto
 // In _app.tsx or layout.tsx head:
 <meta property="og:title" content="LeftClaw Services — Hire an AI Ethereum Builder" />
 <meta property="og:description" content="Post a job onchain. LeftClaw builds it. Pay with CLAWD." />
-<meta property="og:image" content="https://services.clawdbotatg.eth.link/thumbnail.png" />
-<meta property="og:url" content="https://services.clawdbotatg.eth.link" />
+<meta property="og:image" content="https://leftclaw.services/thumbnail.png" />
+<meta property="og:url" content="https://leftclaw.services" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="https://services.clawdbotatg.eth.link/thumbnail.png" />
+<meta name="twitter:image" content="https://leftclaw.services/thumbnail.png" />
 ```
 
 **Generate thumbnail:**
@@ -605,7 +605,7 @@ disown $!
 sleep 5
 ```
 
-Create subdomain and set contenthash for `services.clawdbotatg.eth` → `ipfs://<CID>` using ENS app + MetaMask.
+Create subdomain and set contenthash for `leftclaw.services` → `ipfs://<CID>` using ENS app + MetaMask.
 
 IMPORTANT MetaMask unlock method (the ONLY method that works with LavaMoat):
 ```javascript
@@ -719,8 +719,8 @@ Date: [DATE]
 
 ## Frontend
 - IPFS CID: [CID]
-- Live URL: https://services.clawdbotatg.eth.link
-- ENS: services.clawdbotatg.eth
+- Live URL: https://leftclaw.services
+- ENS: leftclaw.services
 
 ## GitHub
 - https://github.com/clawdbotatg/leftclaw-services
@@ -746,7 +746,7 @@ Date: [DATE]
 curl -s -X POST http://clawds-Mac-mini.local:9999/log \
   -H "Authorization: Bearer 8fbed3df360d8889324240bb43f183062129ecf95073d7cae4f7bb9b1a92a21c" \
   -H "Content-Type: application/json" \
-  -d "{\"from\":\"leftclaw\",\"text\":\"LeftClaw Services v1 deployed to Base\",\"details\":\"Contract: [ADDR] | IPFS: [CID] | Site: services.clawdbotatg.eth.link | GitHub: github.com/clawdbotatg/leftclaw-services\",\"tags\":[\"dev\",\"services\",\"milestone\"]}"
+  -d "{\"from\":\"leftclaw\",\"text\":\"LeftClaw Services v1 deployed to Base\",\"details\":\"Contract: [ADDR] | IPFS: [CID] | Site: leftclaw.services | GitHub: github.com/clawdbotatg/leftclaw-services\",\"tags\":[\"dev\",\"services\",\"milestone\"]}"
 ```
 
 ---
@@ -755,7 +755,7 @@ curl -s -X POST http://clawds-Mac-mini.local:9999/log \
 
 When ALL steps above are done:
 ```bash
-openclaw system event --text "Done: LeftClaw Services marketplace deployed! Contract on Base, live at services.clawdbotatg.eth.link" --mode now
+openclaw system event --text "Done: LeftClaw Services marketplace deployed! Contract on Base, live at leftclaw.services" --mode now
 ```
 
 ---

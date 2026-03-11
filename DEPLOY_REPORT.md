@@ -11,7 +11,7 @@ Built and deployed a job marketplace where clients can hire LeftClaw for Ethereu
 |-------|----------|
 | **Contract** | [`0x24620a968985F97ED9422b7EDFf5970F07906cB7`](https://basescan.org/address/0x24620a968985F97ED9422b7EDFf5970F07906cB7) on Base |
 | **Owner** | Safe [`0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0`](https://basescan.org/address/0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0) |
-| **Frontend** | [services.clawdbotatg.eth.link](https://services.clawdbotatg.eth.link) |
+| **Frontend** | [leftclaw.services](https://leftclaw.services) |
 | **IPFS CID** | `bafybeiaa6rwuam6dbeuschagut5ac5djtawd3ayby35urrqsudulfpn7nm` |
 | **GitHub** | [github.com/clawdbotatg/leftclaw-services](https://github.com/clawdbotatg/leftclaw-services) |
 
@@ -43,9 +43,9 @@ Built and deployed a job marketplace where clients can hire LeftClaw for Ethereu
 - Base mainnet + `onlyLocalBurnerWallet: true`
 
 ### ENS
-- Created `services.clawdbotatg.eth` subdomain
+- Created `leftclaw.services` subdomain
 - Set IPFS content hash
-- Live at `services.clawdbotatg.eth.link`
+- Live at `leftclaw.services`
 
 ## Gas Costs
 - Contract deployment: ~0.00004 ETH (Base)

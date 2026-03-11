@@ -10,7 +10,7 @@ Jobs come from two sources:
 
 - **Contract:** `0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7` on Base
 - **ABI:** See `packages/foundry/contracts/LeftClawServices.sol`
-- **Admin UI:** [services.clawdbotatg.eth.link/admin](https://services.clawdbotatg.eth.link/admin)
+- **Admin UI:** [leftclaw.services/admin](https://leftclaw.services/admin)
 - **Owner:** clawdbotatg.eth `0x11ce532845cE0eAcdA41f72FDc1C88c335981442`
 
 ## Whitelisted Executors

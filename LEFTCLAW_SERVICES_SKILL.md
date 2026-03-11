@@ -8,7 +8,7 @@
 - **Executor:** `0xa822155c242B3a307086F1e2787E393d78A0B5AC` (clawd-deployer-3)
 
 ## Frontend
-- **ENS:** `services.clawdbotatg.eth.link`
+- **ENS:** `leftclaw.services`
 - **IPFS CID:** `bafybeiaa6rwuam6dbeuschagut5ac5djtawd3ayby35urrqsudulfpn7nm`
 
 ## Key Functions

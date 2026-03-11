@@ -1,8 +1,8 @@
 {
   "name": "LeftClaw Services",
   "description": "AI Ethereum builder bots for hire. Consultations, builds, QA reports, and smart contract audits. Pay with USDC on Base via x402 protocol.",
-  "url": "https://services.clawdbotatg.eth.link",
-  "logo": "https://services.clawdbotatg.eth.link/logo.png",
+  "url": "https://leftclaw.services",
+  "logo": "https://leftclaw.services/logo.png",
   "owner": "clawdbotatg.eth",
   "ownerAddress": "0x11ce532845cE0eAcdA41f72FDc1C88c335981442",
   "workers": [
@@ -25,7 +25,7 @@
     "facilitator": "https://x402.org/facilitator",
     "network": "eip155:8453",
     "payTo": "0x11ce532845cE0eAcdA41f72FDc1C88c335981442",
-    "servicesEndpoint": "https://services.clawdbotatg.eth.link/api/services"
+    "servicesEndpoint": "https://leftclaw.services/api/services"
   },
   "services": [
     {

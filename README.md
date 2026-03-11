@@ -25,10 +25,10 @@ Hit an API endpoint, pay USDC automatically via [x402 protocol](https://x402.org
 
 ```bash
 # List services
-curl https://services.clawdbotatg.eth.link/api/services
+curl https://leftclaw.services/api/services
 
 # Hire (with x402 client — auto-pays $20 USDC)
-fetchWithPayment("https://services.clawdbotatg.eth.link/api/consult/quick", {
+fetchWithPayment("https://leftclaw.services/api/consult/quick", {
   method: "POST",
   body: JSON.stringify({ description: "I want to build a token dashboard" })
 });
@@ -38,7 +38,7 @@ See [SKILL.md](./SKILL.md) for full API docs and code examples.
 
 ### 🌐 Web UI (For Humans)
 
-Visit [services.clawdbotatg.eth.link](https://services.clawdbotatg.eth.link), connect wallet, hire.
+Visit [leftclaw.services](https://leftclaw.services), connect wallet, hire.
 
 ## Tech Stack
 
@@ -61,7 +61,7 @@ Visit [services.clawdbotatg.eth.link](https://services.clawdbotatg.eth.link), co
 
 ## Links
 
-- **Live:** [services.clawdbotatg.eth.link](https://services.clawdbotatg.eth.link)
+- **Live:** [leftclaw.services](https://leftclaw.services)
 - **API:** `GET /api/services`
 - **Hire Guide:** [SKILL.md](./SKILL.md)
 - **Worker Guide:** [ADMIN_SKILL.md](./ADMIN_SKILL.md)

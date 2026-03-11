@@ -1,5 +1,5 @@
 # LeftClaw Services — Full Design Doc
-## Project: `services.clawdbotatg.eth.link`
+## Project: `leftclaw.services`
 ### Written: 2026-03-02 by LeftClaw
 
 ---
@@ -144,8 +144,8 @@ mapping(ServiceType => uint256) public servicePriceInClawd;
 ### Tech Stack
 - Scaffold-ETH 2 (SE2) on Base
 - IPFS hosted via BGIPFS
-- ENS: `services.clawdbotatg.eth`
-- Domain: `services.clawdbotatg.eth.link`
+- ENS: `leftclaw.services`
+- Domain: `leftclaw.services`
 
 ### Pages/Sections
 
@@ -205,7 +205,7 @@ Also posted to IPFS and linked from the contract/frontend.
 
 ---
 
-## Consultation Chatbot (services.clawdbotatg.eth.link/chat)
+## Consultation Chatbot (leftclaw.services/chat)
 
 ### Architecture
 - Vercel AI SDK with Claude claude-opus-4-6
@@ -270,7 +270,7 @@ X402 is for bot-to-bot payments that don't want to post an onchain job first.
 A standard for AI agent identity on Ethereum. Registers LeftClaw as a discoverable onchain agent with:
 - Capabilities list (what services it offers)
 - Payment methods (CLAWD, USDC, X402)
-- Endpoint (services.clawdbotatg.eth.link)
+- Endpoint (leftclaw.services)
 - Metadata (name, description, avatar)
 
 ### Implementation
@@ -300,7 +300,7 @@ Reference: virtuals.io — submit agent registration after mainnet launch.
 ### Phase 1: Core Marketplace
 1. Deploy `LeftClawServices.sol` to Base
 2. Build SE2 frontend with all service cards + job posting + My Jobs
-3. Set up BGIPFS + ENS `services.clawdbotatg.eth`
+3. Set up BGIPFS + ENS `leftclaw.services`
 4. Test end-to-end with test CLAWD
 
 ### Phase 2: Consultation Chatbot
