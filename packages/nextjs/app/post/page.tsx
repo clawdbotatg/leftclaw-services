@@ -72,7 +72,7 @@ function PostJobPage() {
   const [customAmount, setCustomAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cv");
   const [step, setStep] = useState<"idle" | "signing" | "approving" | "paying" | "posting" | "done">("idle");
-  const postedJobIdRef = useRef<number | null>(null);
+  const postedJobIdRef = useRef<number | string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const hasSetDefault = useRef(false);
 
@@ -154,7 +154,7 @@ function PostJobPage() {
         if (!walletClient) throw new Error("Wallet not connected");
         if (!selectedStandard) throw new Error("CV not available for custom jobs");
         setStep("signing");
-        const sigKey = `cv-sig-${address.toLowerCase()}`;
+        const sigKey = `cv-sig-v2-${address.toLowerCase()}`;
         let signature = localStorage.getItem(sigKey);
         if (!signature) {
           signature = await walletClient.signMessage({ message: CV_SIGN_MESSAGE });
@@ -167,14 +167,17 @@ function PostJobPage() {
         const spendData = await spendRes.json();
         if (!spendRes.ok) throw new Error(spendData.error || "CV spend failed");
 
-        postedJobIdRef.current = nextJobId ? Number(nextJobId) : null;
-        setStep("posting");
-        const txHash = await writeAndOpen(() => writeContractAsync({
-          address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithCV", args: [serviceType, BigInt(cvCost), jobDesc],
-        }));
-        if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
-        if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        // CV payment is off-chain only — no on-chain tx needed.
+        const cvJobId = `cv-${Date.now()}`;
+        postedJobIdRef.current = cvJobId;
+
+        // Auto-pass sanitization for CV posts (fire-and-forget)
+        fetch("/api/job/sanitize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: cvJobId, description: jobDesc, cvAutoPass: true }),
+        }).catch(() => {});
+
         setStep("done");
 
       } else if (paymentMethod === "clawd") {
