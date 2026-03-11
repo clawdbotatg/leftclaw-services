@@ -58,7 +58,7 @@ function BuildPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cv");
   const [step, setStep] = useState<"idle" | "signing" | "approving" | "paying" | "posting" | "done">("idle");
   const [txError, setTxError] = useState<string | null>(null);
-  const postedJobIdRef = useRef<number | null>(null);
+  const postedJobIdRef = useRef<number | string | null>(null);
   const hasSetDefault = useRef(false);
 
   useEffect(() => {
@@ -155,7 +155,7 @@ function BuildPage() {
       if (paymentMethod === "cv") {
         if (!walletClient) throw new Error("Wallet not connected");
         setStep("signing");
-        const sigKey = `cv-sig-${address.toLowerCase()}`;
+        const sigKey = `cv-sig-v2-${address.toLowerCase()}`;
         let signature = localStorage.getItem(sigKey);
         if (!signature) {
           signature = await walletClient.signMessage({ message: CV_SIGN_MESSAGE });
@@ -169,23 +169,18 @@ function BuildPage() {
         const spendData = await spendRes.json();
         if (!spendRes.ok) throw new Error(spendData.error || "CV spend failed");
 
-        postedJobIdRef.current = nextJobId ? Number(nextJobId) : null;
-        setStep("posting");
-        let txHash;
-        if (isMultiDay) {
-          const customPriceUsd = parseUnits(totalUsd.toString(), 6);
-          txHash = await writeAndOpen(() => writeContractAsync({
-            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-            functionName: "postJobCustomCV", args: [BigInt(cvCost), customPriceUsd, jobDesc],
-          }));
-        } else {
-          txHash = await writeAndOpen(() => writeContractAsync({
-            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-            functionName: "postJobWithCV", args: [BUILD_DAILY_TYPE, BigInt(cvCost), jobDesc],
-          }));
-        }
-        if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
-        if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        // CV payment is off-chain only — no on-chain tx needed.
+        // Generate a synthetic job ID and auto-pass sanitization.
+        const cvJobId = `cv-${Date.now()}`;
+        postedJobIdRef.current = cvJobId;
+
+        // Auto-pass sanitization for CV builds (fire-and-forget)
+        fetch("/api/job/sanitize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: cvJobId, description: jobDesc, cvAutoPass: true }),
+        }).catch(() => {});
+
         setStep("done");
 
       } else if (paymentMethod === "clawd") {
