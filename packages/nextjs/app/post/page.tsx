@@ -18,7 +18,7 @@ const CONTRACT_ABI = deployedContracts[8453]?.LeftClawServices?.abi;
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 const BASE_CHAIN_ID = 8453;
-const CV_SIGN_MESSAGE = "ClawdViction CV Spend";
+const CV_SIGN_MESSAGE = "larv.ai CV Spend";
 
 const ERC20_ABI = [
   { name: "approve", type: "function", stateMutability: "nonpayable" as const, inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ type: "bool" }] },

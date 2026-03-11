@@ -1,7 +1,7 @@
 /**
  * Unified payment verification for LeftClaw Services.
  * Supports 4 payment methods:
- *   - cv: ClawdViction points (off-chain, via clawdviction API)
+ *   - cv: ClawdViction points (off-chain, via larv.ai API)
  *   - clawd: CLAWD token burn to 0xdead (on-chain, verified)
  *   - usdc: USDC transfer to payTo address (on-chain, verified)
  *   - eth: ETH transfer to payTo address (on-chain, verified)
@@ -15,8 +15,8 @@ const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07";
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 const PAY_TO = "0x11ce532845cE0eAcdA41f72FDc1C88c335981442";
-const CV_SPEND_URL = "https://clawdviction.vercel.app/api/cv/spend";
-const CV_SIGN_MESSAGE = "ClawdViction CV Spend";
+const CV_SPEND_URL = "https://larv.ai/api/cv/spend";
+const CV_SIGN_MESSAGE = "larv.ai CV Spend";
 
 // ERC20 Transfer event topic
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";

@@ -15,7 +15,7 @@ const PAY_TO = "0x11ce532845cE0eAcdA41f72FDc1C88c335981442" as const;
 const BASE_CHAIN_ID = 8453;
 const PFP_PRICE_USD = 0.5;
 const PFP_CV_COST = 50_000;
-const CV_SIGN_MESSAGE = "ClawdViction CV Spend";
+const CV_SIGN_MESSAGE = "larv.ai CV Spend";
 
 const ERC20_ABI = [
   {
@@ -112,7 +112,7 @@ export default function PfpPage() {
       let signature: string | undefined;
 
       if (paymentMethod === "cv") {
-        const sigKey = `cv-sig-${address.toLowerCase()}`;
+        const sigKey = `cv-sig-v2-${address.toLowerCase()}`;
         const cached = localStorage.getItem(sigKey);
         if (cached) {
           signature = cached;
@@ -288,7 +288,7 @@ export default function PfpPage() {
               <div className="alert alert-error mb-4">
                 <span>
                   Insufficient {PAYMENT_LABELS[paymentMethod].label} balance.{" "}
-                  {paymentMethod === "cv" && <a href="https://clawdviction.vercel.app/stake" target="_blank" rel="noopener" className="underline">Stake CLAWD →</a>}
+                  {paymentMethod === "cv" && <a href="https://larv.ai/stake" target="_blank" rel="noopener" className="underline">Stake CLAWD →</a>}
                   {paymentMethod === "clawd" && <a href="https://app.uniswap.org/swap?outputCurrency=0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07&chain=base" target="_blank" rel="noopener" className="underline">Get CLAWD →</a>}
                 </span>
               </div>
