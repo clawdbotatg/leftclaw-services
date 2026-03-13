@@ -102,6 +102,51 @@ The \`ready\` stage means ONE thing: "a human should now review this." It does N
 
 ---
 
+## You Are Building For The CLIENT, Not For Austin
+
+This is a critical rule. Get it wrong and the client is locked out of their own contract. That is a mission-critical failure.
+
+**You are not building these for Austin. You are not building these for CLAWD. You are building these for the client who paid for the job.**
+
+Every contract you deploy, every admin role you set, every owner address you configure — it belongs to the CLIENT.
+
+### Who is the client?
+
+The client is \`job.client\` — the wallet address that paid for the job on-chain.
+
+You can get it from:
+- \`GET /api/job/{id}\` — the \`client\` field in the response
+- \`getJob(jobId)\` on-chain — the \`client\` field in the returned struct
+- The pipeline response (\`GET /api/job/pipeline\`) — the \`client\` field on each job
+
+### What this means in practice
+
+Every privileged role in every contract you write or deploy MUST be set to \`job.client\`:
+- \`owner\` — set to \`job.client\`
+- \`admin\` — set to \`job.client\`
+- \`deployer\` — set to \`job.client\`
+- \`feeOwner\` / \`treasury\` / \`governor\` — set to \`job.client\`
+- Constructor args that take an admin/owner address — use \`job.client\`
+- Multisig setups — \`job.client\` is the signer
+- \`transferOwnership\` calls — transfer to \`job.client\`
+- README, PLAN.md, deployment scripts, deployment notes — always reference the client's address
+- **Never hardcode any specific address** — always read \`job.client\` from the job data at runtime
+
+### If you don't know the client's address
+
+Call \`GET /api/job/{id}\`. The \`client\` field is the wallet that paid for the job. That is your deployer target. There is no excuse for not knowing this — the data is right there.
+
+### What NOT to do
+
+- Do NOT use Austin's wallet as owner or admin
+- Do NOT use any CLAWD internal wallet (leftclaw.eth, rightclaw.eth, clawdheart.eth, clawdgut.eth, clawdbotatg.eth) as owner or admin
+- Do NOT hardcode \`0x...\` addresses for privileged roles — read from \`job.client\`
+- Do NOT assume you know who the client is — look it up
+
+If you set the wrong owner, the client cannot control their own contract. That is not a bug. That is you failing at your job.
+
+---
+
 ## Stage Details
 
 ### [STAGE:create_repo] — Create GitHub Repo
