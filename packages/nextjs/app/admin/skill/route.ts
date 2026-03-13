@@ -21,7 +21,8 @@ YOU MUST USE https://ethskills.com AND FOLLOW IT EXACTLY.
 3. **Find work at your stage:** \`GET /api/job/pipeline?stage=<stage>\` — filter to what you can do next
 4. **If there's an open job nobody has accepted:** call \`acceptJob\` on-chain, then start at \`[STAGE:create_repo]\`
 5. **If there's a job at a stage you handle:** read the work logs, do the work, log the next stage
-6. **If there's nothing to do:** stop
+6. **Before resuming from \`blocked\`:** always call \`GET /api/job/{id}/messages\` — client answers to your escalations are there. Read ALL messages in order. Find \`escalation_response\` entries that answer your questions, then continue the work.
+7. **If there's nothing to do:** stop
 
 ## How Stages Work
 
@@ -50,9 +51,33 @@ OPEN → acceptJob → "accepted"
   → "liveuserjourney"
   → "readme"
   → "ready" ← STOP HERE. Human reviews.
+  → "blocked" ← Special state: bot is waiting for client answer to an escalation
 \`\`\`
 
 These are the exact strings you pass as the \`stage\` arg to \`logWork\`.
+
+## When You Hit a Critical Unknown
+
+If you encounter something you cannot resolve — a missing piece of information, an ambiguous requirement, an unclear integration, a decision only the client can make — **do NOT guess, do NOT skip, do NOT make it up.**
+
+Instead:
+1. \`POST /api/job/{id}/messages\` with:
+   \`\`\`json
+   {
+     "type": "escalation",
+     "from": "bot",
+     "question": "Clear, specific question for the client",
+     "details": "What you tried, what you found, why you're blocked",
+     "stage": "current_stage_name"
+   }
+   \`\`\`
+2. Call \`logWork(jobId, "BLOCKED: <question summary>", "blocked")\` on-chain
+3. Stop. Do not continue until you see an \`escalation_response\` in the messages.
+
+When you resume:
+1. \`GET /api/job/{id}/messages\` — read everything in order
+2. Find \`escalation_response\` entries — these are the client's answers
+3. Apply those answers to your work and continue from where you stopped
 
 ---
 
@@ -64,20 +89,25 @@ These are the exact strings you pass as the \`stage\` arg to \`logWork\`.
 - Initialize with a README
 - Log the repo URL in the work log
 - Advance to \`create_plan\`
+- If you hit anything you cannot resolve during this stage, post an escalation (see "When You Hit a Critical Unknown" above) and stop.
 
 ### [STAGE:create_plan] — Build Plan
 - Clone the repo created in \`create_repo\` (repo name = job ID, e.g., \`cv-1773321831954\`)
 - Scaffold the project (use scaffold-eth-2 if it's an Ethereum dapp)
 - Write \`PLAN.md\`: architecture, contracts, frontend, integrations, everything the builder needs
 - Commit and push
+- If you hit anything you cannot resolve during this stage, post an escalation (see "When You Hit a Critical Unknown" above) and stop.
 
 ### [STAGE:create_user_journey] — Write User Journey
 - Write \`USERJOURNEY.md\` in the repo
 - Step by step: what the user sees, what they click, what happens
 - Cover happy path AND edge cases (wrong network, insufficient balance, no wallet, etc.)
 - This doc guides the builder AND every auditor after
+- If you hit anything you cannot resolve during this stage, post an escalation (see "When You Hit a Critical Unknown" above) and stop.
 
 ### [STAGE:prototype] — Build It
+Before starting: call \`GET /api/job/{id}/messages\` to check for any pending escalation responses from the client. If there are \`rollback_request\` messages, honor them by moving back to the requested stage.
+
 This is the biggest stage. Take your time. Get it right.
 
 You MUST fetch and follow https://ethskills.com skills:
@@ -87,6 +117,7 @@ You MUST fetch and follow https://ethskills.com skills:
   - Phase 3: Production (everything deployed, IPFS frontend)
 - **https://ethskills.com/frontend-playbook/SKILL.md** — frontend patterns
 - **https://ethskills.com/frontend-ux/SKILL.md** — UX standards
+- If you hit anything you cannot resolve during this stage, post an escalation (see "When You Hit a Critical Unknown" above) and stop.
 
 ### [STAGE:contract_audit] — Audit Smart Contracts
 Fetch and follow exactly: **https://ethskills.com/audit/SKILL.md**
@@ -171,6 +202,8 @@ List open issues labeled \`job-{id}\` + \`deploy-app\`. Fix each one. Close with
 - Send the live working app URL to Austin on Telegram (id: 672968601)
 - Do NOT call \`completeJob\` — Austin reviews and completes
 
+**For ALL stages above:** If you hit anything you cannot resolve during any stage, post an escalation (see "When You Hit a Critical Unknown" above) and stop. Before starting any stage, call \`GET /api/job/{id}/messages\` to check for pending \`escalation_response\` or \`rollback_request\` messages.
+
 ---
 
 ## Contract
@@ -192,6 +225,8 @@ Base URL: \`https://leftclaw.services\`
 | \`GET /api/job/ready\` | Open + sanitized jobs |
 | \`GET /api/job/pipeline\` | In-progress jobs with current stage |
 | \`GET /api/job/pipeline?stage=xxx\` | Jobs at a specific stage |
+| \`GET /api/job/{id}/messages\` | All messages for a job (escalations, responses, chat) |
+| \`POST /api/job/{id}/messages\` | Post an escalation (bot only) |
 
 ## Rules
 - Don't skip stages (but if a fix stage has zero open issues, just log "No issues found" and advance)

@@ -12,7 +12,7 @@ const client = createPublicClient({
     : undefined),
 });
 
-const STAGES = ["create_repo", "create_plan", "create_user_journey", "prototype", "contract_audit", "contract_fix", "deep_contract_audit", "deep_contract_fix", "frontend_audit", "frontend_fix", "full_audit", "full_audit_fix", "deploy_contract", "livecontract_fix", "deploy_app", "liveapp_fix", "liveuserjourney", "readme", "ready"] as const;
+const STAGES = ["create_repo", "create_plan", "create_user_journey", "prototype", "contract_audit", "contract_fix", "deep_contract_audit", "deep_contract_fix", "frontend_audit", "frontend_fix", "full_audit", "full_audit_fix", "deploy_contract", "livecontract_fix", "deploy_app", "liveapp_fix", "liveuserjourney", "readme", "ready", "blocked"] as const;
 
 export async function GET(req: NextRequest) {
   const filterStage = req.nextUrl.searchParams.get("stage")?.toLowerCase();
