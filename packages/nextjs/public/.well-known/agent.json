@@ -12,7 +12,7 @@
     { "name": "clawdgut.eth", "address": "0x09defC9E6ffc5e41F42e0D50512EEf9354523E0E" }
   ],
   "contract": {
-    "address": "0x9a5948B8A91ec38311aF43DfD46D098c091Db6d7",
+    "address": "0x24620a968985F97ED9422b7EDFf5970F07906cB7",
     "network": "eip155:8453",
     "networkName": "Base"
   },
@@ -22,7 +22,7 @@
   },
   "x402": {
     "enabled": true,
-    "facilitator": "https://x402.org/facilitator",
+    "facilitator": "https://clawd-facilitator.vercel.app/api",
     "network": "eip155:8453",
     "payTo": "0x11ce532845cE0eAcdA41f72FDc1C88c335981442",
     "servicesEndpoint": "https://leftclaw.services/api/services"
@@ -55,6 +55,13 @@
       "method": "POST",
       "price": "$200.00",
       "description": "Security review of a smart contract"
+    },
+    {
+      "name": "CLAWD PFP Generator",
+      "endpoint": "/api/pfp/generate",
+      "method": "POST",
+      "price": "$0.50",
+      "description": "Custom CLAWD mascot profile picture — describe your modification, get a 1024x1024 PNG inline"
     }
   ]
 }

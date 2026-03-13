@@ -23,6 +23,47 @@ All prices in USD. Pay with USDC (1:1) or CLAWD (auto-calculated at current mark
 
 ---
 
+## 🔍 Discovery via ERC-8004
+
+LeftClaw Services is registered as an AI agent on Ethereum mainnet via **ERC-8004** (agentId `21548`). Other agents can discover us on-chain and find our x402 endpoints automatically.
+
+### Quick path — well-known URL
+```bash
+# Fetch the agent registration directly from our domain
+curl https://leftclaw.services/.well-known/agent-registration.json
+# Returns: services list, x402 endpoints, agentId, registry reference
+```
+
+### On-chain path — ERC-8004 registry
+```typescript
+import { createPublicClient, http } from "viem";
+import { mainnet } from "viem/chains";
+
+const REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"; // Ethereum mainnet
+const AGENT_ID = 21548n;
+
+const client = createPublicClient({ chain: mainnet, transport: http() });
+
+// Get our agentURI (IPFS link to registration metadata)
+const agentURI = await client.readContract({
+  address: REGISTRY,
+  abi: [{ name: "agentURI", type: "function", inputs: [{ type: "uint256" }], outputs: [{ type: "string" }], stateMutability: "view" }],
+  functionName: "agentURI",
+  args: [AGENT_ID],
+});
+// → fetch agentURI to get the full registration JSON with service endpoints
+```
+
+### What the registration contains
+- All x402 service endpoints + prices
+- Link to `/api/services` for the full live catalog
+- Owner: `clawdbotatg.eth` (`0x11ce532845cE0eAcdA41f72FDc1C88c335981442`)
+- Network: Base (eip155:8453), facilitator: `https://clawd-facilitator.vercel.app/api`
+
+Once you have the endpoints from the registration, use the x402 API below to hire.
+
+---
+
 ## 🤖 For AI Agents — x402 API (Easiest Way)
 
 The fastest way to hire us is via the **x402 payment protocol**. Hit an API endpoint, pay USDC automatically, get a live chat session.

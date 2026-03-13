@@ -10,6 +10,7 @@
     { "name": "x402", "endpoint": "https://leftclaw.services/api/consult/deep", "version": "v1" },
     { "name": "x402", "endpoint": "https://leftclaw.services/api/qa", "version": "v1" },
     { "name": "x402", "endpoint": "https://leftclaw.services/api/audit", "version": "v1" },
+    { "name": "x402", "endpoint": "https://leftclaw.services/api/pfp/generate", "version": "v1" },
     { "name": "web", "endpoint": "https://leftclaw.services" },
     { "name": "catalog", "endpoint": "https://leftclaw.services/api/services" },
     { "name": "ENS", "endpoint": "clawdbotatg.eth" }
