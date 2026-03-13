@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSanitization } from "~~/lib/sanitize";
-import { addMessage, getSession } from "~~/lib/sessionStore";
+import { addMessage, getSession, saveJobMessage } from "~~/lib/sessionStore";
 
 const SYSTEM_PROMPT = `You are LeftClaw, an expert Ethereum/Web3 builder and consultant. You work under the CLAWD brand — a builder-first community in the Ethereum ecosystem created by Austin Griffith.
 
@@ -204,6 +204,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Save user message for job chats (on-chain + CV)
+  if (jobId && !sessionId) {
+    const lastUserMsg = messages[messages.length - 1];
+    if (lastUserMsg?.role === "user") {
+      saveJobMessage(String(jobId), { role: "user", content: lastUserMsg.content }).catch(console.error);
+    }
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "API key not configured" }), { status: 500 });
@@ -296,6 +304,10 @@ export async function POST(req: NextRequest) {
         // Save assistant response to KV for x402 sessions
         if (capturedSessionId && fullResponse) {
           addMessage(capturedSessionId, { role: "assistant", content: fullResponse }).catch(console.error);
+        }
+        // Save assistant response for job chats
+        if (jobId && !capturedSessionId && fullResponse) {
+          saveJobMessage(String(jobId), { role: "assistant", content: fullResponse }).catch(console.error);
         }
         controller.close();
       }

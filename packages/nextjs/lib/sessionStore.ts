@@ -21,10 +21,10 @@ export interface X402Session {
 }
 
 const SESSION_LIMITS: Record<string, { maxMessages: number; ttlHours: number }> = {
-  CONSULT_QUICK: { maxMessages: 15, ttlHours: 1 },
-  CONSULT_DEEP: { maxMessages: 30, ttlHours: 2 },
-  QA_REPORT: { maxMessages: 20, ttlHours: 4 },
-  AUDIT: { maxMessages: 20, ttlHours: 8 },
+  CONSULT_QUICK: { maxMessages: 15, ttlHours: 168 },
+  CONSULT_DEEP: { maxMessages: 30, ttlHours: 168 },
+  QA_REPORT: { maxMessages: 20, ttlHours: 168 },
+  AUDIT: { maxMessages: 20, ttlHours: 168 },
 };
 
 // In-memory fallback for dev
@@ -105,6 +105,34 @@ export async function addMessage(id: string, message: ChatMessage): Promise<X402
   }
 
   return session;
+}
+
+// --- Job chat persistence (on-chain + CV jobs) ---
+const JOB_CHAT_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+
+function jobChatKey(jobId: string): string {
+  return `jobchat:${jobId}`;
+}
+
+export async function saveJobMessage(jobId: string, message: ChatMessage): Promise<void> {
+  const kv = getKV();
+  if (!kv) return;
+  const existing = await getJobMessages(jobId);
+  existing.push(message);
+  await kv.set(jobChatKey(jobId), JSON.stringify(existing), { ex: JOB_CHAT_TTL_SECONDS });
+}
+
+export async function getJobMessages(jobId: string): Promise<ChatMessage[]> {
+  const kv = getKV();
+  if (!kv) return [];
+  const data = await kv.get<string>(jobChatKey(jobId));
+  if (!data) return [];
+  try {
+    const parsed = typeof data === "string" ? JSON.parse(data) : data;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function updateSession(id: string, updates: Partial<X402Session>): Promise<X402Session | null> {
