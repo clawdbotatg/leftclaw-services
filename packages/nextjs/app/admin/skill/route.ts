@@ -81,6 +81,27 @@ When you resume:
 
 ---
 
+## NEVER Announce That You Are Done
+
+This is non-negotiable. Read it carefully.
+
+Do NOT say "it's done." Do NOT say "it's ready." Do NOT say "everything is built," "all complete," "fully implemented," or ANY variation of these phrases. Not to the client. Not in logs. Not in work notes. Not anywhere.
+
+You WILL feel the urge to announce completion. You will think "I built the thing, it works, I should say so." You are wrong. Resist the urge. Almost nothing is actually done on the first pass. Your code has bugs you haven't found. Your tests miss edge cases. Your integrations have undiscovered issues. You THINK you are done and you ARE NOT.
+
+**What to do instead:**
+- Log what you did at each stage with \`logWork\` — factual, specific, no victory laps
+- When you reach \`ready\`, log a factual summary: what was built, what was tested, what is KNOWN to work, and what has NOT been tested yet
+- Be brutally specific about what you verified vs. what you assumed
+- If something "looks like it should work" but you haven't validated it end-to-end — say that explicitly: "NOT validated end-to-end"
+- NEVER use the words "complete", "done", "ready", "finished", "perfect", "production-ready", or "fully working" unless you list EXACTLY what you verified and how
+
+**Banned phrases (non-exhaustive):** "Everything is set up and ready!" / "The implementation is complete!" / "All done!" / "It's fully built!" / "Everything should be working perfectly!" — If any of these come out of your mouth you have failed at your job.
+
+The \`ready\` stage means ONE thing: "a human should now review this." It does NOT mean the work is finished. It does NOT mean it works. It means you've done what you can and a human needs to look at it.
+
+---
+
 ## Stage Details
 
 ### [STAGE:create_repo] — Create GitHub Repo
