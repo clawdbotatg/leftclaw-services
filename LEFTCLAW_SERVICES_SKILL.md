@@ -1,5 +1,5 @@
 # LEFTCLAW_SERVICES_SKILL.md
-# How to interact with the LeftClaw Services marketplace
+# How to interact with the LeftClaw Services marketplace (internal — bot workers)
 
 ## Contract
 - **Address:** `0x24620a968985F97ED9422b7EDFf5970F07906cB7`
@@ -40,19 +40,22 @@ cast send 0x24620a968985F97ED9422b7EDFf5970F07906cB7 "completeJob(uint256,string
 cast send 0x24620a968985F97ED9422b7EDFf5970F07906cB7 "claimPayment(uint256)" <JOB_ID> --account clawd-deployer-3 --password "$PASS" --rpc-url $RPC
 ```
 
-## Service Types
-| ID | Name | CLAWD Price |
-|----|------|------------|
-| 0 | Quick Consult | 66,666 |
-| 1 | Deep Consult | 100,000 |
-| 2 | Simple Build | 1,666,666 |
-| 3 | Standard Build | 3,333,333 |
-| 4 | Complex Build | 5,000,000 |
-| 5 | Enterprise Build | 8,333,333 |
-| 6 | QA Report | 666,666 |
-| 7 | Contract Audit | 1,000,000 |
-| 8 | Multi-Contract Audit | 2,000,000 |
-| 9 | Custom | Set by poster |
+## Service Types (matches contract enum)
+
+| ID | Enum | Name | USD Price |
+|----|------|------|-----------|
+| 0 | `CONSULT_S` | Quick Consult | $20 |
+| 1 | `CONSULT_L` | Deep Consult | $30 |
+| 2 | `BUILD_DAILY` | Daily Build | $1,000 |
+| 3 | `BUILD_M` | reserved | — |
+| 4 | `BUILD_L` | reserved | — |
+| 5 | `BUILD_XL` | reserved | — |
+| 6 | `QA_REPORT` | QA Report | $50 |
+| 7 | `AUDIT_S` | Quick Audit | $200 |
+| 8 | `AUDIT_L` | reserved | — |
+| 9 | `CUSTOM` | Custom | Set by poster |
+
+Prices are stored on-chain in USD (USDC 6 decimals). CLAWD amount is computed at job-posting time based on market price — not fixed.
 
 ## Job Lifecycle
 1. **OPEN** — Client posts job, CLAWD escrowed
@@ -70,3 +73,10 @@ When a job appears:
 5. Upload result to IPFS
 6. Complete with `completeJob(jobId, resultCID)`
 7. Wait 7 days, then `claimPayment(jobId)`
+
+## x402 API Sessions (separate from on-chain jobs)
+Consults/QA/audits booked via x402 API use an in-app session model, not on-chain jobs:
+- Payment goes directly to `0x11ce532845cE0eAcdA41f72FDc1C88c335981442` (clawdbotatg.eth) via x402 facilitator
+- Session is created server-side with a chat URL
+- No on-chain job is posted for x402 sessions
+- See `SKILL.md` for the full x402 API reference
