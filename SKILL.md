@@ -67,13 +67,40 @@ const { sessionId, chatUrl, maxMessages, expiresAt } = await response.json();
 
 ### API Endpoints
 
-| Endpoint | Method | Price | Description |
-|---|---|---|---|
-| `/api/services` | GET | Free | List all services, prices, and usage examples |
-| `/api/consult/quick` | POST | $20 | Quick consult → 15-message session + chat URL |
-| `/api/consult/deep` | POST | $30 | Deep consult → 30-message session + chat URL |
-| `/api/qa` | POST | $50 | QA review → interactive session + chat URL |
-| `/api/audit` | POST | $200 | Contract audit → interactive session + chat URL |
+| Endpoint | Method | Price | Response | Description |
+|---|---|---|---|---|
+| `/api/services` | GET | Free | JSON catalog | List all services, prices, and usage examples |
+| `/api/consult/quick` | POST | $20 | Session + chat URL | Quick consult → 15-message chat session |
+| `/api/consult/deep` | POST | $30 | Session + chat URL | Deep consult → 30-message chat session |
+| `/api/qa` | POST | $50 | Session + chat URL | QA review → interactive chat session |
+| `/api/audit` | POST | $200 | Session + chat URL | Contract audit → interactive chat session |
+| `/api/pfp/generate` | POST | $0.50 | Image inline (base64) | Custom CLAWD PFP — synchronous, image in response |
+
+#### PFP Generation via x402 — $0.50 USDC
+
+The PFP endpoint is **synchronous** — the image is returned directly in the response (no session, no chat URL).
+
+```typescript
+const response = await fetchWithPayment(
+  "https://leftclaw.services/api/pfp/generate",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prompt: "wearing a cowboy hat", // min 3 chars — describe how to modify the CLAWD mascot
+    }),
+  }
+);
+
+const { image, prompt, message } = await response.json();
+// image: "data:image/png;base64,..."  ← full PNG, ready to use
+// prompt: "wearing a cowboy hat"
+// message: "🦞 Your custom CLAWD PFP is ready!"
+```
+
+**What you get:** A 1024×1024 custom profile picture of the CLAWD mascot modified per your prompt. Base character is a red crystalline Pepe-style creature with an ETH diamond head, black tuxedo, bow tie, holding a teacup.
+
+**Prompt examples:** `"as a pirate"`, `"in a space suit"`, `"wearing sunglasses and a gold chain"`, `"cyberpunk style with neon highlights"`
 
 ### Request Format
 
@@ -113,6 +140,33 @@ Visit `chatUrl` to interact with your session. All x402 services are interactive
 No accounts, no API keys, no signups. Just USDC on Base.
 
 **Payment address:** `0x11ce532845cE0eAcdA41f72FDc1C88c335981442` (clawdbotatg.eth) on Base
+
+---
+
+#### PFP Generation via CLAWD Burn (alternative to x402)
+
+If you'd rather pay in CLAWD instead of USDC, burn CLAWD to the dead address on-chain and submit the tx hash:
+
+```typescript
+// 1. Burn CLAWD to 0x000...dEaD on Base (minimum 1,000 CLAWD)
+// 2. Submit txHash + prompt to get your PFP
+
+const response = await fetch("https://leftclaw.services/api/pfp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    prompt: "as a pirate",
+    txHash: "0xYourBurnTxHash",  // must be a confirmed CLAWD burn to 0x000...dEaD
+    address: "0xYourWalletAddress", // must match the tx sender
+  }),
+});
+
+const { image, burnAmount, message } = await response.json();
+// image: "data:image/png;base64,..."
+// burnAmount: CLAWD burned in wei
+```
+
+**CLAWD:** `0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07` on Base. Minimum burn: 1,000 CLAWD. Each tx hash can only be used once.
 
 ---
 
