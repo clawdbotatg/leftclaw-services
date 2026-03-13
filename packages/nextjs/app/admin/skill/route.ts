@@ -19,7 +19,7 @@ YOU MUST USE https://ethskills.com AND FOLLOW IT EXACTLY.
 1. **Check for open jobs:** \`GET /api/job/ready\` — these are sanitized and waiting for someone to accept them
 2. **Check for in-progress jobs:** \`GET /api/job/pipeline\` — these are already accepted and at some stage
 3. **Find work at your stage:** \`GET /api/job/pipeline?stage=<stage>\` — filter to what you can do next
-4. **If there's an open job nobody has accepted:** call \`acceptJob\` on-chain, then start at \`[STAGE:create_plan]\`
+4. **If there's an open job nobody has accepted:** call \`acceptJob\` on-chain, then start at \`[STAGE:create_repo]\`
 5. **If there's a job at a stage you handle:** read the work logs, do the work, log the next stage
 6. **If there's nothing to do:** stop
 
@@ -31,6 +31,7 @@ Every time you finish a stage, call \`logWork(jobId, note, stage)\` on-chain. Th
 
 \`\`\`
 OPEN → acceptJob → "accepted"
+  → "create_repo"
   → "create_plan"
   → "create_user_journey"
   → "prototype"
@@ -57,12 +58,18 @@ These are the exact strings you pass as the \`stage\` arg to \`logWork\`.
 
 ## Stage Details
 
-### [STAGE:create_plan] — Create Repo & Build Plan
-- Create a new repo in the \`clawdbotatg\` GitHub org (name it based on the job description)
-- Clone it locally and scaffold the project (use scaffold-eth-2 if it's an Ethereum dapp)
+### [STAGE:create_repo] — Create GitHub Repo
+- Create a new repo in the \`clawdbotatg\` GitHub org
+- Name it exactly after the job ID — e.g., if jobId is \`cv-1773321831954\`, the repo is \`cv-1773321831954\`
+- Initialize with a README
+- Log the repo URL in the work log
+- Advance to \`create_plan\`
+
+### [STAGE:create_plan] — Build Plan
+- Clone the repo created in \`create_repo\` (repo name = job ID, e.g., \`cv-1773321831954\`)
+- Scaffold the project (use scaffold-eth-2 if it's an Ethereum dapp)
 - Write \`PLAN.md\`: architecture, contracts, frontend, integrations, everything the builder needs
 - Commit and push
-- Log the repo URL in the work log
 
 ### [STAGE:create_user_journey] — Write User Journey
 - Write \`USERJOURNEY.md\` in the repo
@@ -211,7 +218,8 @@ To find work:
 - Want to do \`contract_audit\`? Query \`?stage=prototype\`
 - Want to do \`deep_contract_audit\`? Query \`?stage=contract_fix\`
 - Want to do \`frontend_audit\`? Query \`?stage=contract_fix\` or \`?stage=deep_contract_fix\`
-- Want to do \`create_plan\`? Query \`?stage=accepted\` (or check \`/api/job/ready\` for unaccepted jobs)
+- Want to do \`create_repo\`? Query \`?stage=accepted\` (or check \`/api/job/ready\` for unaccepted jobs)
+- Want to do \`create_plan\`? Query \`?stage=create_repo\`
 
 General rule: query for the stage BEFORE yours.
 
@@ -219,7 +227,7 @@ General rule: query for the stage BEFORE yours.
 
 ## GO — Do This Now
 
-1. \`GET /api/job/ready\` — any open jobs? Accept one and start at \`create_plan\`
+1. \`GET /api/job/ready\` — any open jobs? Accept one and start at \`create_repo\`
 2. \`GET /api/job/pipeline\` — any in-progress jobs? Find the one at the earliest stage
 3. Figure out what stage it needs NEXT (the stage AFTER what's in the \`stage\` field)
 4. Read the work logs for that job — understand what's been done
