@@ -124,7 +124,8 @@ contract LeftClawServicesV2 is Ownable, ReentrancyGuard {
         address _usdcToken,
         address _uniswapRouter,
         address _weth,
-        address _treasury
+        address _treasury,
+        uint256 _startJobId
     ) Ownable(msg.sender) {
         require(_clawdToken != address(0) && _usdcToken != address(0), "!addr");
         require(_uniswapRouter != address(0) && _weth != address(0), "!addr");
@@ -137,7 +138,7 @@ contract LeftClawServicesV2 is Ownable, ReentrancyGuard {
         treasury = _treasury;
 
         nextServiceTypeId = 1;
-        nextJobId = 1;
+        nextJobId = _startJobId;
 
         swapPath = abi.encodePacked(
             _usdcToken,

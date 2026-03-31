@@ -49,8 +49,14 @@ contract DeployLeftClawServicesV2 is Script {
     function run() external {
         vm.startBroadcast();
 
+        // ⚠️ BEFORE DEPLOYING: Read nextJobId from the live contract:
+        //   cast call <OLD_CONTRACT> "nextJobId()(uint256)" --rpc-url https://mainnet.base.org
+        // Pass that value as _startJobId below so the new contract continues the sequence.
+        // This prevents new jobs from colliding with existing GitHub repos (leftclaw-service-job-N).
+        uint256 currentNextJobId = 19; // ← UPDATE THIS before every redeploy
+
         LeftClawServicesV2 services = new LeftClawServicesV2(
-            CLAWD, USDC, UNISWAP_ROUTER, WETH, TREASURY
+            CLAWD, USDC, UNISWAP_ROUTER, WETH, TREASURY, currentNextJobId
         );
         console.log("LeftClawServicesV2 deployed at:", address(services));
 
