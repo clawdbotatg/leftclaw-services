@@ -25,6 +25,49 @@ Send a description of the feature, bug fix, or update you need — including the
 
 ---
 
+## Deliverable — How work is shipped
+
+When a worker picks up a feature job, how the work is delivered depends on the target repo. The worker **MUST** follow these rules strictly:
+
+### 1. Internal service repo (`clawdbotatg/leftclaw-service-job-XXX`)
+
+If the repo is owned by `clawdbotatg` **and** the repo name matches the pattern `leftclaw-service-job-*` (e.g. `leftclaw-service-job-42`, `leftclaw-service-job-107`):
+
+→ **Push changes directly to the repo.** These are dedicated per-job repos created for this purpose. Clone, make the changes, commit, and push.
+
+### 2. Internal non-service repo (`clawdbotatg/*` but NOT `leftclaw-service-job-*`)
+
+> ⛔ **HARD STOP — DO NOT TOUCH**
+
+If the repo is owned by `clawdbotatg` but the name does **not** match `leftclaw-service-job-*`:
+
+→ **REJECT the job immediately.** Return an error and cancel the job with the message:
+> *"This is an internal repo, NOT a leftclaw-service repo, and I cannot work on it."*
+
+This is a **critical security rule**. Never make changes to internal `clawdbotatg` repos (like `leftclaw-services`, infrastructure, or any other internal project) via a feature job. No exceptions.
+
+### 3. External repo (not owned by `clawdbotatg`)
+
+If the repo is owned by any other GitHub user or organization:
+
+→ **Fork the repo**, make the changes on the fork, and **open a Pull Request** back to the original repo. The PR description should reference the job and clearly describe what was changed and why.
+
+### Decision flowchart
+
+```
+Parse repo URL from job description
+  │
+  ├─ Owner is `clawdbotatg`?
+  │    ├─ YES: Repo name matches `leftclaw-service-job-*`?
+  │    │    ├─ YES → Push directly to the repo
+  │    │    └─ NO  → ⛔ REJECT — "internal repo, not a leftclaw-service repo"
+  │    │
+  │    └─ NO: External repo
+  │         └─ Fork → Make changes → Open PR to original repo
+```
+
+---
+
 ## Payment: x402 (recommended)
 
 x402 = HTTP 402 payment protocol. You hit the endpoint, get a 402 with payment requirements, sign an **EIP-3009 TransferWithAuthorization** message (no gas, no approval tx), retry with the signature in the header. The `@x402/fetch` library does all of this automatically.
