@@ -154,7 +154,7 @@ async function main(): Promise<void> {
   });
 
   const rawSigner = toClientEvmSigner(walletClient as any, publicClient as any);
-  const signer = { ...rawSigner, address: account.address };
+  const signer = { ...rawSigner, address: account.address as `0x${string}` };
 
   const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
     schemes: [

@@ -8,7 +8,7 @@ import { createPublicClient, http, verifyMessage } from "viem";
 import { base } from "viem/chains";
 import Anthropic from "@anthropic-ai/sdk";
 import deployedContracts from "~~/contracts/deployedContracts";
-import { getMessages, addJobMessage, type JobMessage } from "~~/lib/jobMessages";
+import { getMessages, addJobMessage } from "~~/lib/jobMessages";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // jobId format: "cv-1773321831954" — extract numeric part or use as bigint
     const numericId = jobId.startsWith("cv-") ? BigInt(jobId.slice(3)) : BigInt(jobId);
     job = await viemClient.readContract({ address, abi, functionName: "getJob", args: [numericId] });
-  } catch (e) {
+  } catch {
     return Response.json({ error: "Job not found on chain" }, { status: 404 });
   }
 

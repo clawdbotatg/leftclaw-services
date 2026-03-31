@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import deployedContracts from "~~/contracts/deployedContracts";
@@ -10,7 +9,7 @@ const client = createPublicClient({
   transport: http(process.env.BASE_RPC_URL ? process.env.BASE_RPC_URL.trim() : undefined),
 });
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     // Get workers directly from the contract array
     const workerAddresses = (await client.readContract({

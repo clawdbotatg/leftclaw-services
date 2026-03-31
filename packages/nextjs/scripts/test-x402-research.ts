@@ -87,7 +87,7 @@ async function main() {
   // Set up x402 fetch
   const walletClient = createWalletClient({ account, chain: base, transport: http(RPC_URL) });
   const rawSigner = toClientEvmSigner(walletClient as any, publicClient as any);
-  const signer = { ...rawSigner, address: account.address };
+  const signer = { ...rawSigner, address: account.address as `0x${string}` };
   const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
     schemes: [
       {

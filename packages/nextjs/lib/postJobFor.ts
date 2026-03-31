@@ -30,8 +30,8 @@ function getClients() {
 }
 
 async function ensureApproval(
-  publicClient: ReturnType<typeof createPublicClient>,
-  walletClient: ReturnType<typeof createWalletClient>,
+  publicClient: any,
+  walletClient: any,
   owner: `0x${string}`,
 ) {
   const allowance = await publicClient.readContract({
@@ -65,7 +65,7 @@ export async function postJobForOnChain(
 ): Promise<number> {
   const { account, publicClient, walletClient } = getClients();
 
-  await ensureApproval(publicClient, walletClient, account.address);
+  await ensureApproval(publicClient, walletClient, account.address as `0x${string}`);
 
   const nextId = await publicClient.readContract({
     address: CONTRACT_ADDRESS,

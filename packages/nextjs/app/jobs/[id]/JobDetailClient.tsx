@@ -59,7 +59,7 @@ export default function JobDetailClient() {
   const [resultURL, setResultCID] = useState("");
 
   const {
-    data: job,
+    data: jobRaw,
     isLoading,
     refetch,
   } = useScaffoldReadContract({
@@ -67,6 +67,7 @@ export default function JobDetailClient() {
     functionName: "getJob",
     args: [BigInt(jobId || "0")],
   });
+  const job = jobRaw as any;
 
   const { data: isContractExecutorRaw } = useReadContract({
     address: CONTRACT_ADDRESS,
@@ -144,27 +145,7 @@ export default function JobDetailClient() {
   const isClient = address?.toLowerCase() === job.client?.toLowerCase();
   const isAssignedWorker = address?.toLowerCase() === job.worker?.toLowerCase();
   const isOpen = jobStatus === 0;
-  const isCompleted = jobStatus === 2;
   const isConsult = CONSULT_TYPES.has(serviceType);
-
-  const call = async (functionName: string) => {
-    setActionError(null);
-    setPending(functionName);
-    try {
-      const hash = await writeContractAsync({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI as any,
-        functionName,
-        args: [BigInt(jobId)],
-      });
-      await publicClient?.waitForTransactionReceipt({ hash });
-      await refetch();
-    } catch (e) {
-      setActionError(parseError(e));
-    } finally {
-      setPending(null);
-    }
-  };
 
   const handleAccept = async () => {
     setActionError(null);

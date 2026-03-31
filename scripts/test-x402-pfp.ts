@@ -89,7 +89,7 @@ async function main() {
   const walletClient = createWalletClient({ account, chain: base, transport: http(RPC_URL) });
   // toClientEvmSigner reads signer.address but WalletClient exposes it at account.address
   const rawSigner = toClientEvmSigner(walletClient as any, publicClient as any);
-  const signer = { ...rawSigner, address: account.address };
+  const signer = { ...rawSigner, address: account.address as `0x${string}` };
   const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
     schemes: [
       {

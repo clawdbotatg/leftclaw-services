@@ -48,8 +48,6 @@ export default function X402JobClient() {
 
   // Poll for updates
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
     async function load() {
       try {
         const res = await fetch(`/api/session/${sessionId}`);
@@ -69,7 +67,7 @@ export default function X402JobClient() {
     load();
 
     // Auto-refresh every 10s while active
-    interval = setInterval(async () => {
+    const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/session/${sessionId}`);
         if (res.ok) {

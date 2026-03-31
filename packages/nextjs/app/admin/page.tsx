@@ -222,7 +222,7 @@ function ServiceTypesPanel({ refetch }: { refetch: () => void }) {
 
     try {
       const priceUsdc = parseUnits(e.priceUsd, 6);
-      const hash = await writeContractAsync({
+      await writeContractAsync({
         functionName: "updateServiceType",
         args: [id, e.name, e.slug, priceUsdc, BigInt(e.cvDivisor), e.status],
       });
@@ -244,7 +244,7 @@ function ServiceTypesPanel({ refetch }: { refetch: () => void }) {
 
     try {
       const priceUsdc = parseUnits(newPrice, 6);
-      const hash = await writeContractAsync({
+      await writeContractAsync({
         functionName: "addServiceType",
         args: [newName, newSlug, priceUsdc, BigInt(newCvDiv)],
       });
@@ -728,7 +728,7 @@ export default function AdminPage() {
     setOwnerBusy("add");
     setOwnerMsg(null);
     try {
-      const hash = await writeContractAsync({ functionName: "addWorker", args: [addWorkerAddr as `0x${string}`] });
+      await writeContractAsync({ functionName: "addWorker", args: [addWorkerAddr as `0x${string}`] });
 
       setAddWorkerAddr("");
       setOwnerMsg({ type: "success", text: `Worker added` });
@@ -746,7 +746,7 @@ export default function AdminPage() {
     setOwnerBusy("remove");
     setOwnerMsg(null);
     try {
-      const hash = await writeContractAsync({ functionName: "removeWorker", args: [addr as `0x${string}`] });
+      await writeContractAsync({ functionName: "removeWorker", args: [addr as `0x${string}`] });
 
       setRemoveWorkerAddr("");
       setOwnerMsg({ type: "success", text: `Worker removed` });

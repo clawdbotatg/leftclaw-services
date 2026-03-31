@@ -90,7 +90,7 @@ export default function ChatPage() {
   const totalMessages = messages.length;
 
   // Message limit tracking for consultations
-  const serviceTypeId = job ? Number(job.serviceTypeId) : 0;
+  const serviceTypeId = job ? Number((job as any).serviceTypeId ?? (job as any).serviceType ?? 0) : 0;
   const isConsultation = serviceTypeId === 1 || serviceTypeId === 2;
   const maxMessages = 9999; // TEMP: no limit during testing
   const userMessageCount = messages.filter(m => m.role === "user").length;

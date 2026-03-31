@@ -63,7 +63,7 @@ export default function PfpPage() {
   const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
   const {
-    clawdBalance, usdcBalance, ethBalance, cvBalance, cvDisplayBalance,
+    clawdBalance, usdcBalance, cvBalance, cvDisplayBalance,
     clawdPrice, ethPrice,
   } = usePaymentContext();
 
@@ -107,7 +107,7 @@ export default function PfpPage() {
   const [error, setError] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<{ txHash?: string; method: string; amount?: string } | null>(null);
-  const [cvLoading, setCvLoading] = useState(false);
+  
 
   const isWrongNetwork = !!address && chainId !== BASE_CHAIN_ID;
   const clawdNeeded = clawdPrice && priceUsd ? Math.ceil(priceUsd / clawdPrice) : 0;

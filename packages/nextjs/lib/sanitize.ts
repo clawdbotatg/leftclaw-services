@@ -113,7 +113,7 @@ async function _doCheck(jobId: string, text: string): Promise<SanitizationResult
     let parsed: any;
     try {
       parsed = JSON.parse(content);
-    } catch (parseErr) {
+    } catch {
       console.error(`Sanitize: Failed to parse API response for job ${jobId}: "${content}"`);
       // FAIL OPEN — bad response format must never block jobs
       return { jobId, safe: true, reason: "Check skipped (parse error — fail open)", checkedAt: new Date().toISOString() };

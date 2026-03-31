@@ -39,11 +39,12 @@ const STATUS_LABELS: Record<number, { label: string; badge: string }> = {
 const TWENTY_FOUR_HOURS = 24 * 60 * 60; // seconds
 
 function ActiveJobCard({ jobId, doneConsultIds }: { jobId: number; doneConsultIds: Set<number> }) {
-  const { data: job } = useScaffoldReadContract({
+  const { data: jobRaw } = useScaffoldReadContract({
     contractName: "LeftClawServicesV2",
     functionName: "getJob",
     args: [BigInt(jobId)],
   });
+  const job = jobRaw as any;
 
   if (!job) return null;
 

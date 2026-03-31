@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatUnits, parseEther, parseUnits } from "viem";
+import { parseEther, parseUnits } from "viem";
 import { useAccount, usePublicClient, useWalletClient, useWriteContract, useSwitchChain } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";

@@ -31,12 +31,13 @@ const SERVICE_NAMES: Record<number, string> = {
   9: "HumanQA",
 };
 
-function JobCard({ jobId, publicBoard }: { jobId: number; publicBoard?: boolean }) {
-  const { data: job } = useScaffoldReadContract({
+function JobCard({ jobId }: { jobId: number; publicBoard?: boolean }) {
+  const { data: jobRaw } = useScaffoldReadContract({
     contractName: "LeftClawServicesV2",
     functionName: "getJob",
     args: [BigInt(jobId)],
   });
+  const job = jobRaw as any;
 
   if (!job) return (
     <div className="card bg-base-200 animate-pulse">
