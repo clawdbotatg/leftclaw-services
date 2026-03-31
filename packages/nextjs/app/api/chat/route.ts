@@ -296,18 +296,13 @@ export async function POST(req: NextRequest) {
       const isConsultation = serviceTypeId === 1 || serviceTypeId === 2;
 
       if (isConsultation) {
-        // Enforce message limit for consultations
-        jobMessageLimit = serviceTypeId === 1 ? 15 : 30;
+        // Infinite consultation messages — no server-side limit enforced
+        // (client-side tracking in ChatClient.tsx shows usage but never blocks)
+        jobMessageLimit = 9999;
         const existingMessages = await getJobMessages(String(jobId));
         jobUserMessageCount = existingMessages.filter(m => m.role === "user").length;
 
-        // Allow plan generation even at the limit
-        if (jobUserMessageCount >= jobMessageLimit && !isPlanGeneration) {
-          return new Response(
-            JSON.stringify({ error: "Message limit reached", messagesUsed: jobUserMessageCount, messagesLimit: jobMessageLimit }),
-            { status: 403 },
-          );
-        }
+        // Never block based on message count — always allow
       } else {
         const rl = checkRateLimit(String(jobId), clientAddress, Number(job.status));
         if (!rl.allowed) {
