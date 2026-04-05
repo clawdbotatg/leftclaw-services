@@ -131,10 +131,10 @@ function ConsultPage() {
           cvDivisor={cvDivisor}
           serviceName={extra.name}
           descriptionLabel="What do you want to build?"
-          descriptionPlaceholder="e.g. A staking dApp where users earn ETH rewards on CLAWD deposits..."
+          descriptionPlaceholder="e.g. A staking dApp where users earn ETH rewards on CLAUD deposits..."
           descriptionRequired={false}
-          onSuccess={jobId => {
-            const desc = `${extra.name} session`;
+          onSuccess={(jobId, description) => {
+            const desc = description || `${extra.name} session`;
             try { localStorage.setItem(`consult-topic-${jobId}`, desc); } catch {}
             if (!String(jobId).startsWith("cv-")) {
               fetch("/api/job/sanitize", {

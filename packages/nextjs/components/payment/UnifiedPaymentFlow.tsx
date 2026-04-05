@@ -51,7 +51,7 @@ interface UnifiedPaymentFlowProps {
   /** Whether description is required */
   descriptionRequired?: boolean;
   /** Called on successful payment — receives jobId. If returns a URL, redirects. */
-  onSuccess?: (jobId: number | string) => string | void;
+  onSuccess?: (jobId: number | string, description: string) => string | void;
   /** Custom success message instead of redirect */
   successMessage?: string;
   /** Additional content below the description */
@@ -98,6 +98,7 @@ export function UnifiedPaymentFlow({
   const [txError, setTxError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const postedJobIdRef = useRef<number | string | null>(null);
+  const postedDescRef = useRef<string>("");
   const hasSetDefault = useRef(false);
 
   // Auto-select best payment method
@@ -178,7 +179,7 @@ export function UnifiedPaymentFlow({
     if (step !== "done" || postedJobIdRef.current === null) return;
     const jobId = postedJobIdRef.current;
     if (onSuccess) {
-      const result = onSuccess(jobId);
+      const result = onSuccess(jobId, postedDescRef.current);
       if (result) router.push(result);
     } else if (successMessage) {
       setSuccessMsg(successMessage);
@@ -239,6 +240,7 @@ export function UnifiedPaymentFlow({
         if (txHash && publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
 
         postedJobIdRef.current = nextJobId ? Number(nextJobId) : `cv-${Date.now()}`;
+        postedDescRef.current = desc;
         setStep("done");
 
       } else if (paymentMethod === "clawd") {
@@ -268,6 +270,7 @@ export function UnifiedPaymentFlow({
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
         if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        postedDescRef.current = desc;
         setStep("done");
 
       } else if (paymentMethod === "eth") {
@@ -282,6 +285,7 @@ export function UnifiedPaymentFlow({
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
         if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        postedDescRef.current = desc;
         setStep("done");
 
       } else if (paymentMethod === "usdc") {
@@ -309,6 +313,7 @@ export function UnifiedPaymentFlow({
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
         if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        postedDescRef.current = desc;
         setStep("done");
       }
     } catch (e: any) {
