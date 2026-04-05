@@ -1519,7 +1519,7 @@ const deployedContracts = {
       deployedOnBlock: 43157705,
     },
     LeftClawServicesV2: {
-      address: "0x103447131e0d25496b293cfbcaddc6822dce1ccb",
+      address: "0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a",
       abi: [
         {
           type: "constructor",
@@ -3029,7 +3029,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 44309638,
+      deployedOnBlock: 44311101,
     },
   },
 } as const;

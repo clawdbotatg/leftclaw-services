@@ -33,17 +33,17 @@ contract DeployLeftClawServicesV2 is Script {
 
     function _getSeedServices() internal pure returns (SeedService[] memory) {
         SeedService[] memory seeds = new SeedService[](10);
-        // TEST MODE: priceUsd ÷ 50, cvDivisor ÷ 10 (min 1)
-        seeds[0] = SeedService("Quick Consultation",  "consult",       400_000,         10);    // was 20_000_000 / 100
-        seeds[1] = SeedService("Deep Consultation",   "consult-deep",  600_000,         5);     // was 30_000_000 / 50
-        seeds[2] = SeedService("PFP Generator",       "pfp",           5_000,          50);    // was 250_000 / 500
-        seeds[3] = SeedService("Contract Audit",      "audit",         4_000_000,       3);    // was 200_000_000 / 25
-        seeds[4] = SeedService("Frontend QA Audit",   "qa",            1_000_000,       5);    // was 50_000_000 / 50
-        seeds[5] = SeedService("Build",              "build",         20_000_000,       1);    // was 1_000_000_000 / 1
-        seeds[6] = SeedService("Research Report",    "research",       2_000_000,       2);    // was 100_000_000 / 13
-        seeds[7] = SeedService("Judge / Oracle",      "judge",         1_000_000,       5);    // was 50_000_000 / 50
-        seeds[8] = SeedService("HumanQA",            "humanqa",        4_000_000,       3);    // was 200_000_000 / 25
-        seeds[9] = SeedService("Feature",            "feature",       10_000_000,       1);    // was 500_000_000 / 5
+        // TEST MODE: priceUsd ÷ 50, cvDivisor × 10
+        seeds[0] = SeedService("Quick Consultation",  "consult",       400_000,        1000);    // was 20_000_000 / 100
+        seeds[1] = SeedService("Deep Consultation",   "consult-deep",  600_000,         500);    // was 30_000_000 / 50
+        seeds[2] = SeedService("PFP Generator",       "pfp",           5_000,        5000);    // was 250_000 / 500
+        seeds[3] = SeedService("Contract Audit",      "audit",         4_000_000,     250);    // was 200_000_000 / 25
+        seeds[4] = SeedService("Frontend QA Audit",   "qa",            1_000_000,     500);    // was 50_000_000 / 50
+        seeds[5] = SeedService("Build",              "build",         20_000_000,      10);    // was 1_000_000_000 / 1
+        seeds[6] = SeedService("Research Report",    "research",       2_000_000,      130);    // was 100_000_000 / 13
+        seeds[7] = SeedService("Judge / Oracle",      "judge",         1_000_000,      500);    // was 50_000_000 / 50
+        seeds[8] = SeedService("HumanQA",            "humanqa",        4_000_000,     250);    // was 200_000_000 / 25
+        seeds[9] = SeedService("Feature",            "feature",       10_000_000,       50);    // was 500_000_000 / 5
         return seeds;
     }
 
