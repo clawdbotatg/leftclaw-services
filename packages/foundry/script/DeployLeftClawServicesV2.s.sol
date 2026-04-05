@@ -21,6 +21,7 @@ contract DeployLeftClawServicesV2 is Script {
     address constant RIGHTCLAW  = 0x8c00eae9b9A2f89BddaAE4f6884C716562C7cE93;
     address constant CLAWDHEART = 0x472C382550780cD30e1D27155b96Fa4b63d9247e;
     address constant CLAWDGUT   = 0x09defC9E6ffc5e41F42e0D50512EEf9354523E0E;
+    address constant NEW_WORKER = 0x862b4474b449777d2a2622F6a04b9D879D891D19;
 
     // ─── Seed Service Types ───────────────────────────────────────────────────
     // Edit this array to add more service types before deploying.
@@ -73,6 +74,7 @@ contract DeployLeftClawServicesV2 is Script {
         services.addWorker(RIGHTCLAW);
         services.addWorker(CLAWDHEART);
         services.addWorker(CLAWDGUT);
+        services.addWorker(NEW_WORKER);
 
         // Note: do NOT add msg.sender as a worker here.
         // DeployScript.sol uses `new DeployLeftClawServicesV2()` which creates an
