@@ -4,8 +4,10 @@
 // - NEXT_PUBLIC_ALCHEMY_API_KEY: Alchemy key for Base RPC (optional)
 
 import { NextRequest } from "next/server";
-import { createPublicClient, http, verifyMessage } from "viem";
+import { createPublicClient, createWalletClient, http, verifyMessage } from "viem";
 import { base } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+import { execSync } from "child_process";
 import Anthropic from "@anthropic-ai/sdk";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { getMessages, addJobMessage } from "~~/lib/jobMessages";
@@ -20,6 +22,78 @@ const viemClient = createPublicClient({
       : undefined,
   ),
 });
+
+// Track which jobs have already been accepted (in-memory, survives hot reloads via module scope)
+const acceptedJobs = new Set<string>();
+
+// Consultation service type IDs (Quick Consultation = 1, Deep Consultation = 2)
+const CONSULTATION_TYPE_IDS = [1, 2];
+
+/**
+ * Get a wallet client using the deployer key from the macOS keychain + foundry keystore.
+ * Returns null if running in an environment where the keychain/cast is not available.
+ */
+function getDeployerWalletClient() {
+  try {
+    const password = execSync('security find-generic-password -s "clawd-deployer-local" -a "clawd" -w 2>/dev/null').toString().trim();
+    const privateKeyHex = execSync(
+      `cast wallet decrypt-keystore clawd-deployer-local --unsafe-password "${password}"`,
+      { env: { ...process.env, PATH: `${process.env.PATH}:/Users/clawd/.foundry/bin` } }
+    ).toString().trim();
+    // Extract hex key from output like "clawd-deployer-local's private key is: 0x..."
+    const match = privateKeyHex.match(/(0x[0-9a-fA-F]{64})/);
+    if (!match) return null;
+    const account = privateKeyToAccount(match[1] as `0x${string}`);
+    return createWalletClient({
+      account,
+      chain: base,
+      transport: http(
+        process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+          ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+          : "https://mainnet.base.org",
+      ),
+    });
+  } catch (e) {
+    console.error("[chat] Failed to create deployer wallet client:", e);
+    return null;
+  }
+}
+
+/**
+ * Accept a consultation job on-chain (OPEN → IN_PROGRESS).
+ * Only called once per job — tracked in acceptedJobs set.
+ */
+async function acceptConsultationJob(jobId: bigint): Promise<boolean> {
+  const key = jobId.toString();
+  if (acceptedJobs.has(key)) return true; // Already accepted
+
+  const walletClient = getDeployerWalletClient();
+  if (!walletClient) {
+    console.error("[chat] Cannot accept job — no deployer wallet available");
+    return false;
+  }
+
+  try {
+    const hash = await walletClient.writeContract({
+      address,
+      abi,
+      functionName: "acceptJob",
+      args: [jobId],
+    });
+    console.log(`[chat] Accepted consultation job ${key} on-chain, tx: ${hash}`);
+    acceptedJobs.add(key);
+    return true;
+  } catch (e: any) {
+    // If the job was already accepted (e.g. by another process), mark it and move on
+    if (e.message?.includes("already") || e.message?.includes("IN_PROGRESS")) {
+      console.log(`[chat] Job ${key} already accepted on-chain`);
+      acceptedJobs.add(key);
+      return true;
+    }
+    console.error(`[chat] Failed to accept job ${key}:`, e);
+    return false;
+  }
+}
 
 // Rate limiting: in-memory Map
 // - Per-window (hourly) rate limit for active jobs: 3/hour per client per job
@@ -69,11 +143,16 @@ function recordUsage(jobId: string, clientAddress: string, jobStatus: number) {
 }
 
 const SERVICE_TYPE_NAMES: Record<number, string> = {
-  0: "CV-Based Consult (answer questions about crypto/web3/ETH)",
-  1: "AI Code Review (automated code review via bot)",
-  2: "CV-Based Build (custom dev work paid in CLAWD tokens)",
-  3: "Build",
-  4: "PFP Generation",
+  1: "Quick Consultation",
+  2: "Deep Consultation",
+  3: "PFP Generator",
+  4: "Contract Audit",
+  5: "Frontend QA Audit",
+  6: "Build",
+  7: "Research Report",
+  8: "Judge / Oracle",
+  9: "HumanQA",
+  10: "Feature",
 };
 
 async function fetchDescriptionContent(descriptionCID: string): Promise<string> {
@@ -205,6 +284,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return Response.json({ error: "Not the job client" }, { status: 401 });
   }
 
+  // Auto-accept consultation jobs on first client message
+  const jobServiceTypeId = Number(job.serviceTypeId);
+  const jobStatus = Number(job.status);
+  if (CONSULTATION_TYPE_IDS.includes(jobServiceTypeId) && jobStatus === 0 /* OPEN */) {
+    const numericIdForAccept = jobId.startsWith("cv-") ? BigInt(jobId.slice(3)) : BigInt(jobId);
+    const accepted = await acceptConsultationJob(numericIdForAccept);
+    if (accepted) {
+      console.log(`[chat] Consultation job ${jobId} auto-accepted on first client message`);
+    }
+  }
+
   // Rate limit
   const rl = checkRateLimit(jobId, clientAddress, Number(job.status));
   if (!rl.allowed) {
@@ -221,7 +311,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     getMessages(jobId),
     fetchGitHubFile(jobId, "PLAN.md"),
     fetchGitHubFile(jobId, "USERJOURNEY.md"),
-    fetchDescriptionContent(job.descriptionCID || ""),
+    fetchDescriptionContent(job.description || ""),
     fetchSkillMd(jobId),
   ]);
 
@@ -235,7 +325,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await addJobMessage(jobId, { type: "client_message", from: "client", content: message });
   recordUsage(jobId, clientAddress, Number(job.status));
 
-  const serviceTypeName = SERVICE_TYPE_NAMES[Number(job.serviceType)] || `Unknown (${Number(job.serviceType)})`;
+  const serviceTypeName = SERVICE_TYPE_NAMES[Number(job.serviceTypeId)] || `Unknown (${Number(job.serviceTypeId)})`;
   const cvAmount = Number(job.paymentClawd) / 1e18;
   const cvFormatted =
     cvAmount >= 1_000_000
