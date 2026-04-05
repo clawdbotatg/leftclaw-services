@@ -119,6 +119,11 @@ export default function ChatPage() {
   const [sanitizeError, setSanitizeError] = useState<string | null>(null);
   const sanitizeRef = useRef(isCvJob);
 
+  // DEBUG
+  useEffect(() => {
+    console.log("[ChatClient] mount", { jobId, isCvJob, sanitized, jobExists });
+  }, []);
+
   useEffect(() => {
     if (isCvJob) return; // CV jobs skip sanitization gate entirely
     if (!jobExists || sanitizeRef.current) return;
@@ -327,7 +332,9 @@ export default function ChatPage() {
     );
   }
 
+  // DEBUG log why we're showing the loading state
   if (sanitized === null && jobExists) {
+    console.log("[ChatClient] showing loading because sanitized=null, jobExists=true", { sanitized, jobExists, isCvJob });
     return (
       <div className="flex flex-col items-center py-20 gap-3">
         <span className="loading loading-spinner loading-lg" />
