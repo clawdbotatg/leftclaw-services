@@ -347,6 +347,22 @@ contract LeftClawServicesV2 is Ownable, ReentrancyGuard {
         emit JobCompleted(jobId, msg.sender, resultCID);
     }
 
+    /// @notice Client completes their own consultation job (no worker needed)
+    function completeConsultation(uint256 jobId, string calldata resultCID) external nonReentrant {
+        Job storage job = jobs[jobId];
+        require(job.id != 0, "!job");
+        require(job.client == msg.sender, "!client");
+        require(job.status == JobStatus.IN_PROGRESS, "!active");
+        require(_isConsultation(job.serviceTypeId), "!consult");
+        require(bytes(resultCID).length > 0, "!result");
+
+        job.status = JobStatus.COMPLETED;
+        job.resultCID = resultCID;
+        job.completedAt = block.timestamp;
+
+        emit JobCompleted(jobId, msg.sender, resultCID);
+    }
+
     function logWork(uint256 jobId, string calldata note, string calldata stage) external nonReentrant onlyWorker {
         Job storage job = jobs[jobId];
         require(job.id != 0, "!job");
@@ -394,6 +410,20 @@ contract LeftClawServicesV2 is Ownable, ReentrancyGuard {
         job.worker = address(0);
         job.startedAt = 0;
         job.currentStage = "";
+    }
+
+    /// @notice Owner can cancel any OPEN job (for cleanup of stuck jobs)
+    function adminCancelJob(uint256 jobId) external onlyOwner nonReentrant {
+        Job storage job = jobs[jobId];
+        require(job.id != 0, "!job");
+        require(job.status == JobStatus.OPEN, "!open");
+
+        if (job.paymentClawd > 0) {
+            totalLockedClawd -= job.paymentClawd;
+        }
+
+        job.status = JobStatus.CANCELLED;
+        emit JobCancelled(jobId, address(0));
     }
 
     function setTreasury(address _treasury) external onlyOwner {
@@ -507,6 +537,10 @@ contract LeftClawServicesV2 is Ownable, ReentrancyGuard {
         );
     }
 
+    function _isConsultation(uint256 serviceTypeId) internal pure returns (bool) {
+        return serviceTypeId == 1 || serviceTypeId == 2;
+    }
+
     function _createJob(
         address client,
         uint256 serviceTypeId,
@@ -519,6 +553,8 @@ contract LeftClawServicesV2 is Ownable, ReentrancyGuard {
         uint256 jobId = nextJobId++;
         if (clawdAmount > 0) totalLockedClawd += clawdAmount;
 
+        bool isConsult = _isConsultation(serviceTypeId);
+
         jobs[jobId] = Job({
             id: jobId,
             client: client,
@@ -526,9 +562,9 @@ contract LeftClawServicesV2 is Ownable, ReentrancyGuard {
             paymentClawd: clawdAmount,
             priceUsd: priceUsd,
             description: description,
-            status: JobStatus.OPEN,
+            status: isConsult ? JobStatus.IN_PROGRESS : JobStatus.OPEN,
             createdAt: block.timestamp,
-            startedAt: 0,
+            startedAt: isConsult ? block.timestamp : 0,
             completedAt: 0,
             resultCID: "",
             worker: address(0),

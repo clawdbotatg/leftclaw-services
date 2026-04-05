@@ -1519,7 +1519,7 @@ const deployedContracts = {
       deployedOnBlock: 43157705,
     },
     LeftClawServicesV2: {
-      address: "0xb3c4ecf74cb3427432adff277bb5c9b8fd9b71e0",
+      address: "0xef5b3be2674ed81b35cd34fcc926918dc6247c8e",
       abi: [
         {
           type: "constructor",
@@ -1548,6 +1548,11 @@ const deployedContracts = {
               name: "_treasury",
               type: "address",
               internalType: "address",
+            },
+            {
+              name: "_startJobId",
+              type: "uint256",
+              internalType: "uint256",
             },
           ],
           stateMutability: "nonpayable",
@@ -1612,6 +1617,19 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "adminCancelJob",
+          inputs: [
+            {
+              name: "jobId",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "adminResetJob",
           inputs: [
             {
@@ -1648,6 +1666,24 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "completeConsultation",
+          inputs: [
+            {
+              name: "jobId",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "resultCID",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
         },
         {
           type: "function",
@@ -2993,7 +3029,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 44009346,
+      deployedOnBlock: 44304371,
     },
   },
 } as const;

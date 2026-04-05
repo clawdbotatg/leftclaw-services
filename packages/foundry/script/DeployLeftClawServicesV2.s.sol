@@ -53,7 +53,7 @@ contract DeployLeftClawServicesV2 is Script {
         //   cast call <OLD_CONTRACT> "nextJobId()(uint256)" --rpc-url https://mainnet.base.org
         // Pass that value as _startJobId below so the new contract continues the sequence.
         // This prevents new jobs from colliding with existing GitHub repos (leftclaw-service-job-N).
-        uint256 currentNextJobId = 19; // ← UPDATE THIS before every redeploy
+        uint256 currentNextJobId = 35; // ← UPDATE THIS before every redeploy
 
         LeftClawServicesV2 services = new LeftClawServicesV2(
             CLAWD, USDC, UNISWAP_ROUTER, WETH, TREASURY, currentNextJobId
