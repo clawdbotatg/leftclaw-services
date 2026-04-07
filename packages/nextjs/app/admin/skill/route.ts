@@ -32,7 +32,7 @@ GitHub repos are named \`leftclaw-service-job-JOBID\` where JOBID = the job's nu
 2. Update \`currentNextJobId\` in \`DeployLeftClawServicesV2.s.sol\` with that value
 3. Deploy — new jobs will continue the sequence without colliding with existing repos
 
-**Current \`nextJobId\` on the live contract: 19** — update the deploy script with this value before the next deployment.
+**Always read the current \`nextJobId\` live before redeploying** — never use a hardcoded number:
 
 ---
 
