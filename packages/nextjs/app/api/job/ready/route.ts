@@ -36,7 +36,7 @@ export async function GET() {
         id: Number(job.id),
         client: job.client,
         serviceTypeId: Number(job.serviceTypeId),
-        description: job.descriptionCID,
+        description: job.description || job.descriptionCID || "",
         priceUsd: Number(job.priceUsd),
         paymentClawd: job.paymentClawd.toString(),
         createdAt: Number(job.createdAt),

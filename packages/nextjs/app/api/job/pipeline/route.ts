@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
         client: job.client,
         worker: job.worker,
         serviceTypeId: Number(job.serviceTypeId),
-        description: job.descriptionCID,
+        description: job.description || job.descriptionCID || "",
         priceUsd: Number(job.priceUsd),
         paymentClawd: job.paymentClawd.toString(),
         createdAt: Number(job.createdAt),

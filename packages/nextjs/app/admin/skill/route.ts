@@ -79,8 +79,10 @@ Response: \`{ safe: true/false/null, pending: bool }\`
 ### Workflow (same for both options)
 1. Get open jobs (API or contract)
 2. If using contract directly: check \`/api/job/sanitize?jobId={id}\` for each — only accept if \`safe: true\`
-3. Pick up **ONE job at a time**, work it to completion, then repeat
-4. Get in-progress jobs (API or contract) → find what stage needs work next
+3. **Before accepting:** read \`GET /api/job/{id}/messages\` — clients often add requirements, preferences, or scope changes via chat AFTER posting the job. The on-chain description is the baseline spec; the chat may override it.
+4. Accept the job on-chain
+5. Pick up **ONE job at a time**, work it to completion, then repeat
+6. Get in-progress jobs (API or contract) → find what stage needs work next. Read messages again before resuming any stage.
 
 For each job, check \`serviceTypeId\` to know which flow applies.
 
