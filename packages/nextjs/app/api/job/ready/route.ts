@@ -4,9 +4,14 @@ import deployedContracts from "~~/contracts/deployedContracts";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
+const rpcUrl = process.env.BASE_RPC_URL?.trim() ||
+  (process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+    ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+    : "https://mainnet.base.org");
+
 const client = createPublicClient({
   chain: base,
-  transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
+  transport: http(rpcUrl),
 });
 
 export async function GET() {
@@ -16,7 +21,13 @@ export async function GET() {
     const ready: any[] = [];
 
     for (let i = 1n; i < nextJobId; i++) {
-      const job = await client.readContract({ address, abi, functionName: "getJob", args: [i] }) as any;
+      let job: any;
+      try {
+        job = await client.readContract({ address, abi, functionName: "getJob", args: [i] });
+      } catch {
+        // Job ID doesn't exist (contract deployed with _startJobId > 1)
+        continue;
+      }
 
       // Status 0 = OPEN
       if (Number(job.status) !== 0) continue;

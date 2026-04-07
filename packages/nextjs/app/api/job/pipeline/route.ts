@@ -5,9 +5,14 @@ import deployedContracts from "~~/contracts/deployedContracts";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
+const rpcUrl = process.env.BASE_RPC_URL?.trim() ||
+  (process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+    ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+    : "https://mainnet.base.org");
+
 const client = createPublicClient({
   chain: base,
-  transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
+  transport: http(rpcUrl),
 });
 
 const STAGES = ["create_repo", "create_plan", "create_user_journey", "prototype", "contract_audit", "contract_fix", "deep_contract_audit", "deep_contract_fix", "frontend_audit", "frontend_fix", "full_audit", "full_audit_fix", "deploy_contract", "livecontract_fix", "deploy_app", "liveapp_fix", "liveuserjourney", "readme", "ready", "blocked"] as const;
@@ -20,7 +25,13 @@ export async function GET(req: NextRequest) {
     const jobs: any[] = [];
 
     for (let i = 1n; i < nextJobId; i++) {
-      const job = await client.readContract({ address, abi, functionName: "getJob", args: [i] }) as any;
+      let job: any;
+      try {
+        job = await client.readContract({ address, abi, functionName: "getJob", args: [i] });
+      } catch {
+        // Job ID doesn't exist (contract deployed with _startJobId > 1)
+        continue;
+      }
 
       // Status 1 = IN_PROGRESS
       if (Number(job.status) !== 1) continue;
