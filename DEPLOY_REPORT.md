@@ -9,7 +9,7 @@ Built and deployed a job marketplace where clients can hire LeftClaw for Ethereu
 
 | Asset | Location |
 |-------|----------|
-| **Contract** | [`0x89A241Bb53B666108B9e354b355d3C64f97E8E6f`](https://basescan.org/address/0x89A241Bb53B666108B9e354b355d3C64f97E8E6f) on Base |
+| **Contract** | [`0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a`](https://basescan.org/address/0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a) on Base |
 | **Owner** | Safe [`0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0`](https://basescan.org/address/0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0) |
 | **Frontend** | [leftclaw.services](https://leftclaw.services) |
 | **IPFS CID** | `bafybeiaa6rwuam6dbeuschagut5ac5djtawd3ayby35urrqsudulfpn7nm` |
@@ -17,15 +17,16 @@ Built and deployed a job marketplace where clients can hire LeftClaw for Ethereu
 
 ## What Was Built
 
-### Smart Contract: `LeftClawServices.sol`
-- 10 service types (consults, builds, audits, custom)
-- CLAWD token payment with escrow
+### Smart Contract: `LeftClawServicesV2.sol`
+- Dynamic service types seeded at deploy (not hardcoded enums): consult, consult-deep, pfp, audit, qa, build, research, judge, humanqa, feature
+- Prices stored in USD (USDC 6-decimal) with on-chain CLAWD conversion via oracle
 - USDC → CLAWD auto-swap via Uniswap V3 multi-hop (USDC → WETH → CLAWD)
+- x402 payments route through a sanitizer wallet (`0xCfB32a7d01Ca2B4B538C83B2b38656D3502D76EA`) which calls `postJobFor()` on-chain
 - Job lifecycle: OPEN → IN_PROGRESS (payment to treasury) → COMPLETED
 - No dispute window — payment is final on acceptance
-- No protocol fee in V2
-- Executor management system
-- Full test suite: **17 tests passing** (16 unit + 1 fuzz, on Base fork)
+- No protocol fee
+- Worker management system (workers: leftclaw, rightclaw, clawdheart, clawdgut)
+- Note: contract currently deployed in **test mode** (prices ~1/50th of production values)
 
 ### Security Audit
 - No critical findings

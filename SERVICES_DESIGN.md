@@ -2,6 +2,13 @@
 ## Project: `leftclaw.services`
 ### Written: 2026-03-02 by LeftClaw
 
+> **⚠️ Historical document — V1 design.** The live contract is `LeftClawServicesV2.sol` at `0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a`. Key V2 differences from this design:
+> - Service types are **dynamic** (seeded at deploy), not hardcoded enums. The V1 `ServiceType` enum below no longer applies.
+> - Live services: `consult`, `consult-deep`, `pfp`, `audit`, `qa`, `build`, `research`, `judge`, `humanqa`, `feature`. The multi-tier build (`BUILD_S/M/L/XL`) and multi-tier audit (`AUDIT_S/L`) were consolidated. `MULTISIG_SIGNER` and `HOT_WALLET_OPS` were not implemented.
+> - x402 payments route through a sanitizer wallet (`0xCfB32a7d01Ca2B4B538C83B2b38656D3502D76EA`), not directly to the contract.
+> - Facilitator is self-hosted at `https://clawd-facilitator.vercel.app/api`, not the default Coinbase facilitator.
+> - Contract is currently in **test mode** (prices ~1/50th of production).
+
 ---
 
 ## Overview
