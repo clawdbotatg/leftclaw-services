@@ -2,7 +2,7 @@
  * Cron-able endpoint to auto-timeout stale consultation jobs.
  *
  * - OPEN consultations older than 24h → COMPLETED
- * - IN_PROGRESS consultations older than 48h → COMPLETED
+ * - IN_PROGRESS consultations older than 24h → COMPLETED
  *
  * POST /api/job/consult-timeout
  */
@@ -11,53 +11,30 @@ import { NextRequest } from "next/server";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { execSync } from "child_process";
 import deployedContracts from "~~/contracts/deployedContracts";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
 const CONSULTATION_TYPE_IDS = [1, 2]; // Quick Consultation, Deep Consultation
 const OPEN_TIMEOUT_HOURS = 24;
-const IN_PROGRESS_TIMEOUT_HOURS = 48;
+const IN_PROGRESS_TIMEOUT_HOURS = 24;
 const TIMEOUT_RESULT_URL = "https://leftclaw.services/consult-timeout";
 
 // Simple auth key — set CONSULT_TIMEOUT_SECRET env var to protect this endpoint
 const AUTH_SECRET = process.env.CONSULT_TIMEOUT_SECRET;
 
-function getViemClient() {
-  return createPublicClient({
-    chain: base,
-    transport: http(
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-        ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-        : "https://mainnet.base.org",
-    ),
-  });
-}
+function getClients() {
+  const key = process.env.SANITIZER_PRIVATE_KEY;
+  if (!key) return null;
 
-function getDeployerWalletClient() {
-  try {
-    const password = execSync('security find-generic-password -s "clawd-deployer-local" -a "clawd" -w 2>/dev/null').toString().trim();
-    const privateKeyHex = execSync(
-      `cast wallet decrypt-keystore clawd-deployer-local --unsafe-password "${password}"`,
-      { env: { ...process.env, PATH: `${process.env.PATH}:/Users/clawd/.foundry/bin` } },
-    ).toString().trim();
-    const match = privateKeyHex.match(/(0x[0-9a-fA-F]{64})/);
-    if (!match) return null;
-    const account = privateKeyToAccount(match[1] as `0x${string}`);
-    return createWalletClient({
-      account,
-      chain: base,
-      transport: http(
-        process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-          ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-          : "https://mainnet.base.org",
-      ),
-    });
-  } catch (e) {
-    console.error("[consult-timeout] Failed to create deployer wallet client:", e);
-    return null;
-  }
+  const rpc = process.env.BASE_RPC_URL;
+  if (!rpc) return null;
+
+  const account = privateKeyToAccount(key as `0x${string}`);
+  const publicClient = createPublicClient({ chain: base, transport: http(rpc) });
+  const walletClient = createWalletClient({ account, chain: base, transport: http(rpc) });
+
+  return { account, publicClient, walletClient };
 }
 
 export async function POST(req: NextRequest) {
@@ -69,11 +46,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const viemClient = getViemClient();
-  const walletClient = getDeployerWalletClient();
-  if (!walletClient) {
-    return Response.json({ error: "Deployer wallet not available" }, { status: 500 });
+  const clients = getClients();
+  if (!clients) {
+    return Response.json({ error: "SANITIZER_PRIVATE_KEY or BASE_RPC_URL not configured" }, { status: 500 });
   }
+  const { publicClient: viemClient, walletClient, account } = clients;
 
   const now = Math.floor(Date.now() / 1000);
   const results: Array<{ jobId: string; action: string; status: string; tx?: string; error?: string }> = [];
@@ -118,6 +95,8 @@ export async function POST(req: NextRequest) {
               abi,
               functionName: "completeJob",
               args: [jobId, TIMEOUT_RESULT_URL],
+              chain: base,
+              account,
             });
             results.push({
               jobId: jobId.toString(),
@@ -164,7 +143,7 @@ export async function POST(req: NextRequest) {
         let shouldComplete = false;
         let reason = "";
 
-        // Check if consultation has been going for > 48h
+        // Check if consultation has been going for > 24h
         if (ageHours > IN_PROGRESS_TIMEOUT_HOURS) {
           shouldComplete = true;
           reason = `age: ${ageHours.toFixed(1)}h > ${IN_PROGRESS_TIMEOUT_HOURS}h`;
@@ -210,6 +189,8 @@ export async function POST(req: NextRequest) {
               abi,
               functionName: "completeJob",
               args: [jobId, TIMEOUT_RESULT_URL],
+              chain: base,
+              account,
             });
             results.push({
               jobId: jobId.toString(),

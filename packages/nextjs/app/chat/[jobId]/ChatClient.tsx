@@ -3,15 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useParams, useRouter } from "next/navigation";
-import { useAccount, useWalletClient, useWriteContract } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
 import { getCachedAuthSignature, setCachedAuthSignature, clearCachedAuthSignature } from "~~/utils/authSignatureCache";
 import { AUTH_SIGN_MESSAGE } from "~~/lib/authSignature";
-import deployedContracts from "~~/contracts/deployedContracts";
-
-const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
-const CONTRACT_ABI = deployedContracts[8453]?.LeftClawServicesV2?.abi;
 
 interface Message {
   role: "user" | "assistant";
@@ -24,7 +20,6 @@ export default function ChatPage() {
   const jobId = params.jobId as string;
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const { writeContractAsync } = useWriteContract();
   const isCvJob = jobId.startsWith("cv-");
 
   const [authSignature, setAuthSignature] = useState<string | null>(null);
@@ -495,25 +490,14 @@ export default function ChatPage() {
           <button
             className="btn btn-primary btn-sm flex-1"
             onClick={async () => {
-              if (address && !isCvJob) {
-                // Call completeConsultation on-chain (client wallet, msg.sender = client)
-                try {
-                  await writeContractAsync({
-                    address: CONTRACT_ADDRESS,
-                    abi: CONTRACT_ABI as any,
-                    functionName: "completeConsultation",
-                    args: [BigInt(jobId), planGistUrl || ""],
-                  });
-                } catch (err) {
-                  console.error("completeConsultation failed:", err);
-                }
+              // Close consultation on-chain via backend (no user tx needed)
+              if (!isCvJob) {
+                fetch("/api/job/close-consultation", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ jobId, resultCID: planGistUrl || "", address }),
+                }).catch(err => console.error("close-consultation failed:", err));
               }
-              // Always update Redis for UI tracking
-              fetch("/api/job/consult-complete", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ consultJobId: jobId, address }),
-              }).catch(() => {});
               router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(planDescription || "")}`);
             }}
           >
