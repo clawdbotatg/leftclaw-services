@@ -496,13 +496,20 @@ export default function ChatPage() {
           <button
             className="btn btn-primary btn-sm flex-1"
             onClick={async () => {
-              // Close consultation on-chain via backend (no user tx needed)
+              // Close consultation on-chain via backend (no user tx needed).
+              // Must await — router.push would otherwise unmount the page and
+              // abort the in-flight request before it reaches the server.
               if (!isCvJob) {
-                fetch("/api/job/close-consultation", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ jobId, resultCID: planGistUrl || "", address }),
-                }).catch(err => console.error("close-consultation failed:", err));
+                try {
+                  await fetch("/api/job/close-consultation", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ jobId, resultCID: planGistUrl || "", address }),
+                    keepalive: true,
+                  });
+                } catch (err) {
+                  console.error("close-consultation failed:", err);
+                }
               }
               router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(planDescription || "")}`);
             }}

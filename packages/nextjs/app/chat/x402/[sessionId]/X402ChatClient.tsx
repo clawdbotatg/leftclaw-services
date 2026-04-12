@@ -372,7 +372,19 @@ export default function X402ChatClient() {
           </button>
           <button
             className="btn btn-primary btn-sm flex-1"
-            onClick={() => router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(planDescription || "")}`)}
+            onClick={async () => {
+              try {
+                await fetch(`/api/session/${sessionId}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "close" }),
+                  keepalive: true,
+                });
+              } catch (err) {
+                console.error("close session failed:", err);
+              }
+              router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(planDescription || "")}`);
+            }}
           >
             🚀 Start Build Job
           </button>
