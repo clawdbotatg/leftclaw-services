@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getSession } from "~~/lib/sessionStore";
+import { getSession, saveJobPlanGist } from "~~/lib/sessionStore";
 
 // Internal API key for server-to-server calls (chat route → gist route)
 const INTERNAL_SECRET = process.env.GIST_INTERNAL_SECRET || process.env.ANTHROPIC_API_KEY;
@@ -59,7 +59,15 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: data.message || "Gist creation failed" }), { status: 500 });
   }
 
-  return new Response(JSON.stringify({ url: data.html_url }), {
+  const gistUrl = data.html_url;
+
+  // Persist the latest plan gist URL for job-based chats (survives page reload)
+  if (jobId) {
+    const desc = `Build plan: ${gistUrl}\n\nSee consultation plan for full scope and requirements.`;
+    saveJobPlanGist(String(jobId), gistUrl, desc).catch(console.error);
+  }
+
+  return new Response(JSON.stringify({ url: gistUrl }), {
     headers: { "Content-Type": "application/json" },
   });
 }

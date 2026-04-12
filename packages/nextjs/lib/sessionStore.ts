@@ -184,6 +184,30 @@ export async function incrementJobPlanCount(jobId: string): Promise<number> {
   return newCount;
 }
 
+// --- Job-level latest plan gist URL tracking ---
+function jobPlanGistKey(jobId: string): string {
+  return `jobPlanGist:${CONTRACT_ADDR}:${jobId}`;
+}
+
+export async function getJobPlanGist(jobId: string): Promise<{ url: string; description: string } | null> {
+  const kv = getKV();
+  if (!kv) return null;
+  const data = await kv.get<string>(jobPlanGistKey(jobId));
+  if (!data) return null;
+  try {
+    const parsed = typeof data === "string" ? JSON.parse(data) : data;
+    return parsed && parsed.url ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveJobPlanGist(jobId: string, url: string, description: string): Promise<void> {
+  const kv = getKV();
+  if (!kv) return;
+  await kv.set(jobPlanGistKey(jobId), JSON.stringify({ url, description }), { ex: JOB_PLAN_COUNT_TTL });
+}
+
 export async function updateSession(id: string, updates: Partial<X402Session>): Promise<X402Session | null> {
   const session = await getSession(id);
   if (!session) return null;

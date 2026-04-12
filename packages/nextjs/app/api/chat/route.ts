@@ -426,10 +426,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Plan generation limit for on-chain/CV jobs (non-x402)
+  // Always load the count so the system prompt stays accurate
   let jobPlanCount = 0;
-  if (jobId && !sessionId && isPlanGeneration) {
+  if (jobId && !sessionId) {
     jobPlanCount = await getJobPlanCount(String(jobId));
-    if (jobPlanCount >= 3) {
+    if (isPlanGeneration && jobPlanCount >= 3) {
       return new Response(
         JSON.stringify({ error: "Plan generation limit reached (3 max per session)" }),
         { status: 403 },
@@ -461,10 +462,12 @@ export async function POST(req: NextRequest) {
     systemPrompt = systemPrompt.replace("{{SERVICE_PRICES}}", "(Prices unavailable — confirm on the LeftClaw Services website)");
   }
 
-  // Add plan generation limit context
+  // Add plan generation limit context — always tell the bot about the limit
   const currentPlanCount = sessionId ? sessionPlanGenerations : (jobId ? jobPlanCount : 0);
-  if (currentPlanCount > 0) {
-    systemPrompt += `\n\n[PLAN LIMIT: This session has generated ${currentPlanCount}/3 build plans.${currentPlanCount >= 3 ? " The plan generation limit has been reached. Do NOT generate any more build plans. If the user asks for another plan, politely tell them they've used all 3 plan generations for this session and suggest they open a new consultation if they need a fresh plan." : ""}]`;
+  if (currentPlanCount >= 3) {
+    systemPrompt += `\n\n[PLAN LIMIT: This session has generated ${currentPlanCount}/3 build plans. The plan generation limit has been reached. Do NOT generate any more build plans. If the user asks for another plan, politely tell them they've used all 3 plan generations for this session and suggest they open a new consultation if they need a fresh plan.]`;
+  } else {
+    systemPrompt += `\n\n[PLAN LIMIT: This session has generated ${currentPlanCount}/3 build plans. You may generate ${3 - currentPlanCount} more. Only generate a plan when the user explicitly asks or when you have enough context from the conversation.]`;
   }
 
   if (isGreeting) {
@@ -554,8 +557,8 @@ export async function POST(req: NextRequest) {
         if (jobId && !capturedSessionId && fullResponse) {
           saveJobMessage(String(jobId), { role: "assistant", content: fullResponse }).catch(console.error);
         }
-        // Increment plan generation count if a plan was generated
-        if (isPlanGeneration && fullResponse.includes("---PLAN START---") && fullResponse.includes("---PLAN END---")) {
+        // Increment plan generation count if a plan was generated (whether via button or chat)
+        if (fullResponse.includes("---PLAN START---") && fullResponse.includes("---PLAN END---")) {
           if (capturedSessionId) {
             incrementPlanGenerations(capturedSessionId).catch(console.error);
           } else if (jobId) {

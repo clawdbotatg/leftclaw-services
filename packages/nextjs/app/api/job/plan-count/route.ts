@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getJobPlanCount } from "~~/lib/sessionStore";
+import { getJobPlanCount, getJobPlanGist } from "~~/lib/sessionStore";
 
 export async function GET(req: NextRequest) {
   const jobId = req.nextUrl.searchParams.get("jobId");
@@ -7,6 +7,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "jobId required" }, { status: 400 });
   }
 
-  const count = await getJobPlanCount(jobId);
-  return NextResponse.json({ planGenerations: count });
+  const [count, gist] = await Promise.all([
+    getJobPlanCount(jobId),
+    getJobPlanGist(jobId),
+  ]);
+
+  return NextResponse.json({
+    planGenerations: count,
+    latestPlanGistUrl: gist?.url || null,
+    latestPlanDescription: gist?.description || null,
+  });
 }

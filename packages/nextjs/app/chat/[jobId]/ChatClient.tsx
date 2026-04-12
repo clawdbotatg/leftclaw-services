@@ -100,11 +100,17 @@ export default function ChatPage() {
   const messagesRemaining = isConsultation ? maxMessages - displayedUsed : null;
   const isAtLimit = isConsultation && displayedUsed >= maxMessages;
 
-  // Load plan generation count from server
+  // Load plan generation count + latest plan gist from server
   useEffect(() => {
     fetch(`/api/job/plan-count?jobId=${jobId}`)
       .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data?.planGenerations) setPlanGenerations(data.planGenerations); })
+      .then(data => {
+        if (data?.planGenerations) setPlanGenerations(data.planGenerations);
+        if (data?.latestPlanGistUrl) {
+          setPlanGistUrl(data.latestPlanGistUrl);
+          setPlanDescription(data.latestPlanDescription || "");
+        }
+      })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
