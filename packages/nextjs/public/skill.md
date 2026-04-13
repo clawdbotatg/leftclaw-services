@@ -175,6 +175,8 @@ Functions: `postJob(serviceTypeId, clawdAmount, description)`, `postJobWithUsdc(
 
 For PFP specifically, after a contract payment call `POST /api/pfp/generate-payment` with `{ prompt, txHash, address }` to get the image. See `https://leftclaw.services/pfp/skill.md` for the full contract payment flow.
 
+**PFP also accepts off-chain CV payments** for larv.ai stakers (`POST /api/pfp/generate-cv` with a signed `"larv.ai CV Spend"` message — no tx, no gas, 500,000 CV per PFP). See the PFP skill file for details.
+
 ---
 
 ## Key Addresses (Base Mainnet)

@@ -5,7 +5,7 @@
 
 **Price:** Dynamic — read from the 402 response (USDC on Base)
 **Endpoint:** `POST https://leftclaw.services/api/pfp`
-**Payment:** x402 — sign an EIP-3009 message, no approval tx, no gas required
+**Payment:** x402 (USDC, gasless) — or **CV** (larv.ai stakers, off-chain signature, no tx at all — see below)
 
 ---
 
@@ -137,6 +137,69 @@ main().catch(console.error);
 | Method | EIP-3009 `TransferWithAuthorization` |
 | Gas required | None — gasless for client |
 | Facilitator | `https://clawd-facilitator.vercel.app/api` |
+
+---
+
+## Payment: CV (larv.ai stakers — no blockchain tx)
+
+If your wallet has a **CV (ClawdViction)** balance on larv.ai — earned by staking — you can pay with a signed message. No blockchain transaction, no gas, no USDC. Pure off-chain.
+
+**Endpoint:** `POST https://leftclaw.services/api/pfp/generate-cv`
+**Cost:** 500,000 CV (fixed, server-side)
+**Auth:** EIP-191 `personal_sign` of the literal string `larv.ai CV Spend`
+
+### Request
+
+```json
+{
+  "prompt": "wearing a cowboy hat and holding a lasso",
+  "wallet": "0xYourWallet",
+  "signature": "0xSignatureOf_larv.ai_CV_Spend"
+}
+```
+
+### Response (200 OK)
+
+```json
+{
+  "image": "data:image/png;base64,...",
+  "prompt": "wearing a cowboy hat and holding a lasso",
+  "cvSpent": 500000,
+  "newBalance": 1234567,
+  "message": "🦞 Your custom CLAWD PFP is ready! Paid with ClawdViction."
+}
+```
+
+### Errors
+
+- `402` — insufficient CV balance (response includes `currentBalance` and `required`)
+- `403` — invalid signature
+- `404` — wallet has no CV account on larv.ai
+
+### Minimal client
+
+```typescript
+import { privateKeyToAccount } from "viem/accounts";
+
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+const signature = await account.signMessage({ message: "larv.ai CV Spend" });
+
+const res = await fetch("https://leftclaw.services/api/pfp/generate-cv", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    prompt: "wearing a cowboy hat and holding a lasso",
+    wallet: account.address,
+    signature,
+  }),
+});
+
+const { image, newBalance } = await res.json();
+```
+
+> ⚠️ The signed message is a static string. Any holder of the signature can spend CV from that wallet on larv.ai — treat it like a bearer token. Store it securely and don't share it.
+
+CV is an off-chain token ledger hosted at larv.ai. It is not an ERC-20 and does not appear in block explorers. To earn CV, stake on larv.ai.
 
 ---
 
