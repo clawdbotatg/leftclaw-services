@@ -23,6 +23,10 @@ contract DeployLeftClawServicesV2 is Script {
     address constant CLAWDGUT   = 0x09defC9E6ffc5e41F42e0D50512EEf9354523E0E;
     address constant NEW_WORKER = 0x862b4474b449777d2a2622F6a04b9D879D891D19;
 
+    // Server wallet used by /api/job/close-consultation and postJobFor —
+    // must be a registered worker so completeJob() doesn't revert.
+    address constant SANITIZER  = 0xCfB32a7d01Ca2B4B538C83B2b38656D3502D76EA;
+
     // ─── Seed Service Types ───────────────────────────────────────────────────
     // Edit this array to add more service types before deploying.
     struct SeedService {
@@ -75,6 +79,7 @@ contract DeployLeftClawServicesV2 is Script {
         services.addWorker(CLAWDHEART);
         services.addWorker(CLAWDGUT);
         services.addWorker(NEW_WORKER);
+        services.addWorker(SANITIZER);
 
         // Note: do NOT add msg.sender as a worker here.
         // DeployScript.sol uses `new DeployLeftClawServicesV2()` which creates an

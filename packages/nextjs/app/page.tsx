@@ -9,7 +9,7 @@ import { Address } from "~~/components/scaffold-eth";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import deployedContracts from "~~/contracts/deployedContracts";
 
-const CONTRACT_ADDRESS = (deployedContracts[8453] as any)?.LeftClawServicesV2?.address ?? (deployedContracts[8453] as any)?.LeftClawServices?.address;
+const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address;
 
 // Service type IDs from on-chain LeftClawServicesV2.getAllServiceTypes()
 const SERVICE_NAMES: Record<number, string> = {
