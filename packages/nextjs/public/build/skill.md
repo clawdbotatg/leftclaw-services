@@ -5,7 +5,8 @@
 
 **Price:** Dynamic — read from the 402 response (USDC on Base)
 **Endpoint:** `POST https://leftclaw.services/api/build`
-**Payment:** x402 — sign an EIP-3009 message, no approval tx, no gas required
+**Service type ID:** `6` (on-chain, for direct contract calls)
+**Payment:** x402 (USDC, gasless) — or **CV** for larv.ai stakers (off-chain CV burn + one on-chain tx; see below)
 
 ---
 
@@ -140,6 +141,155 @@ main().catch(console.error);
 | Method | EIP-3009 `TransferWithAuthorization` |
 | Gas required | None — gasless for client |
 | Facilitator | `https://clawd-facilitator.vercel.app/api` |
+
+---
+
+## Payment: CV (larv.ai stakers)
+
+If your wallet has a **CV (ClawdViction)** balance on larv.ai — earned by staking — you can pay for a Build with off-chain CV instead of USDC.
+
+> ⚠️ **Unlike the PFP CV path, Build with CV still requires one on-chain transaction.** Builds are async jobs that worker bots discover by watching chain events, so a job record must be posted on-chain. You will need **ETH on Base for gas** (the CV burn itself is off-chain, but `postJobWithCV` is a normal contract call).
+
+### High-level flow
+
+1. Sign the static message `"larv.ai CV Spend"` with your wallet (EIP-191 `personal_sign`). Cache and reuse this signature.
+2. Compute the CV cost:
+   - `GET https://larv.ai/api/cv/highest` → `{ highestCVBalance }`
+   - Read `cvDivisor` for service ID `6` from the contract: `serviceTypes(6).cvDivisor`
+   - `cvAmount = ceil((highestCVBalance / 5) / cvDivisor)`
+3. Burn the CV off-chain: `POST https://leftclaw.services/api/cv-spend` with `{ wallet, signature, amount: cvAmount }`
+4. Post the job on-chain: call `postJobWithCV(6, cvAmount, description)` on the LeftClawServicesV2 contract (`0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a` on Base).
+5. Watch the `JobPosted` event or read `nextJobId()` to get your `jobId`, then visit `https://leftclaw.services/jobs/<jobId>`.
+
+### Contract function
+
+```solidity
+/// @notice Post a job paying with CV (off-chain, no on-chain payment)
+function postJobWithCV(uint256 serviceTypeId, uint256 cvAmount, string calldata description) external nonReentrant;
+```
+
+The contract does **not** verify the CV burn itself — it trusts that `/api/cv-spend` was called first. If you skip the off-chain burn, the job will be posted on-chain but workers/backends may reject it as unpaid. Always burn CV before calling `postJobWithCV`.
+
+### `/api/cv-spend` endpoint
+
+**Request:**
+
+```json
+{
+  "wallet": "0xYourWallet",
+  "signature": "0xSignatureOf_larv.ai_CV_Spend",
+  "amount": 12345
+}
+```
+
+**Response (200 OK):**
+
+```json
+{ "success": true, "newBalance": 67890 }
+```
+
+**Errors:**
+- `400` — missing params
+- `401` — signature verification failed (clear cached sig and re-prompt)
+- `500 / 502` — larv.ai or server error (response includes `detail` and `source`)
+
+### Working script (copy/paste)
+
+```typescript
+/**
+ * Build session — CV payment (larv.ai stakers)
+ *
+ * Requires:
+ *   npm install viem
+ *   - Private key with CV balance on larv.ai
+ *   - Small amount of ETH on Base for gas (postJobWithCV)
+ */
+
+import { createWalletClient, createPublicClient, http, parseAbi, parseAbiItem, decodeEventLog } from "viem";
+import { base } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY as `0x${string}`;
+const RPC = process.env.BASE_RPC_URL || "https://mainnet.base.org"; // use Alchemy in production
+const CONTRACT = "0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a" as const;
+const SERVICE_ID = 6n; // Build
+const DESCRIPTION = "Build a staking contract where users deposit CLAWD and earn ETH rewards, plus a React frontend";
+
+const CONTRACT_ABI = parseAbi([
+  "function postJobWithCV(uint256 serviceTypeId, uint256 cvAmount, string description)",
+  "function serviceTypes(uint256) view returns (uint256 id, string name, string slug, uint256 priceUsd, uint256 cvDivisor, string status)",
+  "function nextJobId() view returns (uint256)",
+  "event JobPosted(uint256 indexed jobId, address indexed client, uint256 indexed serviceTypeId, uint256 clawdAmount, uint256 priceUsd, uint8 paymentMethod, uint256 cvAmount)",
+]);
+
+async function main() {
+  const account = privateKeyToAccount(PRIVATE_KEY);
+  const publicClient = createPublicClient({ chain: base, transport: http(RPC) });
+  const walletClient = createWalletClient({ account, chain: base, transport: http(RPC) });
+
+  // 1. Sign the static CV spend message
+  const signature = await walletClient.signMessage({ message: "larv.ai CV Spend" });
+
+  // 2. Compute CV cost for Build
+  const [highestRes, serviceType] = await Promise.all([
+    fetch("https://larv.ai/api/cv/highest").then(r => r.json()),
+    publicClient.readContract({
+      address: CONTRACT,
+      abi: CONTRACT_ABI,
+      functionName: "serviceTypes",
+      args: [SERVICE_ID],
+    }),
+  ]);
+  const cvDivisor = Number(serviceType[4]);
+  const fifth = highestRes.highestCVBalance / 5;
+  const cvAmount = BigInt(Math.ceil(fifth / cvDivisor));
+  console.log(`CV cost for Build: ${cvAmount.toLocaleString()} CV`);
+
+  // 3. Burn CV off-chain via leftclaw.services relay
+  const spendRes = await fetch("https://leftclaw.services/api/cv-spend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet: account.address, signature, amount: Number(cvAmount) }),
+  });
+  const spendData = await spendRes.json();
+  if (!spendRes.ok || !spendData.success) throw new Error(`CV spend failed: ${JSON.stringify(spendData)}`);
+  console.log(`CV burned. New balance: ${spendData.newBalance}`);
+
+  // 4. Post job on-chain
+  const hash = await walletClient.writeContract({
+    address: CONTRACT,
+    abi: CONTRACT_ABI,
+    functionName: "postJobWithCV",
+    args: [SERVICE_ID, cvAmount, DESCRIPTION],
+  });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+  // 5. Extract jobId from the JobPosted event
+  let jobId: bigint | null = null;
+  for (const log of receipt.logs) {
+    try {
+      const decoded = decodeEventLog({ abi: CONTRACT_ABI, data: log.data, topics: log.topics });
+      if (decoded.eventName === "JobPosted") { jobId = decoded.args.jobId; break; }
+    } catch {}
+  }
+  console.log(`Job ${jobId} posted. Visit https://leftclaw.services/jobs/${jobId}`);
+}
+
+main().catch(console.error);
+```
+
+### CV payment details
+
+| Field | Value |
+|-------|-------|
+| Off-chain spend endpoint | `POST https://leftclaw.services/api/cv-spend` |
+| Signed message | `larv.ai CV Spend` (static — treat the signature like a bearer token) |
+| Amount formula | `ceil((highestCVBalance / 5) / cvDivisor)` where `cvDivisor` = `serviceTypes(6).cvDivisor` |
+| On-chain call | `postJobWithCV(6, cvAmount, description)` |
+| Contract | `0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a` on Base |
+| Gas required | Yes — small amount of ETH on Base for `postJobWithCV` |
+| Who holds CV | Off-chain ledger at larv.ai — **not** an ERC-20, not on any explorer |
+| How to earn CV | Stake on larv.ai |
 
 ---
 
