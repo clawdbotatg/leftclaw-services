@@ -70,6 +70,7 @@ export default function ChatPage() {
   const [planGistUrl, setPlanGistUrl] = useState<string | null>(null);
   const [planDescription, setPlanDescription] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isStartingBuild, setIsStartingBuild] = useState(false);
   const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE"; summary: string } | null>(null);
   const [planGenerations, setPlanGenerations] = useState(0);
   const MAX_PLAN_GENERATIONS = 3;
@@ -495,7 +496,9 @@ export default function ChatPage() {
           </button>
           <button
             className="btn btn-primary btn-sm flex-1"
+            disabled={isStartingBuild}
             onClick={async () => {
+              setIsStartingBuild(true);
               // Close consultation on-chain via backend (no user tx needed).
               // Must await — router.push would otherwise unmount the page and
               // abort the in-flight request before it reaches the server.
@@ -514,7 +517,7 @@ export default function ChatPage() {
               router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(planDescription || "")}`);
             }}
           >
-            🚀 Start Build Job
+            {isStartingBuild ? <span className="loading loading-spinner loading-xs"></span> : "🚀 Start Build Job"}
           </button>
         </div>
       )}
