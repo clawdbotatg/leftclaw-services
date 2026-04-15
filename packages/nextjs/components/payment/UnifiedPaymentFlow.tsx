@@ -230,17 +230,18 @@ export function UnifiedPaymentFlow({
           throw new Error(spendData.error || "CV spend failed");
         }
 
-        // Post CV job on-chain for tracking
-        setStep("posting");
-        const txHash = await writeAndOpen(() => writeContractAsync({
-          address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithCV",
-          args: [svcId, BigInt(cvAmount), desc],
-        }));
-        if (txHash && publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
-
-        postedJobIdRef.current = nextJobId ? Number(nextJobId) : `cv-${Date.now()}`;
+        // CV payment is off-chain only — no on-chain tx needed.
+        const cvJobId = `cv-${Date.now()}`;
+        postedJobIdRef.current = cvJobId;
         postedDescRef.current = desc;
+
+        // Auto-pass sanitization for CV jobs (fire-and-forget)
+        fetch("/api/job/sanitize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: cvJobId, description: desc, cvAutoPass: true }),
+        }).catch(() => {});
+
         setStep("done");
 
       } else if (paymentMethod === "clawd") {
