@@ -84,5 +84,14 @@ export async function postJobForOnChain(
 
   await publicClient.waitForTransactionReceipt({ hash, retryCount: 20, retryDelay: 3_000 });
 
-  return Number(nextId);
+  const jobId = Number(nextId);
+
+  // Fire sanitize (fire-and-forget) — runs Claude check, writes result to KV.
+  // Must be awaited enough to kick off but not block the response; use dynamic import
+  // to avoid pulling sanitize deps into every consumer's bundle.
+  import("./sanitize")
+    .then(({ checkSanitization }) => checkSanitization(String(jobId), description))
+    .catch(err => console.error(`postJobForOnChain: sanitize kick-off failed for job ${jobId}:`, err));
+
+  return jobId;
 }
