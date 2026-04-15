@@ -136,13 +136,7 @@ function ConsultPage() {
           onSuccess={(jobId, description) => {
             const desc = description || `${extra.name} session`;
             try { localStorage.setItem(`consult-topic-${jobId}`, desc); } catch {}
-            if (!String(jobId).startsWith("cv-")) {
-              fetch("/api/job/sanitize", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ jobId: String(jobId), description: desc }),
-              }).catch(() => {});
-            }
+            // Sanitize is fired centrally by UnifiedPaymentFlow.
             return `/chat/${jobId}`;
           }}
         />

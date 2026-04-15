@@ -111,9 +111,22 @@ async function _doCheck(jobId: string, text: string): Promise<SanitizationResult
     const content = data.content?.[0]?.text || "";
 
     let parsed: any;
+    // Strip common wrappers: markdown code fences, leading/trailing prose
+    const stripped = content
+      .trim()
+      .replace(/^```(?:json)?\s*\n?/i, "")
+      .replace(/\n?```\s*$/i, "")
+      .trim();
     try {
-      parsed = JSON.parse(content);
+      parsed = JSON.parse(stripped);
     } catch {
+      // Fallback: extract the first {...} block
+      const match = stripped.match(/\{[\s\S]*\}/);
+      if (match) {
+        try { parsed = JSON.parse(match[0]); } catch {}
+      }
+    }
+    if (!parsed) {
       console.error(`Sanitize: Failed to parse API response for job ${jobId}: "${content}"`);
       // FAIL OPEN — bad response format must never block jobs
       return { jobId, safe: true, reason: "Check skipped (parse error — fail open)", checkedAt: new Date().toISOString() };

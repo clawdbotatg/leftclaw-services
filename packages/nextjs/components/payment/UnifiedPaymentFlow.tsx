@@ -178,6 +178,16 @@ export function UnifiedPaymentFlow({
   useEffect(() => {
     if (step !== "done" || postedJobIdRef.current === null) return;
     const jobId = postedJobIdRef.current;
+
+    // Fire sanitize for on-chain jobs (CV jobs already fire with cvAutoPass inline).
+    if (!String(jobId).startsWith("cv-")) {
+      fetch("/api/job/sanitize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: String(jobId), description: postedDescRef.current }),
+      }).catch(() => {});
+    }
+
     if (onSuccess) {
       const result = onSuccess(jobId, postedDescRef.current);
       if (result) router.push(result);
