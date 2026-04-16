@@ -133,6 +133,7 @@ function ConsultPage() {
           descriptionLabel="What do you want to build?"
           descriptionPlaceholder="e.g. A staking dApp where users earn ETH rewards on CLAUD deposits..."
           descriptionRequired={false}
+          cvOffChain
           onSuccess={(jobId, description) => {
             const desc = description || `${extra.name} session`;
             try { localStorage.setItem(`consult-topic-${jobId}`, desc); } catch {}

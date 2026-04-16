@@ -60,6 +60,10 @@ interface UnifiedPaymentFlowProps {
   initialDescription?: string;
   /** Read-only content locked at the top of the description (e.g. build plan from gist) — always prepended on submit */
   lockedContent?: string;
+  /** If true, CV payment skips the on-chain postJobWithCV tx and uses a synthetic cv-* jobId.
+   * Only set true when the consumer has its own off-chain flow for CV (e.g. consult → /chat/cv-*).
+   * Default false: CV still posts on-chain so workers can discover the job. */
+  cvOffChain?: boolean;
 }
 
 export function UnifiedPaymentFlow({
@@ -75,6 +79,7 @@ export function UnifiedPaymentFlow({
   children,
   initialDescription,
   lockedContent,
+  cvOffChain = false,
 }: UnifiedPaymentFlowProps) {
   const router = useRouter();
   const { address, chainId } = useAccount();
@@ -240,17 +245,31 @@ export function UnifiedPaymentFlow({
           throw new Error(spendData.error || "CV spend failed");
         }
 
-        // CV payment is off-chain only — no on-chain tx needed.
-        const cvJobId = `cv-${Date.now()}`;
-        postedJobIdRef.current = cvJobId;
-        postedDescRef.current = desc;
+        if (cvOffChain) {
+          // Off-chain CV (consult): synthetic cv-* id, no on-chain tx. Consumer owns the flow.
+          const cvJobId = `cv-${Date.now()}`;
+          postedJobIdRef.current = cvJobId;
+          postedDescRef.current = desc;
 
-        // Auto-pass sanitization for CV jobs (fire-and-forget)
-        fetch("/api/job/sanitize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jobId: cvJobId, description: desc, cvAutoPass: true }),
-        }).catch(() => {});
+          // Auto-pass sanitization for off-chain CV jobs
+          fetch("/api/job/sanitize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jobId: cvJobId, description: desc, cvAutoPass: true }),
+          }).catch(() => {});
+        } else {
+          // On-chain CV: post the job on-chain so workers can discover it.
+          postedJobIdRef.current = nextJobId ? Number(nextJobId) : null;
+          postedDescRef.current = desc;
+          setStep("posting");
+          const txHash = await writeAndOpen(() => writeContractAsync({
+            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
+            functionName: "postJobWithCV",
+            args: [svcId, BigInt(cvAmount), desc],
+          }));
+          if (!txHash) { setTxError("Transaction was not submitted — please try again"); setStep("idle"); return; }
+          if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        }
 
         setStep("done");
 
