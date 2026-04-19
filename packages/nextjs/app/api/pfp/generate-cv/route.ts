@@ -2,42 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 120;
 import OpenAI, { toFile } from "openai";
-import { createPublicClient, http, parseAbi, verifyMessage } from "viem";
-import { base } from "viem/chains";
-import deployedContracts from "~~/contracts/deployedContracts";
+import { verifyMessage } from "viem";
+import { computePfpCvCost } from "~~/lib/pfpCvCost";
 
 const CV_SPEND_SECRET = process.env.CV_SPEND_SECRET || "";
 const CV_SPEND_URL = "https://larv.ai/api/cv/spend";
-const CV_HIGHEST_URL = "https://larv.ai/api/cv/highest";
 const CV_SIGN_MESSAGE = "larv.ai CV Spend";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
-const PFP_SERVICE_TYPE_ID = 3;
-
-const SERVICE_TYPE_ABI = parseAbi([
-  "function getServiceType(uint256 id) view returns ((uint256 id, string name, string slug, uint256 priceUsd, uint256 cvDivisor, string status))",
-]);
-const SERVICE_TYPE_CONTRACT = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
-
-// Matches the UI formula in useCVCost: ceil((highestCVBalance / 5) / cvDivisor)
-async function computePfpCvCost(): Promise<number> {
-  const client = createPublicClient({
-    chain: base,
-    transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
-  });
-  const [svc, highestRes] = await Promise.all([
-    client.readContract({
-      address: SERVICE_TYPE_CONTRACT,
-      abi: SERVICE_TYPE_ABI,
-      functionName: "getServiceType",
-      args: [BigInt(PFP_SERVICE_TYPE_ID)],
-    }),
-    fetch(CV_HIGHEST_URL).then(r => r.json()),
-  ]);
-  const cvDivisor = Number(svc.cvDivisor);
-  const highest = Number(highestRes?.highestCVBalance);
-  if (!cvDivisor || !highest || !isFinite(highest)) throw new Error("Failed to compute CV cost");
-  return Math.ceil((highest / 5) / cvDivisor);
-}
 
 let baseImageCache: Buffer | null = null;
 
@@ -77,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     let cvCost: number;
     try {
-      cvCost = await computePfpCvCost();
+      cvCost = (await computePfpCvCost()).generateCvCost;
     } catch (e) {
       console.error("Failed to compute PFP CV cost", e);
       return NextResponse.json({ error: "Unable to determine CV cost right now — try again in a moment" }, { status: 503 });

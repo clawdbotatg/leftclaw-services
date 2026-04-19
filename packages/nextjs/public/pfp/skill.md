@@ -145,7 +145,7 @@ main().catch(console.error);
 If your wallet has a **CV (ClawdViction)** balance on larv.ai — earned by staking — you can pay with a signed message. No blockchain transaction, no gas, no USDC. Pure off-chain.
 
 **Endpoint:** `POST https://leftclaw.services/api/pfp/generate-cv`
-**Cost:** Dynamic — `ceil((highestCVBalance / 5) / cvDivisor)` computed server-side per request. Read the PFP `cvDivisor` from the contract (`getServiceType(3)`) and divide the current `highestCVBalance` (from `https://larv.ai/api/cv/highest`) by 5, then by `cvDivisor`, and round up. The actual amount charged is returned as `cvSpent` in the 200 response.
+**Cost:** Dynamic — `ceil((highestCVBalance / 5) / cvDivisor)` computed server-side per request. To preview the current cost before posting, `GET https://leftclaw.services/api/pfp/cost` (CORS-enabled, cached ~30s) which returns `{ version, generateCvCost, cvDivisor, highestCVBalance, priceUsd, formula }`. The actual amount charged is also returned as `cvSpent` in the 200 response from `generate-cv`.
 **Auth:** EIP-191 `personal_sign` of the literal string `larv.ai CV Spend`
 
 ### Request
