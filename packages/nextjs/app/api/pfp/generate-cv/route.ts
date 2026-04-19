@@ -2,13 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 120;
 import OpenAI, { toFile } from "openai";
-import { verifyMessage } from "viem";
+import { createPublicClient, http, parseAbi, verifyMessage } from "viem";
+import { base } from "viem/chains";
+import deployedContracts from "~~/contracts/deployedContracts";
 
 const CV_SPEND_SECRET = process.env.CV_SPEND_SECRET || "";
 const CV_SPEND_URL = "https://larv.ai/api/cv/spend";
+const CV_HIGHEST_URL = "https://larv.ai/api/cv/highest";
 const CV_SIGN_MESSAGE = "larv.ai CV Spend";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw-services-nextjs.vercel.app";
-const PFP_CV_COST = 500_000;
+const PFP_SERVICE_TYPE_ID = 3;
+
+const SERVICE_TYPE_ABI = parseAbi([
+  "function getServiceType(uint256 id) view returns ((uint256 id, string name, string slug, uint256 priceUsd, uint256 cvDivisor, string status))",
+]);
+const SERVICE_TYPE_CONTRACT = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
+
+// Matches the UI formula in useCVCost: ceil((highestCVBalance / 5) / cvDivisor)
+async function computePfpCvCost(): Promise<number> {
+  const client = createPublicClient({
+    chain: base,
+    transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
+  });
+  const [svc, highestRes] = await Promise.all([
+    client.readContract({
+      address: SERVICE_TYPE_CONTRACT,
+      abi: SERVICE_TYPE_ABI,
+      functionName: "getServiceType",
+      args: [BigInt(PFP_SERVICE_TYPE_ID)],
+    }),
+    fetch(CV_HIGHEST_URL).then(r => r.json()),
+  ]);
+  const cvDivisor = Number(svc.cvDivisor);
+  const highest = Number(highestRes?.highestCVBalance);
+  if (!cvDivisor || !highest || !isFinite(highest)) throw new Error("Failed to compute CV cost");
+  return Math.ceil((highest / 5) / cvDivisor);
+}
 
 let baseImageCache: Buffer | null = null;
 
@@ -46,17 +75,25 @@ export async function POST(req: NextRequest) {
     if (!valid)
       return NextResponse.json({ error: "Invalid signature — sign the message with your wallet" }, { status: 403 });
 
+    let cvCost: number;
+    try {
+      cvCost = await computePfpCvCost();
+    } catch (e) {
+      console.error("Failed to compute PFP CV cost", e);
+      return NextResponse.json({ error: "Unable to determine CV cost right now — try again in a moment" }, { status: 503 });
+    }
+
     const spendRes = await fetch(CV_SPEND_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet, signature, secret: CV_SPEND_SECRET, amount: PFP_CV_COST }),
+      body: JSON.stringify({ wallet, signature, secret: CV_SPEND_SECRET, amount: cvCost }),
     });
     const spendData = await spendRes.json();
 
     if (!spendRes.ok || !spendData.success) {
       const status = spendRes.status === 402 ? 402 : spendRes.status === 404 ? 404 : 400;
       return NextResponse.json(
-        { error: spendData.error || "CV spend failed", ...(spendData.balance !== undefined ? { currentBalance: spendData.balance } : {}), required: PFP_CV_COST },
+        { error: spendData.error || "CV spend failed", ...(spendData.balance !== undefined ? { currentBalance: spendData.balance } : {}), required: cvCost },
         { status }
       );
     }
@@ -86,7 +123,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       image: `data:image/png;base64,${imageData.b64_json}`,
       prompt: prompt.trim(),
-      cvSpent: PFP_CV_COST,
+      cvSpent: cvCost,
       newBalance: spendData.newBalance,
       message: "🦞 Your custom CLAWD PFP is ready! Paid with ClawdViction.",
     });
