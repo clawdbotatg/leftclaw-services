@@ -24,7 +24,17 @@ export const maxDuration = 300;
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 const PFP_SERVICE_TYPE_ID = 3;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://leftclaw.services";
-const AUTH_SECRET = process.env.CONSULT_TIMEOUT_SECRET; // reuse existing sweeper auth
+// Accept either the existing sweeper secret OR Vercel cron auth (CRON_SECRET).
+function isAuthorized(req: NextRequest): boolean {
+  const consultSecret = process.env.CONSULT_TIMEOUT_SECRET;
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = req.headers.get("authorization");
+  if (consultSecret && authHeader === `Bearer ${consultSecret}`) return true;
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true;
+  // If no auth is configured, allow (local dev).
+  if (!consultSecret && !cronSecret) return true;
+  return false;
+}
 
 let baseImageCache: Buffer | null = null;
 
@@ -161,11 +171,8 @@ async function processJob(
 }
 
 export async function POST(req: NextRequest) {
-  if (AUTH_SECRET) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${AUTH_SECRET}`) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!isAuthorized(req)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let clients;
