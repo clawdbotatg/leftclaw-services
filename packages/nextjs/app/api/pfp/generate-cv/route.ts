@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 120;
 import OpenAI, { toFile } from "openai";
-import { verifyMessage } from "viem";
+import { createPublicClient, http } from "viem";
+import { base } from "viem/chains";
 import { computePfpCvCost } from "~~/lib/pfpCvCost";
+
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http(
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+      ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+      : undefined,
+  ),
+});
 
 const CV_SPEND_SECRET = process.env.CV_SPEND_SECRET || "";
 const CV_SPEND_URL = "https://larv.ai/api/cv/spend";
@@ -38,7 +48,7 @@ export async function POST(req: NextRequest) {
     if (!signature || !/^0x[0-9a-fA-F]+$/.test(signature))
       return NextResponse.json({ error: "Valid signature required" }, { status: 400 });
 
-    const valid = await verifyMessage({
+    const valid = await publicClient.verifyMessage({
       address: wallet as `0x${string}`,
       message: CV_SIGN_MESSAGE,
       signature: signature as `0x${string}`,

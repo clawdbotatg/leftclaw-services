@@ -4,7 +4,7 @@
 // - NEXT_PUBLIC_ALCHEMY_API_KEY: Alchemy key for Base RPC (optional)
 
 import { NextRequest } from "next/server";
-import { createPublicClient, createWalletClient, http, verifyMessage } from "viem";
+import { createPublicClient, createWalletClient, http } from "viem";
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { execSync } from "child_process";
@@ -262,7 +262,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Verify wallet signature
   let valid = false;
   try {
-    valid = await verifyMessage({ address: clientAddress as `0x${string}`, message: signedMessage, signature });
+    valid = await viemClient.verifyMessage({ address: clientAddress as `0x${string}`, message: signedMessage, signature });
   } catch {
     return Response.json({ error: "Signature verification failed" }, { status: 401 });
   }

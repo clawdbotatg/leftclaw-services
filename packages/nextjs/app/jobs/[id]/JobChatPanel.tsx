@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSignMessage } from "wagmi";
+import { AUTH_SIGN_MESSAGE } from "~~/lib/authSignature";
+import { getCachedAuthSignature, setCachedAuthSignature } from "~~/utils/authSignatureCache";
 
 interface JobMessage {
   id: string;
@@ -20,6 +22,7 @@ interface SigCache {
 
 export default function JobChatPanel({ jobId, clientAddress }: { jobId: string; clientAddress: string }) {
   const [messages, setMessages] = useState<JobMessage[]>([]);
+  const [messagesLoaded, setMessagesLoaded] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,16 +31,6 @@ export default function JobChatPanel({ jobId, clientAddress }: { jobId: string; 
   const [sigPending, setSigPending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { signMessageAsync } = useSignMessage();
-
-  // Fetch messages on mount
-  useEffect(() => {
-    fetch(`/api/job/${jobId}/messages`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.messages) setMessages(data.messages);
-      })
-      .catch(() => {});
-  }, [jobId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -82,6 +75,29 @@ export default function JobChatPanel({ jobId, clientAddress }: { jobId: string; 
     return !messages.some(r => r.type === "escalation_response" && r.metadata?.escalation_id === escId);
   });
 
+  const loadMessages = useCallback(
+    async (authSig: string) => {
+      try {
+        const res = await fetch(
+          `/api/job/${jobId}/messages?address=${encodeURIComponent(clientAddress)}&sig=${encodeURIComponent(authSig)}`,
+        );
+        const data = await res.json();
+        if (data.messages) {
+          setMessages(data.messages);
+          setMessagesLoaded(true);
+        }
+      } catch {}
+    },
+    [jobId, clientAddress],
+  );
+
+  // Auto-load messages on mount if a cached auth sig is already in localStorage
+  useEffect(() => {
+    if (!clientAddress || messagesLoaded) return;
+    const cached = getCachedAuthSignature(clientAddress);
+    if (cached) loadMessages(cached);
+  }, [clientAddress, messagesLoaded, loadMessages]);
+
   const getSignature = useCallback(async (): Promise<SigCache | null> => {
     // Check cache
     if (sigCache && Date.now() - sigCache.timestamp < 300000) {
@@ -104,9 +120,31 @@ export default function JobChatPanel({ jobId, clientAddress }: { jobId: string; 
     }
   }, [sigCache, jobId, signMessageAsync]);
 
+  const handleLoadMessages = async () => {
+    if (!clientAddress) return;
+    const cached = getCachedAuthSignature(clientAddress);
+    if (cached) {
+      await loadMessages(cached);
+      return;
+    }
+    setSigPending(true);
+    setError(null);
+    try {
+      const signature = await signMessageAsync({ message: AUTH_SIGN_MESSAGE });
+      setCachedAuthSignature(clientAddress, signature);
+      await loadMessages(signature);
+    } catch {
+      setError("Signature required to load messages");
+    } finally {
+      setSigPending(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || sending) return;
     setError(null);
+
+    if (!messagesLoaded) await handleLoadMessages();
 
     const sig = await getSignature();
     if (!sig) return;
@@ -206,10 +244,27 @@ export default function JobChatPanel({ jobId, clientAddress }: { jobId: string; 
 
       {/* Message history */}
       <div className="bg-base-200 rounded-lg p-4 max-h-96 overflow-y-auto space-y-3 mb-4">
-        {messages.length === 0 && (
-          <p className="text-center text-sm opacity-40 py-8">No messages yet. Start the conversation!</p>
+        {!messagesLoaded ? (
+          <div className="flex flex-col items-center py-8 gap-3">
+            {clientAddress ? (
+              <>
+                <p className="text-sm opacity-50">Sign to view your message history</p>
+                <button className="btn btn-sm btn-outline" onClick={handleLoadMessages} disabled={sigPending}>
+                  {sigPending ? <span className="loading loading-spinner loading-xs" /> : "Load messages"}
+                </button>
+              </>
+            ) : (
+              <p className="text-sm opacity-50">Connect wallet to view messages</p>
+            )}
+          </div>
+        ) : (
+          <>
+            {messages.length === 0 && (
+              <p className="text-center text-sm opacity-40 py-8">No messages yet. Start the conversation!</p>
+            )}
+          </>
         )}
-        {messages.map(msg => {
+        {messagesLoaded && messages.map(msg => {
           if (msg.type === "client_message") {
             return (
               <div key={msg.id} className="flex flex-col items-end">

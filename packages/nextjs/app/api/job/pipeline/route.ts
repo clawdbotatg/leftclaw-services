@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import deployedContracts from "~~/contracts/deployedContracts";
+import { verifyWindowedSig, getRegisteredWorkers, workerAuthMessage } from "~~/lib/workerAuth";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
@@ -18,6 +19,23 @@ const client = createPublicClient({
 const STAGES = ["create_repo", "create_plan", "create_user_journey", "prototype", "contract_audit", "contract_fix", "deep_contract_audit", "deep_contract_fix", "frontend_audit", "frontend_fix", "full_audit", "full_audit_fix", "deploy_contract", "livecontract_fix", "deploy_app", "liveapp_fix", "liveuserjourney", "readme", "ready", "blocked"] as const;
 
 export async function GET(req: NextRequest) {
+  const callerAddress = req.nextUrl.searchParams.get("address");
+  const sig = req.nextUrl.searchParams.get("sig");
+
+  if (!callerAddress || !sig) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const sigValid = await verifyWindowedSig(callerAddress, sig, workerAuthMessage);
+  if (!sigValid) {
+    return Response.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  const workers = await getRegisteredWorkers();
+  if (!workers.includes(callerAddress.toLowerCase())) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const filterStage = req.nextUrl.searchParams.get("stage")?.toLowerCase();
 
   try {

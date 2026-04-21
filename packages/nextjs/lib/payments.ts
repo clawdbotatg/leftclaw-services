@@ -7,7 +7,7 @@
  *   - eth: ETH transfer to payTo address (on-chain, verified)
  */
 
-import { createPublicClient, http, verifyMessage } from "viem";
+import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import { getKV } from "./kv";
 
@@ -125,7 +125,7 @@ async function verifyCvPayment(
   if (!signature) return { success: false, error: "Signature required for CV payment" };
 
   // Verify signature locally
-  const valid = await verifyMessage({
+  const valid = await getClient().verifyMessage({
     address: wallet as `0x${string}`,
     message: CV_SIGN_MESSAGE,
     signature: signature as `0x${string}`,

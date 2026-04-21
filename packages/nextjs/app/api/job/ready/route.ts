@@ -1,6 +1,8 @@
+import { NextRequest } from "next/server";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import deployedContracts from "~~/contracts/deployedContracts";
+import { verifyWindowedSig, getRegisteredWorkers, workerAuthMessage } from "~~/lib/workerAuth";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
@@ -14,7 +16,24 @@ const client = createPublicClient({
   transport: http(rpcUrl),
 });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const callerAddress = req.nextUrl.searchParams.get("address");
+  const sig = req.nextUrl.searchParams.get("sig");
+
+  if (!callerAddress || !sig) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const sigValid = await verifyWindowedSig(callerAddress, sig, workerAuthMessage);
+  if (!sigValid) {
+    return Response.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  const workers = await getRegisteredWorkers();
+  if (!workers.includes(callerAddress.toLowerCase())) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const nextJobId = await client.readContract({ address, abi, functionName: "nextJobId" }) as bigint;
 
