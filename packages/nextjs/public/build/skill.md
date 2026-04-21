@@ -152,7 +152,7 @@ If your wallet has a **CV (ClawdViction)** balance on larv.ai — earned by stak
 
 ### High-level flow
 
-1. Sign the static message `"larv.ai CV Spend"` with your wallet (EIP-191 `personal_sign`). Cache and reuse this signature.
+1. Sign the static message `"larv.ai CV Spend"` with your wallet (`personal_sign` — supports both EOA and ERC-1271 smart contract wallets like Coinbase Smart Wallet). Cache and reuse this signature.
 2. Compute the CV cost:
    - `GET https://larv.ai/api/cv/highest` → `{ highestCVBalance }`
    - Read `cvDivisor` for service ID `6` from the contract: `serviceTypes(6).cvDivisor`

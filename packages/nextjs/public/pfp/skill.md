@@ -146,7 +146,7 @@ If your wallet has a **CV (ClawdViction)** balance on larv.ai — earned by stak
 
 **Endpoint:** `POST https://leftclaw.services/api/pfp/generate-cv`
 **Cost:** Dynamic — `ceil((highestCVBalance / 5) / cvDivisor)` computed server-side per request. To preview the current cost before posting, `GET https://leftclaw.services/api/pfp/cost` (CORS-enabled, cached ~30s) which returns `{ version, generateCvCost, cvDivisor, highestCVBalance, priceUsd, formula }`. The actual amount charged is also returned as `cvSpent` in the 200 response from `generate-cv`.
-**Auth:** EIP-191 `personal_sign` of the literal string `larv.ai CV Spend`
+**Auth:** `personal_sign` of the literal string `larv.ai CV Spend` (supports both EOA and ERC-1271 smart contract wallets like Coinbase Smart Wallet)
 
 ### Request
 
