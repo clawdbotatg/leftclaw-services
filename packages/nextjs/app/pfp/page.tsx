@@ -157,7 +157,7 @@ export default function PfpPage() {
         });
         const data = await res.json();
         if (!res.ok) {
-          if (res.status === 401) clearCachedCVSignature(address);
+          if (res.status === 401 || res.status === 403) clearCachedCVSignature(address);
           if (res.status === 402) throw new Error(`Not enough ClawdViction. You have ${(data.currentBalance || 0).toLocaleString()} CV, need ${(cvCost ?? 0).toLocaleString()}.`);
           throw new Error(data.error || "Generation failed");
         }
