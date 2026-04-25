@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { parseEther, parseUnits } from "viem";
 import { useAccount, usePublicClient, useWalletClient, useWriteContract } from "wagmi";
@@ -122,11 +122,13 @@ export default function PfpPage() {
 
   const { cvCost } = useCVCost(cvDivisor ?? 0);
 
-  const [prompt, setPrompt] = useState("");
-  useEffect(() => {
+  const savedPromptRef = useRef<string>("");
+  const [prompt, setPrompt] = useState(() => {
+    if (typeof window === "undefined") return "";
     const saved = loadPfpPrompt();
-    if (saved) setPrompt(saved);
-  }, []);
+    savedPromptRef.current = saved;
+    return saved;
+  });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cv");
   const [step, setStep] = useState<"idle" | "signing" | "approving" | "paying" | "generating" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -160,6 +162,7 @@ export default function PfpPage() {
 
   const handleGenerate = async () => {
     if (!address || !prompt.trim() || priceUsd === null) return;
+    savedPromptRef.current = prompt.trim();
     savePfpPrompt(prompt.trim());
     setError(null); setGeneratedImage(null); setPaymentInfo(null);
 
@@ -313,7 +316,7 @@ export default function PfpPage() {
 
   const handleReset = () => {
     setStep("idle"); setError(null); setGeneratedImage(null); setPaymentInfo(null);
-    setPrompt(loadPfpPrompt());
+    setPrompt(savedPromptRef.current || loadPfpPrompt());
   };
 
   const randomPrompt = () => {
