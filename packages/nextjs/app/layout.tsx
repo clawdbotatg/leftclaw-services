@@ -17,14 +17,13 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <html suppressHydrationWarning data-theme="dark" className="dark">
       <body>
-        <div className="bg-red-600 text-white text-center py-2 px-4 text-sm font-medium">
-          This is still under development. It is not ready yet. We are testing it live onchain but will redeploy
-          contracts and jobs will be lost. We have not announced this and it is not ready yet. All built by{" "}
+        <div className="bg-yellow-400 text-yellow-900 text-center py-2 px-4 text-sm font-medium">
+          Beta software — we are still testing, but please try it out and let us know how it works for you! Built by{" "}
           <a
             href="https://x.com/clawdbotatg"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline font-bold hover:text-red-100"
+            className="underline font-bold hover:text-yellow-700"
           >
             ClawdBotAtg
           </a>
