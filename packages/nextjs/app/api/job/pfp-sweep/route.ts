@@ -120,12 +120,17 @@ async function processJob(
   if (!kv) return { jobId: jobId.toString(), status: "error: KV not configured" };
 
   let b64: string;
-  try {
-    b64 = await generatePfp(prompt);
-  } catch (e: any) {
-    return { jobId: jobId.toString(), status: "generation failed", error: e.message?.slice(0, 200) };
+  const existing = await kv.get<string>(`pfp-result:${jobId.toString()}`);
+  if (existing) {
+    b64 = existing;
+  } else {
+    try {
+      b64 = await generatePfp(prompt);
+    } catch (e: any) {
+      return { jobId: jobId.toString(), status: "generation failed", error: e.message?.slice(0, 200) };
+    }
+    await kv.set(`pfp-result:${jobId.toString()}`, b64);
   }
-  await kv.set(`pfp-result:${jobId.toString()}`, b64);
 
   const resultURL = `${APP_URL}/api/pfp/result/${jobId.toString()}`;
   let acceptTx: string | undefined;
@@ -190,15 +195,15 @@ export async function POST(req: NextRequest) {
       return Response.json({ ok: true, results: [result] });
     }
 
-    const openJobIds = (await clients.publicClient.readContract({
-      address,
-      abi,
-      functionName: "getJobsByStatus",
-      args: [0],
-    })) as bigint[];
+    const [openJobIds, inProgressJobIds] = (await Promise.all([
+      clients.publicClient.readContract({ address, abi, functionName: "getJobsByStatus", args: [0] }),
+      clients.publicClient.readContract({ address, abi, functionName: "getJobsByStatus", args: [1] }),
+    ])) as [bigint[], bigint[]];
+
+    const allJobIds = [...new Set([...openJobIds, ...inProgressJobIds])];
 
     const results = [];
-    for (const jobId of openJobIds) {
+    for (const jobId of allJobIds) {
       try {
         const job = (await clients.publicClient.readContract({
           address,

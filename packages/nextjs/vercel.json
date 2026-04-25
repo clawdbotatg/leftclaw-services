@@ -7,6 +7,7 @@
     "app/api/job/pfp-sweep/route.ts": { "maxDuration": 300 }
   },
   "crons": [
-    { "path": "/api/job/pfp-sweep", "schedule": "0 */3 * * *" }
+    { "path": "/api/job/pfp-sweep", "schedule": "0 */3 * * *" },
+    { "path": "/api/job/consult-timeout", "schedule": "0 * * * *" }
   ]
 }

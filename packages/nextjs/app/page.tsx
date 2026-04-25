@@ -312,7 +312,7 @@ const Home: NextPage = () => {
                 — automatically, trustlessly, with a full audit trail.
               </p>
               <div className="flex flex-col gap-3 items-start">
-                <Link href="/judge" className="btn btn-primary">⚖️ Set up an Oracle Job →</Link>
+                <button className="btn btn-primary" disabled>⚖️ Set up an Oracle Job → <span className="badge badge-sm ml-1">Coming Soon</span></button>
                 <a href="/judge/skill.md" target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm text-white border-white hover:bg-white/20">
                   📄 Judge Skill File
                 </a>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
-import { ServiceHero, UnifiedPaymentFlow } from "~~/components/payment";
+import { ServiceHero } from "~~/components/payment";
 import { EXTRA_SERVICE_META } from "~~/lib/servicesMeta";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
@@ -72,9 +72,6 @@ export default function JudgePage() {
     );
   }
 
-  const priceUsd = Number(service.priceUsd) / 1e6;
-  const cvDivisor = Number(service.cvDivisor);
-
   return (
     <div className="flex flex-col items-center py-10 px-4 min-h-screen">
       <div className="w-full max-w-lg">
@@ -87,16 +84,12 @@ export default function JudgePage() {
           heroPosition={meta.heroPosition}
         />
 
-        <UnifiedPaymentFlow
-          serviceTypeId={SERVICE_TYPE_ID}
-          priceUsd={priceUsd}
-          cvDivisor={cvDivisor}
-          serviceName="Judge / Oracle Job"
-          descriptionLabel={meta.descriptionLabel}
-          descriptionPlaceholder={meta.descriptionPlaceholder}
-          descriptionRequired={true}
-          onSuccess={jobId => `/jobs/${jobId}`}
-        />
+        <div className="alert alert-warning mt-6">
+          <span>⚖️ Judge / Oracle jobs are coming soon — submissions are not yet open.</span>
+        </div>
+        <button className="btn btn-primary btn-lg w-full mt-4" disabled>
+          Submit Judge Job <span className="badge badge-sm ml-1">Coming Soon</span>
+        </button>
 
         <div className="mt-[100px] flex justify-center">
           <a href="/judge/skill.md" className="btn btn-outline btn-sm opacity-60 hover:opacity-100">
