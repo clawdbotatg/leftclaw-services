@@ -44,6 +44,27 @@ const ERC20_ABI = [
   },
 ] as const;
 
+const PFP_PROMPT_STORAGE_KEY = "pfp_last_prompt";
+const PFP_PROMPT_TTL_MS = 10 * 60 * 1000;
+
+const savePfpPrompt = (prompt: string) => {
+  try {
+    localStorage.setItem(PFP_PROMPT_STORAGE_KEY, JSON.stringify({ prompt, ts: Date.now() }));
+  } catch {}
+};
+
+const loadPfpPrompt = (): string => {
+  try {
+    const raw = localStorage.getItem(PFP_PROMPT_STORAGE_KEY);
+    if (!raw) return "";
+    const { prompt, ts } = JSON.parse(raw);
+    if (Date.now() - ts > PFP_PROMPT_TTL_MS) return "";
+    return prompt || "";
+  } catch {
+    return "";
+  }
+};
+
 const EXAMPLE_PROMPTS = [
   "wearing a cowboy hat and boots",
   "as a pirate captain with an eyepatch",
@@ -102,6 +123,10 @@ export default function PfpPage() {
   const { cvCost } = useCVCost(cvDivisor ?? 0);
 
   const [prompt, setPrompt] = useState("");
+  useEffect(() => {
+    const saved = loadPfpPrompt();
+    if (saved) setPrompt(saved);
+  }, []);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cv");
   const [step, setStep] = useState<"idle" | "signing" | "approving" | "paying" | "generating" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -135,6 +160,7 @@ export default function PfpPage() {
 
   const handleGenerate = async () => {
     if (!address || !prompt.trim() || priceUsd === null) return;
+    savePfpPrompt(prompt.trim());
     setError(null); setGeneratedImage(null); setPaymentInfo(null);
 
     try {
@@ -286,7 +312,8 @@ export default function PfpPage() {
   };
 
   const handleReset = () => {
-    setStep("idle"); setError(null); setGeneratedImage(null); setPaymentInfo(null); setPrompt("");
+    setStep("idle"); setError(null); setGeneratedImage(null); setPaymentInfo(null);
+    setPrompt(loadPfpPrompt());
   };
 
   const randomPrompt = () => {
