@@ -45,7 +45,7 @@ export default function X402ChatClient() {
   const [planGistUrl, setPlanGistUrl] = useState<string | null>(null);
   const [planDescription, setPlanDescription] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE"; summary: string } | null>(null);
+  const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA"; summary: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autoSentRef = useRef(false);
@@ -168,9 +168,9 @@ export default function X402ChatClient() {
         }
 
         // Check for route markers
-        const routeMatch = assistantContent.match(/---ROUTE:\s*(AUDIT|QA|PFP|BUILD|FEATURE)---\s*([\s\S]*?)---ROUTE END---/);
+        const routeMatch = assistantContent.match(/---ROUTE:\s*(AUDIT|QA|PFP|BUILD|FEATURE|HUMANQA)---\s*([\s\S]*?)---ROUTE END---/);
         if (routeMatch) {
-          setRouteSuggestion({ type: routeMatch[1] as "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE", summary: routeMatch[2].trim() });
+          setRouteSuggestion({ type: routeMatch[1] as "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA", summary: routeMatch[2].trim() });
         }
       } catch {
         setChatError("Network error");
@@ -345,12 +345,14 @@ export default function X402ChatClient() {
               else if (routeSuggestion.type === "QA") router.push("/post?type=6");
               else if (routeSuggestion.type === "PFP") router.push("/pfp");
               else if (routeSuggestion.type === "FEATURE") router.push("/post?type=feature");
+              else if (routeSuggestion.type === "HUMANQA") router.push("/humanqa");
             }}
           >
             {routeSuggestion.type === "AUDIT" && "🛡️ Go to Audit Service →"}
             {routeSuggestion.type === "QA" && "🔍 Go to QA Service →"}
             {routeSuggestion.type === "PFP" && "🦞 Generate My PFP →"}
             {routeSuggestion.type === "FEATURE" && "🔧 Go to Feature/Bug Fix →"}
+            {routeSuggestion.type === "HUMANQA" && "👤 Talk to a Human →"}
           </button>
         </div>
       )}
@@ -383,7 +385,26 @@ export default function X402ChatClient() {
               } catch (err) {
                 console.error("close session failed:", err);
               }
-              router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(planDescription || "")}`);
+              // Append post-plan chat messages so that decisions made after the plan
+              // (renames, scope tweaks) propagate to the build job. Without this, the
+              // immutable gist locks in old decisions and the build worker never sees
+              // updates the user agreed to in chat.
+              let finalDescription = planDescription || "";
+              let lastPlanIdx = -1;
+              for (let i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].role === "assistant" && messages[i].content.includes("---PLAN END---")) {
+                  lastPlanIdx = i;
+                  break;
+                }
+              }
+              const postPlan = lastPlanIdx >= 0 ? messages.slice(lastPlanIdx + 1) : [];
+              if (postPlan.length > 0) {
+                const formatted = postPlan
+                  .map(m => `**${m.role === "user" ? "Client" : "Consultant"}:** ${m.content}`)
+                  .join("\n\n");
+                finalDescription = `${finalDescription}\n\n---\n\n**POST-PLAN UPDATES** (decisions made after the plan was generated — these supersede anything in the plan that conflicts):\n\n${formatted}`;
+              }
+              router.push(`/build?gist=${encodeURIComponent(planGistUrl)}&description=${encodeURIComponent(finalDescription)}`);
             }}
           >
             🚀 Start Build Job

@@ -140,16 +140,17 @@ export const EXTRA_SERVICE_META: Record<string, ServiceMeta & { contractSlug?: s
   },
   humanqa: {
     emoji: "👤",
-    tagline: "Human-powered frontend QA. A real person reviews your dApp.",
+    tagline: "Talk to a human about your build — anything the AI can't handle.",
     bullets: [
-      "Real human manual review — catches what automated tools miss",
-      "UX wins, accessibility gaps, functionality problems",
-      "Prioritized written report with findings",
+      "Direct human time on your project — short attention budget but real eyes",
+      "Help getting from prototype to production",
+      "Deployment guidance: Vercel, ENS, custom domain, backend setup",
+      "Review your build, answer hard questions, unblock anything stuck",
       "Delivered as a job result on-chain",
     ],
     heroImage: "/hero-humanqa.png",
     heroPosition: "left",
-    descriptionLabel: "What dApp should we review?",
-    descriptionPlaceholder: "Include the dApp URL, contract address, or GitHub repo. Mention specific areas of focus if any.",
+    descriptionLabel: "What do you need a human for?",
+    descriptionPlaceholder: "Describe what you need — review of your build, prod-readiness questions, deployment help, anything stuck. Include relevant URLs / repos / contract addresses.",
   },
 };

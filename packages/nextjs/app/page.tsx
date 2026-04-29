@@ -327,15 +327,16 @@ const Home: NextPage = () => {
           <div className="absolute inset-0 bg-gradient-to-l from-black/70 via-black/40 to-transparent pointer-events-none" />
           <div className="absolute inset-0 flex flex-col justify-center items-end p-10 md:p-16">
             <div className="max-w-lg text-right">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 drop-shadow-lg" style={textShadow}>Human QA</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 drop-shadow-lg" style={textShadow}>Human Help</h2>
               <p className="text-white/80 mb-6 text-lg" style={textShadow}>
-                Human-powered frontend QA. A real person reviews your dApp, catches what automated tools miss,
-                and delivers a prioritized report of UX wins, accessibility issues, and functionality gaps.
+                Talk to a human about your build — anything the AI can't handle. Direct human time on
+                getting from prototype to production: deployment, backend setup, ENS, custom domains,
+                review, hard questions. Short attention budget, real eyes on your project.
               </p>
               <div className="flex flex-col gap-3 items-end">
-                <Link href="/humanqa" className="btn btn-primary">👤 Order Human QA →</Link>
+                <Link href="/humanqa" className="btn btn-primary">👤 Talk to a Human →</Link>
                 <a href="/humanqa/skill.md" target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm text-white border-white hover:bg-white/20">
-                  📄 Human QA Skill File
+                  📄 Human Help Skill File
                 </a>
               </div>
             </div>

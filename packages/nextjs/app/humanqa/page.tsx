@@ -67,7 +67,7 @@ export default function HumanqaPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <h1 className="text-4xl font-bold">404</h1>
-        <p className="opacity-60">HumanQA service not found or inactive</p>
+        <p className="opacity-60">Human Help service not found or inactive</p>
       </div>
     );
   }
@@ -79,10 +79,10 @@ export default function HumanqaPage() {
     <div className="flex flex-col items-center py-10 px-4 min-h-screen">
       <div className="w-full max-w-lg">
         <ServiceHero
-          name="Human QA"
+          name="Human Help"
           emoji={meta?.emoji || "👤"}
-          tagline={meta?.tagline || "Human-powered frontend QA review."}
-          bullets={meta?.bullets || ["Real human review of your dApp frontend", "Prioritized written report", "Tracked on-chain"]}
+          tagline={meta?.tagline || "Talk to a human about your build — anything the AI can't handle."}
+          bullets={meta?.bullets || ["Direct human time on your project", "Help getting from prototype to production", "Deployment, backend, ENS, custom domain guidance", "Tracked on-chain"]}
           heroImage={meta?.heroImage || "/hero-humanqa.png"}
           heroPosition={meta?.heroPosition || "left"}
         />
@@ -91,9 +91,9 @@ export default function HumanqaPage() {
           serviceTypeId={SERVICE_TYPE_ID}
           priceUsd={priceUsd}
           cvDivisor={cvDivisor}
-          serviceName="Human QA Report"
-          descriptionLabel={meta?.descriptionLabel || "What dApp should we review?"}
-          descriptionPlaceholder={meta?.descriptionPlaceholder || "Include the dApp URL, contract address, or GitHub repo."}
+          serviceName="Human Help"
+          descriptionLabel={meta?.descriptionLabel || "What do you need a human for?"}
+          descriptionPlaceholder={meta?.descriptionPlaceholder || "Describe what you need — review, prod-readiness questions, deployment help, anything stuck."}
           descriptionRequired={true}
           onSuccess={jobId => `/jobs/${jobId}`}
         />
