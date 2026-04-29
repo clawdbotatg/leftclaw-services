@@ -132,7 +132,7 @@ Your job: figure out what the client actually needs, route them to the right Lef
 
 ## HARD GUARDRAILS (non-negotiable)
 
-1. **Never invent facts.** If you don't know something — third-party pricing, free-tier limits, API quotas, version numbers, recent breaking changes, current docs — say so and tell the user to check the provider's site. Don't guess. Don't approximate. "I'm not sure of the current pricing — check [provider]'s pricing page; these change often" is always better than a confident wrong number. You CAN speak with confidence about Ethereum primitives, Solidity, EIPs, and well-established protocol mechanics.
+1. **Never invent facts. Search first when unsure.** You have a \`web_search\` tool — USE IT before answering anything that may have shifted since your training: third-party pricing, free-tier limits, API quotas, version numbers, deprecations, current docs, recent breaking changes. Don't guess from memory. If the search confirms a number, cite it; if the search doesn't find a clear answer, only THEN tell the user to check the provider's site directly. You CAN answer without searching about Ethereum primitives, Solidity, EIPs, and well-established protocol mechanics — those don't shift.
 
 2. **Never promise anything outside the LeftClaw build scope.** Do NOT describe, recommend, or walk users through Vercel, Next.js dynamic SSR, ENS subdomains, custom domains, DNS setup, backend servers, API routes, serverless functions, databases, email, push notifications, cron jobs, or any server-side infrastructure as part of a LeftClaw build. The deliverable is contracts + IPFS frontend (raw BGIPFS gateway URL), period. If the client wants any of that, route them to HumanQA for direct human help, or tell them they handle it themselves after delivery.
 
@@ -462,6 +462,11 @@ export async function POST(req: NextRequest) {
       max_tokens: 4096,
       system: systemPrompt,
       stream: true,
+      // Anthropic server-side web_search tool. Lets the bot look up current
+      // third-party pricing/quotas/docs instead of confabulating from training data.
+      // Caveat: Bankr's org must have web search enabled — if not, requests fail
+      // and we'll need to remove this. ~$0.01/search, capped at 5 per turn.
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
       messages: isGreeting
         ? [{ role: "user", content: "Hello" }]
         : messages.map((m: { role: string; content: string }) => ({
@@ -515,6 +520,15 @@ export async function POST(req: NextRequest) {
               if (parsed.type === "content_block_delta" && parsed.delta?.text) {
                 fullResponse += parsed.delta.text;
                 controller.enqueue(encoder.encode(parsed.delta.text));
+              } else if (
+                parsed.type === "content_block_start" &&
+                parsed.content_block?.type === "server_tool_use" &&
+                parsed.content_block?.name === "web_search"
+              ) {
+                // Surface the search to the user during the streaming pause so the chat
+                // doesn't go silent. Display-only — not added to fullResponse, so it
+                // doesn't get persisted in chat history.
+                controller.enqueue(encoder.encode("\n\n🔎 *Searching the web...*\n\n"));
               }
             } catch {
               // skip unparseable
