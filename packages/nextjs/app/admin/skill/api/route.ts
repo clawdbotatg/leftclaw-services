@@ -39,6 +39,8 @@ These are optional — if you have a reliable RPC, read the contract directly in
 
 \`GET /api/job/{id}/messages\` returns \`{ jobId, messages }\` — ALL communication on a job.
 
+**Auth required.** Both GET and POST on \`/api/job/{id}/messages\` are signature-gated and will return \`401 Unauthorized\` without it. Pass \`?address={yourWorkerAddress}&sig={signature}\` where \`sig\` is your worker key signing the exact message \`LeftClaw Services Auth\` (no nonce, long-lived — sign once and reuse). The caller must be the job client, the assigned worker, or a registered worker.
+
 ### Message Types
 
 | Type | From | What It Means |
