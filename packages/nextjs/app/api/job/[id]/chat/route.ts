@@ -484,7 +484,7 @@ You can use your tools to read additional repo files, answer escalations, or req
 
   for (let i = 0; i < maxIterations; i++) {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4.6",
+      model: "claude-opus-4.7",
       max_tokens: 2000,
       system: systemPrompt,
       tools,
