@@ -6,10 +6,12 @@ import JobChatPanel from "./JobChatPanel";
 import { useParams } from "next/navigation";
 import { Address } from "@scaffold-ui/components";
 import { formatUnits } from "viem";
-import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContract, useSignMessage, useWriteContract } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
+import { AUTH_SIGN_MESSAGE } from "~~/lib/authSignature";
+import { getCachedAuthSignature, setCachedAuthSignature } from "~~/utils/authSignatureCache";
 
 function parseError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
@@ -110,6 +112,49 @@ export default function JobDetailClient() {
       })
       .catch(() => triggerCheck());
   }, [jobId, job]);
+
+  // Consult prompt — for consult jobs, the on-chain description is just a placeholder.
+  // The owner can fetch the real prompt from KV by signing the auth message.
+  const [consultPrompt, setConsultPrompt] = useState<string | null>(null);
+  const [consultPromptError, setConsultPromptError] = useState<string | null>(null);
+  const { signMessageAsync } = useSignMessage();
+  useEffect(() => {
+    if (!jobId || !job || !address) return;
+    const serviceTypeId = Number(job.serviceTypeId);
+    const isOwnerAndConsult =
+      (serviceTypeId === 1 || serviceTypeId === 2) &&
+      address.toLowerCase() === job.client?.toLowerCase();
+    if (!isOwnerAndConsult) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        let sig = getCachedAuthSignature(address);
+        if (!sig) {
+          sig = await signMessageAsync({ message: AUTH_SIGN_MESSAGE });
+          setCachedAuthSignature(address, sig);
+        }
+        const res = await fetch(
+          `/api/job/${jobId}/consult-prompt?address=${encodeURIComponent(address)}&sig=${encodeURIComponent(sig)}`,
+        );
+        if (cancelled) return;
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          setConsultPromptError(err?.error || `Failed to load (${res.status})`);
+          return;
+        }
+        const data = await res.json();
+        setConsultPrompt(data.description || null);
+      } catch (e: any) {
+        if (cancelled) return;
+        setConsultPromptError(e?.message || "Failed to load prompt");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId, job, address, signMessageAsync]);
 
   const clawdPrice = useCLAWDPrice();
   const { writeContractAsync } = useWriteContract();
@@ -276,12 +321,24 @@ export default function JobDetailClient() {
               )}
             </div>
 
-            {job.description && (!isConsult || isClient) && (
+            {(job.description || (isConsult && isClient)) && (!isConsult || isClient) && (
               <>
                 <div className="divider"></div>
                 <div>
                   <span className="text-sm opacity-50">Description</span>
-                  <p className="mt-1 whitespace-pre-wrap">{job.description}</p>
+                  {isConsult && isClient ? (
+                    consultPrompt !== null ? (
+                      <p className="mt-1 whitespace-pre-wrap">{consultPrompt}</p>
+                    ) : consultPromptError ? (
+                      <p className="mt-1 italic opacity-60 text-error">
+                        Couldn&apos;t load your prompt: {consultPromptError}
+                      </p>
+                    ) : (
+                      <p className="mt-1 italic opacity-60">🔒 Sign to unlock your consultation prompt…</p>
+                    )
+                  ) : (
+                    <p className="mt-1 whitespace-pre-wrap">{job.description}</p>
+                  )}
                 </div>
               </>
             )}
