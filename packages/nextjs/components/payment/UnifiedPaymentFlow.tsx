@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseEther, parseUnits } from "viem";
+import { parseEther, parseEventLogs, parseUnits } from "viem";
 import { useAccount, usePublicClient, useWalletClient, useWriteContract, useSwitchChain } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
@@ -10,6 +10,8 @@ import { PaymentMethodSelector, formatBalance } from "~~/components/payment";
 import { usePaymentContext, PaymentMethod } from "~~/hooks/scaffold-eth/usePaymentContext";
 import { useCVCost } from "~~/hooks/scaffold-eth/useCVCost";
 import { getCachedCVSignature, setCachedCVSignature, clearCachedCVSignature } from "~~/utils/cvSignatureCache";
+import { getCachedAuthSignature, setCachedAuthSignature } from "~~/utils/authSignatureCache";
+import { AUTH_SIGN_MESSAGE } from "~~/lib/authSignature";
 import { parseContractError } from "~~/utils/parseContractError";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
@@ -19,6 +21,13 @@ const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 const BASE_CHAIN_ID = 8453;
 const CV_SIGN_MESSAGE = "larv.ai CV Spend";
+
+// Service types that hold the user's private prompt (Quick + Deep Consultation).
+// For these, we post a placeholder on-chain and stash the real prompt off-chain
+// via /api/job/save-consult-prompt — must match server-side ON_CHAIN_PLACEHOLDER
+// in lib/consultPrompt.ts.
+const CONSULT_SERVICE_TYPE_IDS = new Set([1, 2]);
+const ON_CHAIN_PLACEHOLDER = "Consult — prompt stored off-chain (private)";
 
 const ERC20_ABI = [
   {
@@ -203,6 +212,57 @@ export function UnifiedPaymentFlow({
     }
   }, [step, router, onSuccess, successMessage]);
 
+  // For consult-type jobs (svc 1, 2), we don't put the prompt on-chain — we post
+  // a placeholder string and stash the real prompt off-chain. After the on-chain
+  // tx confirms, this helper parses the receipt for the actual jobId and posts
+  // the real description to /api/job/save-consult-prompt with an auth signature.
+  // Returns the actual on-chain jobId (or null on failure).
+  const finalizeConsultOffChain = useCallback(
+    async (txHash: `0x${string}`, realDescription: string): Promise<number | null> => {
+      if (!publicClient || !walletClient || !address) return null;
+      try {
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+        const decoded = parseEventLogs({
+          abi: CONTRACT_ABI as any,
+          logs: receipt.logs,
+          eventName: "JobPosted",
+        });
+        const actualJobId = decoded.length > 0 ? Number((decoded[0] as any).args.jobId) : null;
+        if (actualJobId === null) {
+          console.error("[consult-save] couldn't decode JobPosted event from receipt");
+          return null;
+        }
+
+        let authSig = getCachedAuthSignature(address);
+        if (!authSig) {
+          authSig = await walletClient.signMessage({ message: AUTH_SIGN_MESSAGE });
+          setCachedAuthSignature(address, authSig);
+        }
+
+        const res = await fetch("/api/job/save-consult-prompt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jobId: actualJobId,
+            description: realDescription,
+            address,
+            sig: authSig,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error("[consult-save] failed:", res.status, err);
+          throw new Error(err?.error || `save-consult-prompt failed (${res.status})`);
+        }
+        return actualJobId;
+      } catch (e: any) {
+        console.error("[consult-save] error:", e);
+        throw e;
+      }
+    },
+    [publicClient, walletClient, address],
+  );
+
   const handleSubmit = async () => {
     if (!address || isWrongNetwork || isInsufficient) return;
     if (descriptionRequired && !description.trim()) return;
@@ -215,6 +275,11 @@ export function UnifiedPaymentFlow({
         ? `${lockedContent.trim()}\n\n${userNotes || "(no additional notes)"}`
         : (userNotes || `${serviceName} session`);
       const svcId = BigInt(serviceTypeId);
+
+      // For consult service types we send a placeholder on-chain and save the
+      // real description off-chain after the tx confirms.
+      const isConsult = CONSULT_SERVICE_TYPE_IDS.has(serviceTypeId);
+      const chainDesc = isConsult ? ON_CHAIN_PLACEHOLDER : desc;
 
       if (paymentMethod === "cv") {
         if (!walletClient) throw new Error("Wallet not connected");
@@ -265,10 +330,15 @@ export function UnifiedPaymentFlow({
           const txHash = await writeAndOpen(() => writeContractAsync({
             address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
             functionName: "postJobWithCV",
-            args: [svcId, BigInt(cvAmount), desc],
+            args: [svcId, BigInt(cvAmount), chainDesc],
           }));
           if (!txHash) { setTxError("Transaction was not submitted — please try again"); setStep("idle"); return; }
-          if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+          if (isConsult) {
+            const actualJobId = await finalizeConsultOffChain(txHash, desc);
+            if (actualJobId !== null) postedJobIdRef.current = actualJobId;
+          } else if (publicClient) {
+            await publicClient.waitForTransactionReceipt({ hash: txHash });
+          }
         }
 
         setStep("done");
@@ -296,10 +366,15 @@ export function UnifiedPaymentFlow({
         setStep("posting");
         const txHash = await writeAndOpen(() => writeContractAsync({
           address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJob", args: [svcId, priceWei, desc],
+          functionName: "postJob", args: [svcId, priceWei, chainDesc],
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
-        if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        if (isConsult) {
+          const actualJobId = await finalizeConsultOffChain(txHash, desc);
+          if (actualJobId !== null) postedJobIdRef.current = actualJobId;
+        } else if (publicClient) {
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
+        }
         postedDescRef.current = desc;
         setStep("done");
 
@@ -310,11 +385,16 @@ export function UnifiedPaymentFlow({
         const ethWei = parseEther((ethNeeded * 1.05).toFixed(18));
         const txHash = await writeAndOpen(() => writeContractAsync({
           address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithETH", args: [svcId, desc, BigInt(1)],
+          functionName: "postJobWithETH", args: [svcId, chainDesc, BigInt(1)],
           value: ethWei,
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
-        if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        if (isConsult) {
+          const actualJobId = await finalizeConsultOffChain(txHash, desc);
+          if (actualJobId !== null) postedJobIdRef.current = actualJobId;
+        } else if (publicClient) {
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
+        }
         postedDescRef.current = desc;
         setStep("done");
 
@@ -339,10 +419,15 @@ export function UnifiedPaymentFlow({
         setStep("posting");
         const txHash = await writeAndOpen(() => writeContractAsync({
           address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithUsdc", args: [svcId, desc, BigInt(1)],
+          functionName: "postJobWithUsdc", args: [svcId, chainDesc, BigInt(1)],
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
-        if (publicClient) await publicClient.waitForTransactionReceipt({ hash: txHash });
+        if (isConsult) {
+          const actualJobId = await finalizeConsultOffChain(txHash, desc);
+          if (actualJobId !== null) postedJobIdRef.current = actualJobId;
+        } else if (publicClient) {
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
+        }
         postedDescRef.current = desc;
         setStep("done");
       }
