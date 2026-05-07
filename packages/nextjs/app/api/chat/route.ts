@@ -462,11 +462,10 @@ export async function POST(req: NextRequest) {
       max_tokens: 4096,
       system: systemPrompt,
       stream: true,
-      // Anthropic server-side web_search tool. Lets the bot look up current
-      // third-party pricing/quotas/docs instead of confabulating from training data.
-      // Caveat: Bankr's org must have web search enabled — if not, requests fail
-      // and we'll need to remove this. ~$0.01/search, capped at 5 per turn.
-      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
+      // web_search tool was removed: Bankr proxy doesn't support
+      // Anthropic's server-side web_search_20250305 tool. The model would emit
+      // a tool_use block, the proxy couldn't fulfill it, and the stream produced
+      // no further text — leaving users with empty bot responses mid-conversation.
       messages: isGreeting
         ? [{ role: "user", content: "Hello" }]
         : messages.map((m: { role: string; content: string }) => ({
