@@ -2,9 +2,14 @@ import { createPublicClient, createWalletClient, http, parseAbi } from "viem";
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import deployedContracts from "~~/contracts/deployedContracts";
+import { ON_CHAIN_PLACEHOLDER, saveConsultPrompt } from "./consultPrompt";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
+
+// Service types whose description is the user's private prompt to the LLM.
+// For these, we store the real prompt off-chain and post a placeholder on-chain.
+const PRIVATE_PROMPT_SERVICE_TYPES = new Set([1, 2]); // Quick + Deep Consultation
 
 const CONTRACT_ABI = parseAbi([
   "function postJobFor(address client, uint256 serviceTypeId, string description, uint256 minClawdOut) external",
@@ -73,18 +78,28 @@ export async function postJobForOnChain(
     functionName: "nextJobId",
   });
 
+  const jobId = Number(nextId);
+  const isPrivatePrompt = PRIVATE_PROMPT_SERVICE_TYPES.has(serviceTypeId);
+
+  // For consult jobs, persist the real prompt off-chain BEFORE posting on-chain
+  // so the chat handler can resolve it as soon as the tx confirms. The on-chain
+  // description gets a placeholder so the public contract state never sees the prompt.
+  if (isPrivatePrompt) {
+    await saveConsultPrompt(jobId, description);
+  }
+
+  const onChainDescription = isPrivatePrompt ? ON_CHAIN_PLACEHOLDER : description;
+
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: "postJobFor",
-    args: [account.address, BigInt(serviceTypeId), description, 0n],
+    args: [account.address, BigInt(serviceTypeId), onChainDescription, 0n],
     chain: base,
     account: account,
   });
 
   await publicClient.waitForTransactionReceipt({ hash, retryCount: 20, retryDelay: 3_000 });
-
-  const jobId = Number(nextId);
 
   // Fire sanitize (fire-and-forget) — runs Claude check, writes result to KV.
   // Must be awaited enough to kick off but not block the response; use dynamic import

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession, updateSession } from "~~/lib/sessionStore";
+import { verifyAuthSignature } from "~~/lib/authSignature";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;
@@ -9,15 +10,31 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ sess
     return NextResponse.json({ error: "Session not found or expired" }, { status: 404 });
   }
 
+  // Verify caller owns the session before returning the prompt or chat history.
+  // Auth is the long-lived "LeftClaw Services Auth" signature (same pattern as
+  // /api/job/[id]/messages). Sessions without a payerAddress (legacy) cannot be
+  // verified, so sensitive fields stay redacted.
+  const callerAddress = req.nextUrl.searchParams.get("address");
+  const sig = req.nextUrl.searchParams.get("sig");
+
+  let authed = false;
+  if (callerAddress && sig && session.payerAddress) {
+    const sigValid = await verifyAuthSignature(callerAddress, sig);
+    if (sigValid && callerAddress.toLowerCase() === session.payerAddress.toLowerCase()) {
+      authed = true;
+    }
+  }
+
   return NextResponse.json({
     id: session.id,
     serviceType: session.serviceType,
-    description: session.description,
     status: session.status,
     maxMessages: session.maxMessages,
     planGenerations: session.planGenerations || 0,
     expiresAt: session.expiresAt,
-    messages: session.messages,
+    authed,
+    description: authed ? session.description : null,
+    messages: authed ? session.messages : [],
   });
 }
 
