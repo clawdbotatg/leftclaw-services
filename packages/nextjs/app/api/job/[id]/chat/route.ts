@@ -11,6 +11,7 @@ import { execSync } from "child_process";
 import Anthropic from "@anthropic-ai/sdk";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { getMessages, addJobMessage } from "~~/lib/jobMessages";
+import { getConsultPrompt } from "~~/lib/consultPrompt";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
@@ -304,6 +305,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return Response.json({ error: "Rate limit exceeded (3/hour for active jobs)", messagesUsed: rl.used, messagesRemaining: 0 }, { status: 429 });
   }
 
+  // For consult jobs, the on-chain description is a placeholder; the real prompt
+  // lives off-chain in KV (consultPrompt store). Old consult jobs have the real
+  // prompt on-chain — fall back to that.
+  const isConsultJob = CONSULTATION_TYPE_IDS.includes(jobServiceTypeId);
+  const offChainPrompt = isConsultJob ? await getConsultPrompt(jobId) : null;
+  const descriptionForContext = offChainPrompt || job.description || "";
+
   // Fetch context
   const numericId = jobId.startsWith("cv-") ? BigInt(jobId.slice(3)) : BigInt(jobId);
   const [workLogsRaw, messages, planMd, userJourneyMd, descriptionContent, skillMd] = await Promise.all([
@@ -311,7 +319,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     getMessages(jobId),
     fetchGitHubFile(jobId, "PLAN.md"),
     fetchGitHubFile(jobId, "USERJOURNEY.md"),
-    fetchDescriptionContent(job.description || ""),
+    fetchDescriptionContent(descriptionForContext),
     fetchSkillMd(jobId),
   ]);
 

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import { useAccount, useSignMessage } from "wagmi";
+import { AUTH_SIGN_MESSAGE } from "~~/lib/authSignature";
+import { getCachedAuthSignature, setCachedAuthSignature } from "~~/utils/authSignatureCache";
 
 interface Message {
   role: "user" | "assistant";
@@ -13,12 +16,13 @@ interface Message {
 interface SessionInfo {
   id: string;
   serviceType: string;
-  description: string;
+  description: string | null;
   status: string;
   maxMessages: number;
   planGenerations: number;
   expiresAt: string;
   messages: Message[];
+  authed: boolean;
 }
 
 const SERVICE_LABELS: Record<string, { name: string; icon: string }> = {
@@ -40,51 +44,78 @@ const STATUS_CONFIG: Record<string, { label: string; badge: string; desc: string
 export default function X402JobClient() {
   const params = useParams();
   const sessionId = params.sessionId as string;
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllMessages, setShowAllMessages] = useState(false);
+  const [sigPending, setSigPending] = useState(false);
+  const [sigError, setSigError] = useState<string | null>(null);
 
-  // Poll for updates
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch(`/api/session/${sessionId}`);
-        if (!res.ok) {
-          setError(res.status === 404 ? "Session not found or expired" : "Failed to load session");
-          return;
-        }
-        const data: SessionInfo = await res.json();
-        setSession(data);
-      } catch {
-        setError("Failed to load session");
-      } finally {
-        setLoading(false);
-      }
+  const fetchSession = async (sig?: string): Promise<SessionInfo | null> => {
+    const qs = address && sig ? `?address=${encodeURIComponent(address)}&sig=${encodeURIComponent(sig)}` : "";
+    const res = await fetch(`/api/session/${sessionId}${qs}`);
+    if (!res.ok) {
+      setError(res.status === 404 ? "Session not found or expired" : "Failed to load session");
+      return null;
     }
+    return (await res.json()) as SessionInfo;
+  };
 
+  // Initial load — try with cached sig if available, else fetch unauthed.
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const cached = address ? getCachedAuthSignature(address) : null;
+      const data = await fetchSession(cached || undefined);
+      if (cancelled) return;
+      if (data) setSession(data);
+      setLoading(false);
+    }
     load();
 
-    // Auto-refresh every 10s while active
     const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/session/${sessionId}`);
-        if (res.ok) {
-          const data: SessionInfo = await res.json();
-          setSession(data);
-          // Stop polling if completed or expired
-          if (data.status !== "active") {
-            clearInterval(interval);
-          }
-        }
-      } catch {
-        /* ignore poll errors */
+      const cached = address ? getCachedAuthSignature(address) : null;
+      const data = await fetchSession(cached || undefined);
+      if (cancelled) return;
+      if (data) {
+        setSession(data);
+        if (data.status !== "active") clearInterval(interval);
       }
     }, 10000);
 
-    return () => clearInterval(interval);
-  }, [sessionId]);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, address]);
+
+  const handleUnlock = async () => {
+    if (!address) return;
+    setSigError(null);
+    setSigPending(true);
+    try {
+      let sig = getCachedAuthSignature(address);
+      if (!sig) {
+        sig = await signMessageAsync({ message: AUTH_SIGN_MESSAGE });
+        setCachedAuthSignature(address, sig);
+      }
+      const data = await fetchSession(sig);
+      if (data) {
+        setSession(data);
+        if (!data.authed) {
+          setSigError("This wallet is not the session owner.");
+        }
+      }
+    } catch {
+      setSigError("Signature required to view this session.");
+    } finally {
+      setSigPending(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -177,16 +208,32 @@ export default function X402JobClient() {
               </div>
             </div>
 
-            {/* Description */}
-            {session.description && (
-              <>
-                <div className="divider" />
-                <div>
-                  <span className="text-sm opacity-50">Request</span>
-                  <p className="mt-1 whitespace-pre-wrap">{session.description}</p>
+            {/* Description — gated behind owner signature */}
+            <div className="divider" />
+            <div>
+              <span className="text-sm opacity-50">Request</span>
+              {session.authed && session.description ? (
+                <p className="mt-1 whitespace-pre-wrap">{session.description}</p>
+              ) : (
+                <div className="mt-1">
+                  <p className="italic opacity-60 text-sm">
+                    🔒 Session content is private. Sign with the paying wallet to view your request and chat history.
+                  </p>
+                  {address ? (
+                    <button
+                      className="btn btn-sm btn-outline mt-2"
+                      onClick={handleUnlock}
+                      disabled={sigPending}
+                    >
+                      {sigPending ? "Signing..." : "Unlock with wallet"}
+                    </button>
+                  ) : (
+                    <p className="mt-2 text-sm opacity-60">Connect the wallet that paid for this session.</p>
+                  )}
+                  {sigError && <p className="mt-2 text-sm text-error">{sigError}</p>}
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
             {/* Final deliverable — shown prominently when complete */}
             {(isComplete || atLimit) && finalMessage && (

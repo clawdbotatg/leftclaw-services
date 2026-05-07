@@ -3,7 +3,6 @@ import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import { getMessages, addJobMessage } from "~~/lib/jobMessages";
 import { verifyAuthSignature } from "~~/lib/authSignature";
-import { getRegisteredWorkers } from "~~/lib/workerAuth";
 import deployedContracts from "~~/contracts/deployedContracts";
 
 const { address: contractAddress, abi } = deployedContracts[8453].LeftClawServicesV2;
@@ -37,7 +36,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401 });
   }
 
-  // Resolve job owner from chain; allow the assigned worker and registered workers too
+  // Only the job owner (client) or the assigned worker may read job messages.
+  // Previously this also allowed any registered worker, which let any builder
+  // who'd been added as a worker enumerate other clients' job messages.
   let jobClient: string | null = null;
   let jobWorker: string | null = null;
   try {
@@ -51,16 +52,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     jobClient = job.client.toLowerCase();
     jobWorker = job.worker.toLowerCase();
   } catch {
-    // jobId not found on chain — fall through to worker check
+    return new Response(JSON.stringify({ error: "Job not found" }), { status: 404 });
   }
 
   const caller = callerAddress.toLowerCase();
-  const isOwnerOrWorker = caller === jobClient || caller === jobWorker;
-  if (!isOwnerOrWorker) {
-    const workers = await getRegisteredWorkers();
-    if (!workers.includes(caller)) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
-    }
+  const isOwnerOrAssignedWorker = caller === jobClient || (jobWorker && caller === jobWorker);
+  if (!isOwnerOrAssignedWorker) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
   const messages = await getMessages(jobId);

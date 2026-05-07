@@ -276,12 +276,21 @@ export default function JobDetailClient() {
               )}
             </div>
 
-            {job.description && (
+            {job.description && (!isConsult || isClient) && (
               <>
                 <div className="divider"></div>
                 <div>
                   <span className="text-sm opacity-50">Description</span>
                   <p className="mt-1 whitespace-pre-wrap">{job.description}</p>
+                </div>
+              </>
+            )}
+            {isConsult && !isClient && (
+              <>
+                <div className="divider"></div>
+                <div>
+                  <span className="text-sm opacity-50">Description</span>
+                  <p className="mt-1 italic opacity-60">Consultation prompt is private to the client.</p>
                 </div>
               </>
             )}

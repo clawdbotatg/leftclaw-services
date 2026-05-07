@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useParams, useRouter } from "next/navigation";
+import { useAccount, useSignMessage } from "wagmi";
+import { AUTH_SIGN_MESSAGE } from "~~/lib/authSignature";
+import { getCachedAuthSignature, setCachedAuthSignature } from "~~/utils/authSignatureCache";
 
 interface Message {
   role: "user" | "assistant";
@@ -12,12 +15,13 @@ interface Message {
 interface SessionInfo {
   id: string;
   serviceType: string;
-  description: string;
+  description: string | null;
   status: string;
   maxMessages: number;
   planGenerations: number;
   expiresAt: string;
   messages: Message[];
+  authed: boolean;
 }
 
 const SERVICE_LABELS: Record<string, string> = {
@@ -33,6 +37,8 @@ export default function X402ChatClient() {
   const params = useParams();
   const router = useRouter();
   const sessionId = params.sessionId as string;
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,16 +52,22 @@ export default function X402ChatClient() {
   const [planDescription, setPlanDescription] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA"; summary: string } | null>(null);
+  const [sigPending, setSigPending] = useState(false);
+  const [sigError, setSigError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autoSentRef = useRef(false);
   const MAX_CHARS = 1000;
 
-  // Load session info
+  // Load session info — requires owner signature to unlock description + history
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/session/${sessionId}`);
+        const cached = address ? getCachedAuthSignature(address) : null;
+        const qs = address && cached
+          ? `?address=${encodeURIComponent(address)}&sig=${encodeURIComponent(cached)}`
+          : "";
+        const res = await fetch(`/api/session/${sessionId}${qs}`);
         if (!res.ok) {
           setError(res.status === 404 ? "Session not found or expired" : "Failed to load session");
           return;
@@ -71,7 +83,38 @@ export default function X402ChatClient() {
       }
     }
     load();
-  }, [sessionId]);
+  }, [sessionId, address]);
+
+  const handleUnlock = async () => {
+    if (!address) return;
+    setSigError(null);
+    setSigPending(true);
+    try {
+      let sig = getCachedAuthSignature(address);
+      if (!sig) {
+        sig = await signMessageAsync({ message: AUTH_SIGN_MESSAGE });
+        setCachedAuthSignature(address, sig);
+      }
+      const res = await fetch(
+        `/api/session/${sessionId}?address=${encodeURIComponent(address)}&sig=${encodeURIComponent(sig)}`,
+      );
+      if (!res.ok) {
+        setSigError("Failed to load session");
+        return;
+      }
+      const data: SessionInfo = await res.json();
+      setSession(data);
+      setMessages(data.messages || []);
+      setPlanGenerations(data.planGenerations || 0);
+      if (!data.authed) {
+        setSigError("This wallet is not the session owner.");
+      }
+    } catch {
+      setSigError("Signature required to view this session.");
+    } finally {
+      setSigPending(false);
+    }
+  };
 
   // Scroll on new messages
   useEffect(() => {
@@ -230,9 +273,11 @@ export default function X402ChatClient() {
   const isConsultation = session?.serviceType === "CONSULT_QUICK" || session?.serviceType === "CONSULT_DEEP";
   const showPlanButton = isConsultation && messages.length >= 4 && !isStreaming && planGenerations < MAX_PLAN_GENERATIONS && !planGistUrl;
 
-  // Auto-start conversation
+  // Auto-start conversation — only after the session is unlocked, otherwise we'd
+  // greet without the user's actual prompt and lose the opening context.
   useEffect(() => {
     if (!session || loading || messages.length > 0 || autoSentRef.current) return;
+    if (!session.authed) return;
     autoSentRef.current = true;
 
     if (session.description) {
@@ -262,6 +307,26 @@ export default function X402ChatClient() {
   }
 
   if (!session) return null;
+
+  if (!session.authed) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4">
+        <div className="text-5xl mb-4">🔒</div>
+        <p className="text-xl font-bold mb-2">Session content is private</p>
+        <p className="opacity-70 text-sm text-center max-w-md mb-6">
+          Sign with the wallet that paid for this session to view your prompt and chat history.
+        </p>
+        {address ? (
+          <button className="btn btn-primary" onClick={handleUnlock} disabled={sigPending}>
+            {sigPending ? "Signing..." : "Unlock with wallet"}
+          </button>
+        ) : (
+          <p className="opacity-60 text-sm">Connect the wallet that paid for this session.</p>
+        )}
+        {sigError && <p className="mt-4 text-sm text-error">{sigError}</p>}
+      </div>
+    );
+  }
 
   const isExpired = new Date(session.expiresAt) < new Date();
   const userMsgCount = messages.filter(m => m.role === "user").length;
