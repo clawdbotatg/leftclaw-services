@@ -4,7 +4,8 @@
     "app/api/pfp/generate-payment/route.ts": { "maxDuration": 300 },
     "app/api/pfp/generate/route.ts": { "maxDuration": 60 },
     "app/api/pfp/generate-cv/route.ts": { "maxDuration": 60 },
-    "app/api/job/pfp-sweep/route.ts": { "maxDuration": 300 }
+    "app/api/job/pfp-sweep/route.ts": { "maxDuration": 300 },
+    "app/api/chat/route.ts": { "maxDuration": 300 }
   },
   "crons": [
     { "path": "/api/job/pfp-sweep", "schedule": "0 */3 * * *" },
