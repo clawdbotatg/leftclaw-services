@@ -44,6 +44,7 @@ const SERVICE_NAMES: Record<number, string> = {
   7: "Research Report",
   8: "Judge / Oracle",
   9: "HumanQA",
+  10: "Feature",
 };
 
 const CONSULT_TYPES = new Set([1, 2]);

@@ -29,6 +29,7 @@ const SERVICE_NAMES: Record<number, string> = {
   7: "Research Report",
   8: "Judge / Oracle",
   9: "HumanQA",
+  10: "Feature",
 };
 
 function JobCard({ jobId }: { jobId: number; publicBoard?: boolean }) {
@@ -114,7 +115,6 @@ export default function JobsPage() {
       <div className="flex flex-wrap gap-2 mb-6">
         <Link href="/consult" className="btn btn-primary btn-sm">💬 New Consult</Link>
         <Link href="/build" className="btn btn-outline btn-sm">🔨 New Build</Link>
-        <Link href="/post" className="btn btn-outline btn-sm">📝 Post Job</Link>
         <Link href="/" className="btn btn-ghost btn-sm">← Services</Link>
       </div>
 
