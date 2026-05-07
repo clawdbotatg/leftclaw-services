@@ -131,17 +131,71 @@ export default function ChatPage() {
     if (!jobExists || sanitizeRef.current) return;
     sanitizeRef.current = true;
 
-    // Check sanitization status (triggered at job creation, not here)
-    fetch(`/api/job/sanitize?jobId=${jobId}`)
-      .then(res => {
-        if (res.ok) return res.json().then(d => { setSanitized(d.safe); if (!d.safe) setSanitizeError(d.reason); });
-        // Not yet sanitized — poll until it is (should be triggered by payment page)
-        setSanitized(false);
-        setSanitizeError("Job is pending security review. Please wait...");
-      })
-      .catch(() => { setSanitized(false); setSanitizeError("Failed to verify job safety"); });
+    // Poll the sanitize status. If still pending after a few seconds, fire a
+    // recovery POST — the server-side endpoint resolves the description from
+    // KV (consultPrompt) or chain on its own, so this safely recovers from
+    // stuck states where the original POST died (e.g. function timeout).
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    let elapsedMs = 0;
+    let recoveryFired = false;
+    const POLL_INTERVAL_MS = 4000;
+    const RECOVERY_AT_MS = 8000;
+    const GIVE_UP_AT_MS = 90_000;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/job/sanitize?jobId=${jobId}`);
+        if (cancelled) return;
+        if (res.ok) {
+          const d = await res.json();
+          if (d.safe === true) {
+            setSanitized(true);
+            return;
+          }
+          if (d.safe === false) {
+            setSanitized(false);
+            setSanitizeError(d.reason || "Job flagged for manual review");
+            return;
+          }
+          // d.safe === null/undefined → still pending
+        }
+        // Either non-OK response or pending: kick off recovery POST after a short wait
+        if (!recoveryFired && elapsedMs >= RECOVERY_AT_MS) {
+          recoveryFired = true;
+          fetch("/api/job/sanitize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jobId: String(jobId) }),
+          }).catch(() => {});
+        }
+        if (elapsedMs >= GIVE_UP_AT_MS) {
+          setSanitized(false);
+          setSanitizeError("Security review is taking longer than expected. Please refresh — if this persists, contact support.");
+          return;
+        }
+        elapsedMs += POLL_INTERVAL_MS;
+        pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
+      } catch {
+        if (cancelled) return;
+        if (elapsedMs >= GIVE_UP_AT_MS) {
+          setSanitized(false);
+          setSanitizeError("Failed to verify job safety");
+          return;
+        }
+        elapsedMs += POLL_INTERVAL_MS;
+        pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearTimeout(pollTimer);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobExists]);
+  }, [jobExists, jobId]);
 
   useEffect(() => {
     if (messages.length > 0) {

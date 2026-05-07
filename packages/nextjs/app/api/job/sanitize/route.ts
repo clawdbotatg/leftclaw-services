@@ -1,16 +1,36 @@
 import { NextRequest } from "next/server";
+import { createPublicClient, http } from "viem";
+import { base } from "viem/chains";
 import { checkSanitization, getSanitization, setSanitization } from "~~/lib/sanitize";
+import { getConsultPrompt } from "~~/lib/consultPrompt";
+import deployedContracts from "~~/contracts/deployedContracts";
+
+const { address: contractAddress, abi } = deployedContracts[8453].LeftClawServicesV2;
+
+const viemClient = createPublicClient({
+  chain: base,
+  transport: http(
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+      ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+      : undefined,
+  ),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { jobId, description, cvAutoPass } = await req.json();
+    const body = await req.json();
+    const { jobId, cvAutoPass } = body;
+    let description: string | undefined = body.description;
 
-    if (!jobId || !description) {
-      return Response.json({ error: "jobId and description required" }, { status: 400 });
+    if (!jobId) {
+      return Response.json({ error: "jobId required" }, { status: 400 });
     }
 
     // CV consults auto-pass sanitization — off-chain payment, no gate needed
     if (cvAutoPass && String(jobId).startsWith("cv-")) {
+      if (!description) {
+        return Response.json({ error: "description required for cvAutoPass" }, { status: 400 });
+      }
       const result = {
         jobId: String(jobId),
         safe: true,
@@ -21,27 +41,36 @@ export async function POST(req: NextRequest) {
       return Response.json({ ...result, onChain: false });
     }
 
-    // Note: job.sanitized doesn't exist on-chain yet — markSanitized is not in the deployed ABI.
-    // Skip on-chain flag check; rely on Redis/KV for sanitization state.
+    // If no description provided, look it up. Supports recovery from stuck
+    // "Reviewing your request..." states: clients can retrigger with just
+    // {jobId} and the server resolves the prompt itself.
+    if (!description) {
+      // Off-chain consult prompt store (svc 1, 2 posted via current flow)
+      const offChain = await getConsultPrompt(jobId);
+      if (offChain) {
+        description = offChain;
+      } else if (!String(jobId).startsWith("cv-")) {
+        // Fallback to on-chain (build/audit/etc and pre-PR-#41 consults)
+        try {
+          const job = (await viemClient.readContract({
+            address: contractAddress,
+            abi,
+            functionName: "getJob",
+            args: [BigInt(jobId)],
+          })) as any;
+          description = job.description || undefined;
+        } catch {}
+      }
+    }
 
-    // Run Opus analysis
+    if (!description) {
+      return Response.json(
+        { error: "description not provided and could not be resolved from KV or chain" },
+        { status: 400 },
+      );
+    }
+
     const result = await checkSanitization(String(jobId), description);
-
-    // Placeholder: markSanitized doesn't exist in deployed contract ABI yet.
-    // When added, uncomment to write on-chain flag.
-    // if (result.safe && process.env.SANITIZER_PRIVATE_KEY) {
-    //   try {
-    //     const account = privateKeyToAccount(process.env.SANITIZER_PRIVATE_KEY as `0x${string}`);
-    //     const wallet = createWalletClient({ account, chain: base, transport });
-    //     const hash = await wallet.writeContract({
-    //       address, abi, functionName: "markSanitized", args: [BigInt(jobId)],
-    //     });
-    //     return Response.json({ ...result, onChain: true, txHash: hash });
-    //   } catch (txErr: any) {
-    //     console.error("markSanitized tx failed:", txErr.message);
-    //   }
-    // }
-
     return Response.json({ ...result, onChain: false });
   } catch (e) {
     console.error("Sanitize route error:", e);
