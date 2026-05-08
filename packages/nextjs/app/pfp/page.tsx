@@ -125,6 +125,13 @@ export default function PfpPage() {
   const savedPromptRef = useRef<string>("");
   const [prompt, setPrompt] = useState(() => {
     if (typeof window === "undefined") return "";
+    // ?prompt= query param wins (consult-bot route handoff). Fall back to
+    // the recently-typed prompt from localStorage.
+    const urlPrompt = new URLSearchParams(window.location.search).get("prompt");
+    if (urlPrompt) {
+      savedPromptRef.current = urlPrompt;
+      return urlPrompt;
+    }
     const saved = loadPfpPrompt();
     savedPromptRef.current = saved;
     return saved;

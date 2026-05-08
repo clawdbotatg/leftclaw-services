@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePublicClient } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { ServiceHero, UnifiedPaymentFlow } from "~~/components/payment";
@@ -23,8 +24,10 @@ interface ServiceType {
   status: string;
 }
 
-export default function AuditPage() {
+function AuditPageContent() {
   const publicClient = usePublicClient();
+  const searchParams = useSearchParams();
+  const initialDescription = searchParams.get("description") || "";
   const [service, setService] = useState<ServiceType | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -95,6 +98,7 @@ export default function AuditPage() {
           descriptionLabel={meta.descriptionLabel}
           descriptionPlaceholder={meta.descriptionPlaceholder}
           descriptionRequired={true}
+          initialDescription={initialDescription}
           onSuccess={jobId => `/jobs/${jobId}`}
         />
 
@@ -105,5 +109,13 @@ export default function AuditPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuditPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh]"><span className="loading loading-spinner loading-lg" /></div>}>
+      <AuditPageContent />
+    </Suspense>
   );
 }

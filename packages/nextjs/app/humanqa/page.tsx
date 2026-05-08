@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePublicClient } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { ServiceHero, UnifiedPaymentFlow } from "~~/components/payment";
@@ -23,8 +24,10 @@ interface ServiceType {
   status: string;
 }
 
-export default function HumanqaPage() {
+function HumanqaPageContent() {
   const publicClient = usePublicClient();
+  const searchParams = useSearchParams();
+  const initialDescription = searchParams.get("description") || "";
   const [service, setService] = useState<ServiceType | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -95,9 +98,18 @@ export default function HumanqaPage() {
           descriptionLabel={meta?.descriptionLabel || "What do you need a human for?"}
           descriptionPlaceholder={meta?.descriptionPlaceholder || "Describe what you need — review, prod-readiness questions, deployment help, anything stuck."}
           descriptionRequired={true}
+          initialDescription={initialDescription}
           onSuccess={jobId => `/jobs/${jobId}`}
         />
       </div>
     </div>
+  );
+}
+
+export default function HumanqaPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh]"><span className="loading loading-spinner loading-lg" /></div>}>
+      <HumanqaPageContent />
+    </Suspense>
   );
 }
