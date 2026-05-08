@@ -71,7 +71,7 @@ export default function ChatPage() {
   const [planDescription, setPlanDescription] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isStartingBuild, setIsStartingBuild] = useState(false);
-  const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA"; summary: string } | null>(null);
+  const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA" | "RESEARCH"; summary: string } | null>(null);
   const [planGenerations, setPlanGenerations] = useState(0);
   const MAX_PLAN_GENERATIONS = 3;
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -276,9 +276,9 @@ export default function ChatPage() {
       }
 
       // Check for route markers
-      const routeMatch = assistantContent.match(/---ROUTE:\s*(AUDIT|QA|PFP|BUILD|FEATURE|HUMANQA)---\s*([\s\S]*?)---ROUTE END---/);
+      const routeMatch = assistantContent.match(/---ROUTE:\s*(AUDIT|QA|PFP|BUILD|FEATURE|HUMANQA|RESEARCH)---\s*([\s\S]*?)---ROUTE END---/);
       if (routeMatch) {
-        setRouteSuggestion({ type: routeMatch[1] as "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA", summary: routeMatch[2].trim() });
+        setRouteSuggestion({ type: routeMatch[1] as "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA" | "RESEARCH", summary: routeMatch[2].trim() });
       }
     } catch (e) {
       setError("Network error");
@@ -524,6 +524,7 @@ export default function ChatPage() {
               else if (routeSuggestion.type === "PFP") router.push("/pfp");
               else if (routeSuggestion.type === "FEATURE") router.push("/post?type=feature");
               else if (routeSuggestion.type === "HUMANQA") router.push("/humanqa");
+              else if (routeSuggestion.type === "RESEARCH") router.push("/research");
             }}
           >
             {routeSuggestion.type === "AUDIT" && "🛡️ Go to Audit Service →"}
@@ -531,6 +532,7 @@ export default function ChatPage() {
             {routeSuggestion.type === "PFP" && "🦞 Generate My PFP →"}
             {routeSuggestion.type === "FEATURE" && "🔧 Go to Feature/Bug Fix →"}
             {routeSuggestion.type === "HUMANQA" && "👤 Talk to a Human →"}
+            {routeSuggestion.type === "RESEARCH" && "📚 Go to Research Report →"}
           </button>
         </div>
       )}
