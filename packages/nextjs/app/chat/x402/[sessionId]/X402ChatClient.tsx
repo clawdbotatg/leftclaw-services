@@ -52,6 +52,34 @@ export default function X402ChatClient() {
   const [planDescription, setPlanDescription] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA" | "RESEARCH"; summary: string } | null>(null);
+  const routeStorageKey = `routeSuggestion-x402-${sessionId}`;
+
+  // Restore route suggestion from localStorage on mount (so the CTA button
+  // survives navigating away and coming back).
+  useEffect(() => {
+    if (typeof window === "undefined" || !sessionId) return;
+    const saved = localStorage.getItem(routeStorageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.type && parsed?.summary) setRouteSuggestion(parsed);
+      } catch {
+        localStorage.removeItem(routeStorageKey);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  // Persist any route suggestion change to localStorage.
+  useEffect(() => {
+    if (typeof window === "undefined" || !sessionId) return;
+    if (routeSuggestion) {
+      localStorage.setItem(routeStorageKey, JSON.stringify(routeSuggestion));
+    } else {
+      localStorage.removeItem(routeStorageKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeSuggestion, sessionId]);
   const [sigPending, setSigPending] = useState(false);
   const [sigError, setSigError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -407,6 +435,15 @@ export default function X402ChatClient() {
             className="btn btn-primary btn-sm flex-1"
             onClick={() => {
               const desc = encodeURIComponent(routeSuggestion.summary || "");
+              // Mark this consult as closed when the user routes to a service
+              // (matches the pattern the build flow already uses). Fire-and-forget
+              // so navigation isn't blocked on the close response.
+              fetch(`/api/session/${sessionId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "close" }),
+                keepalive: true,
+              }).catch(() => {});
               if (routeSuggestion.type === "AUDIT") router.push(`/audit?description=${desc}`);
               else if (routeSuggestion.type === "QA") router.push(`/qa?description=${desc}`);
               else if (routeSuggestion.type === "PFP") router.push(`/pfp?prompt=${desc}`);

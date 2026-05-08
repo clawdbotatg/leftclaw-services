@@ -72,6 +72,34 @@ export default function ChatPage() {
   const [copied, setCopied] = useState(false);
   const [isStartingBuild, setIsStartingBuild] = useState(false);
   const [routeSuggestion, setRouteSuggestion] = useState<{ type: "AUDIT" | "QA" | "PFP" | "BUILD" | "FEATURE" | "HUMANQA" | "RESEARCH"; summary: string } | null>(null);
+  const routeStorageKey = `routeSuggestion-job-${jobId}`;
+
+  // Restore route suggestion from localStorage on mount (so the CTA button
+  // survives navigating away and coming back).
+  useEffect(() => {
+    if (typeof window === "undefined" || !jobId) return;
+    const saved = localStorage.getItem(routeStorageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.type && parsed?.summary) setRouteSuggestion(parsed);
+      } catch {
+        localStorage.removeItem(routeStorageKey);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
+
+  // Persist any route suggestion change to localStorage.
+  useEffect(() => {
+    if (typeof window === "undefined" || !jobId) return;
+    if (routeSuggestion) {
+      localStorage.setItem(routeStorageKey, JSON.stringify(routeSuggestion));
+    } else {
+      localStorage.removeItem(routeStorageKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeSuggestion, jobId]);
   const [planGenerations, setPlanGenerations] = useState(0);
   const MAX_PLAN_GENERATIONS = 3;
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -520,6 +548,19 @@ export default function ChatPage() {
             className="btn btn-primary btn-sm flex-1"
             onClick={() => {
               const desc = encodeURIComponent(routeSuggestion.summary || "");
+              // Close the on-chain consult job when the user routes to a
+              // downstream service. Mirrors the existing "Start Build Job"
+              // path. The sanitizer wallet is a registered worker; it calls
+              // completeJob() with a routing-result string as the resultCID.
+              if (isConsultation && address) {
+                const resultCID = `Routed to ${routeSuggestion.type.toLowerCase()}: ${routeSuggestion.summary || ""}`.slice(0, 500);
+                fetch("/api/job/close-consultation", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ jobId, resultCID, address }),
+                  keepalive: true,
+                }).catch(() => {});
+              }
               if (routeSuggestion.type === "AUDIT") router.push(`/audit?description=${desc}`);
               else if (routeSuggestion.type === "QA") router.push(`/qa?description=${desc}`);
               else if (routeSuggestion.type === "PFP") router.push(`/pfp?prompt=${desc}`);
