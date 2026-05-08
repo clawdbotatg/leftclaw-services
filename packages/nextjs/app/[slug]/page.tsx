@@ -30,17 +30,24 @@ function ServicePageContent({ slug }: { slug: string }) {
   const [initialDescription, setInitialDescription] = useState("");
   const [lockedContent, setLockedContent] = useState("");
 
+  // Read description from query param regardless of gist presence — supports
+  // direct routing from the consult bot (no plan-gist) as well as the
+  // post-plan build flow (gist + description).
+  useEffect(() => {
+    const descParam = searchParams.get("description") || "";
+    if (descParam) {
+      // Strip the "Build plan: https://gist.github.com/..." prefix if present
+      const cleanDesc = descParam
+        .replace(/^Build\s+plan:\s*https?:\/\/gist\.github\.com\/[^\n]+\n*/i, "")
+        .trim();
+      setInitialDescription(cleanDesc);
+    }
+  }, [searchParams]);
+
   // Fetch gist content if gist param is present
   useEffect(() => {
     const gistUrl = searchParams.get("gist");
     if (!gistUrl) return;
-
-    const descParam = searchParams.get("description") || "";
-    // Strip the "Build plan: https://gist.github.com/..." prefix if present
-    const cleanDesc = descParam
-      .replace(/^Build\s+plan:\s*https?:\/\/gist\.github\.com\/[^\n]+\n*/i, "")
-      .trim();
-    setInitialDescription(cleanDesc);
 
     // Convert gist HTML URL to GitHub API URL
     // HTML: https://gist.github.com/{username}/{gist-id}

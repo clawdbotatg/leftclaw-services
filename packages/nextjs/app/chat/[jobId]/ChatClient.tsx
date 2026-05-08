@@ -519,12 +519,13 @@ export default function ChatPage() {
           <button
             className="btn btn-primary btn-sm flex-1"
             onClick={() => {
-              if (routeSuggestion.type === "AUDIT") router.push("/post?type=7");
-              else if (routeSuggestion.type === "QA") router.push("/post?type=6");
-              else if (routeSuggestion.type === "PFP") router.push("/pfp");
-              else if (routeSuggestion.type === "FEATURE") router.push("/post?type=feature");
-              else if (routeSuggestion.type === "HUMANQA") router.push("/humanqa");
-              else if (routeSuggestion.type === "RESEARCH") router.push("/research");
+              const desc = encodeURIComponent(routeSuggestion.summary || "");
+              if (routeSuggestion.type === "AUDIT") router.push(`/audit?description=${desc}`);
+              else if (routeSuggestion.type === "QA") router.push(`/qa?description=${desc}`);
+              else if (routeSuggestion.type === "PFP") router.push(`/pfp?prompt=${desc}`);
+              else if (routeSuggestion.type === "FEATURE") router.push(`/feature?description=${desc}`);
+              else if (routeSuggestion.type === "HUMANQA") router.push(`/humanqa?description=${desc}`);
+              else if (routeSuggestion.type === "RESEARCH") router.push(`/research?description=${desc}`);
             }}
           >
             {routeSuggestion.type === "AUDIT" && "🛡️ Go to Audit Service →"}
