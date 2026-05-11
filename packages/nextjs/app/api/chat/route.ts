@@ -323,7 +323,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Message limits + rate limiting for job-based chats
-  // Consultations: enforce message limits (Quick=15, Deep=30)
+  // Consultations: hard cap at 15 user messages (both Quick and Deep)
   // Other jobs: rate limit (3/hr active, 2 total post-completion)
   let jobMessageLimit = 0;
   let jobUserMessageCount = 0;
@@ -341,13 +341,20 @@ export async function POST(req: NextRequest) {
       const isConsultation = serviceTypeId === 1 || serviceTypeId === 2;
 
       if (isConsultation) {
-        // Infinite consultation messages — no server-side limit enforced
-        // (client-side tracking in ChatClient.tsx shows usage but never blocks)
-        jobMessageLimit = 9999;
+        // Hard cap at 15 user messages for both Quick and Deep to prevent
+        // runaway Opus costs from idle/abandoned-but-still-typing sessions.
+        // Plan generation bypasses the cap so users can still finalize a plan
+        // after hitting the limit.
+        jobMessageLimit = 15;
         const existingMessages = await getJobMessages(String(jobId));
         jobUserMessageCount = existingMessages.filter(m => m.role === "user").length;
 
-        // Never block based on message count — always allow
+        if (jobUserMessageCount >= jobMessageLimit && !isPlanGeneration) {
+          return new Response(
+            JSON.stringify({ error: "Message limit reached", messagesUsed: jobUserMessageCount, messagesLimit: jobMessageLimit }),
+            { status: 403 },
+          );
+        }
       } else {
         const rl = checkRateLimit(String(jobId), clientAddress, Number(job.status));
         if (!rl.allowed) {
