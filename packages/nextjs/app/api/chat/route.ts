@@ -462,7 +462,7 @@ export async function POST(req: NextRequest) {
       "X-API-Key": apiKey,
     },
     body: JSON.stringify({
-      model: "claude-opus-4.7",
+      model: "claude-sonnet-4.6",
       max_tokens: 4096,
       system: systemPrompt,
       stream: true,
