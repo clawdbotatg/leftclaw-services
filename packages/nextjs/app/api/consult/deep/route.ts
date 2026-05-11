@@ -41,7 +41,7 @@ export const POST = withX402DynamicSettleFirst(
       network: BASE_NETWORK,
       payTo: PAYMENT_ADDRESS,
     },
-    description: "Deep Consultation — 30-message deep-dive on architecture, protocol design, or strategy",
+    description: "Deep Consultation — deep-dive on architecture, protocol design, or strategy",
     extensions: {
       ...declareDiscoveryExtension({
         input: { description: "What you need help with", context: "optional context" },
