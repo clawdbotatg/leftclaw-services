@@ -1,8 +1,8 @@
 /**
  * Cron-able endpoint to auto-timeout stale consultation jobs.
  *
- * - OPEN consultations older than 24h → COMPLETED
- * - IN_PROGRESS consultations older than 24h → COMPLETED
+ * - OPEN consultations older than 2h → COMPLETED
+ * - IN_PROGRESS consultations older than 2h → COMPLETED
  *
  * POST /api/job/consult-timeout
  */
@@ -16,8 +16,8 @@ import deployedContracts from "~~/contracts/deployedContracts";
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
 const CONSULTATION_TYPE_IDS = [1, 2]; // Quick Consultation, Deep Consultation
-const OPEN_TIMEOUT_HOURS = 24;
-const IN_PROGRESS_TIMEOUT_HOURS = 24;
+const OPEN_TIMEOUT_HOURS = 2;
+const IN_PROGRESS_TIMEOUT_HOURS = 2;
 const TIMEOUT_RESULT_URL = "https://leftclaw.services/consult-timeout";
 
 // Simple auth key — set CONSULT_TIMEOUT_SECRET env var to protect this endpoint
