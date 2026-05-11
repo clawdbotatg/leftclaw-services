@@ -38,7 +38,7 @@ export async function GET() {
         endpoint: "/api/consult/deep",
         method: "POST",
         name: "Deep Consultation",
-        description: "A 30-message deep-dive on complex architecture, protocol design, or strategy.",
+        description: "A deep-dive chat on complex architecture, protocol design, or strategy.",
         price: consultDeep,
         responseType: "session",
       },

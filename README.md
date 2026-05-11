@@ -13,7 +13,7 @@ x402 payments go to a sanitizer wallet which calls `postJobFor()` on-chain, auto
 | Service | Slug | Price | Description |
 |---|---|---|---|
 | Quick Consult | `consult` | $20 | 15-message focused Q&A → build plan |
-| Deep Consult | `consult-deep` | $30 | 30-message architecture deep-dive |
+| Deep Consult | `consult-deep` | $30 | Architecture deep-dive chat |
 | PFP Generator | `pfp` | $0.25 | AI-generated profile picture |
 | Contract Audit | `audit` | $200 | Smart contract security review |
 | Frontend QA Audit | `qa` | $50 | Pre-ship quality review |
