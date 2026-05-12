@@ -18,7 +18,7 @@ export interface PfpCvCostResult {
   priceUsd: number;
 }
 
-// Matches the UI formula in useCVCost: ceil((highestCVBalance / 5) / cvDivisor)
+// Matches the UI formula in useCVCost: ceil(highestCVBalance / cvDivisor)
 export async function computePfpCvCost(): Promise<PfpCvCostResult> {
   const client = createPublicClient({
     chain: base,
@@ -37,7 +37,7 @@ export async function computePfpCvCost(): Promise<PfpCvCostResult> {
   const highest = Number(highestRes?.highestCVBalance);
   if (!cvDivisor || !highest || !isFinite(highest)) throw new Error("Failed to compute CV cost");
   return {
-    generateCvCost: Math.ceil((highest / 5) / cvDivisor),
+    generateCvCost: Math.ceil(highest / cvDivisor),
     cvDivisor,
     highestCVBalance: highest,
     priceUsd: Number(svc.priceUsd) / 1_000_000,

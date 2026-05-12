@@ -20,8 +20,7 @@ export function CVPriceTicker({ cvDivisor, className = "" }: CVPriceTickerProps)
         const data = await res.json();
         if (!data.success || !data.highestCVBalance) return;
 
-        const fifth = data.highestCVBalance / 5;
-        const cost = Math.ceil(fifth / cvDivisor);
+        const cost = Math.ceil(data.highestCVBalance / cvDivisor);
 
         if (mounted) {
           setCvCost(prev => {

@@ -17,7 +17,7 @@ export async function GET() {
         cvDivisor: result.cvDivisor,
         highestCVBalance: result.highestCVBalance,
         priceUsd: result.priceUsd,
-        formula: "ceil((highestCVBalance / 5) / cvDivisor)",
+        formula: "ceil(highestCVBalance / cvDivisor)",
       },
       {
         headers: {

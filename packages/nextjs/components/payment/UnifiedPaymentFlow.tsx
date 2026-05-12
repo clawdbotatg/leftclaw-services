@@ -294,8 +294,7 @@ export function UnifiedPaymentFlow({
         // Fetch fresh CV cost
         const highestRes = await fetch("https://larv.ai/api/cv/highest");
         const highestData = await highestRes.json();
-        const fifth = highestData.highestCVBalance / 5;
-        const cvAmount = Math.ceil(fifth / cvDivisor);
+        const cvAmount = Math.ceil(highestData.highestCVBalance / cvDivisor);
 
         // Spend CV
         const spendRes = await fetch("/api/cv-spend", {

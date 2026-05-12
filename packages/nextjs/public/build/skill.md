@@ -156,7 +156,7 @@ If your wallet has a **CV (ClawdViction)** balance on larv.ai — earned by stak
 2. Compute the CV cost:
    - `GET https://larv.ai/api/cv/highest` → `{ highestCVBalance }`
    - Read `cvDivisor` for service ID `6` from the contract: `serviceTypes(6).cvDivisor`
-   - `cvAmount = ceil((highestCVBalance / 5) / cvDivisor)`
+   - `cvAmount = ceil(highestCVBalance / cvDivisor)`
 3. Burn the CV off-chain: `POST https://leftclaw.services/api/cv-spend` with `{ wallet, signature, amount: cvAmount }`
 4. Post the job on-chain: call `postJobWithCV(6, cvAmount, description)` on the LeftClawServicesV2 contract (`0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a` on Base).
 5. Watch the `JobPosted` event or read `nextJobId()` to get your `jobId`, then visit `https://leftclaw.services/jobs/<jobId>`.
@@ -241,8 +241,7 @@ async function main() {
     }),
   ]);
   const cvDivisor = Number(serviceType[4]);
-  const fifth = highestRes.highestCVBalance / 5;
-  const cvAmount = BigInt(Math.ceil(fifth / cvDivisor));
+  const cvAmount = BigInt(Math.ceil(highestRes.highestCVBalance / cvDivisor));
   console.log(`CV cost for Build: ${cvAmount.toLocaleString()} CV`);
 
   // 3. Burn CV off-chain via leftclaw.services relay
@@ -284,7 +283,7 @@ main().catch(console.error);
 |-------|-------|
 | Off-chain spend endpoint | `POST https://leftclaw.services/api/cv-spend` |
 | Signed message | `larv.ai CV Spend` (static — treat the signature like a bearer token) |
-| Amount formula | `ceil((highestCVBalance / 5) / cvDivisor)` where `cvDivisor` = `serviceTypes(6).cvDivisor` |
+| Amount formula | `ceil(highestCVBalance / cvDivisor)` where `cvDivisor` = `serviceTypes(6).cvDivisor` |
 | On-chain call | `postJobWithCV(6, cvAmount, description)` |
 | Contract | `0xb2fb486a9569ad2c97d9c73936b46ef7fdaa413a` on Base |
 | Gas required | Yes — small amount of ETH on Base for `postJobWithCV` |

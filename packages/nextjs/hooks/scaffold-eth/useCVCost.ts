@@ -1,24 +1,23 @@
 import { useEffect, useState } from "react";
 
 /**
- * Fetches the "fifth" from larv.ai and computes CV cost for a given service.
- * fifth = highestCVBalance / 5
- * cvCost = Math.ceil(fifth / cvDivisor)
+ * Fetches the highest CV balance from larv.ai and computes CV cost for a given service.
+ * cvCost = Math.ceil(highestCVBalance / cvDivisor)
  *
- * Caches the fifth value across renders and components via module-level cache.
+ * Caches the highestCVBalance across renders and components via module-level cache.
  */
 
-let _fifthCache: { fifth: number | null; fetchedAt: number } = { fifth: null, fetchedAt: 0 };
-const FIFTH_TTL = 30_000; // 30s cache
+let _highestCache: { highest: number | null; fetchedAt: number } = { highest: null, fetchedAt: 0 };
+const HIGHEST_TTL = 30_000; // 30s cache
 
-export function useCVCost(cvDivisor: number): { cvCost: number | null; fifth: number | null; loading: boolean } {
-  const [fifth, setFifth] = useState<number | null>(_fifthCache.fifth);
-  const [loading, setLoading] = useState(_fifthCache.fifth === null);
+export function useCVCost(cvDivisor: number): { cvCost: number | null; highest: number | null; loading: boolean } {
+  const [highest, setHighest] = useState<number | null>(_highestCache.highest);
+  const [loading, setLoading] = useState(_highestCache.highest === null);
 
   useEffect(() => {
     const now = Date.now();
-    if (_fifthCache.fifth !== null && now - _fifthCache.fetchedAt < FIFTH_TTL) {
-      setFifth(_fifthCache.fifth);
+    if (_highestCache.highest !== null && now - _highestCache.fetchedAt < HIGHEST_TTL) {
+      setHighest(_highestCache.highest);
       setLoading(false);
       return;
     }
@@ -31,9 +30,9 @@ export function useCVCost(cvDivisor: number): { cvCost: number | null; fifth: nu
       .then(data => {
         if (!mounted) return;
         if (data.success !== false && data.highestCVBalance) {
-          const f = data.highestCVBalance / 5;
-          _fifthCache = { fifth: f, fetchedAt: Date.now() };
-          setFifth(f);
+          const h = data.highestCVBalance;
+          _highestCache = { highest: h, fetchedAt: Date.now() };
+          setHighest(h);
         }
       })
       .catch(() => {})
@@ -42,7 +41,7 @@ export function useCVCost(cvDivisor: number): { cvCost: number | null; fifth: nu
     return () => { mounted = false; };
   }, []);
 
-  const cvCost = fifth !== null && cvDivisor > 0 ? Math.ceil(fifth / cvDivisor) : null;
+  const cvCost = highest !== null && cvDivisor > 0 ? Math.ceil(highest / cvDivisor) : null;
 
-  return { cvCost, fifth, loading };
+  return { cvCost, highest, loading };
 }
