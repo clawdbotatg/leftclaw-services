@@ -35,9 +35,17 @@ export async function GET() {
       }
     }
 
-    const result = workerAddresses.map(w => ({
+    // Fetch ETH balances in parallel
+    const balances = await Promise.all(
+      workerAddresses.map(w =>
+        client.getBalance({ address: w }).catch(() => null),
+      ),
+    );
+
+    const result = workerAddresses.map((w, i) => ({
       address: w,
       activeJobs: activeJobs[w.toLowerCase()] || [],
+      ethBalance: balances[i] !== null ? balances[i]!.toString() : null,
     }));
 
     return Response.json({ workers: result, count: result.length });

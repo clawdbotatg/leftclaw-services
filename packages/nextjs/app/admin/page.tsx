@@ -61,6 +61,7 @@ function timeAgo(ts: number) {
 interface WorkerInfo {
   address: string;
   activeJobs: number[];
+  ethBalance: string | null;
 }
 
 function useWorkers() {
@@ -869,21 +870,32 @@ export default function AdminPage() {
                   <p className="text-xs opacity-50">No workers registered</p>
                 ) : (
                   <div className="space-y-2">
-                    {workers.map(w => (
-                      <div key={w.address} className="flex items-center justify-between bg-base-300 rounded-lg px-4 py-2">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Address address={w.address as `0x${string}`} onlyEnsOrAddress disableAddressLink />
-                          <span className="badge badge-sm badge-ghost">{w.activeJobs.length} active</span>
+                    {workers.map(w => {
+                      const balWei = w.ethBalance ? BigInt(w.ethBalance) : null;
+                      const balEth = balWei !== null ? Number(formatUnits(balWei, 18)) : null;
+                      const low = balWei !== null && balWei < BigInt(1e15); // < 0.001 ETH
+                      return (
+                        <div key={w.address} className="flex items-center justify-between bg-base-300 rounded-lg px-4 py-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Address address={w.address as `0x${string}`} onlyEnsOrAddress disableAddressLink />
+                            <span className="badge badge-sm badge-ghost">{w.activeJobs.length} active</span>
+                            <span
+                              className={`font-mono text-xs ${low ? "text-error font-bold" : "opacity-70"}`}
+                              title={low ? "Low gas — worker may stop processing jobs" : "ETH balance"}
+                            >
+                              {balEth !== null ? `${balEth.toFixed(4)} ETH${low ? " ⚠️" : ""}` : "—"}
+                            </span>
+                          </div>
+                          <button
+                            className="btn btn-xs btn-error btn-outline shrink-0"
+                            disabled={ownerBusy !== null}
+                            onClick={() => handleRemoveWorker(w.address)}
+                          >
+                            Remove
+                          </button>
                         </div>
-                        <button
-                          className="btn btn-xs btn-error btn-outline shrink-0"
-                          disabled={ownerBusy !== null}
-                          onClick={() => handleRemoveWorker(w.address)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
