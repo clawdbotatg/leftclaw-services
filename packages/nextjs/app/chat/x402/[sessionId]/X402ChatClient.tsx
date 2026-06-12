@@ -85,7 +85,7 @@ export default function X402ChatClient() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autoSentRef = useRef(false);
-  const MAX_CHARS = 1000;
+  const MAX_CHARS = 2000;
 
   // Load session info — requires owner signature to unlock description + history
   useEffect(() => {

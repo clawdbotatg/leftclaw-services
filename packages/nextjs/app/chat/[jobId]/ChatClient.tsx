@@ -104,7 +104,7 @@ export default function ChatPage() {
   const MAX_PLAN_GENERATIONS = 3;
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const MAX_CHARS = 3000;
+  const MAX_CHARS = 6000;
 
   // On-chain job read — skip for CV jobs (they're off-chain)
   const { data: job, isLoading: jobLoading } = useScaffoldReadContract({
