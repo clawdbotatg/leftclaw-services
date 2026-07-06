@@ -4,11 +4,8 @@
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  x402ResourceServer,
-  x402HTTPResourceServer,
-} from "@x402/core/server";
-import type { RouteConfig, PaywallConfig } from "@x402/core/server";
+import { x402HTTPResourceServer, x402ResourceServer } from "@x402/core/server";
+import type { PaywallConfig, RouteConfig } from "@x402/core/server";
 
 class NextAdapter {
   constructor(private req: NextRequest) {}
@@ -59,14 +56,47 @@ class NextAdapter {
   }
 }
 
-function handlePaymentError(response: any) {
+function decodeBase64Json(value: string | null | undefined): any {
+  if (!value) return undefined;
+  try {
+    return JSON.parse(Buffer.from(value, "base64").toString("utf-8"));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Best-effort payer address from the client's PAYMENT-SIGNATURE payload (exact-EVM: EIP-3009 authorization.from). */
+function extractPayer(paymentHeader: string | undefined): string | undefined {
+  const payload = decodeBase64Json(paymentHeader);
+  const from = payload?.payload?.authorization?.from ?? payload?.payload?.from;
+  return typeof from === "string" ? from : undefined;
+}
+
+function handlePaymentError(response: any, paymentHeader?: string) {
   const headers = new Headers(response.headers);
   if (response.isHtml) {
     headers.set("Content-Type", "text/html");
     return new NextResponse(response.body, { status: response.status, headers });
   }
   headers.set("Content-Type", "application/json");
-  return new NextResponse(JSON.stringify(response.body || {}), { status: response.status, headers });
+  // The x402 spec puts the rejection reason only inside the base64 PAYMENT-REQUIRED
+  // header, leaving the body {}. Mirror it into the body so humans and debugging
+  // agents can tell "wallet not funded" from "protocol broken" without decoding headers.
+  let body = response.body;
+  if (!body || (typeof body === "object" && Object.keys(body).length === 0)) {
+    const required = decodeBase64Json(headers.get("PAYMENT-REQUIRED"));
+    if (required?.error) {
+      const payer = extractPayer(paymentHeader);
+      body = {
+        error: required.error,
+        ...(payer ? { payer } : {}),
+        detail: paymentHeader
+          ? `Payment was rejected: ${required.error}. Full requirements are in the base64 PAYMENT-REQUIRED response header.`
+          : "No payment attached. Sign the requirements in the base64 PAYMENT-REQUIRED response header and retry with a PAYMENT-SIGNATURE header (@x402/fetch does this automatically).",
+      };
+    }
+  }
+  return new NextResponse(JSON.stringify(body || {}), { status: response.status, headers });
 }
 
 async function handleSettlement(
@@ -80,17 +110,15 @@ async function handleSettlement(
   if (response.status >= 400) return response;
   try {
     const responseBody = Buffer.from(await response.clone().arrayBuffer());
-    const result = await httpServer.processSettlement(
-      paymentPayload,
-      paymentRequirements,
-      declaredExtensions,
-      { request: httpContext, responseBody },
-    );
+    const result = await httpServer.processSettlement(paymentPayload, paymentRequirements, declaredExtensions, {
+      request: httpContext,
+      responseBody,
+    });
     if (!result.success) {
-      return new NextResponse(
-        JSON.stringify({ error: "Settlement failed", details: result.errorReason }),
-        { status: 402, headers: { "Content-Type": "application/json" } },
-      );
+      return new NextResponse(JSON.stringify({ error: "Settlement failed", details: result.errorReason }), {
+        status: 402,
+        headers: { "Content-Type": "application/json" },
+      });
     }
     Object.entries(result.headers).forEach(([key, value]) => {
       response.headers.set(key, value as string);
@@ -141,7 +169,7 @@ export function withX402(
       case "no-payment-required":
         return routeHandler(request);
       case "payment-error":
-        return handlePaymentError(result.response);
+        return handlePaymentError(result.response, context.paymentHeader);
       case "payment-verified": {
         const { paymentPayload, paymentRequirements, declaredExtensions } = result;
         const handlerResponse = await routeHandler(request);
@@ -199,7 +227,7 @@ export function withX402Dynamic(
       case "no-payment-required":
         return routeHandler(request);
       case "payment-error":
-        return handlePaymentError(result.response);
+        return handlePaymentError(result.response, context.paymentHeader);
       case "payment-verified": {
         const { paymentPayload, paymentRequirements, declaredExtensions } = result;
         const handlerResponse = await routeHandler(request);
@@ -261,7 +289,7 @@ export function withX402DynamicSettleFirst(
       case "no-payment-required":
         return routeHandler(request);
       case "payment-error":
-        return handlePaymentError(result.response);
+        return handlePaymentError(result.response, context.paymentHeader);
       case "payment-verified": {
         const { paymentPayload, paymentRequirements, declaredExtensions } = result;
 

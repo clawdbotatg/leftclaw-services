@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import JobChatPanel from "./JobChatPanel";
 import { useParams } from "next/navigation";
+import JobChatPanel from "./JobChatPanel";
 import { Address } from "@scaffold-ui/components";
 import { formatUnits } from "viem";
 import { useAccount, usePublicClient, useReadContract, useSignMessage, useWriteContract } from "wagmi";
@@ -89,7 +89,12 @@ export default function JobDetailClient() {
   });
 
   // Sanitization status — check first, trigger if missing (for pre-existing jobs)
-  const [sanitization, setSanitization] = useState<{ safe: boolean | null; reason?: string; checkedAt?: string; pending?: boolean } | null>(null);
+  const [sanitization, setSanitization] = useState<{
+    safe: boolean | null;
+    reason?: string;
+    checkedAt?: string;
+    pending?: boolean;
+  } | null>(null);
   useEffect(() => {
     if (!jobId || !job) return;
 
@@ -99,7 +104,9 @@ export default function JobDetailClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId: String(jobId), description: desc }),
-      }).then(r2 => r2.json()).then(d => setSanitization(d));
+      })
+        .then(r2 => r2.json())
+        .then(d => setSanitization(d));
     };
 
     fetch(`/api/job/sanitize?jobId=${jobId}`)
@@ -123,8 +130,7 @@ export default function JobDetailClient() {
     if (!jobId || !job || !address) return;
     const serviceTypeId = Number(job.serviceTypeId);
     const isOwnerAndConsult =
-      (serviceTypeId === 1 || serviceTypeId === 2) &&
-      address.toLowerCase() === job.client?.toLowerCase();
+      (serviceTypeId === 1 || serviceTypeId === 2) && address.toLowerCase() === job.client?.toLowerCase();
     if (!isOwnerAndConsult) return;
 
     let cancelled = false;
@@ -161,6 +167,14 @@ export default function JobDetailClient() {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
 
+  // A just-created job can take a moment before the RPC serves it — getJob reverts
+  // until then, which would otherwise read as a scary "not found" right after paying.
+  useEffect(() => {
+    if (isLoading || job) return;
+    const timer = setInterval(() => refetch(), 5000);
+    return () => clearInterval(timer);
+  }, [isLoading, job, refetch]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -172,8 +186,12 @@ export default function JobDetailClient() {
   if (!job) {
     return (
       <div className="flex flex-col items-center py-20">
-        <div className="text-6xl mb-4">❌</div>
-        <p>Job not found</p>
+        <div className="text-6xl mb-4">⏳</div>
+        <p className="font-semibold">Job not found — yet</p>
+        <p className="text-sm opacity-70 max-w-md text-center">
+          If you just created this job it may still be indexing. This page retries automatically every few seconds; if
+          it never appears, the job ID may be wrong.
+        </p>
         <Link href="/jobs" className="btn btn-primary mt-4">
           ← Back to Jobs
         </Link>
@@ -268,11 +286,20 @@ export default function JobDetailClient() {
               <div className="flex gap-2 items-center">
                 <span className={`badge ${status.badge}`}>{status.label}</span>
                 {sanitization ? (
-                  sanitization.safe === null || sanitization.pending
-                    ? <span className="badge badge-warning badge-outline">🔄 Checking...</span>
-                    : sanitization.safe
-                    ? <span className="badge badge-success badge-outline" title={`Checked ${sanitization.checkedAt ? new Date(sanitization.checkedAt).toLocaleString() : ""}`}>🛡️ Sanitized</span>
-                    : <span className="badge badge-error badge-outline" title={sanitization.reason || ""}>⚠️ Flagged</span>
+                  sanitization.safe === null || sanitization.pending ? (
+                    <span className="badge badge-warning badge-outline">🔄 Checking...</span>
+                  ) : sanitization.safe ? (
+                    <span
+                      className="badge badge-success badge-outline"
+                      title={`Checked ${sanitization.checkedAt ? new Date(sanitization.checkedAt).toLocaleString() : ""}`}
+                    >
+                      🛡️ Sanitized
+                    </span>
+                  ) : (
+                    <span className="badge badge-error badge-outline" title={sanitization.reason || ""}>
+                      ⚠️ Flagged
+                    </span>
+                  )
                 ) : (
                   <span className="badge badge-ghost badge-outline">⏳ Pending review</span>
                 )}
@@ -481,9 +508,7 @@ export default function JobDetailClient() {
           </div>
         </div>
         {/* Job Chat — build jobs, client only */}
-        {isClient && !isConsult && address && (
-          <JobChatPanel jobId={jobId} clientAddress={address} />
-        )}
+        {isClient && !isConsult && address && <JobChatPanel jobId={jobId} clientAddress={address} />}
 
         {/* Work Log */}
         {(() => {

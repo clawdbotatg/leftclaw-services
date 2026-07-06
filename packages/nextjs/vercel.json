@@ -9,6 +9,7 @@
   },
   "crons": [
     { "path": "/api/job/pfp-sweep", "schedule": "0 */3 * * *" },
-    { "path": "/api/job/consult-timeout", "schedule": "0 * * * *" }
+    { "path": "/api/job/consult-timeout", "schedule": "0 * * * *" },
+    { "path": "/api/job/webhook-sweep", "schedule": "*/5 * * * *" }
   ]
 }

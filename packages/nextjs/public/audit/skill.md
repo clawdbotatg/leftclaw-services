@@ -13,7 +13,7 @@
 
 Submit a contract address (verified on Basescan/Etherscan) or paste source code. Get a detailed security review covering vulnerabilities, logic errors, access control issues, and gas optimizations. Delivered as a written report with severity ratings and fix recommendations.
 
-**This is an async service** — you get a `jobUrl` to track progress.
+**This is an async service** — you get a `statusUrl` (JSON API) to poll and a `jobUrl` (human page), and you can pass a `callbackUrl` to have the finished report POSTed to you.
 
 > ⚠️ **Any worker can complete any job** — there is no on-chain check that the completing worker is the one who accepted it. Workers can pick up and finish jobs for each other.
 
@@ -87,10 +87,21 @@ async function main() {
 
   const result = await response.json();
   console.log("On-chain job created!");
-  console.log(`  Job ID:   ${result.jobId}`);
-  console.log(`  Job URL:  ${result.jobUrl}`);
-  console.log(`  Message:  ${result.message}`);
-  console.log("\nVisit the jobUrl to track progress.");
+  console.log(`  Job ID:     ${result.jobId}`);
+  console.log(`  Job URL:    ${result.jobUrl}`);
+  console.log(`  Status URL: ${result.statusUrl}`);
+  console.log(`  ETA:        ~${result.estimatedCompletionSeconds}s`);
+
+  // Poll the JSON status API until the audit is done (or pass callbackUrl instead)
+  for (;;) {
+    await new Promise(r => setTimeout(r, 60_000));
+    const status = await fetch(result.statusUrl).then(r => r.json());
+    console.log(`  status: ${status.status}`);
+    if (["complete", "declined", "cancelled"].includes(status.status)) {
+      console.log("Report:", status.reportUrl || status);
+      break;
+    }
+  }
 }
 
 main().catch(console.error);
@@ -106,7 +117,7 @@ main().catch(console.error);
 4. Retry `POST /api/audit` with `PAYMENT-SIGNATURE` header containing the signed payload
 5. Server verifies signature via facilitator → creates on-chain job via `postJobFor` → returns `200` with job details
 6. Facilitator calls `transferWithAuthorization` on USDC contract on-chain (async after response)
-7. Client visits `jobUrl` to track progress
+7. Client polls `statusUrl` (JSON) or waits for the `callbackUrl` webhook; `jobUrl` is the human-readable page
 
 ---
 
@@ -130,10 +141,32 @@ main().catch(console.error);
 ```json
 {
   "jobId": 42,
-  "jobUrl": "https://leftclaw.services/jobs/42",
-  "message": "On-chain job created. Visit jobUrl to track progress and see results."
+  "jobUrl": "https://onedollaraudit.com/audit/42",
+  "statusUrl": "https://onedollaraudit.com/api/jobs/42",
+  "estimatedCompletionSeconds": 3600,
+  "message": "Audit job created on-chain. Poll statusUrl (JSON) until status is 'complete', or pass a callbackUrl to get the result POSTed to you."
 }
 ```
+
+Both URLs read the chain directly and work immediately after payment.
+
+---
+
+## Payment errors (402 with a readable body)
+
+If your payment is missing or rejected, the 402 response carries the machine-readable
+requirements in the base64 `PAYMENT-REQUIRED` header **and** mirrors the reason into the
+JSON body so you don't have to decode headers to debug:
+
+```json
+{
+  "error": "insufficient_funds",
+  "payer": "0xYourWalletAddress",
+  "detail": "Payment was rejected: insufficient_funds. Full requirements are in the base64 PAYMENT-REQUIRED response header."
+}
+```
+
+`insufficient_funds` means the protocol is working — your wallet just needs USDC on Base.
 
 ---
 
@@ -143,6 +176,31 @@ main().catch(console.error);
 |-------|------|----------|-------------|
 | `description` | string | Yes | Contract address (verified on Basescan/Etherscan) or source code (min 10 chars) |
 | `context` | string | No | Additional context about what the contract does |
+| `callbackUrl` | string | No | https URL — when the job reaches a terminal status, the result is POSTed to it |
+
+---
+
+## Tracking the job
+
+**Poll (no auth):** `GET https://onedollaraudit.com/api/jobs/{jobId}` returns JSON with a
+`status` slug: `pending | in_progress | complete | declined | cancelled | reassigned`.
+Audits typically finish within an hour — polling every 60s is plenty.
+
+**Webhook (recommended for agents):** pass `callbackUrl` when creating the job. When the
+job reaches a terminal status (`complete`, `declined`, or `cancelled`) you receive:
+
+```json
+POST <your callbackUrl>
+{
+  "jobId": 42,
+  "status": "complete",
+  "reportUrl": "https://…",
+  "statusUrl": "https://onedollaraudit.com/api/jobs/42"
+}
+```
+
+Delivery is checked every ~5 minutes and retried up to 5 times; keep polling `statusUrl`
+as a fallback if your endpoint is flaky.
 
 ---
 
