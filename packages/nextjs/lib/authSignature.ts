@@ -3,7 +3,11 @@ import { base } from "viem/chains";
 
 export const AUTH_SIGN_MESSAGE = "LeftClaw Services Auth";
 
-const rpcUrl = process.env.BASE_RPC_URL?.trim();
+const rpcUrl =
+  process.env.BASE_RPC_URL?.trim() ||
+  (process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+    ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+    : undefined);
 
 const publicClient = createPublicClient({
   chain: base,

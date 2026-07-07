@@ -16,6 +16,14 @@ const viemClient = createPublicClient({
   ),
 });
 
+// Never echo the sanitizer's content-derived reason/tldr to callers — for a flagged
+// job it paraphrases the (possibly private, off-chain) prompt, and these endpoints are
+// unauthenticated + enumerable by jobId. Return a generic label instead; the full
+// reason/tldr stay in KV for the owner/worker admin tools. See PRIVACY_AUDIT.md F5.
+function publicReason(safe: boolean | null | undefined): string {
+  return safe === false ? "Job flagged for manual review" : "Passed security review";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -71,7 +79,13 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await checkSanitization(String(jobId), description);
-    return Response.json({ ...result, onChain: false });
+    return Response.json({
+      jobId: result.jobId,
+      safe: result.safe,
+      reason: publicReason(result.safe),
+      checkedAt: result.checkedAt,
+      onChain: false,
+    });
   } catch (e) {
     console.error("Sanitize route error:", e);
     return Response.json({ error: "Internal error" }, { status: 500 });
@@ -94,7 +108,7 @@ export async function GET(req: NextRequest) {
         await deleteSanitization(jobId);
         return Response.json({ error: "Pending recheck", safe: null, pending: true }, { status: 404 });
       }
-      return Response.json({ jobId, safe: result.safe, reason: result.reason, onChain: false });
+      return Response.json({ jobId, safe: result.safe, reason: publicReason(result.safe), onChain: false });
     }
     return Response.json({ error: "CV job not found", safe: null, pending: true }, { status: 404 });
   }
@@ -109,7 +123,7 @@ export async function GET(req: NextRequest) {
         await deleteSanitization(jobId);
         return Response.json({ jobId, safe: null, pending: true, onChain: false });
       }
-      return Response.json({ jobId, safe: cached.safe, reason: cached.reason, onChain: false });
+      return Response.json({ jobId, safe: cached.safe, reason: publicReason(cached.safe), onChain: false });
     }
     // No KV entry — pending state
     return Response.json({ jobId, safe: null, pending: true, onChain: false });

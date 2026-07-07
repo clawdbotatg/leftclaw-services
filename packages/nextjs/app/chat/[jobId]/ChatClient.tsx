@@ -129,9 +129,16 @@ export default function ChatPage() {
   const messagesRemaining = isConsultation ? maxMessages - displayedUsed : null;
   const isAtLimit = isConsultation && displayedUsed >= maxMessages;
 
-  // Load plan generation count + latest plan gist from server
+  // Load plan generation count + latest plan gist from server. On-chain jobs are
+  // owner-gated (the gist URL leaks the full plan), so wait for the auth signature
+  // and pass address+sig; cv-* jobs are off-chain and need no auth.
   useEffect(() => {
-    fetch(`/api/job/plan-count?jobId=${jobId}`)
+    let url = `/api/job/plan-count?jobId=${jobId}`;
+    if (!isCvJob) {
+      if (!address || !authSignature) return; // wait until the owner has signed
+      url += `&address=${encodeURIComponent(address)}&sig=${encodeURIComponent(authSignature)}`;
+    }
+    fetch(url)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data?.planGenerations) setPlanGenerations(data.planGenerations);
@@ -142,7 +149,7 @@ export default function ChatPage() {
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
+  }, [jobId, isCvJob, address, authSignature]);
 
   // Sanitization gate — CV jobs auto-pass (set at payment time)
   const [sanitized, setSanitized] = useState<boolean | null>(isCvJob ? true : null);

@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import { useAccount, useBalance, usePublicClient, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useBalance, usePublicClient, useReadContract, useReadContracts, useSignMessage } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { AddressInput } from "@scaffold-ui/components";
 import { Address, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
 import { useCLAWDPrice } from "~~/hooks/scaffold-eth/useCLAWDPrice";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { AUTH_SIGN_MESSAGE } from "~~/lib/authSignature";
+import { getCachedAuthSignature, setCachedAuthSignature } from "~~/utils/authSignatureCache";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
 const CONTRACT_ABI = deployedContracts[8453]?.LeftClawServicesV2?.abi;
@@ -612,6 +614,7 @@ function JobCard({
 
 export default function AdminPage() {
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const clawdPrice = useCLAWDPrice();
   const { writeContractAsync } = useScaffoldWriteContract("LeftClawServicesV2");
   const publicClient = usePublicClient();
@@ -691,16 +694,41 @@ export default function AdminPage() {
     }
   }
 
-  // Job TLDR summaries from sanitization cache
+  // Job TLDR summaries from sanitization cache. This is a cross-client feed (it can
+  // summarize private consult prompts), so the endpoint requires an owner/worker
+  // signature — obtain it from cache or prompt once (7-day cache). This page is
+  // already gated to owner/worker, so the signer is authorized by the time we reach
+  // here. If they decline signing, the dashboard just renders without tldr previews.
   const [tldrMap, setTldrMap] = useState<Record<string, string>>({});
   useEffect(() => {
-    if (allJobs.length === 0) return;
-    const jobIds = allJobs.map(j => Number(j.id)).join(",");
-    fetch(`/api/job/summaries?jobIds=${jobIds}`)
-      .then(r => r.json())
-      .then(data => { if (data.summaries) setTldrMap(data.summaries); })
-      .catch(() => {});
-  }, [allJobs.length, totalJobs]);
+    if (allJobs.length === 0 || !address || !(isOwner || isWorker)) return;
+    let cancelled = false;
+    (async () => {
+      let sig = getCachedAuthSignature(address);
+      if (!sig) {
+        try {
+          sig = await signMessageAsync({ message: AUTH_SIGN_MESSAGE });
+          setCachedAuthSignature(address, sig);
+        } catch {
+          return; // user declined — skip summaries
+        }
+      }
+      if (cancelled) return;
+      const jobIds = allJobs.map(j => Number(j.id)).join(",");
+      try {
+        const r = await fetch(
+          `/api/job/summaries?jobIds=${jobIds}&address=${encodeURIComponent(address)}&sig=${encodeURIComponent(sig)}`,
+        );
+        if (!r.ok || cancelled) return;
+        const data = await r.json();
+        if (data.summaries) setTldrMap(data.summaries);
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allJobs.length, totalJobs, address, isOwner, isWorker]);
 
   // Job actions
   const handleJobAction = async (action: string, jobId: bigint, args?: any) => {

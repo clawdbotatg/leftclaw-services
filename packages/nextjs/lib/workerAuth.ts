@@ -57,3 +57,45 @@ export async function verifyWindowedSig(
 
 // Message format workers sign to authenticate against pipeline/ready endpoints.
 export const workerAuthMessage = (window: number) => `LeftClaw Worker Auth - ${window}`;
+
+// Lowercased job.client for an on-chain job, or null if the job can't be read.
+export async function getJobClient(jobId: string): Promise<string | null> {
+  try {
+    const job = (await publicClient.readContract({
+      address: contractAddress,
+      abi,
+      functionName: "getJob",
+      args: [BigInt(jobId)],
+    })) as any;
+    const client = job?.client as string | undefined;
+    return client ? client.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
+// Cache the contract owner for 5 min — it changes ~never.
+let ownerCache: { addr: string; ts: number } | null = null;
+
+export async function getContractOwner(): Promise<string | null> {
+  if (ownerCache && Date.now() - ownerCache.ts < 300_000) return ownerCache.addr;
+  try {
+    const owner = (await publicClient.readContract({
+      address: contractAddress,
+      abi,
+      functionName: "owner",
+    })) as string;
+    ownerCache = { addr: owner.toLowerCase(), ts: Date.now() };
+    return ownerCache.addr;
+  } catch {
+    return ownerCache?.addr ?? null;
+  }
+}
+
+// True if the address is the platform owner or a registered worker — the two
+// roles allowed to see cross-client data (e.g. the admin dashboard's summaries).
+export async function isOwnerOrWorker(address: string): Promise<boolean> {
+  const a = address.toLowerCase();
+  const [owner, workers] = await Promise.all([getContractOwner(), getRegisteredWorkers()]);
+  return a === owner || workers.includes(a);
+}
