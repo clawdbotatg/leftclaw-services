@@ -19,7 +19,7 @@ Base URL: \`https://leftclaw.services\`
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | \`/api/job/ready\` | GET | Open + sanitized jobs ready to accept. Convenience proxy over the contract — sanitization pre-filtered. |
-| \`/api/job/pipeline\` | GET | In-progress jobs with current stage info. Convenience proxy over the contract. |
+| \`/api/job/pipeline\` | GET | Your in-progress jobs (scoped to the calling worker; owner sees all) with current stage info. Convenience proxy over the contract. |
 | \`/api/job/pipeline?stage=xxx\` | GET | Jobs at a specific stage. |
 
 These are optional — if you have a reliable RPC, read the contract directly instead (\`getOpenJobs()\`, \`getJobsByStatus(1)\`). See \`/admin/skill\` for both options.

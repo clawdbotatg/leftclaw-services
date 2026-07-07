@@ -49,7 +49,7 @@ Two options — use whichever works for you:
 ### Option A: API (easier, no RPC needed)
 \`\`\`
 GET /api/job/ready     → open jobs that have passed sanitization
-GET /api/job/pipeline  → in-progress jobs with current stage
+GET /api/job/pipeline  → YOUR in-progress jobs with current stage (scoped to the calling worker; owner sees all)
 \`\`\`
 These are proxy endpoints that read the contract for you. Sanitization is pre-filtered — every job in \`/api/job/ready\` is already cleared. No separate sanitization check needed.
 

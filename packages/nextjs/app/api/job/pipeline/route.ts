@@ -2,14 +2,14 @@ import { NextRequest } from "next/server";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import deployedContracts from "~~/contracts/deployedContracts";
-import { verifyWindowedSig, getRegisteredWorkers, workerAuthMessage } from "~~/lib/workerAuth";
+import { verifyWindowedSig, getRegisteredWorkers, getContractOwner, workerAuthMessage } from "~~/lib/workerAuth";
 
 const { address, abi } = deployedContracts[8453].LeftClawServicesV2;
 
 const rpcUrl = process.env.BASE_RPC_URL?.trim() ||
   (process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
     ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-    : "https://mainnet.base.org");
+    : undefined);
 
 const client = createPublicClient({
   chain: base,
@@ -36,6 +36,15 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Scope the pipeline to the caller's OWN in-progress jobs — a job is only
+  // IN_PROGRESS after its worker accepted it (job.worker is set), so this is
+  // exactly "my work, what stage next." The platform owner sees the full
+  // pipeline for monitoring. Prevents any registered worker from enumerating
+  // every other client's in-progress jobs + work logs. See PRIVACY_AUDIT.md F3.
+  const caller = callerAddress.toLowerCase();
+  const owner = await getContractOwner();
+  const seesAll = caller === owner;
+
   const filterStage = req.nextUrl.searchParams.get("stage")?.toLowerCase();
 
   try {
@@ -53,6 +62,8 @@ export async function GET(req: NextRequest) {
 
       // Status 1 = IN_PROGRESS
       if (Number(job.status) !== 1) continue;
+
+      if (!seesAll && (job.worker as string).toLowerCase() !== caller) continue;
 
       const stage = job.currentStage || "accepted";
 
