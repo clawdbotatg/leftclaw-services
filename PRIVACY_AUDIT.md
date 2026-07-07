@@ -232,9 +232,11 @@ The only thing this *doesn't* yield is the full consult prompt text and the chat
 - F1: **DONE** (commit `c154bf0`, 2026-07-07) — `/api/job/summaries` now requires an owner/worker auth signature; verified 401 on live prod.
 - F2: **DONE** (`c154bf0`) — `/api/job/plan-count` requires the owner signature (`caller == job.client`) for on-chain jobs; `cv-*` synthetic ids pass through.
 - F5: **DONE** (`c154bf0`) — `/api/job/sanitize` GET/POST no longer echo the content-derived `reason`/`tldr`; callers get a generic label, full reason stays in KV.
-- F4: derive address from a verified signer in `/api/job/consult-complete`.
-- F8: require owner sig (or internal secret) in `/api/gist`.
+- F4: **DONE** (commit `a85ae18`, 2026-07-07) — `/api/job/consult-complete` GET+POST derive the address from a verified signature; verified 401 on live prod.
+- F8: **DONE** (`a85ae18`) — `/api/gist` requires the owner signature (`caller == job.client`) for on-chain jobs; `cv-*` pass through; session/internal paths unchanged. Verified 401 on live prod.
 - F3: **DONE** (commit `a265567`, 2026-07-07) — `/api/job/pipeline` scoped to `job.worker == caller` (owner sees all); `/ready` stays broad.
+
+**P0 fully remediated 2026-07-07. Remaining: P1 (F6/F7 auth-scheme redesign) and P2 (F9 on-chain deliverable confidentiality); F10 minor items.**
 
 **P1 — fix the auth scheme (touches client + server):**
 - F6/F7: replace the static-sig-in-URL with the existing windowed-sig pattern, sent in a header/body; shorten the cache TTL.
