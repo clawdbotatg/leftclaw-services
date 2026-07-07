@@ -326,10 +326,30 @@ export default function ChatPage() {
 
   const createGistAndRedirect = async (plan: string) => {
     try {
+      // On-chain jobs must prove ownership to save/overwrite the plan gist
+      // (PRIVACY_AUDIT.md F8). cv-* jobs are off-chain synthetic ids and need no sig.
+      const body: Record<string, unknown> = { plan, jobId };
+      if (!isCvJob && address) {
+        let sig = authSignature;
+        if (!sig && walletClient) {
+          try {
+            sig = await walletClient.signMessage({ message: AUTH_SIGN_MESSAGE });
+            setCachedAuthSignature(address, sig);
+            setAuthSignature(sig);
+          } catch {
+            setError("A wallet signature is required to save the build plan");
+            return;
+          }
+        }
+        if (sig) {
+          body.address = address;
+          body.sig = sig;
+        }
+      }
       const res = await fetch("/api/gist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, jobId }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.url) {

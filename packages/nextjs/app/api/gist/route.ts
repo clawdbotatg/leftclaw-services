@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { getSession, saveJobPlanGist } from "~~/lib/sessionStore";
+import { verifyAuthSignature } from "~~/lib/authSignature";
+import { getJobClient } from "~~/lib/workerAuth";
 
 // Internal API key for server-to-server calls (chat route → gist route)
 const INTERNAL_SECRET = process.env.GIST_INTERNAL_SECRET || process.env.ANTHROPIC_API_KEY;
@@ -7,9 +9,9 @@ const INTERNAL_SECRET = process.env.GIST_INTERNAL_SECRET || process.env.ANTHROPI
 export async function POST(req: NextRequest) {
   // Auth: require internal secret OR valid session ID
   const authHeader = req.headers.get("x-internal-secret");
-  const { plan, jobId, sessionId } = await req.json();
+  const { plan, jobId, sessionId, address, sig } = await req.json();
 
-  // Auth: internal secret, valid session, or has a jobId (on-chain job = already paid)
+  // Auth: internal secret, valid session, or owner-signed for the given jobId.
   let authorized = false;
 
   if (authHeader && INTERNAL_SECRET && authHeader === INTERNAL_SECRET) {
@@ -23,9 +25,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Allow if caller has a jobId (they already paid on-chain to get here)
+  // Job-based caller: prove ownership. Previously ANY supplied jobId authorized the
+  // call, letting anyone create org gists or overwrite another job's stored plan
+  // pointer (PRIVACY_AUDIT.md F8). On-chain (numeric) jobs are sequentially
+  // enumerable, so require the owner signature (caller == job.client). cv-* ids are
+  // off-chain synthetic + non-enumerable, so they pass through like plan-count (F2).
   if (!authorized && jobId) {
-    authorized = true;
+    if (String(jobId).startsWith("cv-")) {
+      authorized = true;
+    } else if (address && sig && (await verifyAuthSignature(address, sig))) {
+      const client = await getJobClient(String(jobId));
+      if (client && client === String(address).toLowerCase()) {
+        authorized = true;
+      }
+    }
   }
 
   if (!authorized) {

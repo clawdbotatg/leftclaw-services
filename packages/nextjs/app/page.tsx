@@ -7,6 +7,7 @@ import { useAccount } from "wagmi";
 import { formatUnits } from "viem";
 import { Address } from "~~/components/scaffold-eth";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { getCachedAuthSignature } from "~~/utils/authSignatureCache";
 import deployedContracts from "~~/contracts/deployedContracts";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address;
@@ -118,7 +119,12 @@ function MyActiveJobs() {
 
   useEffect(() => {
     if (!address) return;
-    fetch(`/api/job/consult-complete?address=${address}`)
+    // The done-list is now owner-scoped (PRIVACY_AUDIT.md F4). Only fetch it if the
+    // wallet has already signed the auth message elsewhere — don't prompt a signature
+    // just for this cosmetic "done" badge; it simply stays empty until they've signed.
+    const sig = getCachedAuthSignature(address);
+    if (!sig) return;
+    fetch(`/api/job/consult-complete?address=${address}&sig=${encodeURIComponent(sig)}`)
       .then(r => r.ok ? r.json() : { done: [] })
       .then(data => setDoneConsultIds(new Set(data.done as number[])))
       .catch(() => {});
