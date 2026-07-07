@@ -229,9 +229,9 @@ The only thing this *doesn't* yield is the full consult prompt text and the chat
 ## 6. Remediation roadmap
 
 **P0 — stop the active leaks (small, isolated patches):**
-- F1: add owner-scoping to `/api/job/summaries` (or remove it).
-- F2: add owner signature to `/api/job/plan-count`.
-- F5: gate `/api/job/sanitize` GET.
+- F1: **DONE** (commit `c154bf0`, 2026-07-07) — `/api/job/summaries` now requires an owner/worker auth signature; verified 401 on live prod.
+- F2: **DONE** (`c154bf0`) — `/api/job/plan-count` requires the owner signature (`caller == job.client`) for on-chain jobs; `cv-*` synthetic ids pass through.
+- F5: **DONE** (`c154bf0`) — `/api/job/sanitize` GET/POST no longer echo the content-derived `reason`/`tldr`; callers get a generic label, full reason stays in KV.
 - F4: derive address from a verified signer in `/api/job/consult-complete`.
 - F8: require owner sig (or internal secret) in `/api/gist`.
 - F3: scope `/api/job/pipeline` to `job.worker == caller`.
