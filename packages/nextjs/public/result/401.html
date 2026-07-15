@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UnionStakingVault.sol — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #401">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">UnionStakingVault.sol</h1>
+    <p class="job-sub">Job #401 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/401"><b>Job page</b> #401</a>
+      <a class="chip" href="https://bafkreifszrk7peqcgxu6tmly3nwycagfjosnya3g34mtupnxkxwtn6ncue.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">8</div><div class="l">High</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#finding-1-reentrancy-in-stakeunstake-enables-double-settlement-o">Finding 1: Reentrancy in stake()/unstake() enables double-settlement of credits and USDC, drainable via claimRewards()</a></li>
+      <li><a href="#finding-2-credit-cap-clamp-distributes-the-fixed-final-remainder">Finding 2: Credit-cap clamp distributes the fixed final remainder by instantaneous stake — near-total capture by a short-lived whale</a></li>
+      <li><a href="#finding-3-treasury-is-a-permanent-non-rotatable-role-and-notifyr">Finding 3: treasury is a permanent, non-rotatable role and notifyReward never verifies USDC funding</a></li>
+      <li><a href="#finding-4-taskregistry-is-a-permanent-non-rotatable-role-that-ca">Finding 4: taskRegistry is a permanent, non-rotatable role that can grief-drain any staker&#39;s banked Action Credits</a></li>
+      <li><a href="#finding-5-renounceownership-inherited-unoverridden-can-permanent">Finding 5: renounceOwnership (inherited, unoverridden) can permanently brick the one-shot setup path</a></li>
+      <li><a href="#finding-6-one-shot-settaskregistrysettreasury-have-no-timelock-o">Finding 6: One-shot setTaskRegistry/setTreasury have no timelock or correction path for a configuration mistake</a></li>
+      <li><a href="#finding-7-no-handling-for-a-blocklistpausable-stake-or-reward-to">Finding 7: No handling for a blocklist/pausable stake or reward token — vault-level blocklisting permanently freezes funds</a></li>
+      <li><a href="#finding-8-internal-azl-accounting-credited-from-the-requested-am">Finding 8: Internal AZL accounting credited from the requested amount, not a measured balance delta — insolvency risk</a></li>
+    </ol>
+    <ol start="11">
+      <li><a href="#finding-9-no-recovery-path-for-usdc-permanently-stranded-when-to">Finding 9: No recovery path for USDC permanently stranded when totalStaked is zero mid-stream</a></li>
+      <li><a href="#finding-10-hardcoded-186-decimal-assumptions-never-validated-aga">Finding 10: Hardcoded 18/6-decimal assumptions never validated against deployed tokens</a></li>
+      <li><a href="#finding-11-creditsremaining-omits-pending-accrual-unlike-its-sib">Finding 11: creditsRemaining() omits pending accrual, unlike its sibling creditsOf()</a></li>
+      <li><a href="#finding-12-accrue-advances-lastaccrualat-before-confirming-credi">Finding 12: _accrue advances lastAccrualAt before confirming credits were computed — dust forfeiture at extreme low stake</a></li>
+      <li><a href="#finding-13-floor-division-dust-loss-in-the-credit-accumulator">Finding 13: Floor-division dust loss in the credit accumulator</a></li>
+      <li><a href="#finding-14-push0-opcode-compatibility-unconfirmed-for-target-cha">Finding 14: PUSH0 opcode compatibility unconfirmed for target chain</a></li>
+      <li><a href="#leads-plausible-not-independently-confirmed-confidence-50">Leads (plausible, not independently confirmed — confidence &lt; 50)</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#verification-note">Verification Note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — UnionStakingVault.sol</h1>
+<p><strong>Job</strong>: leftclaw.services job #401<br><strong>Target</strong>: <code>UnionStakingVault.sol</code>, single contract, 301 lines of Solidity (<code>pragma solidity ^0.8.24</code>)<br><strong>Source provenance</strong>: contract source was supplied directly in the job description (not a GitHub repo / on-chain deployed address). Saved verbatim to <code>audits/401/repo/UnionStakingVault.sol</code>. SHA-256 of the audited file: <code>9dd231933bdf44a0dc32622d685b2b95169a85a8965925c58a7f529d88c91bd5</code>.<br><strong>Out of scope</strong>: <code>TaskRegistry</code> and <code>TreasuryRouter</code> — this contract&#39;s <code>taskRegistry</code>/<code>treasury</code> counterparties. Their source was not provided for this job; every call from them is treated as an external black box. (Note: a <code>TreasuryRouter.sol</code> was independently audited by this auditor as a separate leftclaw job (#400) — that report is not reused here; this audit&#39;s findings come entirely from this job&#39;s own phase 0/1/2 agents, per standing instructions.)<br><strong>Methodology</strong>: three-phase audit — Phase 0 (context: protocol map, access-control inventory, threat catalog) → Phase 1 breadth (ethskills, 5 domain checklists) → Phase 2 depth (pashov, 12 attacker-mindset agents, run blind to Phase 1 findings) → Phase 3 reconciliation with a coverage gate against the Phase 0 inventory/catalog.</p>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap</strong> (raised independently by both phases): 4 findings — treasury unbacked-funding drain, decimals never validated, fee-on-transfer/rebasing insolvency, dust-forfeiture in <code>_accrue</code>.</li>
+<li><strong>Phase-1-only</strong>: 6 findings — <code>renounceOwnership</code> brick risk, <code>taskRegistry</code> grief-drain, one-shot setters with no timelock, blocklist/pausable-token freeze risk, USDC-stranded-at-zero-stake, PUSH0.</li>
+<li><strong>Phase-2-only, promoted</strong>: 2 findings — the reentrancy double-settlement bug (proven independently by 5 of 12 Phase-2 agents with full numeric traces; Phase 1&#39;s general-checklist domain raised the same root cause but this reconciliation treats the Phase-2 depth proofs as primary since they include the <code>claimRewards</code>-drain consequence) and the credit-cap instantaneous-stake dilution bug (proven independently by 4 of 12 Phase-2 agents; genuinely new, not raised in Phase 1).</li>
+<li><strong>Corrected during reconciliation</strong>: Phase 1&#39;s <code>defi-staking</code> domain explicitly examined &quot;can a large last-minute staker capture disproportionate final credits&quot; and concluded <strong>not exploitable</strong>, reasoning that the per-token accrual rate is independent of <code>totalStaked</code> (true for the <em>uncapped</em> accrual branch). Phase 2&#39;s depth agents identified the specific case Phase 1 missed: the <em>cap-clamped</em> branch breaks that cancellation. Four independent Phase-2 agents produced full numeric proofs (90-99% capture in their examples). This reconciliation adopts the Phase-2 finding — <strong>Phase 1&#39;s dismissal on this specific question is superseded.</strong></li>
+<li><strong>Re-examined leads kept</strong>: 6 (the Phase-1-only findings above, hybrid-re-read and confirmed directly against source in this pass) · <strong>demoted</strong>: 0.</li>
+<li><strong>Coverage holes closed this pass</strong>: 0 — both hunting phases already covered every entrypoint in the access-control inventory and every row in the threat catalog.</li>
+<li><strong>Confidence floor used</strong>: findings below are reported at confidence ≥ 70. Items resting on unverifiable out-of-scope behavior (<code>TaskRegistry</code>/<code>TreasuryRouter</code> internals, or unconfirmed non-standard token behavior) are kept in the <strong>Leads</strong> section regardless of corroboration count.</li>
+</ul>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Reentrancy in <code>stake()</code>/<code>unstake()</code> enables double-settlement of credits and USDC, drainable via <code>claimRewards()</code></td>
+<td><span class="pill high">High</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Credit-cap clamp distributes the fixed final remainder by instantaneous stake — near-total capture by a short-lived whale</td>
+<td><span class="pill high">High</span></td>
+<td>[phase2, corrects phase1]</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>treasury</code> is a permanent, non-rotatable role and <code>notifyReward</code> never verifies USDC funding</td>
+<td><span class="pill high">High</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>taskRegistry</code> is a permanent, non-rotatable role that can grief-drain any staker&#39;s banked Action Credits</td>
+<td><span class="pill high">High</span></td>
+<td>[phase1: access-control]</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>renounceOwnership</code> (inherited, unoverridden) can permanently brick the one-shot setup path</td>
+<td><span class="pill high">High</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>6</td>
+<td>One-shot <code>setTaskRegistry</code>/<code>setTreasury</code> have no timelock or correction path for a configuration mistake</td>
+<td><span class="pill high">High</span></td>
+<td>[phase1: access-control]</td>
+</tr>
+<tr>
+<td>7</td>
+<td>No handling for a blocklist/pausable stake or reward token — vault-level blocklisting permanently freezes funds</td>
+<td><span class="pill high">High</span></td>
+<td>[phase1: erc20]</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Internal AZL accounting credited from the requested <code>amount</code>, not a measured balance delta — insolvency risk</td>
+<td><span class="pill high">High</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>9</td>
+<td>No recovery path for USDC permanently stranded when <code>totalStaked</code> is zero mid-stream</td>
+<td><span class="pill low">Low</span></td>
+<td>[phase1: defi-staking]</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Hardcoded 18/6-decimal assumptions never validated against deployed tokens</td>
+<td><span class="pill low">Low</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>creditsRemaining()</code> omits pending accrual, unlike its sibling <code>creditsOf()</code></td>
+<td><span class="pill low">Low</span></td>
+<td>[phase2 only]</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>_accrue</code> advances <code>lastAccrualAt</code> before confirming credits were computed — dust forfeiture at extreme low stake</td>
+<td><span class="pill low">Low</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Floor-division dust loss in the credit accumulator</td>
+<td><span class="pill info">Info</span></td>
+<td>[phase1: precision-math]</td>
+</tr>
+<tr>
+<td>14</td>
+<td>PUSH0 opcode compatibility unconfirmed for target chain</td>
+<td><span class="pill info">Info</span></td>
+<td>[phase1: general]</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="finding-1-reentrancy-in-stakeunstake-enables-double-settlement-o">Finding 1: Reentrancy in <code>stake()</code>/<code>unstake()</code> enables double-settlement of credits and USDC, drainable via <code>claimRewards()</code></h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [both] — independently proven by 5 of 12 Phase-2 agents (execution-trace, first-principles, boundary, numerical-gap, plus Phase 1&#39;s general-checklist domain), each with an independent, fully-traced numeric exploit. Two Phase-2 agents (invariant, asymmetry) examined the same code and treated it as non-exploitable under the current token assumption — noted below.<br><strong>Location</strong>: <code>stake()</code> L120-132, <code>unstake()</code> L134-146, <code>_settle()</code> L281-294, <code>_checkpoint()</code> L296-300 (contrast <code>claimRewards()</code> L214-225, which gets the ordering right)</p>
+<p><strong>Description</strong>: Both <code>stake()</code> and <code>unstake()</code> call <code>_settle(msg.sender)</code> — which banks the pending credit/USDC delta between the global accumulators and the staker&#39;s debt checkpoint — <em>before</em> their external AZL transfer, but call <code>_checkpoint(msg.sender)</code> — which advances the debt checkpoint to stop double-accrual — <em>only after</em> that transfer:</p>
+<pre><code class="language-solidity">function stake(uint256 amount) external {
+    require(stakingActive, &quot;UnionStaking: not active&quot;);
+    require(amount &gt; 0, &quot;UnionStaking: zero amount&quot;);
+    _accrue();
+    _settle(msg.sender);                                        // L124 — banks pending delta
+
+    azlToken.safeTransferFrom(msg.sender, address(this), amount); // L126 — external call, BEFORE checkpoint
+    stakers[msg.sender].staked += amount;
+    totalStaked += amount;
+
+    _checkpoint(msg.sender);                                    // L130 — debt advanced only now
+    emit Staked(msg.sender, amount, totalStaked);
+}
+</code></pre>
+<p><code>unstake()</code> follows the identical pattern (<code>_settle</code> L138, transfer L142, <code>_checkpoint</code> L144). There is no <code>nonReentrant</code> guard anywhere in the contract. If <code>azlToken</code> ever invokes a callback during transfer (ERC777-style <code>tokensToSend</code>/<code>tokensReceived</code>, or any other transfer-hook-bearing token), a reentrant call into any settle-triggering entrypoint (<code>bankCredits()</code>, <code>stake()</code>, <code>unstake()</code>) during that callback finds <code>s.creditDebt</code>/<code>s.usdcDebt</code> still at their pre-call (stale) values — <code>_settle()</code> recomputes and re-banks the <em>same</em> accrual delta a second time before the outer call&#39;s <code>_checkpoint()</code> ever executes.</p>
+<p><strong>Proof of Concept</strong>: Let <code>accCreditPerToken</code> advance from 500 to 700 during the <code>_accrue()</code> at the top of <code>stake()</code>, with the staker&#39;s <code>staked=1e18</code> and <code>creditDebt=500</code>. The outer <code>_settle()</code> computes <code>credits = 1e18*(700-500)/1e18 = 200</code> and banks it. The AZL transfer at L126 fires a hook that re-enters <code>bankCredits()</code>: <code>_accrue()</code> no-ops (<code>elapsed==0</code>, same block), but <code>_settle()</code> re-runs with the <em>unchanged</em> <code>creditDebt=500</code> and re-computes the identical <code>credits=200</code>, banking it a second time — <code>bankedCredits</code> ends at 400 instead of the correct 200. The reentrant call&#39;s own <code>_checkpoint()</code> finally syncs the debt, making the outer call&#39;s later <code>_checkpoint()</code> a no-op. The identical mechanism doubles <code>pendingUsdc</code> via the same <code>_settle()</code> call; a subsequent <code>claimRewards()</code> (which is itself correctly CEI-ordered — L222 zeroes <code>pendingUsdc</code> before L223&#39;s transfer) pays out the <em>inflated</em> amount in real USDC, funded from the shared reward pool other stakers are entitled to — this is direct fund theft, not merely an internal accounting artifact. One Phase-2 agent (boundary) further showed the over-credit scales with reentrancy nesting depth, bounded only by gas.</p>
+<p><strong>Precondition</strong>: <code>azlToken</code> must invoke a callback during <code>safeTransferFrom</code>/<code>safeTransfer</code>. <code>azlToken</code> is <code>immutable</code>, chosen once at construction by the deployer; this audit cannot confirm or rule out non-standard transfer semantics for the actual deployed token, since only this contract&#39;s source was provided. Two Phase-2 agents concluded this makes the finding non-exploitable &quot;as scoped&quot; (standard IERC20 assumed); this report treats the missing CEI ordering and missing reentrancy guard as a real code-level defect regardless, since AZL is the protocol&#39;s own token (not a well-known audited stablecoin) and the assumption is unverified rather than confirmed safe.</p>
+<p><strong>Recommendation</strong>: Move <code>_checkpoint(msg.sender)</code> to immediately after <code>_settle(msg.sender)</code>, strictly before any external call, in both <code>stake()</code> and <code>unstake()</code> — matching the safe ordering already used in <code>claimRewards()</code>. Add <code>ReentrancyGuard</code>/<code>nonReentrant</code> to all four staker-facing entrypoints as defense-in-depth regardless of the token&#39;s current implementation.</p>
+<pre><code class="language-solidity">function stake(uint256 amount) external {
+    require(stakingActive, &quot;UnionStaking: not active&quot;);
+    require(amount &gt; 0, &quot;UnionStaking: zero amount&quot;);
+    _accrue();
+    _settle(msg.sender);
+    stakers[msg.sender].staked += amount;
+    totalStaked += amount;
+    _checkpoint(msg.sender);                                    // moved before the external call
+
+    azlToken.safeTransferFrom(msg.sender, address(this), amount);
+    emit Staked(msg.sender, amount, totalStaked);
+}
+</code></pre>
+<hr>
+<h2 id="finding-2-credit-cap-clamp-distributes-the-fixed-final-remainder">Finding 2: Credit-cap clamp distributes the fixed final remainder by instantaneous stake — near-total capture by a short-lived whale</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: [phase2 only, corrects phase1] — independently proven by 4 of 12 Phase-2 agents (economic-security, periphery, asymmetry, trust-gap), each with a full numeric trace. Phase 1&#39;s defi-staking domain explicitly examined this scenario and concluded it was not exploitable, missing the specific mechanism described below; this reconciliation adopts the Phase-2 finding as authoritative.<br><strong>Location</strong>: <code>_accrue()</code> L243-263, specifically the clamp at L256-259 and the accumulator write at L262</p>
+<p><strong>Description</strong>: In the <em>uncapped</em> branch of <code>_accrue</code>, <code>totalStaked</code> cancels algebraically out of each staker&#39;s share:</p>
+<pre><code class="language-solidity">uint256 periodCredits =
+    (elapsed * CREDIT_UNIT * totalStaked) / (CREDIT_BASE_STAKE * CREDIT_PERIOD);   // L252-253
+...
+accCreditPerToken += (periodCredits * ACC_SCALE) / totalStaked;                     // L262
+</code></pre>
+<p>A staker&#39;s eventual claim is <code>staked_i * periodCredits / totalStaked = staked_i * elapsed * CREDIT_UNIT / (CREDIT_BASE_STAKE * CREDIT_PERIOD)</code> — independent of <code>totalStaked</code>, so ordinary just-in-time staking earns exactly proportional to stake × time held, matching the NatSpec&#39;s &quot;no race to claim first&quot; claim (L18-19). The moment the 600,000-credit cap is crossed, however:</p>
+<pre><code class="language-solidity">if (totalCreditsIssued + periodCredits &gt;= CREDIT_CAP) {
+    periodCredits = CREDIT_CAP - totalCreditsIssued;    // L257 — now a FIXED remainder
+    emit CreditCapReached(CREDIT_CAP);
+}
+totalCreditsIssued += periodCredits;
+accCreditPerToken += (periodCredits * ACC_SCALE) / totalStaked;   // L262 — totalStaked no longer cancels
+</code></pre>
+<p><code>periodCredits</code> becomes a fixed number <code>R = CREDIT_CAP - totalCreditsIssued</code>, decoupled from elapsed time — whoever holds the largest <code>staked_i</code> at the instant this one clamping tick fires captures the largest share of <code>R</code>, regardless of how briefly they&#39;ve held it.</p>
+<p><strong>Proof of Concept</strong> (from the trust-gap agent&#39;s trace): existing stakers collectively hold <code>H = 500,000,000e18</code> AZL, accumulated over the program&#39;s entire history; <code>R = 5e18</code> (5 credits) remain before <code>CREDIT_CAP</code>. Attacker calls <code>stake(4,500,000,000e18)</code> (9× <code>H</code>) — this call&#39;s own <code>_accrue()</code> runs against the <em>old</em> <code>totalStaked</code> (elapsed==0 idempotency prevents self-triggering the crossing), so the attacker gains nothing yet, but <code>totalStaked</code> is now <code>5,000,000,000e18</code>. Approximately one day later, the attacker (or anyone) calls <code>bankCredits()</code>: <code>periodCredits</code> computed against the new, inflated <code>totalStaked</code> exceeds <code>R</code>, so it clamps to <code>R=5e18</code>; <code>accCreditPerToken += 5e18*1e18/5,000,000,000e18</code>. The attacker&#39;s <code>_settle()</code> credits them <code>4,500,000,000e18 * 5e18 / 5,000,000,000e18 = 4.5e18</code> — 90% of the last 5 credits ever to exist — for roughly one day of exposure, versus the long-term stakers&#39; entire program history. The attacker then calls <code>unstake()</code> for the full principal; banked credits survive unstaking by design (NatSpec L21). Since <code>totalCreditsIssued</code> now equals <code>CREDIT_CAP</code>, issuance halts permanently (L250) — there is no future period in which the diluted long-term stakers can recover their share.</p>
+<p><strong>Note</strong>: unlike Finding 1, this requires no external token assumptions — it is a pure on-chain capital-and-timing attack, executable by any address with sufficient capital, fully within an attacker&#39;s own control.</p>
+<p><strong>Recommendation</strong>: Snapshot <code>totalStaked</code> at the start of the pending-elapsed interval (i.e., as of <code>lastAccrualAt</code>) rather than reading it at the trigger-call moment, so mid-interval stake changes cannot affect that interval&#39;s clamped remainder; or impose a minimum stake-duration/bonding period before newly-staked AZL counts toward the denominator of a cap-crossing distribution.</p>
+<hr>
+<h2 id="finding-3-treasury-is-a-permanent-non-rotatable-role-and-notifyr">Finding 3: <code>treasury</code> is a permanent, non-rotatable role and <code>notifyReward</code> never verifies USDC funding</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: [both] — Phase-1 access-control domain (full FINDING with drain-race exploit chain), corroborated as a LEAD by 4 Phase-2 agents and as a FINDING by Phase-1&#39;s general-checklist domain.<br><strong>Location</strong>: <code>notifyReward()</code> L188-202, <code>setTreasury()</code> L103-107</p>
+<p><strong>Description</strong>: <code>treasury</code> is set exactly once by the owner (L103-107) with no rotate/revoke path anywhere in the contract. <code>notifyReward</code> is gated only by <code>msg.sender == treasury</code> (L189) and never checks <code>usdcToken.balanceOf(address(this))</code> — it purely trusts the NatSpec-documented assumption (&quot;a USDC reward already transferred to this vault,&quot; L185) and folds the caller-supplied <code>amount</code> directly into <code>rewardRateScaled</code>/<code>rewardPeriodFinish</code> (L194-199). If <code>treasury</code> is ever compromised or misconfigured, it can call <code>notifyReward(amount)</code> with an arbitrary, unfunded <code>amount</code>, inflating <code>accUsdcPerToken</code> accrual for all stakers based on a rate that was never backed by a matching transfer — and because <code>treasury</code> can never be rotated, there is no remediation once this begins.</p>
+<p><strong>Proof of Concept</strong>: <code>treasury = T</code> is compromised (or a bug causes it to misreport). The vault genuinely holds 10,000 USDC from prior, correctly-funded cycles. Attacker (controlling <code>T</code>) calls <code>notifyReward(1,000,000e6)</code> with no matching transfer; <code>rewardRateScaled</code> (L198) is computed purely from this unbacked figure. The attacker&#39;s own staked position accrues a large <code>pendingUsdc</code> share quickly and calls <code>claimRewards()</code> first, draining the real 10,000 USDC before other legitimate stakers can claim. Remaining stakers&#39; <code>claimRewards()</code> calls revert on insufficient balance despite their <code>pendingUsdc</code> bookkeeping showing a nonzero, &quot;earned&quot; amount — and <code>treasury</code> can never be replaced to stop the pattern.</p>
+<p><strong>Recommendation</strong>: Have <code>notifyReward</code> pull funds atomically via <code>usdcToken.safeTransferFrom(treasury, address(this), amount)</code> instead of trusting a prior out-of-band transfer, and add an owner-gated rotation path for <code>treasury</code> (dropping the permanent one-shot guard).</p>
+<hr>
+<h2 id="finding-4-taskregistry-is-a-permanent-non-rotatable-role-that-ca">Finding 4: <code>taskRegistry</code> is a permanent, non-rotatable role that can grief-drain any staker&#39;s banked Action Credits</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: [phase1: access-control] — re-examined against source in Phase 3, confirmed; corroborated as a &quot;confused-deputy&quot; LEAD by 3 Phase-2 agents (access-control, trust-gap, and one gap-hunter).<br><strong>Location</strong>: <code>trySpendCredit()</code> L158-170, <code>onlyRegistry</code> modifier L85-88, <code>setTaskRegistry()</code> L97-101</p>
+<p><strong>Description</strong>: <code>taskRegistry</code> is set exactly once by the owner (L97-101) with no rotate/revoke path. <code>trySpendCredit(address agent)</code> is <code>onlyRegistry</code>-gated but takes an <strong>arbitrary</strong> <code>agent</code> parameter chosen entirely by whichever address holds the <code>taskRegistry</code> role — the vault performs no check that <code>agent</code> consented to or benefited from the call. Each call, if <code>agent</code> has ≥1 banked credit, unconditionally deducts one <code>CREDIT_UNIT</code> (L166) with no cooldown, per-call cap, or way for <code>agent</code> to object. If <code>taskRegistry</code> is ever compromised or misconfigured, it can call <code>trySpendCredit(victim)</code> repeatedly to burn down any staker&#39;s entire banked-credit balance with zero benefit delivered — and the role can never be revoked or rotated.</p>
+<p><strong>Proof of Concept</strong>: <code>taskRegistry = R</code> is compromised. Victim has banked 5 credits via prior <code>bankCredits()</code>/settlement calls. Attacker (controlling <code>R</code>) calls <code>trySpendCredit(victim)</code> 5 times in a row (or across 5 separate transactions — no rate limit exists), destroying the victim&#39;s entire banked-credit balance with no fee ever bypassed on their behalf. No owner intervention is possible since <code>taskRegistry</code> cannot be replaced.</p>
+<p><strong>Recommendation</strong>: Add an owner-gated (ideally timelocked or multisig-gated) rotation/revocation path for <code>taskRegistry</code>, dropping the permanent one-shot guard; consider a pausable circuit breaker on <code>trySpendCredit</code> so the owner can freeze credit-spending if the registry is known to be compromised.</p>
+<hr>
+<h2 id="finding-5-renounceownership-inherited-unoverridden-can-permanent">Finding 5: <code>renounceOwnership</code> (inherited, unoverridden) can permanently brick the one-shot setup path</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: [both] — Phase-1 general/access-control domains (full FINDING); Phase-2&#39;s access-control agent examined the same path and classified it as a LEAD under the &quot;admin can misconfigure their own contract&quot; exclusion rule rather than a third-party-exploitable finding. This reconciliation keeps it as a Finding since the phase-2 exclusion rule is about third-party exploitability, and the audit&#39;s severity definitions explicitly include owner-only fund/functionality loss under Medium-and-above categories; the mechanical consequence here (permanent, irrecoverable bricking) matches the &quot;permanent DoS&quot; criterion for High regardless of who triggers it.<br><strong>Location</strong>: inherited <code>Ownable.renounceOwnership()</code> (not overridden anywhere in this file); <code>setTaskRegistry()</code> L97-101, <code>setTreasury()</code> L103-107, <code>activateStaking()</code> L111-116</p>
+<p><strong>Description</strong>: <code>UnionStakingVault is Ownable2Step</code> (L28). <code>Ownable2Step</code> hardens only the <em>transfer</em> path into a two-step propose/accept flow — it does not override <code>renounceOwnership()</code>, which remains the single-step, immediate <code>Ownable</code> version. <code>setTaskRegistry</code>, <code>setTreasury</code>, and <code>activateStaking</code> are each <code>onlyOwner</code> and one-shot (guarded by an <code>== address(0)</code>/<code>!stakingActive</code> check) with no alternative path once ownership is gone. If the owner renounces before completing any subset of the three, that subset can never be set by anyone, ever.</p>
+<p><strong>Proof of Concept</strong>: Contract is deployed; owner has called none of the three setup functions yet. Owner calls the inherited <code>renounceOwnership()</code>. <code>owner()</code> is now <code>address(0)</code>; <code>setTaskRegistry</code>/<code>setTreasury</code>/<code>activateStaking</code> are all permanently unreachable — <code>stake()</code> reverts forever (<code>stakingActive</code> can never become true), and <code>trySpendCredit</code>/<code>notifyReward</code> are permanently unreachable since their gating addresses default to <code>address(0)</code>, unsatisfiable by any <code>msg.sender</code>.</p>
+<p><strong>Recommendation</strong>: Override <code>renounceOwnership()</code> to revert, or gate it on all three setup steps being complete:</p>
+<pre><code class="language-solidity">function renounceOwnership() public view override onlyOwner {
+    revert(&quot;UnionStaking: renounce disabled&quot;);
+}
+</code></pre>
+<hr>
+<h2 id="finding-6-one-shot-settaskregistrysettreasury-have-no-timelock-o">Finding 6: One-shot <code>setTaskRegistry</code>/<code>setTreasury</code> have no timelock or correction path for a configuration mistake</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: [phase1: access-control] — re-examined against source in Phase 3, confirmed.<br><strong>Location</strong>: <code>setTaskRegistry()</code> L97-101, <code>setTreasury()</code> L103-107</p>
+<p><strong>Description</strong>: Both setters accept any non-zero address and, once set, can never be called again. There is no timelock, no propose-then-confirm flow, and no way to correct even a simple operator error (e.g., a stale or mistyped address). This is distinct from Findings 3/4 (a <em>compromised</em> role holder) and Finding 5 (never set at all): here, a single, irreversible transaction with no review window permanently locks in whatever address the owner supplies, with no remediation if it is wrong.</p>
+<p><strong>Proof of Concept</strong>: Owner intends to wire the real <code>TaskRegistry</code> contract but supplies the wrong (yet valid, non-zero) address — a copy-paste error or stale deployment address. <code>setTaskRegistry(wrongAddress)</code> succeeds and can never be corrected; the credit-spend feature (the core advertised utility, per NatSpec L18) is permanently dead for the life of the deployment. The identical failure mode applies to <code>setTreasury</code>.</p>
+<p><strong>Recommendation</strong>: Replace the irreversible one-shot pattern with a timelocked or two-step propose/confirm setter that still restricts each role to being set only once in production but gives the owner a window to catch and correct mistakes before they become permanent.</p>
+<hr>
+<h2 id="finding-7-no-handling-for-a-blocklistpausable-stake-or-reward-to">Finding 7: No handling for a blocklist/pausable stake or reward token — vault-level blocklisting permanently freezes funds</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 75<br><strong>Origin</strong>: [phase1: erc20]<br><strong>Location</strong>: <code>claimRewards()</code> L223, <code>unstake()</code> L142</p>
+<p><strong>Description</strong>: <code>usdcToken</code> is typed exactly as a realistic USDC deployment, which implements Circle-style blocklist/pause functionality where a flagged address can neither send nor receive tokens. If the vault&#39;s own address is ever blocklisted (compliance action, false positive, or a protocol-wide pause), <code>usdcToken.safeTransfer(msg.sender, amount)</code> in <code>claimRewards()</code> (L223) reverts for every staker, permanently — there is no owner-controlled emergency sweep or migration function anywhere in the contract. The identical risk applies symmetrically to <code>azlToken</code>/<code>unstake()</code> if that token ever implements an equivalent mechanism, in which case all staked principal (not just rewards) becomes unrecoverable.</p>
+<p><strong>Proof of Concept</strong>: The vault holds $500,000 in accrued <code>pendingUsdc</code> across all stakers. The vault&#39;s address is blocklisted by USDC&#39;s administrator for any reason. Every subsequent <code>claimRewards()</code> call reverts permanently — no mechanism in the contract can un-blocklist the address, reroute payment, or rescue the funds to a fresh deployment.</p>
+<p><strong>Recommendation</strong>: Add an owner-gated (ideally timelocked) emergency-sweep/migration function for this scenario, and/or support a per-claim &quot;pay to arbitrary address&quot; parameter so a blocklisted user&#39;s own address doesn&#39;t compound the problem.</p>
+<hr>
+<h2 id="finding-8-internal-azl-accounting-credited-from-the-requested-am">Finding 8: Internal AZL accounting credited from the requested <code>amount</code>, not a measured balance delta — insolvency risk</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [both] — Phase-1 erc20/general/precision-math domains (full FINDING with numeric trace); corroborated as a LEAD by 4 Phase-2 agents, all noting the precondition is unverified for the actual deployed <code>azlToken</code>.<br><strong>Location</strong>: <code>stake()</code> L126-128</p>
+<p><strong>Description</strong>: <code>stake()</code> pulls <code>azlToken</code> via <code>safeTransferFrom</code> (L126) and then credits <code>stakers[msg.sender].staked</code>/<code>totalStaked</code> with the full requested <code>amount</code> (L127-128) — never a measured <code>balanceOf</code> delta. If <code>azlToken</code> ever applies a transfer fee or rebases downward, the vault&#39;s actual token balance permanently falls short of what <code>totalStaked</code> claims, with no reconciliation anywhere in the contract.</p>
+<p><strong>Proof of Concept</strong>: Assume <code>azlToken</code> charges a 2% transfer fee. Alice calls <code>stake(10,000e18)</code>: the vault records <code>staked += 10,000e18</code> but only receives 9,800e18. Repeated across many stakers, the gap between recorded <code>totalStaked</code> and the real <code>azlToken.balanceOf(vault)</code> widens monotonically and never self-corrects. Eventually, <code>unstake()</code>&#39;s <code>safeTransfer</code> (L142) for whichever staker(s) unstake last will attempt to pay out more than the vault actually holds and revert — their recorded principal becomes permanently unredeemable.</p>
+<p><strong>Recommendation</strong>: Measure the actual balance delta around <code>safeTransferFrom</code> and credit that instead of the parameter:</p>
+<pre><code class="language-solidity">uint256 balBefore = azlToken.balanceOf(address(this));
+azlToken.safeTransferFrom(msg.sender, address(this), amount);
+uint256 received = azlToken.balanceOf(address(this)) - balBefore;
+stakers[msg.sender].staked += received;
+totalStaked += received;
+</code></pre>
+<hr>
+<h2 id="finding-9-no-recovery-path-for-usdc-permanently-stranded-when-to">Finding 9: No recovery path for USDC permanently stranded when <code>totalStaked</code> is zero mid-stream</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [phase1: defi-staking] — re-examined in Phase 3; the underlying &quot;stranded slice&quot; mechanism was independently confirmed (not disputed) by multiple Phase-2 agents while examining related JIT-staking questions.<br><strong>Location</strong>: <code>notifyReward()</code> L188-202, <code>_updateRewardAcc()</code> L232-239</p>
+<p><strong>Description</strong>: <code>notifyReward</code> never checks <code>totalStaked &gt; 0</code> before starting/refreshing a 7-day stream. If <code>totalStaked</code> is 0 for any portion of an active stream (before the first staker, or after a mass-unstake), <code>_updateRewardAcc</code> still advances <code>lastRewardUpdateAt</code> unconditionally (L238) while skipping the <code>accUsdcPerToken</code> increment (L235-237, guarded by <code>totalStaked &gt; 0</code>) — that USDC (already sitting in the vault, per the <code>notifyReward</code> contract) is permanently unattributable, with no owner sweep function anywhere.</p>
+<p><strong>Proof of Concept</strong>: Treasury calls <code>notifyReward(10,000e6)</code> immediately after <code>activateStaking()</code>, before anyone stakes. No one stakes for 7 days. Every <code>_updateRewardAcc</code> call during this window hits the zero-stake branch; <code>accUsdcPerToken</code> never increases. After <code>rewardPeriodFinish</code>, the first staker finally arrives — the entire 10,000 USDC is now permanently stuck with no recovery path.</p>
+<p><strong>Recommendation</strong>: Require <code>totalStaked &gt; 0</code> in <code>notifyReward</code>, and/or add an owner-only rescue function for USDC held in excess of all outstanding obligations.</p>
+<hr>
+<h2 id="finding-10-hardcoded-186-decimal-assumptions-never-validated-aga">Finding 10: Hardcoded 18/6-decimal assumptions never validated against deployed tokens</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [both] — Phase-1 erc20/precision-math domains (full FINDING with numeric trace); corroborated as a LEAD by 2 Phase-2 agents.<br><strong>Location</strong>: constructor L90-95, <code>CREDIT_BASE_STAKE</code> L33, <code>USDC_ACC_SCALE</code> L38</p>
+<p><strong>Description</strong>: <code>CREDIT_BASE_STAKE = 100,000,000 * 1e18</code> assumes 18-decimal AZL; <code>USDC_ACC_SCALE = 1e36</code> is explicitly tuned (per the code comment) for 6-decimal USDC. Neither the constructor nor any other function ever calls <code>decimals()</code> on either token to validate these assumptions.</p>
+<p><strong>Proof of Concept</strong>: If <code>azlToken</code> were deployed with 6 decimals instead of 18, a &quot;100,000,000 AZL&quot; stake would numerically be <code>100,000,000 * 1e6</code>, but <code>CREDIT_BASE_STAKE</code> still divides by <code>100,000,000 * 1e18</code> — the credit-issuance rate silently drops by a factor of <code>1e12</code>, meaning <code>periodCredits</code> floors to 0 for essentially any realistic elapsed time/stake size, permanently disabling credit mining with no revert to signal the misconfiguration.</p>
+<p><strong>Recommendation</strong>: Validate decimals at construction:</p>
+<pre><code class="language-solidity">require(IERC20Metadata(_azlToken).decimals() == 18, &quot;UnionStaking: AZL must be 18 decimals&quot;);
+require(IERC20Metadata(_usdcToken).decimals() == 6, &quot;UnionStaking: reward token must be 6 decimals&quot;);
+</code></pre>
+<hr>
+<h2 id="finding-11-creditsremaining-omits-pending-accrual-unlike-its-sib">Finding 11: <code>creditsRemaining()</code> omits pending accrual, unlike its sibling <code>creditsOf()</code></h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 75<br><strong>Origin</strong>: [phase2 only]<br><strong>Location</strong>: <code>creditsRemaining()</code> L179-181, <code>creditsOf()</code> L151-154, <code>_pendingCredits()</code> L265-278</p>
+<p><strong>Description</strong>: <code>creditsRemaining()</code> returns <code>CREDIT_CAP - totalCreditsIssued</code> (L180) with no projection of pending, not-yet-checkpointed accrual — while <code>creditsOf()</code> explicitly includes <code>_pendingCredits(s)</code> (L153) for the equivalent per-agent view. The global view is therefore stale by exactly the pending-accrual amount whenever <code>_accrue()</code> hasn&#39;t been triggered recently.</p>
+<p><strong>Proof of Concept</strong>: With <code>totalStaked = CREDIT_BASE_STAKE</code> and <code>totalCreditsIssued</code> exactly one credit short of <code>CREDIT_CAP</code>, if 30 days elapse with no on-chain interaction, the pending (unrealized) accrual is exactly 1 whole credit — meaning the cap has effectively already been reached in real time. <code>creditsRemaining()</code> still reports &quot;1 credit available&quot; throughout that entire 30-day window, right up until the next state-changing call finally triggers <code>_accrue()</code> and consumes it.</p>
+<p><strong>Recommendation</strong>: Have <code>creditsRemaining()</code> project pending global accrual the same way <code>_pendingCredits</code> does, or document it explicitly as &quot;as of the last on-chain accrual, may be stale.&quot;</p>
+<hr>
+<h2 id="finding-12-accrue-advances-lastaccrualat-before-confirming-credi">Finding 12: <code>_accrue</code> advances <code>lastAccrualAt</code> before confirming credits were computed — dust forfeiture at extreme low stake</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 70<br><strong>Origin</strong>: [both] — Phase-1 precision-math domain; corroborated by 3 Phase-2 agents, all concluding negligible real-world exploitability outside a narrow pre-adoption window.<br><strong>Location</strong>: <code>_accrue()</code> L246-254</p>
+<p><strong>Description</strong>: <code>lastAccrualAt = block.timestamp</code> (L248) is written before the <code>totalStaked==0</code>/cap-reached check (L250) and the <code>periodCredits==0</code> check (L254). When <code>periodCredits</code> floors to zero (reachable whenever <code>elapsed * totalStaked</code> is below roughly <code>2.6e14</code> wei-seconds), that window is discarded rather than carried forward.</p>
+<p><strong>Proof of Concept</strong>: With <code>totalStaked = 1e14</code> wei and <code>elapsed=1</code>: <code>periodCredits = floor(1e14 * 1e18 / 2.592e32) = 0</code>, early return at L254, but <code>lastAccrualAt</code> already advanced. If calls keep resetting the window faster than the threshold is crossed, credit issuance stalls indefinitely at that stake level — reachable only in a brief post-launch window before real capital arrives, since a single whole AZL token already defeats the threshold.</p>
+<p><strong>Recommendation</strong>: Only advance <code>lastAccrualAt</code> when credits are actually issued, or track a carry-forward remainder for sub-threshold windows.</p>
+<hr>
+<h2 id="finding-13-floor-division-dust-loss-in-the-credit-accumulator">Finding 13: Floor-division dust loss in the credit accumulator</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [phase1: precision-math]<br><strong>Location</strong>: <code>_accrue()</code> L262, <code>_settle()</code> L284</p>
+<p><strong>Description</strong>: <code>totalCreditsIssued</code> counts the full unrounded <code>periodCredits</code> against the cap, but <code>accCreditPerToken += periodCredits*ACC_SCALE/totalStaked</code> floors, so the amount actually redeemable by stakers is always ≤ <code>periodCredits</code>. Standard MasterChef/Synthetix rounding tradeoff; economically negligible.</p>
+<p><strong>Recommendation</strong>: No code change strictly necessary; document that <code>totalCreditsIssued</code> is a cap-tracking counter, not a guarantee of exactly-600,000 claimable credits.</p>
+<hr>
+<h2 id="finding-14-push0-opcode-compatibility-unconfirmed-for-target-cha">Finding 14: PUSH0 opcode compatibility unconfirmed for target chain</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 60<br><strong>Origin</strong>: [phase1: general]<br><strong>Location</strong>: <code>pragma solidity ^0.8.24;</code> L2</p>
+<p><strong>Description</strong>: Solidity ≥0.8.20 emits <code>PUSH0</code> by default; several L2s/alt-chains have historically lacked support. Deployment-configuration concern only.</p>
+<p><strong>Recommendation</strong>: Confirm the target chain supports <code>PUSH0</code>, or pin <code>evmVersion</code> in compiler settings.</p>
+<hr>
+<h2 id="leads-plausible-not-independently-confirmed-confidence-50">Leads (plausible, not independently confirmed — confidence &lt; 50)</h2>
+<ul>
+<li><strong>Fee-on-transfer/rebasing <code>usdcToken</code>.</strong> If <code>usdcToken</code> itself (not just <code>azlToken</code>) were fee-on-transfer, <code>notifyReward</code>&#39;s nominal <code>amount</code> would overstate real inflow regardless of <code>treasury</code>&#39;s honesty — compounds Finding 3. Raised by 2 Phase-2 agents; token behavior unverified.</li>
+<li><strong><code>trySpendCredit</code>&#39;s confused-deputy shape.</strong> The vault fully trusts <code>taskRegistry</code> to only ever name the legitimate <code>agent</code> — if <code>TaskRegistry</code> (out of scope) ever exposes a path where a caller can name someone else&#39;s address, this vault has no independent defense. Raised by 3 Phase-2 agents; <code>TaskRegistry</code> source not available for this job.</li>
+<li><strong>JIT reward-stream sniping is a documented, accepted tradeoff for the (non-capped) USDC stream</strong> — verified by multiple Phase-2 agents as behaving exactly as the NatSpec claims (proportional to stake × time held), not re-reported as a finding.</li>
+<li><strong><code>totalCreditsSpent</code> is write-only in this contract</strong> — never read on-chain; likely consumed by the out-of-scope <code>TaskRegistry</code>. Noted for completeness, not a defect.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard (line)</th>
+<th>Caller</th>
+<th>Writes</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setTaskRegistry</code></td>
+<td><code>onlyOwner</code> + one-shot (97,98)</td>
+<td>owner</td>
+<td><code>taskRegistry</code>(100)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>setTreasury</code></td>
+<td><code>onlyOwner</code> + one-shot (103,104)</td>
+<td>owner</td>
+<td><code>treasury</code>(106)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>activateStaking</code></td>
+<td><code>onlyOwner</code> + one-shot (111,112)</td>
+<td>owner</td>
+<td><code>stakingActive</code>(113), <code>lastAccrualAt</code>(114)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>stake</code></td>
+<td>none on caller; <code>stakingActive</code>(121), <code>amount&gt;0</code>(122); self-scoped</td>
+<td>any address</td>
+<td><code>stakers[msg.sender].staked</code>(127), <code>totalStaked</code>(128)</td>
+<td>yes — pulls AZL in (126)</td>
+</tr>
+<tr>
+<td><code>unstake</code></td>
+<td>none on caller; <code>amount&lt;=s.staked</code>(136); self-scoped</td>
+<td>any staker</td>
+<td><code>stakers[msg.sender].staked</code>(140), <code>totalStaked</code>(141)</td>
+<td>yes — sends AZL out (142)</td>
+</tr>
+<tr>
+<td><code>trySpendCredit</code></td>
+<td><code>onlyRegistry</code> (158, modifier 85-88)</td>
+<td>taskRegistry only</td>
+<td><code>stakers[agent].bankedCredits</code>(166), <code>totalCreditsSpent</code>(167)</td>
+<td>no transfer — spends internal credit</td>
+</tr>
+<tr>
+<td><code>bankCredits</code></td>
+<td>none; self-scoped</td>
+<td>any address</td>
+<td>via <code>_settle</code>/<code>_checkpoint</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>notifyReward</code></td>
+<td>inline <code>msg.sender==treasury</code>(189) + <code>stakingActive</code>(190)</td>
+<td>treasury only</td>
+<td><code>rewardRateScaled</code>(198), <code>rewardPeriodFinish</code>(199), <code>lastRewardUpdateAt</code>(200)</td>
+<td>no transfer inside — assumes USDC already delivered</td>
+</tr>
+<tr>
+<td><code>claimRewards</code></td>
+<td>none; self-scoped; <code>pendingUsdc&gt;0</code>(221)</td>
+<td>any staker with pending USDC</td>
+<td><code>stakers[msg.sender].pendingUsdc=0</code>(222)</td>
+<td>yes — sends USDC out (223)</td>
+</tr>
+<tr>
+<td><code>creditsOf</code>/<code>creditsRemaining</code>/<code>claimableUsdc</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>—</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>transferOwnership</code>/<code>acceptOwnership</code>/<code>renounceOwnership</code> (inherited <code>Ownable2Step</code>/<code>Ownable</code>, out-of-scope source)</td>
+<td><code>onlyOwner</code> / pending-owner check</td>
+<td>owner / pendingOwner</td>
+<td><code>_owner</code></td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles</strong>: <strong>owner</strong> (deployer, two-step transfer, un-overridden single-step renounce — Finding 5) → 3 one-shot setup functions (Finding 6). <strong>taskRegistry</strong> (owner-set once, no rotate — Finding 4) → sole caller of <code>trySpendCredit</code>, arbitrary <code>agent</code> parameter. <strong>treasury</strong> (owner-set once, no rotate — Finding 3) → sole caller of <code>notifyReward</code>, unverified funding.</p>
+<p><strong>Unguarded list</strong>: <code>stake</code>, <code>unstake</code>, <code>bankCredits</code>, <code>claimRewards</code> are open to any address by design (self-scoped to <code>msg.sender</code>) — intended staker-facing surface, not an omission.</p>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Addressed by</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>owner</td>
+<td><code>renounceOwnership</code> (inherited) before setup complete</td>
+<td>Permanently brick unset dependencies</td>
+<td>Finding 5</td>
+</tr>
+<tr>
+<td>owner</td>
+<td>3 one-shot setters</td>
+<td>Permanent mis-wiring, no correction path</td>
+<td>Finding 6</td>
+</tr>
+<tr>
+<td>treasury</td>
+<td><code>notifyReward</code></td>
+<td>Set an unbacked reward rate, drain real USDC via claim-order race</td>
+<td>Finding 3</td>
+</tr>
+<tr>
+<td>taskRegistry</td>
+<td><code>trySpendCredit(agent)</code></td>
+<td>Grief-drain any named agent&#39;s banked credits</td>
+<td>Finding 4</td>
+</tr>
+<tr>
+<td>any staker (hook-capable AZL)</td>
+<td>reentrancy during <code>stake</code>/<code>unstake</code></td>
+<td>Double-settle credits/USDC, drain real USDC via <code>claimRewards</code></td>
+<td>Finding 1</td>
+</tr>
+<tr>
+<td>any well-capitalized staker</td>
+<td>short-term stake right before a cap-crossing <code>_accrue</code> tick</td>
+<td>Capture a disproportionate share of the fixed, non-replenishing final credit batch</td>
+<td>Finding 2</td>
+</tr>
+<tr>
+<td>depositor of a non-standard <code>azlToken</code>/<code>usdcToken</code> (owner&#39;s one-time construction choice)</td>
+<td><code>stake</code>/<code>unstake</code>/<code>claimRewards</code></td>
+<td>Desync internal accounting from actual token balances</td>
+<td>Findings 8, 10</td>
+</tr>
+<tr>
+<td>any address</td>
+<td><code>notifyReward</code> at <code>totalStaked==0</code></td>
+<td>Cause USDC to be permanently stranded (no attacker gain, but no recovery either)</td>
+<td>Finding 9</td>
+</tr>
+<tr>
+<td>malicious/blocklisting token administrator</td>
+<td>vault address itself</td>
+<td>Freeze all rewards (or all principal) permanently</td>
+<td>Finding 7</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage</strong>: 9 entrypoints (plus 3 inherited) in inventory, all addressed. 8 threat-catalog rows from Phase 0, 8 answered. Coverage holes closed this Phase-3 pass: 0.</p>
+<h2 id="verification-note">Verification Note</h2>
+<p>Every <code>file:line</code> citation above was checked against <code>audits/401/repo/UnionStakingVault.sol</code> directly before inclusion; line numbers reflect the actual 301-line source file (post stray-leading-byte cleanup), not sub-agent chunked/bundled views.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifszrk7peqcgxu6tmly3nwycagfjosnya3g34mtupnxkxwtn6ncue.ipfs.community.bgipfs.com/"><code>https://bafkreifszrk7peqcgxu6tmly3nwycagfjosnya3g34mtupnxkxwtn6ncue.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/401">#401</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

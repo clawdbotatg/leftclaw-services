@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TreasuryRouter.sol — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #400">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">TreasuryRouter.sol</h1>
+    <p class="job-sub">Job #400 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/400"><b>Job page</b> #400</a>
+      <a class="chip" href="https://bafkreidsi63xk6rrnysbp4ofycwjclhalyfuvavpgwwzzcivtjhx5d4qiq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">6</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">5</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#finding-1-withdrawfees-lets-feerecipient-bypass-the-documented-4">Finding 1: withdrawFees lets feeRecipient bypass the documented 40/40/20 revenue split entirely</a></li>
+      <li><a href="#finding-2-renounceownership-inherited-unoverridden-can-permanent">Finding 2: renounceOwnership (inherited, unoverridden) can permanently brick unset dependencies</a></li>
+      <li><a href="#finding-3-feerecipient-is-a-fully-self-administered-single-point">Finding 3: feeRecipient is a fully self-administered single point of failure with no owner-level recovery</a></li>
+      <li><a href="#finding-4-recordaccessfee-accrues-arbitrary-amounts-with-no-matc">Finding 4: recordAccessFee accrues arbitrary amounts with no matching transfer or balance reconciliation</a></li>
+      <li><a href="#finding-5-exit-compensation-split-exitpartycompexitprotocolshare">Finding 5: Exit-compensation split (EXIT_PARTY_COMP/EXIT_PROTOCOL_SHARE/ExitCompensationPaid) is dead code</a></li>
+      <li><a href="#finding-6-setagentdepositvault-trusts-an-unvalidated-external-re">Finding 6: setAgentDepositVault trusts an unvalidated external return value for usdc</a></li>
+      <li><a href="#finding-7-one-shot-setters-give-owner-permanent-un-timelocked-co">Finding 7: One-shot setters give owner permanent, un-timelocked control over revenue destinations</a></li>
+      <li><a href="#finding-8-distributerevenue-fully-couples-buyback-distribution-t">Finding 8: distributeRevenue fully couples buyback distribution to UnionStakingVault health</a></li>
+      <li><a href="#finding-9-collectazlaccessfee-setazltoken-nominal-accrual-with-n">Finding 9: collectAzlAccessFee / setAzlToken — nominal accrual with no fee-on-transfer check, no decimals validation</a></li>
+    </ol>
+    <ol start="12">
+      <li><a href="#finding-10-dust-triggered-distributerevenue-resets-the-7-day-coo">Finding 10: Dust-triggered distributeRevenue() resets the 7-day cooldown for near-zero payout</a></li>
+      <li><a href="#finding-11-no-sweeprescue-path-for-tokens-or-eth-landing-outside">Finding 11: No sweep/rescue path for tokens or ETH landing outside the tracked accrual channels</a></li>
+      <li><a href="#finding-12-withdrawfeeswithdrawnativefees-do-not-guard-to-agains">Finding 12: withdrawFees/withdrawNativeFees do not guard to against system addresses</a></li>
+      <li><a href="#finding-13-collectazlaccessfee-lets-the-trusted-recorder-pull-fr">Finding 13: collectAzlAccessFee lets the trusted recorder pull from an arbitrary payer with no cap</a></li>
+      <li><a href="#finding-14-no-emergency-pausecircuit-breaker-anywhere-in-the-con">Finding 14: No emergency pause/circuit breaker anywhere in the contract</a></li>
+      <li><a href="#finding-15-push0-opcode-compatibility-unconfirmed-for-target-cha">Finding 15: PUSH0 opcode compatibility unconfirmed for target chain</a></li>
+      <li><a href="#leads-plausible-not-independently-confirmed-confidence-50">Leads (plausible, not independently confirmed — confidence &lt; 50)</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#verification-note">Verification Note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — TreasuryRouter.sol</h1>
+<p><strong>Job</strong>: leftclaw.services job #400<br><strong>Target</strong>: <code>TreasuryRouter.sol</code>, single contract, 218 lines of Solidity (<code>pragma solidity ^0.8.24</code>)<br><strong>Source provenance</strong>: contract source was supplied directly in the job description (not a GitHub repo / on-chain deployed address). Saved verbatim to <code>audits/400/repo/TreasuryRouter.sol</code>. SHA-256 of the audited file: <code>c334efa39cea25eea74e3fd8008966ccd19a8ba7b115e07dbc8f4def7fdca038</code>.<br><strong>Out of scope</strong>: <code>AgentDepositVault</code> and <code>UnionStakingVault</code> (imported at L8–9) — their source was not provided for this job. Every call into them is treated as an external black box; findings that depend on their internal behavior are flagged as such.<br><strong>Methodology</strong>: three-phase audit — Phase 0 (context: protocol map, access-control inventory, threat catalog) → Phase 1 breadth (ethskills, 5 domain checklists) → Phase 2 depth (pashov, 12 attacker-mindset agents, run blind to Phase 1 findings) → Phase 3 reconciliation with a coverage gate against the Phase 0 inventory/catalog.</p>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap</strong> (raised independently by both phases): 5 findings — unsegregated-accrual revenue-split bypass, exit-compensation dead code, <code>recordAccessFee</code> unbacked-accrual DoS, <code>setAgentDepositVault</code> unchecked external return, <code>distributeRevenue</code>↔staking-vault coupling.</li>
+<li><strong>Phase-1-only</strong>: 5 findings — <code>renounceOwnership</code> un-overridden brick risk, <code>feeRecipient</code> single point of failure, one-shot setters with no timelock, <code>collectAzlAccessFee</code> arbitrary-payer/no-cap, no emergency pause.</li>
+<li><strong>Phase-2-only</strong>: 0 findings promoted (all phase-2-unique items stayed leads — see Leads section).</li>
+<li><strong>Re-examined leads kept</strong>: 5 (phase-1-only findings above, hybrid-re-read and confirmed directly against source in this pass) · <strong>demoted</strong>: 0.</li>
+<li><strong>Coverage holes closed this pass</strong>: 0 — both hunting phases already covered every entrypoint in the access-control inventory and every row in the threat catalog; nothing required a first-time re-read in Phase 3.</li>
+<li><strong>Confidence floor used</strong>: findings below are reported at confidence ≥ 70 (all have a fully-traced, quoted exploit/failure mechanism). Items resting on unverifiable out-of-scope behavior are kept in the <strong>Leads</strong> section regardless of how many agents raised them, per the audit&#39;s confidence-floor rule.</li>
+<li>12 independent Phase-2 attacker-mindset agents ran blind to the Phase 1 report; strong convergence (9+ of 12 agents independently derived the same root cause for Finding 1, 8+ for Finding 2/3) is noted per-finding as corroboration, not counted multiple times toward severity.</li>
+</ul>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><code>withdrawFees</code> lets <code>feeRecipient</code> bypass the documented 40/40/20 revenue split entirely</td>
+<td><span class="pill medium">Medium</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>renounceOwnership</code> (inherited, unoverridden) can permanently brick unset dependencies</td>
+<td><span class="pill high">High</span></td>
+<td>[phase1: access-control]</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>feeRecipient</code> is a fully self-administered single point of failure with no owner-level recovery</td>
+<td><span class="pill high">High</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>recordAccessFee</code> accrues arbitrary amounts with no matching transfer or balance reconciliation</td>
+<td><span class="pill medium">Medium</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Exit-compensation split (<code>EXIT_PARTY_COMP</code>/<code>EXIT_PROTOCOL_SHARE</code>/<code>ExitCompensationPaid</code>) is dead code</td>
+<td><span class="pill medium">Medium</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>setAgentDepositVault</code> trusts an unvalidated external return value for <code>usdc</code></td>
+<td><span class="pill medium">Medium</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>7</td>
+<td>One-shot setters give <code>owner</code> permanent, un-timelocked control over revenue destinations</td>
+<td><span class="pill medium">Medium</span></td>
+<td>[phase1: access-control]</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>distributeRevenue</code> fully couples buyback distribution to unrelated <code>UnionStakingVault</code> health</td>
+<td><span class="pill medium">Medium</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>collectAzlAccessFee</code> / <code>setAzlToken</code> — nominal accrual with no fee-on-transfer check, no decimals validation</td>
+<td><span class="pill low">Low</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Dust-triggered <code>distributeRevenue()</code> resets the 7-day cooldown for near-zero payout</td>
+<td><span class="pill low">Low</span></td>
+<td>[both]</td>
+</tr>
+<tr>
+<td>11</td>
+<td>No sweep/rescue path for tokens or ETH landing outside the tracked accrual channels</td>
+<td><span class="pill low">Low</span></td>
+<td>[phase1: general]</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>withdrawFees</code>/<code>withdrawNativeFees</code> do not guard <code>to</code> against system addresses</td>
+<td><span class="pill low">Low</span></td>
+<td>[phase1: general]</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>collectAzlAccessFee</code> lets the trusted recorder pull from an arbitrary <code>payer</code> with no cap</td>
+<td><span class="pill low">Low</span></td>
+<td>[phase1: access-control]</td>
+</tr>
+<tr>
+<td>14</td>
+<td>No emergency pause/circuit breaker anywhere in the contract</td>
+<td><span class="pill info">Info</span></td>
+<td>[phase1: access-control]</td>
+</tr>
+<tr>
+<td>15</td>
+<td>PUSH0 opcode compatibility unconfirmed for target chain</td>
+<td><span class="pill info">Info</span></td>
+<td>[phase1: general]</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="finding-1-withdrawfees-lets-feerecipient-bypass-the-documented-4">Finding 1: <code>withdrawFees</code> lets <code>feeRecipient</code> bypass the documented 40/40/20 revenue split entirely</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 95<br><strong>Origin</strong>: [both] — independently raised as a FINDING by 9 of 12 Phase-2 agents (math-precision, access-control, economic-security, periphery, invariant, trust-gap, numerical-gap, and corroborated by execution-trace/asymmetry as related) and by the Phase-1 ethskills general/defi-staking passes.<br><strong>Location</strong>: <code>withdrawFees()</code> L186-193, <code>distributeRevenue()</code> L121-149, <code>accruedFees</code> mapping L46</p>
+<p><strong>Description</strong>: All accrued USDC — regardless of whether it is &quot;fresh&quot; (pending the 40/40/20 split) or &quot;already reserved&quot; (the 20% the NatSpec at L117-120 calls &quot;feeRecipient-withdrawable&quot;) — lives in the same <code>accruedFees[address(usdc)]</code> slot. <code>withdrawFees</code> has no notion of this distinction:</p>
+<pre><code class="language-solidity">function withdrawFees(address token, address to) external {
+    require(msg.sender == feeRecipient, &quot;Treasury: not recipient&quot;);
+    require(to != address(0), &quot;Treasury: zero to&quot;);
+    uint256 amount = accruedFees[token];     // L189 — entire slot, not just the reserve
+    require(amount &gt; 0, &quot;Treasury: nothing to withdraw&quot;);
+    accruedFees[token] = 0;
+    IERC20(token).safeTransfer(to, amount);  // L192
+}
+</code></pre>
+<p><code>feeRecipient</code> can call this at any time — no cooldown, no dependency on <code>distributeRevenue</code> having run, no check against <code>stakingVault</code>/<code>buybackExecutor</code> even being wired — and sweep 100% of accrued USDC instead of the documented 20%. A second, related manifestation of the same root cause: even when <code>distributeRevenue()</code> is allowed to run first, the 20% it retains (<code>accruedFees[address(usdc)] = reserved;</code>, L138) is written back into the identical slot that the <em>next</em> epoch&#39;s <code>distributeRevenue()</code> reads as its distribution base (L130), so any un-withdrawn reserve is re-split 40/40/20 on every subsequent call — decaying toward zero rather than staying fixed, contrary to the NatSpec.</p>
+<p><strong>Proof of Concept</strong>: Assume a week of <code>recordAccessFee</code>/<code>collectAzlAccessFee</code> calls accrues <code>accruedFees[usdc] = 1,000,000,000</code> (1,000 USDC, 6-decimal). Before anyone calls <code>distributeRevenue()</code>, <code>feeRecipient</code> calls <code>withdrawFees(address(usdc), feeRecipient)</code>: <code>amount = 1,000,000,000</code> (L189), zeroed (L191), transferred in full (L192). <code>stakingVault</code> and <code>buybackExecutor</code> receive 0 instead of their documented 400,000,000 (40%) each. A subsequent <code>distributeRevenue()</code> call reads <code>amount = accruedFees[usdc] = 0</code> and reverts at L131 (&quot;nothing to distribute&quot;). This can be repeated every epoch indefinitely — <code>feeRecipient</code> faces zero cost or timing constraint to always withdraw first. Decay variant: if <code>distributeRevenue()</code> does run first and leaves <code>reserved = 200,000,000</code>, a second call one epoch later with no new inflow re-splits that 200,000,000 into 80,000,000/80,000,000/40,000,000 — 80% of the &quot;reserve&quot; leaves to stakers/buyback purely from the passage of one more epoch.</p>
+<p><strong>Recommendation</strong>: Track the reserved/pending-distribution portions in separate storage slots. <code>withdrawFees</code> for USDC should only ever read/zero a dedicated <code>reservedUsdc</code> variable that <code>distributeRevenue</code> populates with the 20% remainder; <code>distributeRevenue</code>&#39;s <code>amount</code> should be computed only from fees accrued since the last distribution, not from the full <code>accruedFees[usdc]</code> slot.</p>
+<pre><code class="language-solidity">uint256 public reservedUsdc;
+// in distributeRevenue():
+reservedUsdc += reserved;
+accruedFees[address(usdc)] = 0; // only fresh accrual lived here
+// in withdrawFees(), for the usdc key specifically, read/zero reservedUsdc instead
+</code></pre>
+<hr>
+<h2 id="finding-2-renounceownership-inherited-unoverridden-can-permanent">Finding 2: <code>renounceOwnership</code> (inherited, unoverridden) can permanently brick unset dependencies</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: [phase1: access-control] — re-examined directly against source in Phase 3 (hybrid re-read), confirmed.<br><strong>Location</strong>: inherited <code>Ownable.renounceOwnership()</code> via <code>Ownable2Step</code> (L12); the five one-shot <code>onlyOwner</code> setters (<code>setAgentDepositVault</code> L81-86, <code>setAzlToken</code> L88-92, <code>setReputationRegistry</code> L94-98, <code>setStakingVault</code> L100-109, <code>setBuybackExecutor</code> L111-115)</p>
+<p><strong>Description</strong>: <code>TreasuryRouter is Ownable2Step</code> (L12). <code>Ownable2Step</code> overrides only the <em>transfer</em> path (two-step <code>transferOwnership</code>/<code>acceptOwnership</code>); it does not override <code>renounceOwnership()</code>, which remains the vanilla single-step <code>Ownable</code> version — callable by <code>owner</code> at any time, immediately zeroing <code>_owner</code> with no confirmation step. Every one of the five dependency-wiring setters is <code>onlyOwner</code> and one-shot (guarded by an <code>== address(0)</code> check), with no alternate path to set them once ownership is gone. If <code>renounceOwnership()</code> is called before all five have been invoked, whichever remain unset can never be set — permanently disabling <code>distributeRevenue()</code> (needs <code>stakingVault</code>/<code>buybackExecutor</code>), <code>recordNativeSlash()</code> (needs <code>reputationRegistry</code>), the <code>agentDepositVault</code> leg of <code>onlyFeeRecorder</code>, or all AZL fee collection (needs <code>azlToken</code>).</p>
+<p><strong>Proof of Concept</strong>: Owner deploys <code>TreasuryRouter</code>, calls <code>setAgentDepositVault</code> and <code>setAzlToken</code> only (enough for basic USDC/AZL fee recording to start), then calls the inherited <code>renounceOwnership()</code> before calling <code>setStakingVault</code>/<code>setBuybackExecutor</code>/<code>setReputationRegistry</code>. <code>owner</code> is now <code>address(0)</code>. Any subsequent call to those three setters reverts forever with <code>Ownable: caller is not the owner</code> — <code>distributeRevenue()</code> can never be enabled, <code>recordNativeSlash()</code> can never be authorized, permanently, for the life of the contract.</p>
+<p><strong>Recommendation</strong>: Override <code>renounceOwnership()</code> to revert unconditionally, or gate it on all five dependencies already being set:</p>
+<pre><code class="language-solidity">function renounceOwnership() public view override onlyOwner {
+    revert(&quot;Treasury: renounce disabled&quot;);
+}
+</code></pre>
+<hr>
+<h2 id="finding-3-feerecipient-is-a-fully-self-administered-single-point">Finding 3: <code>feeRecipient</code> is a fully self-administered single point of failure with no owner-level recovery</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: [both] — Phase-1 access-control domain as a standalone finding; corroborated structurally by nearly every Phase-2 agent&#39;s observation that <code>owner</code> has zero authority over <code>feeRecipient</code> (used as a premise in Findings 1&#39;s exploit chain).<br><strong>Location</strong>: <code>proposeFeeRecipient()</code> L205-210, <code>acceptFeeRecipient()</code> L212-218, <code>withdrawFees()</code> L186-193, <code>withdrawNativeFees()</code> L195-203</p>
+<p><strong>Description</strong>: <code>feeRecipient</code> is set once in the constructor (L74) and thereafter rotated <em>exclusively</em> via its own propose/accept two-step (<code>msg.sender == feeRecipient</code> at L206, <code>msg.sender == pendingFeeRecipient</code> at L213) — <code>owner</code> has no path anywhere in the contract that touches <code>feeRecipient</code> or <code>pendingFeeRecipient</code>. This creates two unmitigated failure modes: <strong>(a) key loss</strong> — if the <code>feeRecipient</code> address (EOA or contract) can no longer call <code>proposeFeeRecipient</code>, every token in <code>accruedFees</code> and all of <code>accruedNative</code> becomes permanently unwithdrawable, with no owner override, timelock, or fallback anywhere in the contract; <strong>(b) key compromise</strong> — an attacker holding the <code>feeRecipient</code> key can call <code>withdrawFees</code>/<code>withdrawNativeFees</code> immediately, in a single transaction, for the full accrued balance of any token, with no timelock or pause to react.</p>
+<p><strong>Proof of Concept</strong>: (a) The EOA holding <code>feeRecipient</code> loses its key. <code>accruedFees</code>/<code>accruedNative</code> continue to accumulate from ongoing protocol operation but can never be withdrawn by anyone, forever — there is no function in the contract, callable by <code>owner</code> or anyone else, that can reach these balances except through <code>feeRecipient</code>. (b) An attacker who obtains the <code>feeRecipient</code> private key calls <code>withdrawFees(usdc, attacker)</code> then <code>withdrawFees(azlToken, attacker)</code> then <code>withdrawNativeFees(attacker)</code> in immediate succession — no on-chain mechanism exists to pause or intercept this.</p>
+<p><strong>Recommendation</strong>: Give <code>owner</code> (or a separate guardian/multisig) an emergency override to force-set <code>feeRecipient</code>, ideally behind a timelock so the override itself can&#39;t be abused, and/or add a delay between <code>proposeFeeRecipient</code> and <code>acceptFeeRecipient</code> so a compromise is visible before it takes effect.</p>
+<hr>
+<h2 id="finding-4-recordaccessfee-accrues-arbitrary-amounts-with-no-matc">Finding 4: <code>recordAccessFee</code> accrues arbitrary amounts with no matching transfer or balance reconciliation</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> (permanent-DoS impact if triggered)<br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: [both] — raised independently in Phase 1 by general/erc20/access-control domains (5 separate write-ups converging on the same root cause), and promoted to a fully-proven FINDING by Phase-2 agent-8 (asymmetry) with concrete numeric proof; corroborated as a LEAD by 7 other Phase-2 agents.<br><strong>Location</strong>: <code>recordAccessFee()</code>/<code>_recordAccessFee()</code> L161-178, consumed by <code>withdrawFees()</code> L186-193 and <code>distributeRevenue()</code> L121-149</p>
+<p><strong>Description</strong>: <code>recordAccessFee</code> is <code>onlyFeeRecorder</code>-gated (<code>taskRegistry</code> or <code>agentDepositVault</code> only) but is pure bookkeeping:</p>
+<pre><code class="language-solidity">function _recordAccessFee(address token, uint256 amount, AccessFeeKind kind, address payer) internal {
+    accruedFees[token] += amount;   // L176 — no corresponding transfer, ever
+    emit AccessFeeCollected(kind, payer, token, amount);
+}
+</code></pre>
+<p>Unlike <code>collectAzlAccessFee</code> (which pulls tokens via <code>safeTransferFrom</code> at L153 <em>before</em> recording), <code>recordAccessFee</code> credits an arbitrary caller-supplied <code>amount</code> with zero token movement and zero reconciliation against <code>IERC20(token).balanceOf(address(this))</code> anywhere in the contract. If the trusted recorder ever records more than the contract actually holds — bug, double-fire, or compromise in the out-of-scope <code>taskRegistry</code>/<code>agentDepositVault</code> — <code>accruedFees[token]</code> becomes permanently overstated. Both <code>withdrawFees</code> and <code>distributeRevenue</code> always attempt to move the <em>entire</em> recorded amount, so the <code>safeTransfer</code> reverts on insufficient balance; because the revert unwinds the whole transaction (including the zeroing at L191 or the write at L138), the ledger can never self-correct. This permanently freezes withdrawal/distribution of that token, including the genuinely-backed portion sitting alongside the phantom excess.</p>
+<p><strong>Proof of Concept</strong>: Contract legitimately holds 100,000,000 raw USDC units and <code>accruedFees[usdc] == 100,000,000</code>. A single erroneous <code>recordAccessFee(address(usdc), 1_000_000_000_000, AccessFeeKind.DISMISS_SEARCH, payer)</code> call from the trusted recorder bumps <code>accruedFees[usdc]</code> to <code>1,000,100,000,000</code> while the real balance stays <code>100,000,000</code>. <code>withdrawFees(usdc, to)</code> now sets <code>accruedFees[usdc]=0</code> (L191) and calls <code>usdc.safeTransfer(to, 1,000,100,000,000)</code> (L192) → reverts (insufficient balance) → the whole transaction, including the zeroing, rolls back → <code>accruedFees[usdc]</code> is right back at <code>1,000,100,000,000</code>. <code>distributeRevenue()</code> reads the same poisoned value and hits the identical revert at its own <code>safeTransfer</code> calls (L141/L145). There is no function anywhere in the contract that can decrement <code>accruedFees[token]</code> other than these two, both of which now permanently revert — the real 100,000,000 USDC (and any further legitimate accrual on top) is frozen indefinitely, until a third party voluntarily donates enough raw balance to cover the gap.</p>
+<p><strong>Recommendation</strong>: Cap withdrawal/distribution amounts at <code>min(accruedFees[token], IERC20(token).balanceOf(address(this)))</code>, or require <code>recordAccessFee</code> to be paired with an actual balance-delta check, mirroring <code>collectAzlAccessFee</code>&#39;s pull-then-record pattern.</p>
+<hr>
+<h2 id="finding-5-exit-compensation-split-exitpartycompexitprotocolshare">Finding 5: Exit-compensation split (<code>EXIT_PARTY_COMP</code>/<code>EXIT_PROTOCOL_SHARE</code>/<code>ExitCompensationPaid</code>) is dead code</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: [both] — one of the most heavily corroborated findings in this audit: raised in Phase 1 (general domain, all 3 runs) and independently derived as a FINDING or LEAD by 10 of 12 Phase-2 agents.<br><strong>Location</strong>: constants <code>EXIT_PARTY_COMP</code>/<code>EXIT_PROTOCOL_SHARE</code> L27-28, event <code>ExitCompensationPaid</code> L56, constructor invariant L75-78, <code>AccessFeeKind.DISMISS_SEARCH</code>/<code>WORKER_LEAVE</code> L42-43, <code>_recordAccessFee()</code> L170-178</p>
+<p><strong>Description</strong>: The constructor asserts <code>EXIT_PARTY_COMP + EXIT_PROTOCOL_SHARE == ACCESS_FEE</code> (L76 inside the <code>require</code> spanning L75-78), and the enum members <code>DISMISS_SEARCH</code>/<code>WORKER_LEAVE</code> strongly imply a compensated counterparty on exit — but <code>_recordAccessFee</code> treats every <code>AccessFeeKind</code> identically:</p>
+<pre><code class="language-solidity">function _recordAccessFee(address token, uint256 amount, AccessFeeKind kind, address payer) internal {
+    accruedFees[token] += amount;                          // L176 — full amount, no kind branch
+    emit AccessFeeCollected(kind, payer, token, amount);    // L177 — kind is a passthrough event field only
+}
+</code></pre>
+<p><code>ExitCompensationPaid</code> is never emitted anywhere in the file, and <code>EXIT_PARTY_COMP</code>/<code>EXIT_PROTOCOL_SHARE</code> are never read outside the one-time constructor check. There is no function anywhere in <code>TreasuryRouter</code> — for any <code>AccessFeeKind</code>, including the exit-flavored ones — that pays a compensation share to a distinct counterparty; the entire fee lands in the same <code>accruedFees[token]</code> bucket only <code>feeRecipient</code> can withdraw.</p>
+<p><strong>Proof of Concept</strong>: <code>taskRegistry</code> calls <code>recordAccessFee(usdcAddr, 5_000_000, AccessFeeKind.WORKER_LEAVE, workerAddr)</code>. The full 5,000,000 (5 USDC at 6-decimals) accrues to <code>accruedFees[usdcAddr]</code> at L176; <code>workerAddr</code> — the implied beneficiary of <code>EXIT_PARTY_COMP</code> — receives nothing from this contract, ever, under any call sequence. <code>feeRecipient</code> can later sweep the entire amount via <code>withdrawFees</code>.</p>
+<p><strong>Recommendation</strong>: Either implement the missing split/payout (accept a distinct recipient parameter for exit-kind records, transfer <code>EXIT_PARTY_COMP</code> to them, emit <code>ExitCompensationPaid</code>, and credit only <code>EXIT_PROTOCOL_SHARE</code> to <code>accruedFees</code>), or — if the split is genuinely handled entirely by the out-of-scope <code>AgentDepositVault</code> before it calls <code>recordAccessFee</code> with only the protocol&#39;s share — remove the unused constants/event from <code>TreasuryRouter</code> and document that explicitly, so the code doesn&#39;t imply an enforcement it doesn&#39;t provide.</p>
+<hr>
+<h2 id="finding-6-setagentdepositvault-trusts-an-unvalidated-external-re">Finding 6: <code>setAgentDepositVault</code> trusts an unvalidated external return value for <code>usdc</code></h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [both] — Phase-1 general/access-control domains flagged this (with a severity split between High and Low across runs, reconciled here to Medium); independently promoted to a fully-proven FINDING by 2 Phase-2 agents (execution-trace, first-principles) with concrete numeric traces, and raised as a LEAD by 3 more.<br><strong>Location</strong>: <code>setAgentDepositVault()</code> L81-86, specifically L85; consumed by <code>setStakingVault()</code> L100-109 and <code>distributeRevenue()</code> L121-149</p>
+<p><strong>Description</strong>:</p>
+<pre><code class="language-solidity">function setAgentDepositVault(address _vault) external onlyOwner {
+    require(agentDepositVault == address(0), &quot;Treasury: vault set&quot;);
+    require(_vault != address(0), &quot;Treasury: zero&quot;);
+    agentDepositVault = _vault;
+    usdc = IERC20(AgentDepositVault(_vault).usdcToken());   // L85 — no zero-check on the return
+}
+</code></pre>
+<p>The one-shot lock is keyed on <code>agentDepositVault == address(0)</code> (L82), not on <code>usdc</code> being valid, and there is no re-point path for either variable once <code>agentDepositVault</code> is set. If <code>AgentDepositVault(_vault).usdcToken()</code> ever returns <code>address(0)</code> — a plausible deploy-ordering mistake (wiring the router before the vault&#39;s own USDC token is configured) or a genuinely misbehaving/uninitialized vault — <code>usdc</code> is permanently stuck at <code>address(0)</code>. <code>setStakingVault</code> requires <code>address(usdc) != address(0)</code> (L104), so the entire staking-vault wiring — and with it, <code>distributeRevenue()</code>&#39;s <code>require(address(stakingVault) != address(0))</code> gate (L122) — becomes permanently unreachable.</p>
+<p><strong>Proof of Concept</strong>: Owner deploys <code>AgentDepositVault</code> and calls <code>setAgentDepositVault(vaultAddr)</code> before the vault&#39;s own USDC-token configuration step runs; <code>usdcToken()</code> returns <code>address(0)</code> at that moment. <code>usdc</code> locks to <code>address(0)</code> forever (no re-point path exists). Any subsequent <code>setStakingVault(...)</code> call reverts permanently at L104 (&quot;Treasury: usdc not set&quot;); <code>distributeRevenue()</code> can never be enabled for the life of the contract. (Fees recorded via <code>recordAccessFee</code> against the <em>real</em> USDC token address remain withdrawable through <code>withdrawFees</code>, since that function takes an explicit <code>token</code> parameter independent of the <code>usdc</code> state variable — so this bug disables the staking-distribution subsystem specifically, not all USDC fund access.)</p>
+<p><strong>Recommendation</strong>: Validate the external return before committing to state:</p>
+<pre><code class="language-solidity">address _usdc = AgentDepositVault(_vault).usdcToken();
+require(_usdc != address(0), &quot;Treasury: vault usdc unset&quot;);
+agentDepositVault = _vault;
+usdc = IERC20(_usdc);
+</code></pre>
+<hr>
+<h2 id="finding-7-one-shot-setters-give-owner-permanent-un-timelocked-co">Finding 7: One-shot setters give <code>owner</code> permanent, un-timelocked control over revenue destinations</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: [phase1: access-control] — re-examined against source in Phase 3, confirmed.<br><strong>Location</strong>: <code>setStakingVault()</code> L100-109, <code>setBuybackExecutor()</code> L111-115, <code>setAgentDepositVault()</code> L81-86, <code>setReputationRegistry()</code> L94-98</p>
+<p><strong>Description</strong>: <code>stakingVault</code> and <code>buybackExecutor</code> are the sole destinations for 80% of every weekly USDC revenue split (<code>distributeRevenue()</code> L133-146), and are set exactly once, instantly, by <code>owner</code>, with no timelock and no re-point mechanism (each guarded only by an <code>== address(0)</code> one-shot check). If <code>owner</code> sets any of these to an incorrect, deprecated, or self-dealt address — by mistake or malice — the protocol has no on-chain way to correct it: every future <code>distributeRevenue()</code> call permanently routes 40%/40% of accrued USDC to that address.</p>
+<p><strong>Proof of Concept</strong>: <code>owner</code> calls <code>setBuybackExecutor(ownerControlledEOA)</code> and <code>setStakingVault(vaultOwnerAlsoControls)</code>. From that point on, the fully permissionless <code>distributeRevenue()</code> routes 80% of all accrued USDC fees to owner-controlled destinations every 7-day epoch, with no governance mechanism, staker vote, or other party able to intervene or redirect.</p>
+<p><strong>Recommendation</strong>: Add a timelock before these setters take effect (even a short one), and/or a governance-gated re-point path, rather than instant, permanent, single-key control over revenue routing.</p>
+<hr>
+<h2 id="finding-8-distributerevenue-fully-couples-buyback-distribution-t">Finding 8: <code>distributeRevenue</code> fully couples buyback distribution to <code>UnionStakingVault</code> health</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [both] — Phase-1 defi-staking domain; corroborated by Phase-2 agent-10 (numerical-gap) identifying the specific coupling of an unrelated invariant to a shared boundary condition.<br><strong>Location</strong>: <code>distributeRevenue()</code> L121-149, precondition L128, external call L142</p>
+<p><strong>Description</strong>: <code>require(stakingVault.totalStaked() &gt; 0, ...)</code> (L128) gates the <em>entire</em> function — including the buyback transfer (L145), which has no logical dependency on staking activity — and <code>stakingVault.notifyReward(stakerShare)</code> (L142) has no <code>try/catch</code>. Since <code>stakingVault</code> is wired via a one-shot setter with no re-point path (Finding 7), there is no owner recovery if the vault ever has zero stakers (pre-launch, or all stakers exiting) or if <code>notifyReward</code> reverts for any reason (paused, buggy, migrated). In either case the whole transaction reverts, blocking the unrelated buyback leg and the epoch-timer advance right alongside the staking leg. Meanwhile <code>feeRecipient</code> can still sweep 100% of <code>accruedFees[usdc]</code> via <code>withdrawFees</code> regardless (Finding 1), so stakers/buyback can end up permanently at 0% while <code>feeRecipient</code> retains full discretion.</p>
+<p><strong>Proof of Concept</strong>: <code>UnionStakingVault</code> is deployed and wired via <code>setStakingVault</code>, but no user has staked yet (<code>totalStaked() == 0</code>). Once 7 days elapse and <code>accruedFees[usdc] &gt; 0</code>, any call to <code>distributeRevenue()</code> reverts at L128 every time — the buyback share never reaches <code>buybackExecutor</code> and <code>lastDistributionAt</code> never advances, even though the buyback leg has nothing to do with staking.</p>
+<p><strong>Recommendation</strong>: Decouple the buyback/reserve legs from the staking-notification leg — e.g. wrap <code>notifyReward</code> in <code>try/catch</code> and re-accrue <code>stakerShare</code> on failure instead of reverting the whole function, or split distribution into independently-callable legs so a staking-side failure cannot block the buyback leg or the epoch-timer advance.</p>
+<hr>
+<h2 id="finding-9-collectazlaccessfee-setazltoken-nominal-accrual-with-n">Finding 9: <code>collectAzlAccessFee</code> / <code>setAzlToken</code> — nominal accrual with no fee-on-transfer check, no decimals validation</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 75<br><strong>Origin</strong>: [both] — Phase-1 general/erc20/precision-math domains; corroborated as a LEAD by 6 Phase-2 agents.<br><strong>Location</strong>: <code>_collectAzlAccessFee()</code>/<code>collectAzlAccessFee()</code> L151-159, <code>setAzlToken()</code> L88-92, <code>AZL_ACCESS_FEE</code> L26</p>
+<p><strong>Description</strong>: <code>_collectAzlAccessFee</code> pulls <code>AZL_ACCESS_FEE</code> (1000e18 — hardcodes an 18-decimal assumption) via <code>safeTransferFrom</code> (L153) then unconditionally credits the <em>constant</em> <code>AZL_ACCESS_FEE</code> to <code>accruedFees[azlToken]</code> (L158→176), never measuring <code>balanceOf</code> before/after. <code>setAzlToken</code> is a one-shot owner setter with no <code>decimals()</code> check. If <code>azlToken</code> (once wired, permanently) applies a transfer fee, rebases, or has non-18 decimals, actual custody diverges from recorded accrual with no way to detect or correct it — compounding Finding 4&#39;s inability to reconcile.</p>
+<p><strong>Proof of Concept</strong>: A 2%-fee-on-transfer AZL variant delivers 980e18 of a nominal 1000e18 pull; <code>accruedFees[azlToken]</code> still credits the full 1000e18. Divergence compounds over repeated calls until a <code>withdrawFees(azlToken, ...)</code> call reverts on insufficient balance. Separately, wiring a 6-decimal token via <code>setAzlToken</code> makes every <code>collectAzlAccessFee</code> call attempt to pull <code>1000e18</code> raw units (<code>1e15</code> whole tokens) — an amount no realistic payer holds or approves — permanently breaking AZL fee collection with no re-point path.</p>
+<p><strong>Recommendation</strong>: Measure <code>balanceOf(this)</code> before/after the <code>safeTransferFrom</code> and record the actual delta; validate <code>IERC20Metadata(token).decimals() == 18</code> in <code>setAzlToken</code> before locking it in.</p>
+<hr>
+<h2 id="finding-10-dust-triggered-distributerevenue-resets-the-7-day-coo">Finding 10: Dust-triggered <code>distributeRevenue()</code> resets the 7-day cooldown for near-zero payout</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 75<br><strong>Origin</strong>: [both] — Phase-1 general domain; corroborated as a LEAD by Phase-2 agents 7 and 10 (first-principles, numerical-gap).<br><strong>Location</strong>: <code>distributeRevenue()</code> L121-149</p>
+<p><strong>Description</strong>: The function is permissionless and gated only by <code>amount &gt; 0</code> (L131). When <code>accruedFees[usdc]</code> is small enough that <code>(amount * 4000) / 10000</code> truncates to 0 for both <code>stakerShare</code> and <code>buybackShare</code> (e.g. <code>amount</code> ∈ {1, 2} raw units), both transfer blocks are skipped via their <code>if (... &gt; 0)</code> guards (L140, L144), yet <code>lastDistributionAt</code> still unconditionally advances (L137) — consuming the full 7-day epoch for a near-zero distribution.</p>
+<p><strong>Proof of Concept</strong>: Anyone calls <code>distributeRevenue()</code> the instant <code>accruedFees[usdc]</code> becomes a dust value (e.g. 1-2 raw units, which can occur as leftover reserve dust per Finding 1&#39;s decay mechanism). <code>stakerShare</code>/<code>buybackShare</code> truncate to 0, no transfer occurs, but <code>lastDistributionAt = block.timestamp</code> still executes — delaying the next meaningful distribution by a further full epoch.</p>
+<p><strong>Recommendation</strong>: Consider a minimum-amount threshold before allowing <code>lastDistributionAt</code> to advance.</p>
+<hr>
+<h2 id="finding-11-no-sweeprescue-path-for-tokens-or-eth-landing-outside">Finding 11: No sweep/rescue path for tokens or ETH landing outside the tracked accrual channels</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: [phase1: general] — re-examined against source in Phase 3, confirmed; also present as a code-smell observation in several Phase-2 agents&#39; notes.<br><strong>Location</strong>: whole contract; <code>withdrawFees()</code> L186-193, <code>withdrawNativeFees()</code> L195-203</p>
+<p><strong>Description</strong>: Both withdrawal functions move only the internal counters (<code>accruedFees[token]</code>, <code>accruedNative</code>), never <code>balanceOf(address(this))</code>/<code>address(this).balance</code>. Direct token transfers, airdrops, or force-fed ETH (<code>selfdestruct</code>, coinbase reward, pre-computed CREATE2 address) are invisible to the counters and permanently unrecoverable — no rescue function exists anywhere in the contract.</p>
+<p><strong>Recommendation</strong>: Add an owner/feeRecipient-gated sweep of <code>balanceOf(this) - accruedFees[token]</code> (and the ETH equivalent), or explicitly document this as accepted behavior.</p>
+<hr>
+<h2 id="finding-12-withdrawfeeswithdrawnativefees-do-not-guard-to-agains">Finding 12: <code>withdrawFees</code>/<code>withdrawNativeFees</code> do not guard <code>to</code> against system addresses</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 70<br><strong>Origin</strong>: [phase1: general] — re-examined against source in Phase 3, confirmed.<br><strong>Location</strong>: <code>withdrawFees()</code> L186-193, <code>withdrawNativeFees()</code> L195-203</p>
+<p><strong>Description</strong>: Only <code>to != address(0)</code> is checked (L188, L197). <code>feeRecipient</code> (a trusted role) could pass <code>to = address(this)</code>, zeroing the accrual entry (L191/L200) while the tokens/ETH never actually leave the contract — destroying the accounting trail with no sweep path to recover them (compounds Finding 11).</p>
+<p><strong>Recommendation</strong>: Add <code>require(to != address(this))</code> as defense-in-depth.</p>
+<hr>
+<h2 id="finding-13-collectazlaccessfee-lets-the-trusted-recorder-pull-fr">Finding 13: <code>collectAzlAccessFee</code> lets the trusted recorder pull from an arbitrary <code>payer</code> with no cap</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 75<br><strong>Origin</strong>: [phase1: access-control] — re-examined against source in Phase 3, confirmed.<br><strong>Location</strong>: <code>collectAzlAccessFee()</code> L156-159</p>
+<p><strong>Description</strong>: <code>collectAzlAccessFee(payer, kind)</code> is callable only by <code>onlyFeeRecorder</code> (<code>taskRegistry</code>/<code>agentDepositVault</code>), but acts on an arbitrary <code>payer</code> rather than <code>msg.sender</code>, with no per-payer/per-kind cap or replay guard in <code>TreasuryRouter</code> itself — the only limit is the payer&#39;s standing ERC20 allowance. A bug or compromise in the trusted recorder could call this repeatedly for the same <code>payer</code>, draining their full approved allowance well beyond any single legitimate action.</p>
+<p><strong>Recommendation</strong>: Consider a per-action identifier/replay-guard, or a rate/amount cap per payer, as defense-in-depth against a compromised recorder.</p>
+<hr>
+<h2 id="finding-14-no-emergency-pausecircuit-breaker-anywhere-in-the-con">Finding 14: No emergency pause/circuit breaker anywhere in the contract</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: [phase1: access-control]<br><strong>Location</strong>: contract-wide</p>
+<p><strong>Description</strong>: No pause/guardian lever exists to halt fee recording, withdrawal, or distribution in response to a detected compromise of any trusted role (compounds Findings 2-4). May be an intentional trade-off for an &quot;immutable treasury sink&quot; design — flagged for confirmation with the protocol team.</p>
+<hr>
+<h2 id="finding-15-push0-opcode-compatibility-unconfirmed-for-target-cha">Finding 15: PUSH0 opcode compatibility unconfirmed for target chain</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 60<br><strong>Origin</strong>: [phase1: general]<br><strong>Location</strong>: <code>pragma solidity ^0.8.24;</code> L2</p>
+<p><strong>Description</strong>: Solidity ≥0.8.20 emits <code>PUSH0</code> by default; several L2s/alt-chains have historically lacked support at various points. Deployment-configuration concern only.</p>
+<p><strong>Recommendation</strong>: Confirm the target chain supports <code>PUSH0</code>, or pin <code>evmVersion</code> in compiler settings.</p>
+<hr>
+<h2 id="leads-plausible-not-independently-confirmed-confidence-50">Leads (plausible, not independently confirmed — confidence &lt; 50)</h2>
+<ul>
+<li><strong>JIT-stake reward sniping around <code>distributeRevenue</code>/<code>notifyReward</code>.</strong> Raised independently by 7 of 12 Phase-2 agents and Phase-1&#39;s defi-staking domain. <code>distributeRevenue()</code> is permissionless with a fully public, deterministic trigger time and amount, and gates staker eligibility only on a point-in-time <code>totalStaked() &gt; 0</code> check (L128) with no minimum-duration/snapshot requirement. An actor could stake immediately before, and unstake immediately after, a <code>distributeRevenue()</code> call to capture a disproportionate reward share — but whether this is actually exploitable depends entirely on <code>UnionStakingVault.notifyReward</code>&#39;s internal accounting (time-weighted vs. instant pro-rata), which is out of scope for this job. <strong>Recommendation</strong>: flag explicitly for the <code>UnionStakingVault</code> audit to confirm reward-streaming semantics neutralize this.</li>
+<li><strong>Token-address collision risk.</strong> Nothing in <code>setAzlToken</code>/<code>setAgentDepositVault</code> prevents the owner from wiring <code>azlToken == usdc</code> (or either equal to <code>stakingVault</code>/<code>buybackExecutor</code>/<code>feeRecipient</code>), which would merge USDC- and AZL-denominated accrual into a single <code>accruedFees</code> slot and corrupt <code>distributeRevenue</code>&#39;s math. Requires a specific owner misconfiguration; not independently exploitable by a third party.</li>
+<li><strong>Cross-contract amount/decimal mismatch between <code>ACCESS_FEE</code>/<code>EXIT_PARTY_COMP</code>/<code>EXIT_PROTOCOL_SHARE</code> and whatever the out-of-scope <code>AgentDepositVault</code> actually passes to <code>recordAccessFee</code>.</strong> These constants are asserted consistent with each other at construction (L75-78) but never validated against any runtime-supplied <code>amount</code>. Cannot be confirmed without <code>AgentDepositVault</code>&#39;s source.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard (line)</th>
+<th>Caller</th>
+<th>Writes</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setAgentDepositVault</code></td>
+<td><code>onlyOwner</code> + one-shot (81,82)</td>
+<td>owner</td>
+<td><code>agentDepositVault</code>(84), <code>usdc</code>(85)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>setAzlToken</code></td>
+<td><code>onlyOwner</code> + one-shot (88,89)</td>
+<td>owner</td>
+<td><code>azlToken</code>(91)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>setReputationRegistry</code></td>
+<td><code>onlyOwner</code> + one-shot (94,95)</td>
+<td>owner</td>
+<td><code>reputationRegistry</code>(97)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>setStakingVault</code></td>
+<td><code>onlyOwner</code> + one-shot (100,101) + preconditions (103,104,106,107)</td>
+<td>owner</td>
+<td><code>stakingVault</code>(108)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>setBuybackExecutor</code></td>
+<td><code>onlyOwner</code> + one-shot (111,112)</td>
+<td>owner</td>
+<td><code>buybackExecutor</code>(114)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>distributeRevenue</code></td>
+<td><strong>none</strong> — permissionless, state-precondition only (122,123,125,128,131)</td>
+<td>anyone</td>
+<td><code>lastDistributionAt</code>(137), <code>accruedFees[usdc]</code>(138)</td>
+<td>yes — <code>usdc.safeTransfer</code>×2 (141,145) + <code>stakingVault.notifyReward</code> (142)</td>
+</tr>
+<tr>
+<td><code>collectAzlAccessFee</code></td>
+<td><code>onlyFeeRecorder</code> (156, modifier body 61-68)</td>
+<td>taskRegistry / agentDepositVault</td>
+<td><code>accruedFees[azlToken]</code>(176)</td>
+<td>yes — pulls AZL (153)</td>
+</tr>
+<tr>
+<td><code>recordAccessFee</code></td>
+<td><code>onlyFeeRecorder</code> (161)</td>
+<td>taskRegistry / agentDepositVault</td>
+<td><code>accruedFees[token]</code>(176), caller-supplied</td>
+<td>no transfer — accounting only</td>
+</tr>
+<tr>
+<td><code>recordNativeSlash</code></td>
+<td>inline <code>msg.sender==reputationRegistry</code> (181), payable</td>
+<td>reputationRegistry</td>
+<td><code>accruedNative</code>(182)</td>
+<td>yes — receives native <code>msg.value</code></td>
+</tr>
+<tr>
+<td><code>withdrawFees</code></td>
+<td>inline <code>msg.sender==feeRecipient</code> (187)</td>
+<td>feeRecipient</td>
+<td><code>accruedFees[token]=0</code>(191)</td>
+<td>yes — arbitrary <code>token</code> (192)</td>
+</tr>
+<tr>
+<td><code>withdrawNativeFees</code></td>
+<td>inline <code>msg.sender==feeRecipient</code> (196)</td>
+<td>feeRecipient</td>
+<td><code>accruedNative=0</code>(200)</td>
+<td>yes — raw <code>call{value}</code> (201)</td>
+</tr>
+<tr>
+<td><code>proposeFeeRecipient</code></td>
+<td>inline <code>msg.sender==feeRecipient</code> (206)</td>
+<td>feeRecipient</td>
+<td><code>pendingFeeRecipient</code>(208)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>acceptFeeRecipient</code></td>
+<td>inline <code>msg.sender==pendingFeeRecipient</code> (213)</td>
+<td>pendingFeeRecipient</td>
+<td><code>feeRecipient</code>(215)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>transferOwnership</code>/<code>acceptOwnership</code>/<code>renounceOwnership</code> (inherited <code>Ownable2Step</code>/<code>Ownable</code>, out of scope source)</td>
+<td><code>onlyOwner</code> / pending-owner check</td>
+<td>owner / pendingOwner</td>
+<td><code>_owner</code></td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles</strong>: <code>owner</code> (deployer, two-step transfer, un-overridden single-step renounce — see Finding 2) → 5 one-shot setters. <code>feeRecipient</code> (constructor-set, self-administered two-step rotation, independent of owner — see Finding 3) → both withdrawal functions. <code>taskRegistry</code> (immutable) and <code>agentDepositVault</code> (owner-set once) → <code>onlyFeeRecorder</code>. <code>reputationRegistry</code>, <code>buybackExecutor</code>, <code>stakingVault</code> → owner-set once, no revoke/rotate path (Finding 7).</p>
+<p><strong>Unguarded list</strong>: <code>distributeRevenue()</code> (L121) — fully permissionless; destinations are pre-wired, only timing is caller-influenced.</p>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Addressed by</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>owner</td>
+<td>5 one-shot setters</td>
+<td>Permanent mis-wiring, no un-set path</td>
+<td>Finding 7</td>
+</tr>
+<tr>
+<td>owner</td>
+<td><code>renounceOwnership</code> (inherited)</td>
+<td>Permanently brick unset dependencies</td>
+<td>Finding 2</td>
+</tr>
+<tr>
+<td>taskRegistry / agentDepositVault</td>
+<td><code>collectAzlAccessFee</code>, <code>recordAccessFee</code></td>
+<td>Fabricate unbacked <code>accruedFees</code> entries → permanent DoS</td>
+<td>Finding 4</td>
+</tr>
+<tr>
+<td>reputationRegistry</td>
+<td><code>recordNativeSlash</code></td>
+<td>Credit <code>accruedNative</code> via <code>msg.value</code></td>
+<td>invariant holds — ledger exactly equals received native value, no other inflow path exists (no <code>receive</code>/<code>fallback</code>)</td>
+</tr>
+<tr>
+<td>feeRecipient</td>
+<td><code>withdrawFees</code></td>
+<td>Sweep 100% of accrued USDC bypassing the 40/40/20 split</td>
+<td>Finding 1</td>
+</tr>
+<tr>
+<td>feeRecipient</td>
+<td><code>withdrawNativeFees</code></td>
+<td>Drain <code>accruedNative</code> to arbitrary <code>to</code> (incl. self, destroying the accounting trail)</td>
+<td>Finding 3, Finding 12</td>
+</tr>
+<tr>
+<td>feeRecipient / pendingFeeRecipient</td>
+<td>propose/accept rotation</td>
+<td>Transfer withdrawal rights, no owner override</td>
+<td>Finding 3</td>
+</tr>
+<tr>
+<td>anyone (permissionless)</td>
+<td><code>distributeRevenue()</code></td>
+<td>Control exact timing (destinations fixed)</td>
+<td>Finding 10; JIT-stake risk — Lead</td>
+</tr>
+<tr>
+<td>malicious/misbehaving <code>AgentDepositVault</code>/<code>UnionStakingVault</code>/token contracts</td>
+<td><code>usdcToken()</code>, <code>azlToken()</code>, <code>totalStaked()</code>, <code>notifyReward()</code> return values</td>
+<td>Desync internal accounting</td>
+<td>Finding 6, Finding 8, Finding 9</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage</strong>: 13 entrypoints in inventory, 13 addressed (12 with findings, 1 — <code>recordNativeSlash</code> — examined with invariant confirmed holding). 8 threat-catalog rows, 8 answered. Coverage holes closed this Phase-3 pass: 0.</p>
+<h2 id="verification-note">Verification Note</h2>
+<p>Every <code>file:line</code> citation above was checked against <code>audits/400/repo/TreasuryRouter.sol</code> directly (<code>sed -n &#39;&lt;N&gt;p&#39;</code>/full <code>Read</code>) before inclusion; line numbers reflect the actual 219-line source file, not sub-agent chunked views.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidsi63xk6rrnysbp4ofycwjclhalyfuvavpgwwzzcivtjhx5d4qiq.ipfs.community.bgipfs.com/"><code>https://bafkreidsi63xk6rrnysbp4ofycwjclhalyfuvavpgwwzzcivtjhx5d4qiq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/400">#400</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>
