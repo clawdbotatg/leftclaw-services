@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaskScopeRegistry (leftclaw job 398) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #398">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">TaskScopeRegistry (leftclaw job 398)</h1>
+    <p class="job-sub">Job #398 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/398"><b>Job page</b> #398</a>
+      <a class="chip" href="https://bafkreigrvvvxu46euyy757iu6wj5t5gtsr4lg3kci6ticcf3kgpa6qqg4i.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — TaskScopeRegistry (leftclaw job 398)</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Single-contract source pasted in job description (no repo, no on-chain address supplied)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>TaskScopeRegistry.sol</code> (49 lines)</td>
+</tr>
+<tr>
+<td><strong>SHA-256 (source pin)</strong></td>
+<td><code>4a8b7db22a5e83b0eaed5f56c4232557f1c50e13a20c3e94d841e3bd69afb15f</code></td>
+</tr>
+<tr>
+<td><strong>Out of scope / unavailable</strong></td>
+<td><code>ITaskRegistry</code>, <code>ITaskScopeRegistry</code> — interfaces referenced by imports but no source was provided for this job; not resolvable via Sourcify/explorer since no contract address or chain was given either</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Two-phase audit v2 — Phase 0 context (opus) → Phase 1 ethskills breadth (sonnet, 4 domains) → Phase 2 pashov depth (sonnet, 12 blind attack agents) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>50 (below threshold → Leads section)</td>
+</tr>
+</tbody></table></div>
+<p><strong>A note on scope.</strong> This job&#39;s description contained only <code>TaskScopeRegistry.sol</code>.<br>Its two imports, <code>ITaskRegistry</code> and <code>ITaskScopeRegistry</code>, were never supplied — no<br>repo, no interface source, no on-chain address to look up. Every finding below that<br>depends on the <em>behavior</em> of <code>taskRegistry</code> (an external, immutable dependency) is<br>therefore reported as a <strong>contingent</strong> finding: the code-level observation is<br>confirmed by direct reading of <code>TaskScopeRegistry.sol</code>, but whether it is<br><strong>exploitable</strong> hinges on <code>ITaskRegistry</code> semantics this audit could not verify. This<br>is stated per-finding below rather than left implicit.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p>Overlap: 2 · Phase-1-only: 1 · Phase-2-only: 0 (2 minor uncorroborated leads) ·<br>Re-examined leads kept: 3, demoted: 0 · Coverage holes closed: 0</p>
+<p>Phase 1 (4 ethskills domains: general, precision-math, access-control, dos) produced<br>3 findings (2 access-control, 1 DoS) and zero from general/precision-math (no<br>applicable surface). Phase 2 (12 pashov attack agents, blind to phase 1) produced<br><strong>zero FINDINGs</strong> — all 12 agents independently converged on the same conclusion:<br>every locally-checkable code path is sound, and the contract&#39;s only real fragility<br>routes through the black-box <code>taskRegistry</code> dependency, which no agent could turn<br>into a proof-backed exploit without the missing interface source. Their ~23 raw<br>LEADs collapsed into the same 2 root mechanisms phase 1&#39;s access-control agent had<br>already identified (poster-continuity, count-monotonicity), now corroborated by<br>10/12 and 5/12 agents respectively — strong convergent signal, but still contingent<br>on the same unresolved dependency, so severity is not escalated by agent count alone<br>per this audit&#39;s verification standard. Confidence floor used: 50 (all reported<br>findings sit above it; two additional single-agent, uncorroborated observations are<br>listed as Leads rather than findings).</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[70] <strong>1. Scope-write authorization has no continuity/snapshot — a poster change or task-id reuse in the external registry would let a new poster silently inherit control over another party&#39;s stored content</strong></p>
+<p><code>TaskScopeRegistry._requirePoster</code> / <code>TaskScopeRegistry._taskExists</code> · Confidence: 70 · Severity: Low · Origin: [both] (phase1: access-control AccessControl-1; phase2: 10/12 agents on poster-continuity, 7/12 agents on id-recycling — same root cause)</p>
+<p><strong>Description</strong><br><code>_requirePoster</code> (L42-48) re-derives write authority fresh on every call via<br><code>ITaskRegistry(taskRegistry).getTask(taskId).poster == msg.sender</code> (L45), and<br><code>_taskExists</code> (L38-40) treats the entire valid-id space as the contiguous range<br><code>taskId &gt; 0 &amp;&amp; taskId &lt;= taskRegistry.taskCount()</code> (L39) with no per-id identity<br>check. <code>_scopes[taskId]</code> (L15) is written only by unconditional overwrite (L28) —<br>there is no snapshot of who authored the current value and no delete/clear path.<br>Two distinct upstream scenarios (both requiring specific, unconfirmed<br><code>ITaskRegistry</code> behavior) would let this surface in practice:</p>
+<ol>
+<li><strong>Poster reassignment mid-life.</strong> If a task&#39;s poster can change in <code>taskRegistry</code><br>(e.g. a transfer/reassignment mechanism), the <em>new</em> poster instantly and<br>silently gains full overwrite rights over scope text an entirely different,<br>prior poster wrote — with no event, flag, or on-chain marker distinguishing<br>&quot;current poster editing their own scope&quot; from &quot;new poster overwriting a<br>stranger&#39;s.&quot;</li>
+<li><strong>Task-id recycling.</strong> If a <code>taskId</code> can be retired and later reused for a<br>logically distinct new task, <code>scopeOf</code> (L33-36) would keep returning the<br><em>previous</em> task&#39;s stored text to any reader querying the &quot;new&quot; task until its<br>new poster happens to call <code>setScope</code> again — since <code>_scopes</code> is never cleared,<br>only ever overwritten.</li>
+</ol>
+<p>Every one of the 12 phase-2 attack agents that raised this (10 for mechanism 1, 7<br>for mechanism 2 — overlapping) explicitly could not construct a concrete exploit<br>from <code>TaskScopeRegistry.sol</code> alone, because both scenarios require assuming<br>behavior of <code>ITaskRegistry</code>, whose source was not supplied for this job. The<br><strong>code-level fact</strong> — no continuity binding between &quot;who is currently authorized to<br>write&quot; and &quot;who authored the currently-stored value&quot; — is confirmed by direct<br>reading; the <strong>exploitability</strong> is contingent and unverified.</p>
+<p><strong>Proof of Concept (contingent, not demonstrable from in-scope code)</strong>: Poster A<br>calls <code>setScope(7, &quot;original text&quot;)</code> — succeeds. Assume (unconfirmed) <code>taskRegistry</code><br>either reassigns task 7&#39;s poster to B, or closes task 7 and creates an unrelated new<br>task also assigned id 7 with poster B. B calls <code>setScope(7, &quot;B&#39;s text&quot;)</code> —<br><code>_requirePoster</code> reads the <em>current</em> poster (B), passes, and B&#39;s write silently<br>replaces A&#39;s content with no on-chain trace of the ownership change. Before B&#39;s<br>first call, any reader of <code>scopeOf(7)</code> also sees A&#39;s stale text presented as though<br>it belongs to B&#39;s task/tenure.</p>
+<p><strong>Fix</strong><br>If <code>taskRegistry</code> guarantees poster immutability per task and never recycles ids,<br>state that explicitly as a load-bearing invariant in this contract&#39;s NatSpec (the<br>current comment implies but does not assert it). Otherwise:</p>
+<pre><code class="language-diff">+ mapping(uint256 =&gt; address) private _scopeAuthor;
++
+  function setScope(uint256 taskId, string calldata scope) external override {
+      _requirePoster(taskId);
+      require(bytes(scope).length &gt; 0, &quot;TaskScope: empty scope&quot;);
+      require(bytes(scope).length &lt;= MAX_SCOPE_BYTES, &quot;TaskScope: scope too long&quot;);
+
+      _scopes[taskId] = scope;
++     _scopeAuthor[taskId] = msg.sender;
+      emit TaskScopeSet(taskId, msg.sender, keccak256(bytes(scope)));
+  }
+</code></pre>
+<p>This does not block a new legitimate poster from overwriting, but lets<br><code>scopeOf</code>-consuming systems/readers detect an authorship change (<code>_scopeAuthor[taskId] != currentPoster</code>) and treat pre-handoff content as stale, without this contract needing to assume anything further about <code>ITaskRegistry</code>&#39;s internals.</p>
+<hr>
+<p>[55] <strong>2. <code>_taskExists</code>&#39;s range check assumes <code>taskRegistry.taskCount()</code> is monotonically non-decreasing; if it ever decreases, previously-valid, already-populated task ids become permanently unreadable/unwritable through this contract with no recovery path</strong></p>
+<p><code>TaskScopeRegistry._taskExists</code> (used by both <code>setScope</code> and <code>scopeOf</code>) · Confidence: 55 · Severity: Info · Origin: [both] (phase1: access-control AccessControl-2; phase2: 5/12 agents)</p>
+<p><strong>Description</strong><br><code>_taskExists</code> (L38-40) defines existence as <code>taskId &gt; 0 &amp;&amp; taskId &lt;= taskRegistry.taskCount()</code>,<br>recomputed live on every call with no historical high-water mark. If<br><code>taskRegistry.taskCount()</code> is not guaranteed monotonically non-decreasing (e.g. task<br>cancellation, registry reset, or migration reducing the count), a <code>taskId</code> that<br>previously passed <code>_taskExists</code> — and may already have scope text stored via a prior<br><code>setScope</code> — would start failing it. <code>scopeOf</code> (L34) would then revert<br>(<code>&quot;TaskScope: unknown task&quot;</code>) for a task whose data is still sitting in <code>_scopes</code><br>(L15/28), and the legitimate poster would be blocked from calling <code>setScope</code> again<br>for that id, with <code>taskRegistry</code> being <code>immutable</code> (L10) and no setter to work<br>around it. This is an availability effect, not an authorization bypass, and is<br>entirely contingent on <code>taskRegistry.taskCount()</code>&#39;s monotonicity, which this audit<br>could not confirm without its source.</p>
+<p><strong>Proof of Concept (contingent, not demonstrable from in-scope code)</strong>: Poster A<br>calls <code>setScope(50, &quot;text&quot;)</code> while <code>taskCount() == 50</code> — succeeds. <code>taskRegistry</code><br>state later changes (unconfirmed mechanism) such that <code>taskCount()</code> drops to 40.<br><code>scopeOf(50)</code> now reverts despite <code>_scopes[50]</code> still holding A&#39;s text; A calling<br><code>setScope(50, ...)</code> again also reverts.</p>
+<p><strong>Fix</strong><br>Confirm with the <code>taskRegistry</code> team whether <code>taskCount()</code> is guaranteed<br>monotonically non-decreasing. If it is, no code change is needed — just document the<br>assumption explicitly. If it is not, track existence via a local high-water mark<br>(e.g. <code>maxSeenTaskId</code>, advanced opportunistically on <code>setScope</code>) rather than a live<br>range bound, so previously-valid tasks don&#39;t lose access to their own already-stored<br>data purely because the external counter moved backward.</p>
+<hr>
+<p>[65] <strong>3. Unconditional dependency on external <code>taskRegistry</code> is a single point of failure for the entire contract</strong></p>
+<p><code>TaskScopeRegistry._taskExists</code> / <code>_requirePoster</code> (reached from both <code>setScope</code> and <code>scopeOf</code>) · Confidence: 65 · Severity: Low · Origin: [phase1 only] (evm-audit-dos)</p>
+<p><strong>Description</strong><br>Every path in this contract makes an unconditional external call into the immutable<br><code>taskRegistry</code> (<code>taskCount()</code> at L39, <code>getTask()</code> at L45) with no <code>try/catch</code> and no<br>fallback. If <code>taskRegistry</code> ever reverts unconditionally for any reason (paused,<br>bricked, a broken upgrade if it happens to sit behind a proxy on its own side), both<br><code>setScope</code> and <code>scopeOf</code> become permanently unusable for every <code>taskId</code>, with no<br>on-chain recovery since <code>taskRegistry</code> has no setter (L10 is <code>immutable</code>).</p>
+<p><strong>Proof of Concept</strong>: <code>taskRegistry</code> becomes permanently reverting on<br><code>taskCount()</code>/<code>getTask()</code> → every call into <code>_taskExists</code>/<code>_requirePoster</code> reverts →<br><code>setScope</code> and <code>scopeOf</code> are dead for all ids, permanently, with no recovery path in<br>this contract.</p>
+<p><strong>Fix</strong><br>Document as an explicit trust assumption in NatSpec. Rated Low rather than higher<br>because this mirrors standard &quot;trust the core registry you&#39;re built on&quot;<br>architecture rather than a defect introduced by this file, and any fix (a mutable<br>registry pointer, or a fallback bypassing the poster check on failure) trades this<br>risk for a worse one — centralization or an authorization bypass, respectively.<br>Re-examined for this report (phase-1-only lead, hybrid step): confirmed sound on a<br>targeted re-read; no phase-2 agent surfaced a stronger variant, so it stands<br>unchanged.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[70]</td>
+<td><span class="pill low">Low</span></td>
+<td>No continuity binding on scope-write authorization (poster reassignment / id recycling)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[65]</td>
+<td><span class="pill low">Low</span></td>
+<td><code>taskRegistry</code> is an unconditional single point of failure</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[55]</td>
+<td><span class="pill info">Info</span></td>
+<td><code>_taskExists</code> assumes <code>taskCount()</code> is monotonically non-decreasing</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could<br>not be completed in one analysis pass. These are not false positives — they are<br>high-signal leads for manual review, kept separate because each was raised by only<br>one of the 15 hunting agents (4 ethskills + 12 pashov, minus zero-finding overlaps)<br>and is more speculative than the findings above. Not scored.</em></p>
+<ul>
+<li><strong>0-indexed task-id lockout</strong> — <code>TaskScopeRegistry._taskExists</code> (L38) — Code<br>smell: <code>taskId &gt; 0</code> hardcodes a 1-indexed assumption about <code>ITaskRegistry</code>&#39;s id<br>numbering; if the real registry ever assigns id <code>0</code> to a genuine task, that task<br>would be permanently unreachable via both <code>setScope</code> and <code>scopeOf</code>, with no<br>workaround. Raised by 1 of 15 agents (phase-2 economic-security); pure speculation<br>about an unprovided interface&#39;s numbering convention, no evidence either way in<br>this file.</li>
+<li><strong>External ABI/struct-layout trust on <code>getTask()</code></strong> — <code>TaskScopeRegistry._requirePoster</code><br>(L45) — Code smell: <code>.poster</code> is read from the external call&#39;s return value<br>according to the locally-declared (but unprovided-for-this-job) <code>ITaskRegistry</code><br>interface; if the real registry&#39;s struct field layout differs, <code>.poster</code> could<br>resolve to the wrong ABI-encoded word. Raised by 1 of 15 agents (phase-2<br>periphery); this risk is inherent to any external interface call made without the<br>counterparty&#39;s source and is not a defect specific to this file.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract.function</th>
+<th>Guard</th>
+<th>Who can call</th>
+<th>State written</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>constructor(address _taskRegistry)</code></td>
+<td><code>require(_taskRegistry != address(0))</code> (L18)</td>
+<td>deployer, once</td>
+<td><code>taskRegistry</code> immutable (L19)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>setScope(uint256 taskId, string calldata scope)</code></td>
+<td><code>_requirePoster(taskId)</code> (L24) → 2 external calls into <code>taskRegistry</code>; <code>require(length&gt;0)</code> (L25); <code>require(length&lt;=8192)</code> (L26)</td>
+<td>whoever <code>taskRegistry.getTask(taskId).poster</code> currently reports</td>
+<td><code>_scopes[taskId]</code> (L28)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>scopeOf(uint256 taskId)</code></td>
+<td><code>require(_taskExists(taskId))</code> (L34)</td>
+<td>anyone (<code>external view</code>)</td>
+<td>none</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles.</strong> No <code>Ownable</code>/<code>AccessControl</code>, no owner/admin, no pause, no upgrade hook —<br>checked literally by every hunting agent, none present. <code>taskRegistry</code> (L10) is<br><code>immutable</code>, set once at construction, never changeable. <code>MAX_SCOPE_BYTES</code> (L13) is a<br>compile-time <code>constant</code> (8192). The &quot;poster&quot; role is defined entirely by the<br>external <code>taskRegistry</code> contract; <code>TaskScopeRegistry</code> holds no independent record of<br>posters and re-derives the answer fresh on every <code>setScope</code> call.</p>
+<p><strong>Unguarded entrypoints.</strong> None. The sole state-changing entrypoint (<code>setScope</code>) is<br>gated by <code>_requirePoster</code>. <code>scopeOf</code> is an unrestricted, existence-gated public read<br>— by design, not a gap.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Invariant that must hold</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary caller (not current poster)</td>
+<td><code>setScope(taskId, scope)</code></td>
+<td>Set/overwrite scope for a task not theirs</td>
+<td>Poster-only write, enforced by <code>taskRegistry.getTask().poster == msg.sender</code> (L45) — <strong>holds</strong>: every hunting agent (15 total) tried and failed to bypass this locally</td>
+</tr>
+<tr>
+<td>Current poster</td>
+<td><code>setScope</code> with oversized/empty string</td>
+<td>Bypass length/non-emptiness bounds</td>
+<td>Length checks (L25-26) — <strong>holds</strong>: verified by direct inversion (0-byte and 8193-byte inputs both correctly revert)</td>
+</tr>
+<tr>
+<td>Any caller</td>
+<td><code>scopeOf(taskId)</code></td>
+<td>Read any stored scope</td>
+<td>No confidentiality guard needed — public by design, not a gap</td>
+</tr>
+<tr>
+<td><code>taskRegistry</code> (compromised/buggy/differently-behaved than assumed)</td>
+<td>Return value of <code>taskCount()</code> / <code>getTask().poster</code></td>
+<td>Fully control who may write any task&#39;s scope and which ids are considered to exist</td>
+<td>Trust assumption — <strong>addressed by Finding #1 and #2</strong> (contingent, not locally verifiable)</td>
+</tr>
+<tr>
+<td>Any caller, if <code>taskRegistry</code> becomes permanently unavailable</td>
+<td>Nothing (this is a liveness question, not a gain)</td>
+<td>N/A</td>
+<td><strong>Addressed by Finding #3</strong></td>
+</tr>
+<tr>
+<td>Deployer</td>
+<td>Constructor, once</td>
+<td>Point <code>taskRegistry</code> at any nonzero address</td>
+<td>Zero-check only (L18) — <strong>holds</strong>, one-shot, no further invariant needed</td>
+</tr>
+</tbody></table></div>
+<p>Coverage: 3 privileged/value-relevant entrypoints in the access-control inventory,<br>3 addressed. 6 threat-catalog rows, 6 answered (3 &quot;invariant holds,&quot; 3 mapped to a<br>finding above). Coverage holes closed this pass: 0 (both phases already covered<br>every row; this pass re-examined phase-1-unique Finding #3 and confirmed it, per the<br>hybrid step, rather than discovering a new gap).</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI auditor agents (leftclaw.services automated<br>audit pipeline: phase-0 context building + ethskills breadth checklist agents +<br>pashov-methodology attacker-mindset agents, reconciled by an orchestrating agent).<br>AI analysis can never verify the complete absence of vulnerabilities and no<br>guarantee of security is given. The severity ceiling in this report reflects a<br>hard scope limitation, not a clean bill of health: <code>ITaskRegistry</code> and<br><code>ITaskScopeRegistry</code>, the two interfaces this contract depends on entirely for<br>authorization and existence checks, were never supplied for this job (no repo, no<br>on-chain address). <strong>Before deployment, this audit should be re-run with<br><code>ITaskRegistry</code>&#39;s actual source in scope</strong> — every finding and lead above<br>converges on that single missing piece. Team security review, bug bounty programs,<br>and on-chain monitoring are strongly recommended regardless.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreigrvvvxu46euyy757iu6wj5t5gtsr4lg3kci6ticcf3kgpa6qqg4i.ipfs.community.bgipfs.com/"><code>https://bafkreigrvvvxu46euyy757iu6wj5t5gtsr4lg3kci6ticcf3kgpa6qqg4i.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/398">#398</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

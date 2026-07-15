@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TestTaskRegistry Agent-Task-Marketplace System — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #403">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">TestTaskRegistry Agent-Task-Marketplace System</h1>
+    <p class="job-sub">Job #403 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/403"><b>Job page</b> #403</a>
+      <a class="chip" href="https://bafkreicewob2cdxwb2rs6wztirucwruf3cryiuwyenuebgrrbkqvsigd6y.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#below-confidence-threshold-findings-description-only">Below-Confidence-Threshold Findings (description only)</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#phase-1-only-lowinfo-items-not-independently-re-surfaced-by-phas">Phase-1-only Low/Info items (not independently re-surfaced by Phase 2, kept for completeness)</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — TestTaskRegistry Agent-Task-Marketplace System</h1>
+<p><strong>Audit target</strong>: <code>TestTaskRegistry</code> + 5 wired contracts (<code>EscrowVault</code>, <code>AgentDepositVault</code>, <code>ReputationRegistry</code>, <code>TreasuryRouter</code>, <code>UnionStakingVault</code>)<br><strong>Chain</strong>: Base (chain id 8453)<br><strong>Address</strong>: <code>0xE7C722C58EA7B74f4C0fC46058E8634D201C7379</code> (verified source, Basescan)<br><strong>Compiler</strong>: solc <code>v0.8.24+commit.e11b9ed9</code>, optimizer enabled (200 runs), EVM version <code>paris</code><br><strong>Methodology</strong>: three-phase audit — Phase 0 context (protocol map + access-control inventory + threat catalog, opus) → Phase 1 breadth (6 ethskills domain checklists, opus) → Phase 2 depth (12 independent attacker-mindset agents, blind to Phase 1, opus) → hybrid reconciliation with a coverage gate against the Phase 0 inventory/threat catalog.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Default (all in-scope <code>.sol</code>, excluding <code>interfaces/</code> per convention)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>TaskRegistry.sol</code> (contract <code>TestTaskRegistry</code>) · <code>EscrowVault.sol</code><br><code>AgentDepositVault.sol</code> · <code>ReputationRegistry.sol</code><br><code>TreasuryRouter.sol</code> · <code>UnionStakingVault.sol</code></td>
+</tr>
+<tr>
+<td><strong>In-scope LOC</strong></td>
+<td>2,087 (6 contracts)</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1–100)</strong></td>
+<td>50 — findings below 50 are listed as Leads, not scored findings</td>
+</tr>
+</tbody></table></div>
+<p><code>ArbitrationModule</code> (referenced only via <code>IArbitrationModule</code>/<code>IArbitrationRecovery</code>) is an external, out-of-scope black box; findings that depend entirely on its unverifiable internal behavior are recorded as Leads.</p>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Phase 1</strong> (6 ethskills domains: general, precision-math, erc20, access-control, dos, defi-staking): 2 Medium, 9 Low, 11 Info.</li>
+<li><strong>Phase 2</strong> (12 pashov attack agents, blind): 2 concrete findings converged on by 8–9/12 agents independently (<code>createTask</code> consent gap, <code>EscrowVault</code> streaming/hour-block dead release path), 1 finding converged on by 3/12 + corroborated by Phase 1 (TreasuryRouter reserve), and a novel structural finding converged on by 5/12 agents from different angles and <strong>directly verified against source in this reconciliation pass</strong> (the balance-health watchdog is unreachable).</li>
+<li><strong>Overlap</strong>: 3 major findings independently hit by both phases or by a strong majority of Phase-2 agents (<code>[both]</code>). <strong>Phase-2-only</strong>: the dead-watchdog finding and several contingent leads. <strong>Phase-1-only</strong>: all Info/Low hygiene items not re-surfaced by Phase 2 (kept in the Leads/Low appendix below).</li>
+<li><strong>Re-examined leads</strong>: every Phase-2-unique claim above Low severity was independently re-read against the actual contract source in this reconciliation turn (not merely trusted from agent output) — see the &quot;Verification&quot; note on each Medium+/High finding.</li>
+<li><strong>Coverage gate</strong>: 76 external/public state-changing functions in the Phase-0 inventory; all 76 are addressed below either by a finding or by an explicit &quot;examined, no issue&quot; line in the Threat Model table. All 14 Phase-0 threat-catalog rows are answered. <strong>Coverage holes closed this pass: 0</strong> (both hunting phases already covered the full inventory; this pass added verification, not new coverage).</li>
+<li><strong>Confidence floor</strong>: 50. All findings below list a confidence score; Leads (&lt; 50) are collected in a dedicated section without severity/fix.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[92] <strong>1. <code>createTask</code> binds a non-consenting worker, enabling reputation forgery and a permanent partial deposit lock</strong></p>
+<p><code>TestTaskRegistry.createTask</code> · Confidence: 92 · <strong>Severity: High</strong></p>
+<p><strong>Description</strong><br><code>createTask(worker, ...)</code> (TaskRegistry.sol:280-340) binds any address holding ≥$25 in <code>AgentDepositVault</code> as the task&#39;s <code>worker</code> and activates the task immediately (<code>state = ACTIVE</code>, L314; <code>_bindAgent(worker)</code>, L333) — the only checks are <code>worker != msg.sender</code> (L293) and a balance/blocked check (<code>requireMinimum(worker)</code>, L299); there is <strong>no signature, approval, or acknowledgment from the named worker</strong>. The victim cannot self-exit: <code>leaveTask</code> requires <code>state == CLAIMED</code> (L240), but a direct hire is born <code>ACTIVE</code> and never passes through <code>CLAIMED</code>. Because <code>deadline</code> is also unvalidated (no <code>deadline &gt; block.timestamp</code> check anywhere in <code>createTask</code> or <code>postTask</code>), an attacker can set it to any value. Two independent harms follow, both reachable in the same attack:</p>
+<ul>
+<li><strong>Reputation forgery.</strong> If the attacker funds the task (<code>fundTask</code>, even 1 wei) so <code>EscrowVault.lockedBalance(taskId) &gt; 0</code>, and lets the deadline pass, anyone can call <code>expireTask</code> (permissionless). Because <code>wasFundedActive = (state==ACTIVE &amp;&amp; locked&gt;0)</code> is true (TaskRegistry.sol:503) and <code>t.worker != address(0)</code>, <code>expireTask</code> emits a full-weight (100) <code>TASK_FAILED</code> signal against the victim (L514-523) — a permanent on-chain reputation mark for a task the victim never agreed to and had no ability to complete or decline. The attacker&#39;s funded escrow is refunded to them at the same call (L505-507). Net attacker cost: one access fee (~$5 USDC + 1,000 AZL); the 1-wei funding is fully refunded.</li>
+<li><strong>Deposit lock.</strong> With <code>liveTaskBindings[victim] &gt; 0</code>, <code>maxWithdrawableDeposit</code> (TaskRegistry.sol:539-548) reserves the <code>MIN_TASK_BALANCE</code> ($8) floor of the victim&#39;s deposit for as long as the task stays open. With a far-future deadline, this is an indefinite lock; the victim&#39;s only self-service escape is <code>openDispute</code> (TaskRegistry.sol:474), which pulls them into arbitration and can cost them a dispute bond.</li>
+</ul>
+<p><strong>Verification</strong>: Read directly against <code>TaskRegistry.sol</code> in this reconciliation pass (lines above quoted from the actual file, not agent paraphrase). Independently reconstructed with a concrete numeric PoC by 9 of 12 blind Phase-2 attack agents (access-control, periphery, execution-trace, economic-security, first-principles, boundary, invariant, trust-gap, flow-gap) and by the Phase-1 access-control checklist agent — the highest-convergence finding of the engagement.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function createTask(
+     address worker,
+     address token,
+     uint256 totalAmount,
+     IEscrowVault.EscrowMode escrowMode,
+     bytes32 settlementDigest,
+     uint256 deadline,
+     bool replacementAllowed,
+     uint256[] calldata milestoneAmounts,
+     uint256 streamRate,
+     uint256 hourBlockSize
+-) external returns (uint256 taskId) {
++) external returns (uint256 taskId) {
+     require(worker != address(0), &quot;TaskRegistry: zero worker&quot;);
+     require(worker != msg.sender, &quot;TaskRegistry: self hire&quot;);
++    require(deadline &gt; block.timestamp, &quot;TaskRegistry: bad deadline&quot;);
+     require(address(agentVault) != address(0), &quot;TaskRegistry: no vault&quot;);
+     require(token == agentVault.usdcToken(), &quot;TaskRegistry: token mismatch&quot;);
+     _validateTaskTerms(totalAmount, escrowMode, milestoneAmounts);
+     if (address(agentVault) != address(0)) {
+         agentVault.requireMinimum(msg.sender);
+         agentVault.requireMinimum(worker);
+         if (treasury != address(0)) {
+             _chargeAccessFee(msg.sender, TreasuryRouter.AccessFeeKind.POST);
+         }
+     }
++    // Require the worker&#39;s affirmative consent rather than binding+activating
++    // unilaterally, e.g. start in a PENDING state the worker must accept:
++    //   tasks[taskId].state = TaskState.PENDING_ACCEPT;
++    //   (worker calls a new acceptDirectHire(taskId) to move it to ACTIVE,
++    //    and can freely decline/ignore it with no binding or reputation effect
++    //    until accepted)
+</code></pre>
+<hr>
+<p>[88] <strong>2. <code>EscrowVault.streamRelease</code>/<code>claimHourBlock</code> have no reachable release path — STREAMING/HOUR_BLOCKS workers have no enforceable payout</strong></p>
+<p><code>EscrowVault.streamRelease</code> / <code>EscrowVault.claimHourBlock</code> · Confidence: 88 · <strong>Severity: High</strong></p>
+<p><strong>Description</strong><br><code>TestTaskRegistry.postTask</code>/<code>createTask</code> accept <code>EscrowMode.STREAMING</code> and <code>EscrowMode.HOUR_BLOCKS</code> with no restriction (<code>_validateTaskTerms</code>, TaskRegistry.sol:597-614, only constrains <code>MILESTONE</code> mode — L603 returns immediately for any other mode), and <code>fundTask</code> funds them normally via <code>depositFor</code>. But <code>EscrowVault.streamRelease</code> (EscrowVault.sol:158) and <code>claimHourBlock</code> (EscrowVault.sol:182) are <code>onlyRegistry</code>, and <strong>no function anywhere in <code>TaskRegistry.sol</code> calls either one</strong> (grep-confirmed across the full file). <code>submitProof</code> — the only path into the worker-protective <code>IN_REVIEW</code> state and its <code>resolveStaleReview</code> optimistic-acceptance backstop — reverts for any non-<code>MILESTONE</code> task (TaskRegistry.sol:355-358, <code>&quot;TaskRegistry: not milestone&quot;</code>).</p>
+<p>Consequently, a worker who claims and performs work on a STREAMING/HOUR_BLOCKS task has exactly two ways the funded escrow can move: poster-discretionary <code>completeTask</code> (all remaining escrow → worker, TaskRegistry.sol:444-460), or permissionless post-deadline <code>expireTask</code> (all remaining escrow → <strong>poster</strong>, TaskRegistry.sol:493-527). There is no unilateral worker claim, and no partial-payment protection of any kind — a poster can let a streaming worker deliver work for the task&#39;s full duration and then simply never call <code>completeTask</code>, reclaiming 100% of the funded escrow via <code>expireTask</code> once the deadline passes.</p>
+<p><strong>Verification</strong>: <code>grep -n &quot;streamRelease\|claimHourBlock&quot; src/*.sol</code> confirms the only occurrences are the two function definitions themselves — zero call sites. Independently found as a Finding by 2 of 12 blind Phase-2 agents (first-principles, asymmetry) and as a Lead by 4 more (periphery, boundary, flow-gap, numerical-gap); flagged at Low severity in Phase 1 (general-3) before the payment-loss implication was traced through by Phase 2.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    /// @notice Worker-callable stream claim, mirroring submitProof&#39;s IN_REVIEW protection.
++    function claimStream(uint256 taskId, uint256 maxAmount) external onlyWorker(taskId) taskLive(taskId) notPaused(taskId) {
++        escrow.streamRelease(taskId, maxAmount);
++        _enforceBalanceHealth(taskId);
++    }
++
++    function claimHourBlock(uint256 taskId) external onlyWorker(taskId) taskLive(taskId) notPaused(taskId) {
++        escrow.claimHourBlock(taskId);
++        _enforceBalanceHealth(taskId);
++    }
+</code></pre>
+<p>Alternatively (smaller diff, if incremental release is not meant to ship yet), reject the two modes at creation time:</p>
+<pre><code class="language-diff">     function _validateTaskTerms(
+         uint256 totalAmount,
+         IEscrowVault.EscrowMode escrowMode,
+         uint256[] calldata milestoneAmounts
+     ) internal pure {
+         require(totalAmount &gt; 0, &quot;TaskRegistry: zero total&quot;);
++        require(escrowMode != IEscrowVault.EscrowMode.STREAMING &amp;&amp;
++                escrowMode != IEscrowVault.EscrowMode.HOUR_BLOCKS,
++                &quot;TaskRegistry: mode not wired&quot;);
+         if (escrowMode != IEscrowVault.EscrowMode.MILESTONE) return;
+</code></pre>
+<hr>
+<p>[80] <strong>3. <code>TreasuryRouter</code>&#39;s 20% protocol reserve is not segregated from the distributable pool — permissionlessly recycled every epoch, and fully drainable by <code>feeRecipient</code> before distribution</strong></p>
+<p><code>TreasuryRouter.distributeRevenue</code> / <code>TreasuryRouter.withdrawFees</code> · Confidence: 80 · <strong>Severity: Medium</strong></p>
+<p><strong>Description</strong><br><code>distributeRevenue</code> (TreasuryRouter.sol:121-149) splits <code>accruedFees[usdc]</code> 40% staker / 40% buyback / 20% reserved, then writes the reserve back into the <strong>same</strong> storage slot it just read as its distribution base:</p>
+<pre><code class="language-solidity">uint256 amount = accruedFees[address(usdc)];              // L130
+...
+uint256 reserved = amount - stakerShare - buybackShare;   // L135
+lastDistributionAt = block.timestamp;
+accruedFees[address(usdc)] = reserved;                     // L138 — same slot
+</code></pre>
+<p>Two consequences, both verified directly against the source:</p>
+<ul>
+<li><strong>Permissionless recycling</strong> (no privilege required): <code>distributeRevenue</code> is callable by anyone once the 7-day epoch elapses. With no new fees accruing, the &quot;reserve&quot; decays geometrically: $1,000 → epoch 1 leaves $200 reserved → epoch 2 leaves $40 → epoch 3 leaves $8 → → 0, with the difference each round paid out 40/40 to stakers/buyback instead of retained. The documented &quot;20% remains accrued as protocol reserve&quot; (L119 comment) does not hold across more than one distribution.</li>
+<li><strong><code>feeRecipient</code> full-pool capture</strong>: <code>withdrawFees(token, to)</code> (TreasuryRouter.sol:186-193) reads and zeroes the <em>entire</em> <code>accruedFees[token]</code> with no cap and no ordering guarantee relative to <code>distributeRevenue</code>. Because the reserve and the not-yet-distributed 80% staker/buyback share live in the same variable, <code>feeRecipient</code> calling <code>withdrawFees(usdc, ...)</code> before <code>distributeRevenue</code> runs takes 100% of accrued USDC — not just the intended 20% — leaving stakers and the buyback executor with nothing that epoch (and <code>distributeRevenue</code> then reverts with &quot;nothing to distribute&quot;).</li>
+</ul>
+<p>This degrades the documented 40/40/20 revenue-sharing invariant and undermines the UnionStakingVault USDC-reward value proposition (stakers&#39; expected yield is not actually guaranteed by the code). It does not let an external, unprivileged attacker steal funds for themselves — the misdirected value stays within the protocol&#39;s own destinations (reserve vs. stakers vs. buyback) or requires the trusted <code>feeRecipient</code> role — which is why this is Medium rather than High/Critical per the given severity rubric (trust-model violation / incorrect accounting, not external fund theft).</p>
+<p><strong>Verification</strong>: Read directly against <code>TreasuryRouter.sol</code> in this reconciliation pass. Independently found as a Finding by 3 of 12 blind Phase-2 agents (math-precision with a full numeric trace, periphery, trust-gap) and as a Lead by 3 more (economic-security, numerical-gap, invariant); corroborates Phase 1&#39;s <code>staking-1</code> (also Medium).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     mapping(address =&gt; uint256) public accruedFees;
++    mapping(address =&gt; uint256) public reservedFees;
+     uint256 public accruedNative;
+@@
+     function distributeRevenue() external {
+         ...
+-        uint256 amount = accruedFees[address(usdc)];
++        uint256 amount = accruedFees[address(usdc)] - reservedFees[address(usdc)];
+         require(amount &gt; 0, &quot;Treasury: nothing to distribute&quot;);
+
+         uint256 stakerShare = (amount * STAKER_SHARE_BPS) / 10000;
+         uint256 buybackShare = (amount * BUYBACK_SHARE_BPS) / 10000;
+         uint256 reserved = amount - stakerShare - buybackShare;
+
+         lastDistributionAt = block.timestamp;
+-        accruedFees[address(usdc)] = reserved;
++        reservedFees[address(usdc)] += reserved;
++        accruedFees[address(usdc)] -= (stakerShare + buybackShare);
+         ...
+     }
+
+     function withdrawFees(address token, address to) external {
+         require(msg.sender == feeRecipient, &quot;Treasury: not recipient&quot;);
+         require(to != address(0), &quot;Treasury: zero to&quot;);
+-        uint256 amount = accruedFees[token];
++        uint256 amount = reservedFees[token];
+         require(amount &gt; 0, &quot;Treasury: nothing to withdraw&quot;);
+-        accruedFees[token] = 0;
++        reservedFees[token] = 0;
+         IERC20(token).safeTransfer(to, amount);
+     }
+</code></pre>
+<hr>
+<p>[78] <strong>4. <code>MIN_TASK_BALANCE</code> is a flat per-agent floor, not per-binding — under-collateralizes multi-task agents and makes the balance-health watchdog structurally unreachable</strong></p>
+<p><code>AgentDepositVault</code> (<code>meetsTaskMinimum</code>, all debit functions) / <code>TestTaskRegistry</code> (<code>maxWithdrawableDeposit</code>, <code>_enforceBalanceHealth</code>) · Confidence: 85 · <strong>Severity: Medium</strong></p>
+<p><strong>Description</strong><br><code>MIN_TASK_BALANCE = 8_000_000</code> is documented &quot;$8 per live task binding&quot; (AgentDepositVault.sol:20), and <code>liveTaskBindings[agent]</code> (TaskRegistry.sol:36) exactly tracks how many live tasks an agent is bound to. But every place the floor is actually enforced treats it as a <strong>flat</strong> value, independent of that count:</p>
+<ul>
+<li><code>maxWithdrawableDeposit</code> (TaskRegistry.sol:539-548): <code>if (liveTaskBindings[agent] &gt; 0) { floor = agentVault.MIN_TASK_BALANCE(); ... return bal - floor; }</code> — a single <code>MIN_TASK_BALANCE</code>, not <code>MIN_TASK_BALANCE * liveTaskBindings[agent]</code>.</li>
+<li><code>meetsTaskMinimum</code> (AgentDepositVault.sol:136-138): <code>deposits[agent] &gt;= MIN_TASK_BALANCE &amp;&amp; !isBlocked(agent)</code> — same flat comparison, used by every solvency check in the system.</li>
+</ul>
+<p>An agent bound to N concurrent tasks is therefore &quot;healthy&quot; and can freely withdraw down to a single shared $8, not $8×N — the documented per-task collateral guarantee does not exist in the code.</p>
+<p>This is verified (this reconciliation pass, by direct enumeration of every <code>deposits[x] -=</code> site) to have a second, more structural consequence. Every function that decreases <code>deposits[agent]</code> enforces a floor ≥ this same flat value:</p>
+<ul>
+<li><code>withdraw</code> (AgentDepositVault.sol:98-108): capped by <code>maxWithdrawableDeposit</code>, floors at $8 while bound.</li>
+<li><code>debitDisputeBond</code> (AgentDepositVault.sol:184-192): <code>require(deposits[agent] - amount &gt;= MIN_TASK_BALANCE)</code> — floors at $8.</li>
+<li><code>debitAccessFee</code>/<code>debitDismissFee</code>/<code>debitLeaveFee</code> (AgentDepositVault.sol:207-275): each <code>require</code>s <code>deposits &gt;= MIN_ENTRY_BALANCE + fee</code> <em>before</em> debiting the fee, leaving the post-debit balance ≥ <code>MIN_ENTRY_BALANCE</code> ($25).</li>
+<li>Every binding entrypoint (<code>postTask</code>, <code>claimTask</code>, <code>createTask</code>) requires ≥ <code>MIN_ENTRY_BALANCE</code> ($25) via <code>requireMinimum</code>/<code>requireBalanceForFee</code> <em>before</em> the corresponding <code>_bindAgent</code> call.</li>
+</ul>
+<p>So a bound agent&#39;s <code>deposits[agent]</code> can never fall below $8 through any code path. The <strong>only</strong> other way <code>meetsTaskMinimum</code> can return <code>false</code> is <code>isBlocked(agent)</code>, and <code>blockedUntil</code> (the sole storage backing <code>isBlocked</code>) is written in exactly one place: <code>applyPlatformPenalty</code> (AgentDepositVault.sol:277-279), whose <strong>only caller in the entire codebase</strong> is <code>_finalizePausedTask</code> (TaskRegistry.sol:711), which itself only runs when a task that is already <code>PAUSED</code> reaches <code>pauseEndsAt</code> (TaskRegistry.sol:628-631) — and a task only becomes <code>PAUSED</code> when <code>_firstUnderfunded</code> (TaskRegistry.sol:656-660) returns a non-zero address, i.e. when <code>meetsTaskMinimum</code> is already <code>false</code> for some party. This is fully circular with no bootstrap: nothing outside this exact subsystem can ever produce the state (&quot;underfunded or blocked&quot;) that the subsystem exists to detect and act on.</p>
+<p>Net effect: the permissionless &quot;balance-health watchdog&quot; — <code>checkTaskBalance</code> → pause → resume-or-finalize → 7-day platform block + best-effort reputation reset — <strong>can never trigger for any agent</strong>, for any task, under any reachable sequence of calls. It is fully dead code, despite being described in an inline <code>@notice</code> comment (TaskRegistry.sol:253) as an active protection (&quot;Permissionless balance watchdog — pause, resume, or finalize delete&quot;). This also means <code>emergencyTopUp</code> (which requires <code>state == PAUSED</code>) is unreachable, and the <code>_finalizePausedTask</code> milestone-forfeiture asymmetry (Finding 5, below) is currently dormant.</p>
+<p><strong>Verification</strong>: Read directly against <code>AgentDepositVault.sol</code> and <code>TaskRegistry.sol</code> in this reconciliation pass; every <code>deposits[x] -=</code> site and the sole <code>blockedUntil</code> writer were individually traced and confirmed to hold the floor invariant described above, with no bypass found. Independently converged on from different angles by 5 of 12 blind Phase-2 agents (boundary and invariant as standalone Findings; asymmetry, trust-gap, and flow-gap as Leads reaching the identical circular-precondition conclusion); the flat-floor half was separately flagged (without the dead-watchdog implication) by Phase 1&#39;s <code>general-1</code> (Low).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     // TaskRegistry.sol
+     function maxWithdrawableDeposit(address agent) external view returns (uint256) {
+         uint256 bal = agentVault.balanceOf(agent);
+         if (bal == 0) return 0;
+-        if (liveTaskBindings[agent] &gt; 0) {
+-            uint256 floor = agentVault.MIN_TASK_BALANCE();
++        uint256 bindings = liveTaskBindings[agent];
++        if (bindings &gt; 0) {
++            uint256 floor = agentVault.MIN_TASK_BALANCE() * bindings;
+             if (bal &lt;= floor) return 0;
+             return bal - floor;
+         }
+         return bal;
+     }
+</code></pre>
+<pre><code class="language-diff">     // AgentDepositVault.sol — meetsTaskMinimum needs the caller&#39;s binding count.
+-    function meetsTaskMinimum(address agent) public view returns (bool) {
+-        return deposits[agent] &gt;= MIN_TASK_BALANCE &amp;&amp; !isBlocked(agent);
++    function meetsTaskMinimum(address agent, uint256 bindingCount) public view returns (bool) {
++        return deposits[agent] &gt;= MIN_TASK_BALANCE * bindingCount &amp;&amp; !isBlocked(agent);
+     }
+</code></pre>
+<p>(and thread <code>liveTaskBindings[agent]</code> through the <code>TaskRegistry._firstUnderfunded</code>/<code>_partiesMeetMinimum</code> call sites accordingly, so a genuinely under-collateralized multi-task agent becomes detectable and the watchdog can fire as designed).</p>
+<hr>
+<p>[55] <strong>5. <code>_finalizePausedTask</code> forfeits a worker&#39;s already-proven milestones to the poster when the worker (not the poster) is the pause culprit</strong></p>
+<p><code>TestTaskRegistry._finalizePausedTask</code> · Confidence: 55 (Low — currently unreachable, see Finding 4) · <strong>Severity: Low</strong></p>
+<p><strong>Description</strong><br>When a paused task finalizes, <code>_finalizePausedTask</code> (TaskRegistry.sol:679-715) only releases proven-but-unaccepted milestones to the worker when <code>culprit == t.poster &amp;&amp; p.resumeState == IN_REVIEW</code> (L684-697). In the mirror case — <code>culprit == t.worker</code> while <code>IN_REVIEW</code> with proven milestones sitting in <code>_pendingReview</code> — that branch is skipped and <code>refundRemainingToPoster</code> (L698) returns the <em>entire</em> remaining escrow, including the worker&#39;s already-delivered, proof-accepted-pending value, to the poster; the worker is additionally 7-day platform-blocked (<code>applyPlatformPenalty</code>). A worker who did the work and submitted proof loses it entirely if they happen to be attributed as the culprit.</p>
+<p>This asymmetry is real in the code but is currently <strong>contingent on Finding 4</strong>: since <code>_firstUnderfunded</code> can never return a non-zero address today, no task can ever reach <code>_finalizePausedTask</code> with any culprit at all, poster or worker. It becomes live the moment Finding 4 is fixed (correctly, since fixing 4 is what makes underfunding — and hence a worker-culprit finalize — reachable), so both should be fixed together.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">         if (
+-            culprit == t.poster &amp;&amp;
+             p.resumeState == TaskState.IN_REVIEW &amp;&amp;
+             t.worker != address(0)
+         ) {
+             uint256[] storage pending = _pendingReview[taskId];
+             uint256 length = pending.length;
+             for (uint256 i = 0; i &lt; length; i++) {
+                 escrow.releaseMilestone(taskId, pending[i]);
+             }
+             if (length &gt; 0) {
+                 _recordCompletionSignal(taskId, t.worker);
+             }
+         }
+</code></pre>
+<hr>
+<h2 id="below-confidence-threshold-findings-description-only">Below-Confidence-Threshold Findings (description only)</h2>
+<p>[48] <strong>6. <code>resetSubject</code> confiscates a party&#39;s entire, unrelated native-ETH verifier bond on platform penalty</strong><br><code>ReputationRegistry.resetSubject</code> (L114-125) — <code>applyPlatformPenalty</code> forwards the culprit&#39;s <em>entire</em> <code>verifierBond</code> to the treasury via <code>resetSubject</code>, an unrelated role/domain (verifier bonding vs. task-collateral penalty), with no proration. Currently contingent on Finding 4 (its only caller, <code>applyPlatformPenalty</code>, is unreachable). Fix: decouple platform-block from bond confiscation, or prorate.</p>
+<p>[45] <strong>7. <code>createTask</code> can be called fee-free during the treasury-wiring window</strong><br><code>TestTaskRegistry.createTask</code> L294-303 gates the access-fee charge behind <code>if (treasury != address(0))</code> with no hard <code>require</code>, unlike <code>postTask</code>&#39;s hard require at L152. During the deploy sequence (agentVault set, treasury not yet set), <code>createTask</code> — including the non-consensual-binding path of Finding 1 — is callable for free. Fix: <code>require(treasury != address(0))</code> in <code>createTask</code>, matching <code>postTask</code>.</p>
+<p>[40] <strong>8. Self-dealt post→claim→complete cycle mints a full-weight, non-discounted <code>TASK_COMPLETED</code> reputation signal cheaply</strong><br>A single actor controlling two funded ($25+) addresses can <code>postTask</code>→<code>claimTask</code>→<code>completeTask</code> between themselves for ~2 access fees, producing a <code>recordCompletion</code> signal with <code>taskTypeHash = 0</code> (the non-direct-hire/&quot;arms-length&quot; signal, TaskRegistry.sol:578-582) indistinguishable on-chain from a genuine completion. Reputation is documented as an &quot;evidence layer for off-chain aggregation&quot; (ReputationRegistry.sol:9), so impact depends on how much off-chain trust weighs raw signal counts. Fix: none required in-scope; flag for off-chain consumers to discount low-value/low-frequency completions, or add a minimum-escrow-value threshold for the un-discounted signal type.</p>
+<p>[38] <strong>9. <code>expireTask</code> stamps <code>TASK_FAILED</code> on workers who already delivered accepted milestones</strong><br><code>wasFundedActive</code> (TaskRegistry.sol:503) can&#39;t distinguish a wholly-failed worker from one who completed and was paid for earlier milestones before hitting the deadline on remaining scope — both get the same full-weight (100) <code>TASK_FAILED</code> signal (L514-523). Fix: skip/discount the signal when <code>_completionRecorded[taskId]</code> is already <code>true</code>.</p>
+<p>[35] <strong>10. A milestone task cannot be topped up once its first milestone is released</strong><br><code>EscrowVault._applyDeposit</code> (L123-127) requires <code>state == UNFUNDED || LOCKED</code>; after the first <code>releaseMilestone</code> the state becomes <code>PARTIAL_RELEASE</code>, so a subsequent <code>fundTask</code>/<code>depositFor</code> reverts. A poster who under-funds a milestone task and accepts the first milestone can never fund the remaining milestones — <code>submitProof</code> then reverts <code>&quot;unfunded&quot;</code> for the rest — a workflow dead-end, not a fund-loss. Fix: allow deposits while <code>PARTIAL_RELEASE</code>, or require full funding before the first milestone release.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass, or whose reachability depends entirely on the out-of-scope <code>ArbitrationModule</code>. Not scored.</em></p>
+<ul>
+<li><strong>Arbitration partial-rotation window</strong> — <code>rotateArbitration*</code> on TaskRegistry/EscrowVault/AgentDepositVault/ReputationRegistry are four independent owner-only calls, each gated only on the current/replacement module&#39;s self-reported <code>disputeOpeningPaused()</code>/<code>activeDisputeCount()</code>. No atomicity between the four, and the replacement&#39;s self-report is unverifiable from in-scope code. Owner-privileged; requires the out-of-scope module&#39;s cooperation or compromise.</li>
+<li><strong>Dispute freeze-lag / <code>onDisputeResolved</code> state-desync</strong> — <code>openDispute</code> sets <code>DISPUTED</code> before the external <code>arbitration.openDispute</code> call; escrow <code>FROZEN</code> is a separate, later inbound call. <code>onDisputeResolved</code> trusts that arbitration already settled escrow with no in-scope cross-check. Exploitability depends entirely on the out-of-scope module&#39;s call ordering.</li>
+<li><strong><code>EscrowVault.split</code>&#39;s <code>workerBps</code> has no in-scope upper bound</strong> — <code>workerBps &gt; 10000</code> reverts via checked-math underflow (<code>toPoster = remaining - toWorker</code>), so this degrades gracefully today, but the bound is implicit rather than asserted; worth an explicit <code>require(workerBps &lt;= 10000)</code> for defense-in-depth against a misbehaving arbitration module.</li>
+<li><strong>Claim-then-dismiss AZL fee griefing</strong> — a worker pays a non-refundable 1,000 AZL to <code>claimTask</code>; an immediate <code>dismissWorker</code> returns only <code>EXIT_PARTY_COMP</code> ($2.50 USDC), no AZL. Mutual-cost (poster also burns AZL), so not a clean one-sided profit, but a real worker-side sunk cost on repeated bait-and-dismiss.</li>
+<li><strong>No-balance-diff crediting on 3 inflow sites</strong> (<code>EscrowVault.depositFor</code>, <code>UnionStakingVault.stake</code>, <code>TreasuryRouter._collectAzlAccessFee</code>) vs. <code>AgentDepositVault</code>&#39;s balance-diff pattern elsewhere — latent under the current &quot;trusted USDC/AZL only&quot; wiring (<code>token == agentVault.usdcToken()</code> enforced at every task-creation site; AZL is the protocol&#39;s own token), live only if a non-conforming token is ever wired.</li>
+<li><strong>USDC blacklist/pause risk on the shared vaults</strong> — if Circle blacklists <code>AgentDepositVault</code>/<code>EscrowVault</code> or <code>treasury</code>, several non-deferred <code>safeTransfer</code> legs (<code>debitAccessFee</code>, <code>debitDisputeBond</code>, <code>withdraw</code>) would revert with no fallback, unlike the <code>_payOrDefer</code>-protected release paths. External-trigger only.</li>
+</ul>
+<h2 id="phase-1-only-lowinfo-items-not-independently-re-surfaced-by-phas">Phase-1-only Low/Info items (not independently re-surfaced by Phase 2, kept for completeness)</h2>
+<ul>
+<li><code>renounceOwnership</code> disabled on only 1 of 6 contracts (<code>AgentDepositVault</code>) — the other five can be permanently bricked (losing <code>rotateArbitration*</code>/<code>activateStaking</code>) if owner renounces. <strong>Low.</strong></li>
+<li><code>creditDisputeBond</code> requires exact receipt (<code>received == amount</code>) while sibling credit functions tolerate <code>received &gt; 0</code> — inconsistent, only matters under a hypothetical fee-on-transfer USDC. <strong>Low.</strong></li>
+<li>Credit-accumulator rounding drift vs. the 600k issuance cap — negligible (~1e-10 credits per accrual at realistic stake). <strong>Low.</strong></li>
+<li>AZL&#39;s 18-decimal assumption is hardcoded into fee/credit constants but never asserted on-chain (unlike USDC&#39;s enforced 6-decimal check). <strong>Low.</strong></li>
+<li>Unbounded <code>delete subjectSignals[subject]</code> in <code>resetSubject</code> — O(length) gas cost; growth requires genuine authorized protocol actions, not cheaply attacker-inflatable, and the primary caller already wraps this in try/catch. <strong>Low.</strong></li>
+<li>Uncapped milestone-release loops (<code>resolveStaleReview</code>, <code>_finalizePausedTask</code>) — bounded by poster-set (self-paid) milestone count; <code>resolveStaleReview</code> is self-chunkable; the non-chunkable <code>_finalizePausedTask</code> path requires the (currently unreachable, per Finding 4) culprit-attribution precondition. <strong>Low.</strong></li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><em>Full function-by-function table (guard, caller, state written, value-moving) is in the Phase-0 protocol map and was independently re-verified by the Phase-1 access-control checklist agent and multiple Phase-2 agents; summarized here.</em></p>
+<p><strong>Owner-only (Ownable2Step, per-contract)</strong>: all wiring setters (one-shot, <code>require(x==0)</code> gated) across all 6 contracts, plus the 4 independent <code>rotateArbitration*</code> functions and <code>UnionStakingVault.activateStaking()</code> (one-shot). No owner function moves user funds directly. <code>AgentDepositVault.renounceOwnership()</code> is the only overridden (disabled) renounce — see Phase-1-only Lows.</p>
+<p><strong>Cross-contract trust roles</strong>: <code>taskRegistry</code> (<code>onlyRegistry</code>) is trusted by EscrowVault, AgentDepositVault, UnionStakingVault, and (via <code>onlyAuthorized</code>) ReputationRegistry and TreasuryRouter (<code>onlyFeeRecorder</code>) — granted once via one-shot setter, no revoke. <code>arbitrationModule</code>/<code>arbitration</code> (<code>onlyArbitration</code>) is trusted by EscrowVault, AgentDepositVault, and (via dedicated <code>msg.sender</code> checks) TaskRegistry and ReputationRegistry — the only trust role with a live replacement path (<code>rotateArbitration*</code>, see Leads).</p>
+<p><strong>Permissionless entrypoints</strong> (verified safe except where noted): <code>postTask</code>, <code>claimTask</code>, <code>checkTaskBalance</code>, <code>createTask</code> (<strong>Finding 1</strong>), <code>resolveStaleReview</code>, <code>expireTask</code>, <code>distributeRevenue</code> (<strong>Finding 3</strong>), <code>stake</code>/<code>unstake</code>/<code>bankCredits</code>/<code>claimRewards</code> (self-scoped, clean), <code>stakeVerifierBond</code>/<code>unstakeVerifierBond</code> (self-scoped, clean), <code>claimPayout</code> ×2 (self-scoped, clean).</p>
+<p><strong>feeRecipient</strong> (TreasuryRouter, independent 2-step transfer from ownership): controls <code>withdrawFees</code>/<code>withdrawNativeFees</code> — see <strong>Finding 3</strong>.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Any address</td>
+<td><code>createTask</code></td>
+<td>Bind + defame a non-consenting agent</td>
+<td><strong>Finding 1</strong></td>
+</tr>
+<tr>
+<td>Poster (normal usage)</td>
+<td>STREAMING/HOUR_BLOCKS task + <code>expireTask</code></td>
+<td>Free labor, 100% refund</td>
+<td><strong>Finding 2</strong></td>
+</tr>
+<tr>
+<td>Any address (permissionless)</td>
+<td><code>distributeRevenue</code></td>
+<td>Erode protocol reserve over epochs</td>
+<td><strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td><code>feeRecipient</code></td>
+<td><code>withdrawFees</code></td>
+<td>Capture stakers&#39;/buyback&#39;s undistributed share</td>
+<td><strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td>Any bound agent</td>
+<td>withdraw/debit paths</td>
+<td>Under-collateralize multi-task exposure</td>
+<td><strong>Finding 4</strong></td>
+</tr>
+<tr>
+<td>Poster/worker (contingent)</td>
+<td><code>_finalizePausedTask</code></td>
+<td>Confiscate counterparty&#39;s proven milestones</td>
+<td><strong>Finding 5</strong> (dormant, see Finding 4)</td>
+</tr>
+<tr>
+<td>Self-dealing actor</td>
+<td>post→claim→complete</td>
+<td>Cheap reputation farming</td>
+<td><strong>Lead 8</strong>, invariant holds otherwise — reputation is documented as evidence-only</td>
+</tr>
+<tr>
+<td>ArbitrationModule (out-of-scope, trusted)</td>
+<td>freeze/split/refund, onDisputeResolved, dispute bonds, reputation records</td>
+<td>Full escrow/bond control</td>
+<td>Invariant holds: <code>onlyArbitration</code>/<code>msg.sender==arbitration</code> gates are correctly applied everywhere in-scope; residual risk is entirely in the external module, out of audit scope</td>
+</tr>
+<tr>
+<td>Owner (all 6 contracts)</td>
+<td>wiring setters, <code>rotateArbitration*</code></td>
+<td>Reconfigure trust roots</td>
+<td>Invariant holds for one-shot setters (verified <code>require(x==0)</code> on every one); <code>rotateArbitration*</code> partial-window is a Lead, requires owner-key compromise or module cooperation</td>
+</tr>
+<tr>
+<td>Any address</td>
+<td><code>stake</code>/<code>unstake</code>/<code>claimRewards</code>/dispute-bond/dismiss-leave paths lacking <code>nonReentrant</code></td>
+<td>Reentrancy</td>
+<td>Invariant holds: every reachable token is the immutable, non-callback USDC/AZL; CEI ordering confirmed at every site (this pass, cross-checked against math-precision, execution-trace, and periphery agents&#39; independent traces)</td>
+</tr>
+<tr>
+<td>Fee-on-transfer/rebasing token (hypothetical)</td>
+<td><code>depositFor</code>, <code>stake</code>, AZL collection</td>
+<td>Desync internal vs. real balances</td>
+<td>Invariant holds under current wiring (<code>token==usdcToken</code> enforced); Lead only</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage</strong>: 76/76 entrypoints in the Phase-0 inventory addressed above (by finding or by &quot;invariant holds&quot; line). 14/14 threat-catalog rows answered. Holes closed this pass: 0.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-building + breadth checklist + depth attacker-mindset agents, cross-verified against the actual contract source in a final reconciliation pass). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A follow-up human review, and confirmation of the out-of-scope <code>ArbitrationModule</code>&#39;s behavior (which several Leads above depend on), are strongly recommended before mainnet funds are placed at risk. Findings 1–4 all have concrete, source-verified fixes above and should be prioritized before further deployment activity on this system.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicewob2cdxwb2rs6wztirucwruf3cryiuwyenuebgrrbkqvsigd6y.ipfs.community.bgipfs.com/"><code>https://bafkreicewob2cdxwb2rs6wztirucwruf3cryiuwyenuebgrrbkqvsigd6y.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/403">#403</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

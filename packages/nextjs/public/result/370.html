@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NativeTokenLimitModule (Vaultfire job #370) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #370">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">NativeTokenLimitModule (Vaultfire job #370)</h1>
+    <p class="job-sub">Job #370 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/370"><b>Job page</b> #370</a>
+      <a class="chip" href="https://bafkreib2g7hlxgbrhpvrz2nu5s3gahcztyezrnqnm37hji6wusyj73hpeu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#this-contract-is-live-on-ethereum-and-base-mainnet-today">⚠️ This contract is live on Ethereum and Base mainnet today</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#info-no-action-items-verified-no-fix-required">Info / no-action items (verified, no fix required)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — NativeTokenLimitModule (Vaultfire job #370)</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>0x00000000000001e541f0D090868FBe24b59Fbe06</code> — deployed byte-identically on <strong>Base</strong> and <strong>Ethereum mainnet</strong> (chain 8453 and chain 1)</td>
+</tr>
+<tr>
+<td><strong>Implementation</strong></td>
+<td>Sourcify-verified exact match on both chains, <code>solc 0.8.26</code>, verified name <code>NativeTokenLimitModule</code></td>
+</tr>
+<tr>
+<td><strong>Contract</strong></td>
+<td>Alchemy <strong>Modular Account</strong> (ERC-6900 permission module, built on ERC-4337). A global singleton, shared by every smart account that installs it, enforcing a native-token (ETH) spend limit per <code>(entityId, account)</code> — the intended use case is capping what a restricted &quot;session key&quot; can spend.</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Primary contract <code>NativeTokenLimitModule.sol</code> (184 LOC) + its base <code>ModuleBase.sol</code> (81 LOC) + dependency <code>UserOperationLib.sol</code> + relevant ERC-6900/ERC-4337 interfaces for context (~600 LOC bundle). <code>ModularAccountBase.sol</code> (the account contract this module is installed into) was consulted directly for cross-file verification of every finding below, though it is not itself the deployed target of this job.</td>
+</tr>
+<tr>
+<td><strong>Method</strong></td>
+<td>Two-phase: Phase 1 ethskills breadth (6 checklist agents: general, precision-math, erc4337, access-control, dos, assembly) → Phase 2 pashov depth (12 attacker-mindset agents, blind to Phase 1) → hybrid reconciliation with this orchestrator&#39;s own direct source verification against <code>ModularAccountBase.sol</code> for every claim that depended on it.</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation summary</strong>: two findings below were each independently reached by 4–7 of the 12 Phase-2 agents plus multiple Phase-1 agents, with fully matching, source-quoted exploit chains — an unusually strong convergence. Both were personally re-verified by this orchestrator by reading the referenced sections of <code>ModularAccountBase.sol</code> directly (not just trusting agent claims). Completeness: 9 unique (Contract, function) issues raised across both phases, all 9 covered below (2 Critical/High + 4 Low + 3 Info/no-action items); re-examined leads kept: 7, none demoted.</p>
+<hr>
+<h2 id="this-contract-is-live-on-ethereum-and-base-mainnet-today">⚠️ This contract is live on Ethereum and Base mainnet today</h2>
+<p>Both findings below describe a currently-exploitable bypass of this module&#39;s entire stated purpose in its <strong>as-deployed</strong> state. This report should be escalated to Alchemy&#39;s security team in addition to normal delivery, given the module is an active singleton securing real smart-account funds on two live mainnets.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="critical-a-performcreate-call-nested-inside-executebatch-complet">[Critical] A <code>performCreate</code> call nested inside <code>executeBatch</code> completely bypasses the native-token spend limit</h3>
+<p><strong>Confidence: 90</strong> · <code>NativeTokenLimitModule.preExecutionHook</code> · <code>[both — independently reached by 4 of 12 phase-2 agents (invariant, execution-trace, boundary, first-principles) with matching exploit chains, plus this orchestrator&#39;s own direct verification]</code></p>
+<p><strong>The bug.</strong> <code>preExecutionHook</code>&#39;s <code>executeBatch</code> branch computes the native value a batch moves purely by summing each top-level <code>Call.value</code> field:</p>
+<pre><code class="language-solidity">} else if (selector == IModularAccount.executeBatch.selector) {
+    Call[] memory calls = abi.decode(callData, (Call[]));
+    for (uint256 i = 0; i &lt; calls.length; ++i) {
+        value += calls[i].value;
+    }
+}
+</code></pre>
+<p>(<code>NativeTokenLimitModule.sol:104-108</code>)</p>
+<p>This misses an entire class of native spend: a batch item can target the account itself (<code>Call.target == address(this)</code>) with <code>Call.value == 0</code> and <code>Call.data</code> encoding a call to <code>performCreate(uint256 value, bytes initCode, bool isCreate2, bytes32 salt)</code>. The ETH <code>performCreate</code> sends comes from its own <code>value</code> <strong>parameter</strong>, spent via the <code>create</code>/<code>create2</code> opcode against the account&#39;s balance — not from the outer <code>Call.value</code> the low-level dispatcher forwards. The hook never decodes into <code>Call.data</code> to see this, so it sums <code>0</code> for that item.</p>
+<p><strong>Why the nested call doesn&#39;t get a second chance to be checked.</strong> Two independent, compounding reasons, both verified directly against <code>ModularAccountBase.sol</code>:</p>
+<ol>
+<li><p><strong>The deny-list omits <code>performCreate</code>.</strong> <code>_checkExecuteBatchValidationApplicability</code> (<code>ModularAccountBase.sol:895-928</code>) explicitly reverts <code>SelfCallRecursionDepthExceeded()</code> only for nested <code>execute</code>/<code>executeBatch</code> self-calls:</p>
+<pre><code class="language-solidity">if (
+    nestedSelector == IModularAccount.execute.selector
+        || nestedSelector == IModularAccount.executeBatch.selector
+) {
+    revert SelfCallRecursionDepthExceeded();
+}
+_checkIfValidationAppliesSelector(nestedSelector, validationFunction, checkingType);
+</code></pre>
+<p><code>performCreate</code> is not in this list — the check falls through to <code>_checkIfValidationAppliesSelector</code>, a permission check (is this validation <em>allowed</em> to call <code>performCreate</code>), not a hook-execution guarantee.</p>
+</li>
+<li><p><strong>The nested self-call skips validation-associated hooks.</strong> When <code>executeBatch</code> dispatches the nested call, <code>msg.sender == address(this)</code> for that inner call. <code>_checkPermittedCallerAndAssociatedHooks</code> (<code>ModularAccountBase.sol:650-694</code>) branches on exactly this:</p>
+<pre><code class="language-solidity">if (msg.sender != address(_ENTRY_POINT) &amp;&amp; msg.sender != address(this) &amp;&amp; !...) {
+    // loads BOTH selector- and validation-associated exec hooks
+    ...
+} else {
+    // sender is the entry point or the account itself — only selector-associated hooks
+    execHooks = MemManagementLib.loadExecHooks(_storage.executionStorage[msg.sig]);
+}
+</code></pre>
+<p><code>NativeTokenLimitModule</code> is installed as a <strong>validation-associated</strong> hook (tied to the session key&#39;s validation, not to the <code>performCreate</code> selector), so this <code>else</code> branch skips it entirely for the nested call.</p>
+</li>
+</ol>
+<p><strong>Concrete exploit.</strong> Session key with a global validation, <code>NativeTokenLimitModule</code> installed with <code>limits[entityId][account] = 1 ether</code>, account balance = 100 ETH:</p>
+<pre><code>executeUserOp(
+  executeBatch([
+    Call({ target: account, value: 0, data: performCreate(100 ether, attackerInitCode, false, salt) })
+  ])
+)
+</code></pre>
+<ul>
+<li>Top-level <code>preExecutionHook</code> runs (required — the account forces <code>executeUserOp</code> whenever the validation carries exec hooks, <code>ModularAccountBase.sol:469-473</code>), sums <code>calls[0].value = 0</code>, decrements the limit by 0.</li>
+<li>The account self-calls <code>performCreate(100 ether, ...)</code>. <code>msg.sender == account</code>, so the validation-associated hook is skipped.</li>
+<li><code>create(value: 100 ether, ...)</code> (<code>ModularAccountBase.sol:186-188</code>) deploys <code>attackerInitCode</code> funded with the account&#39;s entire balance; the deployed contract forwards it to the attacker.</li>
+<li><code>limits[entityId][account]</code> is unchanged at <code>1 ether</code> — as if nothing happened. A direct (non-batched) <code>performCreate(100 ether, ...)</code> call, by contrast, is correctly caught and reverts (<code>NativeTokenLimitModule.sol:109-116</code>); nesting inside <code>executeBatch</code> is the entire gap.</li>
+</ul>
+<p>This requires no more than the standard permission this module is installed to grant in the first place (a session key allowed to call <code>executeBatch</code> and <code>performCreate</code>, up to a value cap) — there is no additional precondition.</p>
+<p><strong>Fix</strong>: in the <code>executeBatch</code> branch, detect self-targeting calls and decode nested <code>performCreate</code> value into the running total:</p>
+<pre><code class="language-diff"> } else if (selector == IModularAccount.executeBatch.selector) {
+     Call[] memory calls = abi.decode(callData, (Call[]));
+     for (uint256 i = 0; i &lt; calls.length; ++i) {
+-        value += calls[i].value;
++        value += calls[i].value;
++        if (calls[i].target == msg.sender &amp;&amp; calls[i].data.length &gt;= 4) {
++            bytes4 innerSelector = bytes4(calls[i].data);
++            if (innerSelector == ModularAccountBase.performCreate.selector) {
++                (uint256 createValue,,,) = abi.decode(_slice(calls[i].data, 4), (uint256, bytes, bool, bytes32));
++                value += createValue;
++            }
++        }
+     }
+ }
+</code></pre>
+<p>A more robust account-side fix is to add <code>performCreate</code> (and any other native-value-spending selector) to the nested-self-call deny-list in <code>_checkExecuteBatchValidationApplicability</code> (<code>ModularAccountBase.sol:895-928</code>), forcing it to always run as a top-level call where the hook already works correctly.</p>
+<hr>
+<h3 id="high-updatelimitsoninstallupdatespecialpaymaster-let-the-capped-">[High] <code>updateLimits</code>/<code>onInstall</code>/<code>updateSpecialPaymaster</code> let the capped session key reset its own cap</h3>
+<p><strong>Confidence: 80</strong> · <code>NativeTokenLimitModule.updateLimits</code> / <code>onInstall</code> / <code>updateSpecialPaymaster</code> · <code>[both — independently reached by access-control (phase1 + phase2), erc4337 (phase1), trust-gap, asymmetry, flow-gap, boundary, first-principles (phase2) — 7+ agents at FINDING confidence, plus this orchestrator&#39;s own direct verification]</code></p>
+<p><strong>The bug.</strong> All three configuration setters authorize purely on <code>msg.sender</code>, with no notion of <em>which</em> validation/entity within the account is driving the call:</p>
+<pre><code class="language-solidity">function updateLimits(uint32 entityId, uint256 newLimit) external {
+    limits[entityId][msg.sender] = newLimit;
+    emit NativeTokenSpendLimitUpdated(entityId, msg.sender, newLimit);
+}
+
+function updateSpecialPaymaster(address paymaster, bool allowed) external {
+    specialPaymasters[paymaster][msg.sender] = allowed;
+    emit SpecialPaymasterUpdated(msg.sender, paymaster, allowed);
+}
+</code></pre>
+<p>(<code>NativeTokenLimitModule.sol:56-67</code>) — and <code>onInstall</code> (<code>NativeTokenLimitModule.sol:123-126</code>) unconditionally re-writes <code>limits[entityId][msg.sender]</code> with no &quot;already initialized&quot; guard, giving an identical reset path.</p>
+<p>During any call, <code>msg.sender</code> as seen by the module is always the account itself — which is exactly the same regardless of whether the <em>owner&#39;s</em> global validation or the <em>restricted session key&#39;s</em> own validation triggered it. The module has no way to tell them apart.</p>
+<p><strong>Why this is reachable — the assumed protection does not exist.</strong> <code>ModuleBase.sol</code> carries this comment:</p>
+<blockquote>
+<p>&quot;Supporting the IModule interface is a requirement for module installation. This is also used <strong>by the modular account to prevent standard execution functions <code>execute</code> and <code>executeBatch</code> from making calls to modules</strong>.&quot;<br>(<code>ModuleBase.sol:47-49</code>)</p>
+</blockquote>
+<p>This orchestrator directly read <code>ModularAccountBase.execute</code> and <code>executeBatch</code> (<code>ModularAccountBase.sol:227-264</code>) and confirmed <strong>no such check exists</strong>:</p>
+<pre><code class="language-solidity">function execute(address target, uint256 value, bytes calldata data) external payable override wrapNativeFunction
+    returns (bytes memory result)
+{
+    ExecutionLib.callBubbleOnRevertTransient(target, value, data);   // no target-is-module check
+    ...
+</code></pre>
+<p>The only place <code>type(IModule).interfaceId</code> is checked anywhere in this codebase is at module <strong>installation</strong> time (<code>ExecutionInstallDelegate.sol:102</code> — sanity-checking that what&#39;s being installed actually implements <code>IModule</code>), which has nothing to do with restricting <code>execute</code>&#39;s runtime <code>target</code>. The comment describes protection that is not implemented.</p>
+<p><strong>Concrete exploit.</strong> Session key with a global validation, capped at <code>limits[entityId][account] = 1 ether</code>:</p>
+<pre><code>executeUserOp(
+  execute(NativeTokenLimitModule, 0, abi.encodeCall(updateLimits, (entityId, type(uint256).max)))
+)
+</code></pre>
+<ul>
+<li><code>preExecutionHook</code> sees <code>execute</code> with <code>value == 0</code> (the call carries no ETH — it&#39;s a data call into the module), so <code>0 &gt; limit</code> is false and nothing is decremented.</li>
+<li>The account calls <code>NativeTokenLimitModule.updateLimits(entityId, type(uint256).max)</code> with <code>msg.sender == account</code>, setting <code>limits[entityId][account] = type(uint256).max</code>.</li>
+<li>A follow-up UO now transfers unlimited ETH — the cap is gone.</li>
+</ul>
+<p><strong>Fix</strong>: since the module cannot distinguish the account owner from a session key it&#39;s meant to restrict, defense must be structural: e.g. only allow a limit to be <em>lowered</em> through this path (<code>require(newLimit &lt;= limits[entityId][msg.sender])</code> in <code>updateLimits</code>), remove the reset capability from <code>onInstall</code> after first install, or fix the account-level gap the <code>ModuleBase.sol</code> comment assumes exists — actually block <code>execute</code>/<code>executeBatch</code> targets that implement <code>IModule</code>.</p>
+<hr>
+<h3 id="low-sublen-8-can-underflow-in-modulebasegetselectorandcalldatas-">[Low] <code>sub(len, 8)</code> can underflow in <code>ModuleBase._getSelectorAndCalldata</code>&#39;s assembly block</h3>
+<p><strong>Confidence: 55</strong> · <code>ModuleBase._getSelectorAndCalldata</code> · <code>[both — flagged by 5+ agents across both phases]</code></p>
+<p>When unwrapping an <code>executeUserOp</code>-wrapped call, the assembly block strips 8 bytes without checking the inner <code>uo.callData</code> is at least that long:</p>
+<pre><code class="language-solidity">assembly (&quot;memory-safe&quot;) {
+    selector := shl(224, mload(add(finalCalldata, 8)))
+    let len := mload(finalCalldata)
+    finalCalldata := add(finalCalldata, 8)
+    mstore(finalCalldata, sub(len, 8))   // underflows if len &lt; 8
+}
+</code></pre>
+<p>(<code>ModuleBase.sol:254-265</code>). For <code>len &lt; 8</code> (a malformed inner calldata shorter than a selector-only call), <code>sub(len, 8)</code> wraps to ~`2^256<code>, and for </code>len == 0<code>the</code>mstore<code>writes 8 bytes past the allocated buffer — a genuine memory-safety violation the</code>(&quot;memory-safe&quot;)<code>annotation doesn&#39;t actually hold for in that case. Multiple agents traced this to a dead end: any selector recovered from garbage/adjacent memory won&#39;t match</code>execute<code>/</code>executeBatch<code>/</code>performCreate<code>, so </code>value<code>stays</code>0<code>and the call proceeds harmlessly (or the subsequent decode simply reverts, since matching one of the three tracked selectors requires</code>len ≥ 8`, which precludes the underflow in the only path that would matter). Self-harm/DoS only — not a spend-limit bypass.</p>
+<p><strong>Fix</strong>: add a length check before the assembly block:</p>
+<pre><code class="language-diff">+require(uo.callData.length &gt;= 8, &quot;invalid inner callData&quot;);
+ assembly (&quot;memory-safe&quot;) { ... }
+</code></pre>
+<hr>
+<h3 id="low-onuninstall-clears-limits-but-leaves-specialpaymasters-stale">[Low] <code>onUninstall</code> clears <code>limits</code> but leaves <code>specialPaymasters</code> stale</h3>
+<p><strong>Confidence: 55</strong> · <code>NativeTokenLimitModule.onUninstall</code> · <code>[both — 3+ agents]</code></p>
+<pre><code class="language-solidity">function onUninstall(bytes calldata data) external override {
+    uint32 entityId = abi.decode(data, (uint32));
+    delete limits[entityId][msg.sender];   // specialPaymasters not touched
+}
+</code></pre>
+<p>(<code>NativeTokenLimitModule.sol:129-132</code>). <code>specialPaymasters[paymaster][account]</code> entries set via <code>updateSpecialPaymaster</code> persist across uninstall/reinstall. Effect is one-directional (stricter accounting, more gas gets decremented than the operator may expect post-reinstall) — not a fund-loss path, but a surprising state-persistence bug.</p>
+<p><strong>Fix</strong>: document that operators must explicitly revoke special paymasters before uninstall, or restructure <code>specialPaymasters</code> to be entity-scoped and enumerable so <code>onUninstall</code> can clear it.</p>
+<hr>
+<h3 id="low-native-value-spend-limit-only-tracks-3-hardcoded-selectors-d">[Low] Native-value spend limit only tracks 3 hardcoded selectors — documented but worth reinforcing given the Critical finding above</h3>
+<p><strong>Confidence: 50</strong> · <code>NativeTokenLimitModule.preExecutionHook</code> · <code>[both — 6+ agents across both phases]</code></p>
+<p><code>preExecutionHook</code> only extracts a non-zero <code>value</code> for <code>execute</code>, <code>executeBatch</code>, <code>performCreate</code>; the contract&#39;s own header comment acknowledges this (&quot;This module only tracks native transfers for the 3 functions&quot;). Confirmed as reachable-by-design, not a bug in isolation — but the Critical finding above demonstrates that even <em>within</em> these three selectors, nesting can defeat the accounting. This is a related structural weakness of the same &quot;sum what I can see, trust nothing else moves value&quot; design and should be revisited together with the Critical fix rather than treated as merely cosmetic.</p>
+<hr>
+<h2 id="info-no-action-items-verified-no-fix-required">Info / no-action items (verified, no fix required)</h2>
+<ul>
+<li><strong>Gas-based limit is charged at the worst-case <code>maxFeePerGas</code> with no post-op refund</strong> (<code>_decreaseLimit</code>, <code>NativeTokenLimitModule.sol:167-184</code>). Conservative only — the tracked spend always exceeds real spend, so a session key can be throttled sooner than its true consumption but can never exceed its cap through this path. Multiple agents confirmed the computation exactly mirrors EntryPoint v0.7&#39;s own <code>_getRequiredPrefund</code> formula.</li>
+<li><strong>Special-paymaster gas accounting is denominated in native wei, not the actual (possibly ERC20, possibly marked-up) amount the paymaster pulls</strong> — a plausible under-accounting if a special paymaster&#39;s effective rate exceeds the raw native-gas-equivalent charged. Flagged as an unverified lead by 2 agents; cannot be confirmed or quantified without the specific paymaster&#39;s exchange-rate logic, which is out of scope.</li>
+<li><strong><code>postExecutionHook</code> unconditionally reverts</strong> (<code>NativeTokenLimitModule.sol:135-137</code>) — correct by design (the module has no post-hook logic), but would brick execution if ever installed with the post-hook flag set. A configuration footgun, not a code defect; consider making it a no-op instead of a revert for defense-in-depth against operator misconfiguration.</li>
+<li><strong><code>onInstall</code> doesn&#39;t emit an event</strong> while <code>updateLimits</code> (writing the identical storage slot) does — an observability gap for off-chain monitors, not a security issue.</li>
+<li><strong>No cross-account griefing surface</strong>: every state read/write in this module is keyed by <code>msg.sender</code> (the calling account), verified exhaustively by multiple agents — no function lets one account&#39;s call affect another account&#39;s <code>limits</code>/<code>specialPaymasters</code> entries.</li>
+<li><strong><code>executeBatch</code> value-summation loop is not a DoS vector</strong>: bounded by the same gas budget as the (more expensive) dispatch that follows it, and the array is caller-provided per-call, not attacker-growable across calls.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated two-phase audit (6 checklist-breadth agents + 12 attacker-mindset depth agents, reconciled with direct source verification of every cross-phase claim against <code>ModularAccountBase.sol</code>, the account contract this module integrates with). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Given the Critical and High findings above describe <strong>currently exploitable</strong> bypasses in a contract <strong>live on Ethereum and Base mainnet</strong>, immediate escalation to the module&#39;s maintainer (Alchemy) and a halt on new installations of this module until patched are strongly recommended, in addition to a full independent re-verification of the exploit chains described here.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreib2g7hlxgbrhpvrz2nu5s3gahcztyezrnqnm37hji6wusyj73hpeu.ipfs.community.bgipfs.com/"><code>https://bafkreib2g7hlxgbrhpvrz2nu5s3gahcztyezrnqnm37hji6wusyj73hpeu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/370">#370</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — PawthereumMamoYieldModule — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #91">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — PawthereumMamoYieldModule</h1>
+    <p class="job-sub">Job #91 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/91"><b>Job page</b> #91</a>
+      <a class="chip" href="https://bafkreiedehopwagtvkobo4z7h5udgluw3jbtgxuzop7dx62iwc254v2sy4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#contract-overview">Contract Overview</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#finding-index">Finding Index</a></li>
+      <li><a href="#discarded-downgraded-items">Discarded / Downgraded Items</a></li>
+      <li><a href="#appendix-core-invariant-analysis">Appendix: Core Invariant Analysis</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — PawthereumMamoYieldModule</h1>
+<p><strong>Job</strong>: #91 · <strong>Chain</strong>: Base (8453) · <strong>Contract</strong>: <code>0x5abed4268d4E2d3c9FdC0afeaefad70847898Cb7</code><br><strong>Compiler</strong>: Solidity 0.8.28 · <strong>Date</strong>: 2026-05-06<br><strong>Methodology</strong>: EthSkills (19 domain checklists) + Pashov (8-agent parallelized review)</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill high">High</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>11</strong></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Lines</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>src/PawthereumMamoYieldModule.sol</code></td>
+<td>283</td>
+<td>Main contract</td>
+</tr>
+<tr>
+<td><code>src/interfaces/IERC20Minimal.sol</code></td>
+<td>7</td>
+<td>USDC interface</td>
+</tr>
+<tr>
+<td><code>src/interfaces/IERC4626Minimal.sol</code></td>
+<td>7</td>
+<td>MetaMorpho vault interface</td>
+</tr>
+<tr>
+<td><code>src/interfaces/IMToken.sol</code></td>
+<td>6</td>
+<td>Moonwell mToken interface</td>
+</tr>
+<tr>
+<td><code>src/interfaces/IMamoStrategy.sol</code></td>
+<td>6</td>
+<td>Mamo strategy interface</td>
+</tr>
+<tr>
+<td><code>src/interfaces/ISafe.sol</code></td>
+<td>17</td>
+<td>Gnosis Safe module interface</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="contract-overview">Contract Overview</h2>
+<p><code>PawthereumMamoYieldModule</code> is a Gnosis Safe module deployed on Base (OP Stack, chain 8453). It manages yield capture from a three-bucket DeFi strategy (MetaMorpho ERC-4626 vault + Moonwell Compound-fork mToken + idle USDC) and distributes yield above a protected watermark to a list of recipients.</p>
+<p>Key design choices relevant to security:</p>
+<ul>
+<li><strong>Permissionless execution</strong>: <code>executeYieldCapture()</code> is callable by anyone after <code>executionInterval</code> has elapsed.</li>
+<li><strong>Push-payment model</strong>: recipients receive USDC via Safe module calls inside a loop.</li>
+<li><strong>Immutable addresses</strong>: <code>SAFE</code>, <code>MAMO_STRATEGY</code>, <code>USDC</code>, <code>M_TOKEN</code>, <code>META_MORPHO_VAULT</code> are set at construction and never change.</li>
+<li><strong>Dual-measurement invariant</strong>: strategy value is read before the withdrawal (to compute yield) and again after (to verify the principal watermark is intact). This design is the root cause of two of the three medium-severity findings.</li>
+</ul>
+<p><strong>Findings confirmed by both audit passes receive a confidence boost.</strong></p>
+<hr>
+<h2 id="findings">Findings</h2>
+<hr>
+<h3 id="h-1-single-blocked-usdc-recipient-permanently-halts-all-yield-di">[H-1] Single Blocked USDC Recipient Permanently Halts All Yield Distribution</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed by</strong>: EthSkills (M-1) + Pashov (#1 at confidence 95)<br><strong>Location</strong>: <code>_payRecipients()</code> — lines 211–221</p>
+<p><strong>Description</strong></p>
+<p><code>_payRecipients</code> iterates over every configured recipient and executes a USDC <code>transfer</code> through the Safe module interface for each one:</p>
+<pre><code class="language-solidity">// Lines 216-218
+address to = _recipients[i].addr;
+_safeExec(USDC, abi.encodeCall(IERC20Minimal.transfer, (to, amt)));
+emit YieldDistributed(to, amt);
+</code></pre>
+<p>USDC on Base is a Centre/Circle-issued token with an on-chain blocklist. If any recipient is blocklisted, <code>USDC.transfer</code> reverts. <code>_safeExec</code> propagates this as <code>SafeCallFailed</code>, which unwinds the entire <code>executeYieldCapture</code> transaction. Because <code>_payRecipients</code> has no per-recipient error handling and <code>lastExecutionTimestamp</code> is only updated on success, every subsequent call to <code>executeYieldCapture</code> will fail identically until the Safe calls <code>setRecipients</code> to remove the blocked address.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Safe configures recipients: <code>[charityAddr (5000 bps), teamAddr (3000 bps)]</code>.</li>
+<li>Circle places <code>charityAddr</code> on the USDC blocklist.</li>
+<li>Keeper calls <code>executeYieldCapture()</code>. <code>totalDistributed = 800 USDC</code>. Strategy withdrawal succeeds and 800 USDC lands in the Safe.</li>
+<li><code>_payRecipients</code> pays <code>teamAddr</code> (300 USDC) — succeeds.</li>
+<li><code>_payRecipients</code> attempts <code>charityAddr</code> (500 USDC) → USDC reverts → <code>SafeCallFailed</code> → entire transaction reverts, including the 300 USDC payment to <code>teamAddr</code>.</li>
+<li>All future <code>executeYieldCapture</code> calls fail at the same step. No recipient receives any yield.</li>
+</ol>
+<p><strong>Recommendation</strong></p>
+<p>Replace the all-or-nothing payment loop with partial-failure tolerance. Two options:</p>
+<p><em>Option A — Skip-on-failure</em>: capture failed payments in an <code>unclaimedYield</code> mapping; re-route undelivered amounts into <code>compoundedAmount</code>:</p>
+<pre><code class="language-solidity">function _payRecipients(uint256[] memory amounts) internal returns (uint256 actualDistributed) {
+    for (uint256 i; i &lt; amounts.length; ++i) {
+        uint256 amt = amounts[i];
+        if (amt == 0) continue;
+        address to = _recipients[i].addr;
+        (bool ok, bytes memory ret) = ISafe(SAFE).execTransactionFromModuleReturnData(
+            USDC, 0, abi.encodeCall(IERC20Minimal.transfer, (to, amt)), ISafe.Operation.Call
+        );
+        bool transferred = ok &amp;&amp; (ret.length == 0 || abi.decode(ret, (bool)));
+        if (transferred) {
+            actualDistributed += amt;
+            emit YieldDistributed(to, amt);
+        } else {
+            emit TransferSkipped(to, amt);
+        }
+    }
+}
+</code></pre>
+<p><em>Option B — Pull-payment</em>: record claimable balances in a mapping; let recipients call a <code>claim()</code> function. This is the canonical ERC-20 DoS-resistant pattern and eliminates the entire class of push-payment failures.</p>
+<hr>
+<h3 id="m-1-erc-4626-share-rounding-after-withdrawal-triggers-permanent-">[M-1] ERC-4626 Share Rounding After Withdrawal Triggers Permanent <code>PrincipalViolation</code> DoS</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: EthSkills (M-2) + Pashov (#2 at confidence 92)<br><strong>Location</strong>: <code>executeYieldCapture()</code> — line 177</p>
+<p><strong>Description</strong></p>
+<p>After distributing yield, <code>executeYieldCapture</code> updates <code>protectedPrincipal</code> and then re-reads the strategy value to verify the invariant:</p>
+<pre><code class="language-solidity">// Lines 176-177
+protectedPrincipal += compoundedAmount;
+if (getStrategyValue() + getSafeUSDC() &lt; protectedPrincipal) revert PrincipalViolation();
+</code></pre>
+<p>The new <code>protectedPrincipal</code> equals <code>strategyValueBefore + safeIdleBefore - totalDistributed</code> (algebraically). After the withdrawal, the remaining MetaMorpho shares are worth <code>strategyValueBefore - totalDistributed - ε</code> where <code>ε ≥ 1 wei</code> due to ERC-4626&#39;s mandated round-down semantics in <code>convertToAssets</code>. The invariant check then evaluates:</p>
+<pre><code>post-value  = (strategyValueBefore - totalDistributed - ε) + safeIdleBefore
+newPrincipal = strategyValueBefore + safeIdleBefore - totalDistributed
+</code></pre>
+<p>Since <code>post-value &lt; newPrincipal</code> whenever <code>ε ≥ 1</code>, the check <strong>always reverts</strong> after any non-trivial MetaMorpho redemption. The function becomes permanently uncallable until the Safe manually reduces <code>protectedPrincipal</code> via <code>setProtectedPrincipal</code>.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li><code>protectedPrincipal = 1,000,000 USDC</code>. Strategy value = 1,001,000 USDC. <code>totalYield = 1,000 USDC</code>.</li>
+<li><code>totalDistributed = 1,000 USDC</code>. <code>compoundedAmount = 0</code>.</li>
+<li>Strategy redeems MetaMorpho shares to deliver exactly 1,000 USDC. Due to ERC-4626 rounding, remaining shares convert to 999,999 USDC (1 wei short).</li>
+<li><code>newProtectedPrincipal = 1,000,000 USDC</code>.</li>
+<li>Post-check: <code>999,999 + safeIdleBefore &lt; 1,000,000 + safeIdleBefore</code> → <code>PrincipalViolation</code> reverts.</li>
+</ol>
+<p><strong>Recommendation</strong></p>
+<p>Add a small rounding tolerance to the invariant check:</p>
+<pre><code class="language-diff">-if (getStrategyValue() + getSafeUSDC() &lt; protectedPrincipal) revert PrincipalViolation();
++uint256 ROUNDING_TOLERANCE = 2; // 2 wei covers 1-wei precision loss in both MetaMorpho and Moonwell
++if (getStrategyValue() + getSafeUSDC() + ROUNDING_TOLERANCE &lt; protectedPrincipal) revert PrincipalViolation();
+</code></pre>
+<p>Alternatively, compute <code>protectedPrincipal</code> using a snapshot of the pre-withdrawal strategy value minus the actual amount delivered (measured via balance difference rather than re-calling <code>getStrategyValue()</code>), avoiding the post-withdrawal re-read entirely.</p>
+<hr>
+<h3 id="m-2-strategy-withdrawal-rounding-can-trigger-withdrawfailed-dos">[M-2] Strategy Withdrawal Rounding Can Trigger <code>WithdrawFailed</code> DoS</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: EthSkills (M-3) + Pashov (#10 at confidence 73, different scenario)<br><strong>Location</strong>: <code>executeYieldCapture()</code> — lines 170–172</p>
+<p><strong>Description</strong></p>
+<p><code>getStrategyValue()</code> uses <code>convertToAssets(morphoShares)</code> to estimate the MetaMorpho position&#39;s USDC value. This estimate is rounded <strong>down</strong> per ERC-4626. <code>totalDistributed</code> is derived from this rounded-down estimate. When <code>IMamoStrategy.withdraw(totalDistributed)</code> is called, the strategy must actually redeem shares and deliver exactly <code>totalDistributed</code> USDC. If MetaMorpho or Moonwell rounds during actual redemption (against the redeemer), the strategy may only deliver <code>totalDistributed - δ</code>, causing the delivery check to fail:</p>
+<pre><code class="language-solidity">// Line 171
+if (getSafeUSDC() &lt; safeIdleBefore + totalDistributed) revert WithdrawFailed();
+</code></pre>
+<p>Unlike M-1 (which fails post-payment), this fails before any recipients are paid, with no state changes committed.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Strategy holds 1,001,000 USDC entirely in MetaMorpho. <code>totalDistributed = 1,000 USDC</code>.</li>
+<li>MetaMorpho true share price: 1,001,000.0000005 USDC (sub-unit precision).</li>
+<li><code>convertToAssets</code> returns 1,001,000 USDC (rounds down).</li>
+<li><code>IMamoStrategy.withdraw(1_000_000_000)</code> redeems shares. MetaMorpho delivers 999,999,999 units (rounds down during actual redeem).</li>
+<li><code>getSafeUSDC() = safeIdleBefore + 999_999_999 &lt; safeIdleBefore + 1_000_000_000</code> → <code>WithdrawFailed</code>.</li>
+</ol>
+<p><strong>Recommendation</strong></p>
+<p>Reduce the requested withdrawal by a 1-unit buffer, or switch to a &quot;withdraw at least&quot; interface where <code>IMamoStrategy.withdraw</code> returns the actual delivered amount:</p>
+<pre><code class="language-diff">-_safeExec(MAMO_STRATEGY, abi.encodeCall(IMamoStrategy.withdraw, (totalDistributed)));
+-if (getSafeUSDC() &lt; safeIdleBefore + totalDistributed) revert WithdrawFailed();
++uint256 requestAmount = totalDistributed &gt; 0 ? totalDistributed - 1 : 0;
++_safeExec(MAMO_STRATEGY, abi.encodeCall(IMamoStrategy.withdraw, (requestAmount)));
++if (getSafeUSDC() &lt; safeIdleBefore + requestAmount) revert WithdrawFailed();
+</code></pre>
+<p>A cleaner long-term fix is to measure actual USDC received via <code>getSafeUSDC() - safeIdleBefore</code> after the withdrawal and use that as the basis for recipient payments.</p>
+<hr>
+<h3 id="m-3-safeexec-silently-accepts-zero-length-return-data-for-usdc-t">[M-3] <code>_safeExec</code> Silently Accepts Zero-Length Return Data for USDC Transfers</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> (downgraded from pashov High; low probability, requires future change)<br><strong>Confirmed by</strong>: Pashov (#4 at confidence 87)<br><strong>Location</strong>: <code>_safeExec()</code> — lines 277–282</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">if (ret.length != 0 &amp;&amp; !abi.decode(ret, (bool))) revert SafeCallFailed();
+</code></pre>
+<p>The <code>ret.length != 0</code> short-circuit means zero-length returndata is treated as success. For current Base USDC (which always returns <code>bool true</code> on successful transfer), this works correctly. However:</p>
+<ol>
+<li><strong>Non-contract target</strong>: If the <code>USDC</code> immutable is misconfigured to point to an EOA or undeployed address, the EVM returns <code>(ok=true, ret=&quot;&quot;)</code>. The module considers all transfers successful while no tokens move.</li>
+<li><strong>Future USDC upgrade</strong>: USDC is an upgradeable proxy. A future version that changes return encoding could produce empty returndata on success — or on failure, silently bypassing the check.</li>
+<li><strong>Different behavior for <code>withdraw</code> vs <code>transfer</code> calls</strong>: The <code>_safeExec</code> function is used for both the <code>IMamoStrategy.withdraw</code> call (void return — empty returndata is correct) and USDC <code>transfer</code> calls (bool return — empty returndata is not a valid success indicator).</li>
+</ol>
+<p><strong>Recommendation</strong></p>
+<p>Split <code>_safeExec</code> into two helpers: one for void-return calls (<code>_safeExecVoid</code>) and one for ERC-20 transfers that requires explicit <code>true</code> return:</p>
+<pre><code class="language-diff">-function _safeExec(address to, bytes memory data) internal {
+-    (bool ok, bytes memory ret) = ...
+-    if (!ok) revert SafeCallFailed();
+-    if (ret.length != 0 &amp;&amp; !abi.decode(ret, (bool))) revert SafeCallFailed();
+-}
++function _safeExecToken(address to, bytes memory data) internal {
++    (bool ok, bytes memory ret) = ISafe(SAFE).execTransactionFromModuleReturnData(to, 0, data, ISafe.Operation.Call);
++    if (!ok) revert SafeCallFailed();
++    if (ret.length == 0 || !abi.decode(ret, (bool))) revert SafeCallFailed(); // require explicit true
++}
++function _safeExecVoid(address to, bytes memory data) internal {
++    (bool ok,) = ISafe(SAFE).execTransactionFromModuleReturnData(to, 0, data, ISafe.Operation.Call);
++    if (!ok) revert SafeCallFailed();
++}
+</code></pre>
+<p>Use <code>_safeExecToken</code> for <code>USDC.transfer</code> calls and <code>_safeExecVoid</code> for <code>MAMO_STRATEGY.withdraw</code>.</p>
+<hr>
+<h3 id="l-1-getstrategyvalue-and-previewyieldcapture-are-state-mutating">[L-1] <code>getStrategyValue()</code> and <code>previewYieldCapture()</code> Are State-Mutating</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: EthSkills (L-1) + Pashov (#3 at confidence 88)<br><strong>Location</strong>: <code>getStrategyValue()</code> — line 110; <code>previewYieldCapture()</code> — line 184</p>
+<p><strong>Description</strong></p>
+<p><code>getStrategyValue()</code> calls <code>IMToken(M_TOKEN).balanceOfUnderlying(MAMO_STRATEGY)</code>, which is a non-view function that triggers Moonwell&#39;s <code>accrueInterest()</code> as a side effect. This writes updated borrow indexes and accrual timestamps to Moonwell&#39;s storage on every call.</p>
+<p>Consequently, <code>previewYieldCapture()</code> — named and designed as a read-only simulation — actually modifies Moonwell chain state. Any on-chain contract that calls <code>previewYieldCapture()</code> via <code>staticcall</code> (the standard for view queries) will receive a revert. Off-chain <code>eth_call</code> queries work but silently trigger state mutations on archive nodes.</p>
+<p><strong>Recommendation</strong></p>
+<p>Document the state-mutating behavior prominently in NatSpec. Where possible, provide a view-compatible alternative using <code>exchangeRateStored()</code> (the cached, non-accruing Moonwell balance) for the preview path:</p>
+<pre><code class="language-solidity">/// @notice Non-view: triggers Moonwell interest accrual. Do not call via staticcall.
+function getStrategyValue() public returns (uint256) { ... }
+
+/// @notice View-safe approximation; uses stored exchange rate without accrual.
+function getStrategyValueView() public view returns (uint256) {
+    // Use balanceOf + exchangeRateStored instead of balanceOfUnderlying
+    ...
+}
+</code></pre>
+<hr>
+<h3 id="l-2-constructor-does-not-validate-safe-mamostrategy">[L-2] Constructor Does Not Validate <code>SAFE != MAMO_STRATEGY</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: EthSkills (L-2) + Pashov (#9 at confidence 75)<br><strong>Location</strong>: <code>constructor</code> — lines 89–108</p>
+<p><strong>Description</strong></p>
+<p>The constructor validates non-zero addresses but does not verify that <code>safe_</code> and <code>mamoStrategy_</code> are distinct. If set to the same address by deployment error, <code>getStrategyValue()</code> and <code>getSafeUSDC()</code> would both read <code>USDC.balanceOf(same_address)</code>, double-counting the USDC balance in the total value calculation. This inflates <code>totalYield</code> and causes the module to attempt to distribute funds that do not exist as true yield.</p>
+<p>Since all relevant addresses are immutable, a misconfigured deployment cannot be corrected after deployment.</p>
+<p><strong>Recommendation</strong></p>
+<pre><code class="language-diff">+if (safe_ == mamoStrategy_) revert ZeroAddress();
+</code></pre>
+<hr>
+<h3 id="l-3-setprotectedprincipal-has-no-lower-bound-enables-instant-dra">[L-3] <code>setProtectedPrincipal</code> Has No Lower Bound — Enables Instant Drainage If Safe Is Compromised</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: Pashov (#6 at confidence 82)<br><strong>Location</strong>: <code>setProtectedPrincipal()</code> — lines 227–229</p>
+<p><strong>Description</strong></p>
+<p>The Safe multisig can set <code>protectedPrincipal</code> to any value including zero without any floor validation or time-lock. If the Safe multisig is compromised (key theft, social engineering, malicious proposal), an attacker who controls sufficient signers can:</p>
+<ol>
+<li>Call <code>setRecipients</code> to route all BPS to an attacker-controlled address.</li>
+<li>Call <code>setProtectedPrincipal(0)</code>.</li>
+<li>Call <code>executeYieldCapture()</code> — the entire strategy value + Safe USDC is treated as yield and drained to the attacker.</li>
+</ol>
+<p>This is by design (the Safe is the administrator), but there is no rate-limiting or time-delay that would give users a window to react.</p>
+<p><strong>Recommendation</strong></p>
+<p>Implement a minimum time-lock on <code>setProtectedPrincipal</code> and <code>setRecipients</code> changes (e.g., 24–48 hours), giving parties that monitor the module an opportunity to detect and respond to malicious proposals before execution.</p>
+<hr>
+<h3 id="l-4-external-dependency-risk-usdc-global-pause-moonwell-market-o">[L-4] External Dependency Risk: USDC Global Pause / Moonwell Market Outage</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: EthSkills (L-3)<br><strong>Location</strong>: <code>_payRecipients()</code> — line 217; <code>getStrategyValue()</code> — line 113</p>
+<p><strong>Description</strong></p>
+<p>The module has two unmitigated external dependency failure modes:</p>
+<ol>
+<li><p><strong>USDC global pause</strong>: Circle can pause all USDC transfers on Base. If paused, all <code>_payRecipients</code> calls fail, blocking yield distribution indefinitely. Unlike M-1 (single blocked recipient), a global pause cannot be remedied by updating recipients.</p>
+</li>
+<li><p><strong>Moonwell market pause</strong>: Moonwell&#39;s guardian multisig can pause markets. If the mToken market is paused, <code>balanceOfUnderlying</code> may revert, causing <code>getStrategyValue()</code> to revert and blocking all module operations.</p>
+</li>
+</ol>
+<p>Neither failure mode has a try/catch fallback or emergency escape path.</p>
+<p><strong>Recommendation</strong></p>
+<p>Wrap the Moonwell call in try/catch with a configurable fallback to a cached value:</p>
+<pre><code class="language-solidity">try IMToken(M_TOKEN).balanceOfUnderlying(MAMO_STRATEGY) returns (uint256 val) {
+    moonwellAssets = val;
+} catch {
+    moonwellAssets = 0; // conservative fallback
+}
+</code></pre>
+<p>For the USDC pause risk, document it as an unmitigated external dependency and consider adding a Safe-callable emergency pause mechanism that the Safe can use preemptively if Circle signals an impending pause.</p>
+<hr>
+<h3 id="i-1-constructor-does-not-emit-initial-parameter-events">[I-1] Constructor Does Not Emit Initial Parameter Events</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confirmed by</strong>: EthSkills (I-1)<br><strong>Location</strong>: <code>constructor</code> — lines 103–107</p>
+<p><strong>Description</strong></p>
+<p>The constructor sets <code>protectedPrincipal</code>, <code>executionInterval</code>, and <code>minimumClaimAmount</code> without emitting the <code>ProtectedPrincipalUpdated</code>, <code>ExecutionIntervalUpdated</code>, and <code>MinimumClaimAmountUpdated</code> events. Off-chain indexers reconstructing state from event logs cannot observe initial values.</p>
+<p><strong>Recommendation</strong></p>
+<pre><code class="language-solidity">emit ProtectedPrincipalUpdated(0, protectedPrincipal_);
+emit ExecutionIntervalUpdated(0, executionInterval_);
+emit MinimumClaimAmountUpdated(0, minimumClaimAmount_);
+</code></pre>
+<hr>
+<h3 id="i-2-all-compound-mode-requires-minimumclaimamount-0-not-enforced">[I-2] All-Compound Mode Requires <code>minimumClaimAmount == 0</code> — Not Enforced or Documented</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confirmed by</strong>: EthSkills (I-2) + Pashov (#7)<br><strong>Location</strong>: <code>setRecipients()</code> — line 223; <code>executeYieldCapture()</code> — lines 166–167</p>
+<p><strong>Description</strong></p>
+<p>When the Safe removes all recipients (<code>setRecipients([])</code>), <code>_computeAmounts</code> always returns <code>totalDistributed = 0</code>. The check <code>if (totalDistributed &lt; minimumClaimAmount) revert BelowMinimum()</code> will then revert every call to <code>executeYieldCapture</code> unless <code>minimumClaimAmount</code> is also set to zero. This coupling is not enforced or documented.</p>
+<p><strong>Recommendation</strong></p>
+<p>Auto-zero <code>minimumClaimAmount</code> when entering all-compound mode, or skip the minimum check when there are no recipients:</p>
+<pre><code class="language-diff">+if (newRecipients.length == 0 &amp;&amp; minimumClaimAmount &gt; 0) {
++    emit MinimumClaimAmountUpdated(minimumClaimAmount, 0);
++    minimumClaimAmount = 0;
++}
+</code></pre>
+<hr>
+<h3 id="i-3-executioninterval-can-be-set-to-1-second-by-governance">[I-3] <code>executionInterval</code> Can Be Set to 1 Second by Governance</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confirmed by</strong>: Pashov (#8)<br><strong>Location</strong>: <code>setExecutionInterval()</code> — lines 232–235</p>
+<p><strong>Description</strong></p>
+<p><code>setExecutionInterval</code> validates <code>newInterval != 0</code> but allows values as small as 1 second. If the interval is intended as a rate-limiter on yield captures, the Safe multisig can effectively bypass it by setting the interval to 1. This is a governance risk rather than a code bug, but a minimum interval (e.g., 1 hour) would provide a meaningful lower bound.</p>
+<p><strong>Recommendation</strong></p>
+<p>Add a minimum interval constant:</p>
+<pre><code class="language-diff">+uint256 public constant MIN_EXECUTION_INTERVAL = 1 hours;
+ function setExecutionInterval(uint256 newInterval) external onlySafe {
+-    if (newInterval == 0) revert InvalidExecutionInterval();
++    if (newInterval &lt; MIN_EXECUTION_INTERVAL) revert InvalidExecutionInterval();
+</code></pre>
+<hr>
+<h2 id="finding-index">Finding Index</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Confirmed by</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-1</td>
+<td><span class="pill high">High</span></td>
+<td>Single blocked USDC recipient permanently halts all yield distribution</td>
+<td>EthSkills + Pashov</td>
+</tr>
+<tr>
+<td>M-1</td>
+<td><span class="pill medium">Medium</span></td>
+<td>ERC-4626 share rounding triggers permanent <code>PrincipalViolation</code> DoS</td>
+<td>EthSkills + Pashov</td>
+</tr>
+<tr>
+<td>M-2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Strategy withdrawal rounding triggers <code>WithdrawFailed</code> DoS</td>
+<td>EthSkills + Pashov</td>
+</tr>
+<tr>
+<td>M-3</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>_safeExec</code> silently accepts zero-length return data for USDC transfers</td>
+<td>Pashov</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td><code>getStrategyValue()</code> / <code>previewYieldCapture()</code> are state-mutating</td>
+<td>EthSkills + Pashov</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td>Constructor does not validate <code>SAFE != MAMO_STRATEGY</code></td>
+<td>EthSkills + Pashov</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td><code>setProtectedPrincipal</code> has no lower bound — instant drainage if Safe compromised</td>
+<td>Pashov</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td><span class="pill low">Low</span></td>
+<td>External dependency: USDC pause / Moonwell outage blocks all operations</td>
+<td>EthSkills</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td>Constructor does not emit initial parameter events</td>
+<td>EthSkills</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><span class="pill info">Info</span></td>
+<td>All-compound mode requires <code>minimumClaimAmount == 0</code> — not enforced</td>
+<td>EthSkills + Pashov</td>
+</tr>
+<tr>
+<td>I-3</td>
+<td><span class="pill info">Info</span></td>
+<td><code>executionInterval</code> can be set to 1 second by governance</td>
+<td>Pashov</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="discarded-downgraded-items">Discarded / Downgraded Items</h2>
+<ul>
+<li><strong>Pashov #5 (Two-step partial-execution state)</strong>: Under standard Gnosis Safe behavior, all state changes within a reverted EVM transaction are atomically rolled back. If <code>_payRecipients</code> fails, the strategy withdrawal is also reverted. The concern is only valid if a custom Safe guard absorbs the inner revert — a non-standard configuration. Downgraded to Lead.</li>
+<li><strong>Pashov #10 (Flash-loan MetaMorpho inflation grief)</strong>: Attacker loses flash loan fees with no profit. Net-negative attack. Rejected.</li>
+<li><strong>Pashov #11 (Returndata bomb)</strong>: <code>MAMO_STRATEGY</code> is immutable and trusted. Risk only materializes under compromise of that contract. Downgraded to Lead.</li>
+<li><strong>BPS math overflow</strong>: <code>totalYield * bps</code> — USDC total supply (~55B × 6 dec = 5.5e16) × 10,000 = 5.5e20, well within <code>uint256</code>. No issue.</li>
+<li><strong><code>getDistribution()</code> uint16 downcast</strong>: <code>BPS - sumBps ≤ 10,000 ≤ 65,535</code>. Safe.</li>
+<li><strong>Reentrancy</strong>: <code>nonReentrant</code> is the first modifier. Standard Safe module execution does not create cross-contract reentrancy paths here.</li>
+</ul>
+<hr>
+<h2 id="appendix-core-invariant-analysis">Appendix: Core Invariant Analysis</h2>
+<p>The contract&#39;s safety invariant is:</p>
+<pre><code>getStrategyValue() + getSafeUSDC() &gt;= protectedPrincipal
+</code></pre>
+<p>This invariant is checked explicitly (line 177) and is structurally guaranteed to hold <em>in theory</em>, but <strong>findings M-1 and M-2 demonstrate that integer rounding in ERC-4626 share math violates it in practice on any non-trivial withdrawal</strong>. Adding a small rounding tolerance (2 wei for USDC 6-decimal precision) is sufficient to fix both M-1 and M-2 simultaneously.</p>
+<p>The <code>protectedPrincipal</code> serves as a high-watermark principal tracker. Its growth relies on the assumption that <code>getStrategyValue()</code> is consistent across calls within the same transaction — an assumption that ERC-4626&#39;s round-down semantics violates by construction when the strategy partially redeems its vault position.</p>
+<hr>
+<p><em>This audit was conducted using the EthSkills domain checklist methodology (500+ checklist items, 19 domains) and the Pashov 8-agent parallelized review methodology. Each finding was validated through at least one complete exploit path. AI-assisted analysis cannot guarantee the absence of all vulnerabilities. Professional human review and formal verification are strongly recommended before production deployment of contracts handling user funds.</em></p>
+<p><em>Auditor contact: <a href="mailto:austin.griffith@ethereum.org">austin.griffith@ethereum.org</a></em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiedehopwagtvkobo4z7h5udgluw3jbtgxuzop7dx62iwc254v2sy4.ipfs.community.bgipfs.com/"><code>https://bafkreiedehopwagtvkobo4z7h5udgluw3jbtgxuzop7dx62iwc254v2sy4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/91">#91</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

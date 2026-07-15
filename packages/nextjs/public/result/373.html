@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multisig / MultisigFactory / Clones (slop-computer-wallet) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #373">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Multisig / MultisigFactory / Clones (slop-computer-wallet)</h1>
+    <p class="job-sub">Job #373 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/373"><b>Job page</b> #373</a>
+      <a class="chip" href="https://bafkreiehek3bocfebv7cvqaqjbrffpzz6lw3verdtzcntfspf6tot6ml5y.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">7</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — Multisig / MultisigFactory / Clones (slop-computer-wallet)</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>github.com/clawdbotatg/slop-computer-wallet</code> @ commit <code>d5cf721b56c2373535e0922594085ac8ed5bb88e</code></td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Named path: <code>packages/foundry/contracts/</code> (Multisig.sol linked directly by client; MultisigFactory.sol + Clones.sol pulled in as the tightly-coupled deployment system)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>Multisig.sol</code> (420 LOC) · <code>MultisigFactory.sol</code> (62 LOC)<br><code>Clones.sol</code> (72 LOC) — 554 LOC total</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>3-phase: context map (opus) → ethskills breadth, 7 domains (sonnet) → pashov depth, 12 attack agents blind to phase-1 (sonnet) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>50</td>
+</tr>
+</tbody></table></div>
+<p><strong>Note on prior audits:</strong> the source carries inline comments referencing prior audit rounds (<code>M-1</code>, <code>L-1</code>, <code>L-3</code>, <code>I-3</code>, <code>Audit B L-1</code>, <code>Audit C L-3</code>) at exactly the spots a fresh review would otherwise flag (zero-coordinate passkey rejection, credentialId cleanup intent, <code>Clones</code> free-memory-pointer, empty-batch rejection, codeless-implementation factory check, reentrancy guard). This review was run fully independently — every finding below comes from this job&#39;s own phase 0 map, phase 1, and phase 2 agents, not by inspecting those prior rounds.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p>Phase 1 (7 ethskills domains) raised 13 raw items. Phase 2 (12 pashov agents, blind to phase 1) raised 12 unique (Contract, function, bug-class) groups covering 33 raw FINDING/LEAD items. Cross-phase dedup by root cause: <strong>Overlap: 2 · Phase-1-only: 6 · Phase-2-only: 4 · Re-examined leads kept: 5, demoted: 2 (EIP-7702 signer-widening and the free-memory-pointer item, downgraded after hybrid re-examination confirmed both are either working-as-documented or currently benign) · Coverage holes closed: 0</strong> (both phases independently covered every privileged entrypoint and threat-catalog row; the assembly byte-math on Clones was cross-checked directly against source during this pass as corroboration, not as a fresh hole).</p>
+<p>Confidence floor: 50. Findings below 50 are listed under <strong>Leads</strong>. Two findings (zero-threshold bypass, missing domain separation) were independently reconstructed with full concrete exploit traces by 2–5 agents across both phases each — the highest-confidence items in this report. One finding (credentialId collision) was independently found by 10 of the 12 phase-2 agents plus the phase-1 access-control agent — the most-corroborated item, though its impact is confined to an off-chain lookup mapping, not funds or authorization.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[95] <strong>1. Zero threshold on the un-initializable implementation contract lets anyone drain it with zero signatures</strong></p>
+<p><code>Multisig._verifySignatures</code> / <code>execTransaction</code> / <code>execBatchTransaction</code> / <code>isValidSignature</code> · Confidence: 95 · <code>[both: phase1 proxies-domain agent + phase2 agents 5 (invariant) &amp; 7 (first-principles), independently]</code></p>
+<p><strong>Description</strong><br>The constructor&#39;s <code>_disableInitializers()</code> permanently blocks <code>initialize()</code> on the raw implementation contract (the address every clone delegates to, publicly readable via <code>MultisigFactory.implementation()</code>), but nothing else ever sets <code>threshold</code> there, so it stays <code>0</code> forever; <code>_verifySignatures</code>&#39;s gate <code>signatures.length &lt; threshold</code> is <code>0 &lt; 0 == false</code> for an empty array, so an empty <code>Signature[]</code> &quot;passes&quot; a 0-of-0 quorum, and <code>execTransaction</code>/<code>execBatchTransaction</code>/<code>isValidSignature</code> all proceed as if fully authorized.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li><code>implementation</code> (Multisig.sol) is a real, permanently deployed contract with an unconditional <code>receive()</code> (L403) and unconditionally-accepting ERC-721/1155 hooks (L405-419) — any ETH or NFT sent to it (by mistake, an automated sweep, or a probe) is accepted.</li>
+<li>Attacker calls <code>Multisig(payable(implementation)).execTransaction(attacker, implementation.balance, &quot;&quot;, block.timestamp + 1, new Signature )</code>.</li>
+<li>Inside <code>_verifySignatures</code> (L318-337): <code>threshold == 0</code> (never set — <code>initialize</code>, the only writer, is permanently blocked at L98-100/L116), <code>signatures.length == 0</code>, so <code>if (signatures.length &lt; threshold)</code> (L319) evaluates <code>0 &lt; 0 == false</code> → no revert; the <code>for</code> loop (L322) runs zero iterations.</li>
+<li>Back in <code>execTransaction</code>: <code>nonce++</code> (L274), then <code>target.call{value: implementation.balance}(&quot;&quot;)</code> (L276) sends the balance to the attacker. The identical bypass makes <code>isValidSignature</code> (L377-399) return the ERC-1271 magic value for <strong>any</strong> hash via the same <code>0 &lt; 0</code> gate at L379.</li>
+</ol>
+<p>No live clone can reach this state — <code>initialize</code>&#39;s own bound check (<code>_threshold == 0 || _threshold &gt; total</code>, L121) and <code>changeThreshold</code>&#39;s (L217) prevent <code>threshold</code> from ever being 0 post-init — this is specific to, but always present on, the one implementation contract every deployment of this system requires.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function _verifySignatures(bytes32 hash, Signature[] calldata signatures) internal view {
+-        if (signatures.length &lt; threshold) revert ThresholdNotMet();
++        if (threshold == 0 || signatures.length &lt; threshold) revert ThresholdNotMet();
+</code></pre>
+<pre><code class="language-diff">     function isValidSignature(bytes32 hash, bytes memory signatures) external view returns (bytes4 magicValue) {
+         Signature[] memory sigs = abi.decode(signatures, (Signature[]));
+-        if (sigs.length &lt; threshold) return 0xffffffff;
++        if (threshold == 0 || sigs.length &lt; threshold) return 0xffffffff;
+</code></pre>
+<hr>
+<p>[85] <strong>2. No domain separation between the exec digest and generic ERC-1271 message signing enables blind-signing phishing</strong></p>
+<p><code>Multisig.getExecHash</code> / <code>getBatchExecHash</code> / <code>isValidSignature</code> / <code>_recoversTo</code> · Confidence: 85 · <code>[both: phase1 general + signatures domains + phase2 agent 4 (execution-trace, full concrete numeric proof) &amp; agent 12 (flow-gap)]</code></p>
+<p><strong>Description</strong><br><code>getExecHash</code>/<code>getBatchExecHash</code> (L244-255) are bare <code>abi.encode</code> digests with no EIP-712 domain separator or type-hash. <code>isValidSignature</code> (L377-399) — which the contract&#39;s own NatSpec advertises as letting &quot;the multisig itself sign off-chain messages&quot; (L19-20) — validates any externally-supplied <code>bytes32 hash</code> through the identical signer-verification path (<code>_isValidAccountSig</code>/<code>_isValidPasskeySig</code>) used to authorize fund transfers, and <code>_recoversTo</code> (L365-371) accepts both a raw digest and a <code>personal_sign</code>-prefixed one. A signer therefore cannot tell, from an opaque hash they&#39;re asked to <code>personal_sign</code> for what looks like a message-signing or nested-cosigning request, whether it is in fact a live spend-authorization digest for the wallet&#39;s current nonce.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Attacker reads public state: <code>nonce</code>, <code>address(this)</code>, <code>block.chainid</code>, and picks <code>target = attacker</code>, <code>value = &lt;victim balance&gt;</code>, <code>data = &quot;&quot;</code>, a near-future <code>deadline</code>.</li>
+<li>Attacker computes <code>H = getExecHash(attacker, value, &quot;&quot;, deadline)</code> off-chain (a pure view function) using the wallet&#39;s live <code>nonce</code>.</li>
+<li>Attacker presents <code>H</code> to <code>threshold</code> signers independently disguised as an unrelated &quot;sign in&quot; / message-approval / nested-Safe-cosigning request (a raw hex blob — nothing in a <code>personal_sign</code> prompt distinguishes it from an exec digest).</li>
+<li>Once <code>threshold</code> signers have each <code>personal_sign</code>ed <code>H</code>, attacker assembles the sorted <code>Signature[]</code> and calls <code>execTransaction(attacker, value, &quot;&quot;, deadline, signatures)</code> before <code>deadline</code> — <code>_verifySignatures</code> (L318-337) recomputes and matches <code>H</code> exactly, passes, and the wallet is drained.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-    function getExecHash(address target, uint256 value, bytes calldata data, uint256 deadline)
+-        public
+-        view
+-        returns (bytes32)
+-    {
+-        return keccak256(abi.encode(block.chainid, address(this), nonce, deadline, target, value, keccak256(data)));
+-    }
++    bytes32 private constant EXEC_TYPEHASH =
++        keccak256(&quot;ExecTransaction(uint256 chainId,address wallet,uint256 nonce,uint256 deadline,address target,uint256 value,bytes32 dataHash)&quot;);
++
++    function getExecHash(address target, uint256 value, bytes calldata data, uint256 deadline)
++        public
++        view
++        returns (bytes32)
++    {
++        return _hashTypedDataV4(keccak256(abi.encode(
++            EXEC_TYPEHASH, block.chainid, address(this), nonce, deadline, target, value, keccak256(data)
++        )));
++    }
+</code></pre>
+<p>Adopt OZ <code>EIP712</code> (domain separator over name/version/chainid/verifyingContract) with a distinct type-hash for <code>getBatchExecHash</code> too, and give <code>isValidSignature</code>&#39;s generic message-signing path its own, differently-tagged type-hash (mirroring Safe&#39;s <code>SafeTx</code> vs <code>SafeMessage</code> split) so a signature valid in one context can never validate in the other.</p>
+<hr>
+<p>[70] <strong>3. No enforced maximum validity window lets signed transactions become stale &quot;time bombs&quot;</strong></p>
+<p><code>Multisig.execTransaction</code> / <code>execBatchTransaction</code> · Confidence: 70 · <code>[phase1: governance domain]</code></p>
+<p><strong>Description</strong><br><code>deadline</code> (L268, L288 params) is caller/signer-chosen with no protocol-enforced upper bound; the only check is <code>block.timestamp &gt; deadline</code> (L271, L294). A signature set collected for prompt execution (e.g. a swap with a <code>minOut</code> computed off current prices) remains a live, executable authorization for as long as the wallet&#39;s <code>nonce</code> doesn&#39;t move — which can be indefinite if the wallet is otherwise idle — so state-dependent parameters can go stale, or the signers&#39; intent can simply no longer match reality, before anyone (signer or not, since these functions have no caller restriction) finally submits it.</p>
+<p><strong>Proof of Concept</strong><br>Signers sign <code>execTransaction(dex, value, swapCalldata(minOut=X), deadline=block.timestamp+365 days)</code> intending same-day execution. Submission is delayed (slow relayer, or a signer intentionally withholds it). Months later, market conditions have moved so <code>minOut=X</code> is now stale/unfavorable; any address holding the still-valid signature set executes it at the old parameters — the <code>nonce</code> binding stops replay but does nothing to stop late-but-first execution.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    uint256 public constant MAX_DEADLINE_WINDOW = 7 days;
++
+     function execTransaction(...) external nonReentrant returns (bytes memory result) {
+         if (block.timestamp &gt; deadline) revert ExpiredSignature();
++        if (deadline &gt; block.timestamp + MAX_DEADLINE_WINDOW) revert ExpiredSignature();
+</code></pre>
+<p>(mirror in <code>execBatchTransaction</code>)</p>
+<hr>
+<p>[97] <strong>4. <code>credentialIdHash</code> collision lets <code>removeSigner</code> wipe an unrelated, still-active signer&#39;s reverse lookup</strong></p>
+<p><code>Multisig._addSigner</code> / <code>removeSigner</code> · Confidence: 97 · <code>[both: phase1 access-control domain + 10 of 12 phase2 agents independently: math-precision, access-control, economic-security, execution-trace, invariant, periphery, first-principles, asymmetry, boundary, numerical-gap, trust-gap]</code></p>
+<p><strong>Description</strong><br><code>_addSigner</code> (L229-239) writes <code>credentialIdToAddress[credId] = signer</code> and <code>credentialIdOf[signer] = credId</code> with no check that <code>credentialIdToAddress[credId]</code> is already claimed by a different signer. If two passkey signers are ever registered with the same non-zero <code>credentialIdHash</code> (duplicate entries in one <code>initialize()</code> call, or a later <code>addPasskeySigner</code>), the second registration silently overwrites the first signer&#39;s reverse-lookup entry while the first signer&#39;s own <code>credentialIdOf</code> stays stale, pointing at the same shared hash. A later, entirely legitimate <code>removeSigner</code> on the <em>first</em> signer then deletes the <em>second</em>, still-active signer&#39;s live reverse-lookup entry as collateral damage — breaking the documented invariant <code>credentialIdOf[a]==c!=0 =&gt; credentialIdToAddress[c]==a</code>. <strong>This does not affect signature verification or fund custody</strong> — <code>_verifySignatures</code>/<code>isValidSignature</code> key off <code>signerInfo[address].qx/qy</code> directly, never through this mapping — the impact is confined to <code>getPasskeyByCredentialId</code>&#39;s off-chain login/lookup convenience function.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Passkey signer A registered (via <code>initialize</code> or <code>addPasskeySigner</code>) with <code>credId = X</code>: <code>credentialIdToAddress[X] = A</code>, <code>credentialIdOf[A] = X</code>.</li>
+<li>Passkey signer B later registered, different <code>(qx,qy)</code> but the same <code>credId = X</code> (typo, copy-paste, or two entries in one <code>initialize</code> array): <code>_addSigner</code> (L234-236) overwrites <code>credentialIdToAddress[X] = B</code>; <code>credentialIdOf[A]</code> is untouched and still reads <code>X</code>.</li>
+<li>Quorum calls <code>removeSigner(A)</code> for an unrelated reason (e.g. device rotation): <code>removeSigner</code> (L199-203) reads <code>credId = credentialIdOf[A] == X</code>, and executes <code>delete credentialIdToAddress[X]</code> — but that slot currently belongs to B, a fully active signer never touched by this call. <code>getPasskeyByCredentialId(X)</code> now returns <code>address(0)</code> even though B remains a valid, threshold-eligible signer.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function _addSigner(address signer, SignerType kind, bytes32 qx, bytes32 qy, bytes32 credId) internal {
+         if (signer == address(0)) revert InvalidSigner();
+         if (signerInfo[signer].exists) revert AlreadySigner();
+         signerInfo[signer] = SignerInfo({ exists: true, kind: kind, qx: qx, qy: qy });
+         _signers.push(signer);
+         if (credId != bytes32(0)) {
++            if (credentialIdToAddress[credId] != address(0)) revert AlreadySigner();
+             credentialIdToAddress[credId] = signer;
+             credentialIdOf[signer] = credId;
+         }
+</code></pre>
+<p>and in <code>removeSigner</code>, only clear the reverse entry if it still points back at the signer being removed:</p>
+<pre><code class="language-diff">         bytes32 credId = credentialIdOf[signer];
+         if (credId != bytes32(0)) {
+-            delete credentialIdToAddress[credId];
++            if (credentialIdToAddress[credId] == signer) delete credentialIdToAddress[credId];
+             delete credentialIdOf[signer];
+         }
+</code></pre>
+<hr>
+<p>[65] <strong>5. Unbounded ERC-1271 recursion via nested/cyclic Multisig signers (gas-griefing DoS)</strong></p>
+<p><code>Multisig.isValidSignature</code> / <code>_isValidAccountSig</code> · Confidence: 65 · <code>[both: phase1 signatures domain + phase2 agents 5, 4, 3]</code></p>
+<p><strong>Description</strong><br>Only direct self-registration is blocked (<code>_addAccountSigner</code> rejects <code>signer == address(this)</code>, L225); an indirect cycle is not — Multisig A can register Multisig B as a signer while B independently registers A. <code>_isValidAccountSig</code>&#39;s staticcall to a signer&#39;s <code>isValidSignature</code> (L347) has no depth counter, so a crafted nested signature walking such a cycle recurses until gas exhaustion or the 1024-call-depth limit, reverting that specific execution/validation attempt.</p>
+<p><strong>Fix</strong>: track and cap recursion depth through the ERC-1271 delegation path (e.g. pass a depth counter via a wrapper, reverting past a small max), or require nested-signer registrations to pass an explicit acyclic-hierarchy check (e.g. via <code>getSigners()</code> introspection when the candidate is itself a Multisig).</p>
+<hr>
+<p>[60] <strong>6. Signer/threshold governance has no timelock</strong></p>
+<p><code>Multisig.onlySelf</code> cluster (<code>removeSigner</code>, <code>changeThreshold</code>) via <code>execBatchTransaction</code> · Confidence: 60 · <code>[phase1: access-control domain]</code></p>
+<p><strong>Description</strong><br>A coalition reaching exactly <code>threshold</code> can bundle <code>changeThreshold(1)</code> + <code>removeSigner(...)</code> for every other signer + an arbitrary fund transfer into one atomic <code>execBatchTransaction</code> (L287-307), with no delay or notice for the excluded signers. This is inherent to any purely self-governed M-of-N scheme (identical to Gnosis Safe&#39;s own model) — flagged for completeness and deployment guidance rather than as a distinct code defect.</p>
+<p><strong>Fix</strong>: optionally add a timelock/delay specific to signer-set and threshold changes (distinct from ordinary fund-moving <code>execTransaction</code>), or explicitly document that reaching <code>threshold</code> is equivalent to permanent full control, not just approval of a single transaction.</p>
+<hr>
+<p>[55] <strong>7. Self-governed quorum has no recovery path if enough signers become unavailable</strong></p>
+<p><code>Multisig.removeSigner</code> / <code>changeThreshold</code> / <code>execTransaction</code> · Confidence: 55 · <code>[phase1: governance domain]</code></p>
+<p><strong>Description</strong><br>All signer/threshold changes are <code>onlySelf</code>, reachable only via a threshold-signed self-call. If <code>threshold == signerCount</code> (N-of-N) and even one signer&#39;s key is permanently lost, no remaining coalition can ever reach <code>threshold</code> again — the wallet, including its own recovery functions, locks forever. Inherent to pure self-governance (same property Gnosis Safe has), not a coding defect.</p>
+<p><strong>Fix</strong>: document the risk for integrators/deploy tooling (warn against <code>threshold == signerCount</code>); optionally offer an opt-in, long-time-locked fallback recovery path for deployments that want resilience against key loss.</p>
+<hr>
+<p>[55] <strong>8. A single key can satisfy two &quot;independent&quot; signer slots via a nested Multisig sharing that key</strong></p>
+<p><code>Multisig._verifySignatures</code> / <code>isValidSignature</code> / <code>_isValidAccountSig</code> · Confidence: 55 · <code>[phase2 only: trust-gap agent, full concrete trace]</code></p>
+<p><strong>Description</strong><br><code>_addAccountSigner</code> only blocks literal <code>signer == address(this)</code> (L225); it cannot detect that a separately-registered Account signer (e.g. a nested Multisig clone) resolves its own quorum using the same private key already registered directly on the parent. One signing action by that shared key can then satisfy both the direct ECDSA check and the nested wallet&#39;s <code>isValidSignature</code> (which itself re-derives from the same key), silently collapsing the wallet&#39;s effective threshold. This requires the quorum to <em>voluntarily</em> register the overlapping configuration — no general on-chain check can detect key correlation across independently-registered contract wallets.</p>
+<p><strong>Fix</strong>: document that registering both a direct signer and a nested wallet under common key control degrades the effective threshold; where the nested signer is introspectable (another instance of this same <code>Multisig</code> contract), optionally reject registration if <code>getSigners()</code> of the candidate overlaps with the parent&#39;s own <code>_signers</code>.</p>
+<hr>
+<p>[90] <strong>9. Free-memory-pointer bump under-counts bytes written by the clone-bytecode assembly (currently benign)</strong></p>
+<p><code>Clones.cloneDeterministic</code> / <code>predictDeterministicAddress</code> · Confidence: 90 · <code>[both: phase1 assembly domain + phase2 agents 1, 6 — all three independently confirmed via byte-level trace]</code></p>
+<p><strong>Description</strong><br>The third <code>mstore</code> (Clones.sol:29 / :58) writes a full 32-byte word starting at <code>ptr+0x28</code> (40), touching memory through <code>ptr+0x48</code> (72). The subsequent <code>mstore(0x40, add(ptr, 0x40))</code> (Clones.sol:33 / :61) only reserves through <code>ptr+0x40</code> (64) — 8 bytes <code>[ptr+64, ptr+72)</code> are written but fall outside the newly-reserved region. <strong>Verified directly against the source</strong>: those 8 bytes are the trailing zero-padding of the suffix literal (<code>0x5af43d82803e903d91602b57fd5bf3</code> followed by 17 zero bytes, of which the last 8 land past the reservation), and Solidity assumes unallocated memory is zero — so the gap is harmless today only because those specific bytes happen to be zero, not because the arithmetic accounts for the true write extent. A future edit to the suffix constant with non-zero low bytes would silently corrupt the next allocation.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-        mstore(0x40, add(ptr, 0x40))
++        mstore(0x40, add(ptr, 0x48))
+</code></pre>
+<p>(apply to both <code>cloneDeterministic</code> and <code>predictDeterministicAddress</code>)</p>
+<hr>
+<p>[80] <strong>10. Reliance on Cancun-only opcodes (transient storage) with no pinned EVM version risks unusable or silently-non-functional deployments on some chains</strong></p>
+<p><code>Multisig.sol</code> (import of <code>ReentrancyGuardTransient</code>, L9) · Confidence: 80 · <code>[phase1: general domain; corroborated by repo&#39;s own deploy-target list]</code></p>
+<p><strong>Description</strong><br><code>ReentrancyGuardTransient</code> uses <code>TLOAD</code>/<code>TSTORE</code> (EIP-1153, Cancun); combined with the <code>&gt;=0.8.24</code> pragma (which by default also emits <code>PUSH0</code>, Shanghai), deployment requires both Shanghai and Cancun support. <code>foundry.toml</code> defines RPC endpoints for several chains that may lag full Cancun support, and its own comments already flag zkSync/Abstract as CREATE2-incompatible for a different reason — deploying to a chain without transient-storage support would either fail to deploy or, worse, silently no-op the reentrancy guard the code comments explicitly rely on (&quot;audit C L-3&quot;).</p>
+<p><strong>Fix</strong>: pin <code>evm_version</code> in <code>foundry.toml</code> to the intended target chain(s) per-deployment, or fall back to a standard storage-slot <code>ReentrancyGuard</code> if broad multichain/L2 deployment is in scope.</p>
+<hr>
+<p>[80] <strong>11. Signature-verification logic duplicated between <code>_verifySignatures</code> and <code>isValidSignature</code></strong></p>
+<p><code>Multisig._verifySignatures</code> (L318-337) vs <code>isValidSignature</code> (L377-399) · Confidence: 80 · <code>[both: phase1 general domain + phase2 agent 6 (periphery)]</code></p>
+<p><strong>Description</strong><br>The same threshold/ordering/kind-matching/per-signer-validation loop is implemented twice — once reverting on failure, once returning a magic-value/failure-selector. Diffed field-by-field by three independent agents across both phases: currently semantically identical, but nothing enforces they stay that way under future edits.</p>
+<p><strong>Fix</strong>: factor the shared loop into one internal <code>_checkSignatures(hash, signatures) returns (bool)</code> helper used by both call sites.</p>
+<hr>
+<p>[75] <strong>12. <code>isValidSignature</code> can revert instead of returning the ERC-1271 failure selector on malformed input</strong></p>
+<p><code>Multisig.isValidSignature</code> (L377-378) / <code>_isValidPasskeySig</code> (L355-357) · Confidence: 75 · <code>[both: phase1 signatures domain + phase2 agent 7 (first-principles)]</code></p>
+<p><strong>Description</strong><br><code>abi.decode</code> on caller-supplied <code>signatures</code>/<code>data</code> blobs reverts on malformed input rather than returning <code>0xffffffff</code> per ERC-1271 convention. Not independently exploitable — this contract&#39;s own internal caller (<code>_isValidAccountSig</code>) already wraps external ERC-1271 calls in try/catch, and standard <code>SignatureChecker</code>-style callers use a static call that tolerates reverts — listed for strict standards compliance.</p>
+<p><strong>Fix</strong>: optionally guard the decode with a length/format pre-check that returns the failure selector instead of reverting on malformed input, for callers that don&#39;t tolerate reverts.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[95]</td>
+<td><span class="pill high">High</span></td>
+<td>Zero-threshold implementation-contract bypass</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[85]</td>
+<td><span class="pill high">High</span></td>
+<td>Missing domain separation → blind-signing phishing</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[90]</td>
+<td><span class="pill low">Low</span></td>
+<td>Clones free-memory-pointer under-count (benign today)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[97]</td>
+<td><span class="pill low">Low</span></td>
+<td>credentialId collision corrupts unrelated signer&#39;s reverse lookup</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[70]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>No max validity window — stale-signature &quot;time bomb&quot;</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[80]</td>
+<td><span class="pill low">Low</span></td>
+<td>Cancun-only opcode reliance, unpinned EVM version</td>
+</tr>
+<tr>
+<td>11</td>
+<td>[80]</td>
+<td><span class="pill info">Info</span></td>
+<td>Duplicated verification logic</td>
+</tr>
+<tr>
+<td>12</td>
+<td>[75]</td>
+<td><span class="pill info">Info</span></td>
+<td>isValidSignature reverts instead of returning failure selector</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[65]</td>
+<td><span class="pill low">Low</span></td>
+<td>Unbounded ERC-1271 recursion (nested/cyclic signers)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[60]</td>
+<td><span class="pill low">Low</span></td>
+<td>No timelock on signer/threshold governance</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[55]</td>
+<td><span class="pill low">Low</span></td>
+<td>No recovery path on N-of-N key loss</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[55]</td>
+<td><span class="pill low">Low</span></td>
+<td>Shared-key double-counting via nested Multisig signer</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed, or where reconciliation determined the trail largely matches documented design intent. Not scored above the confidence floor.</em></p>
+<ul>
+<li><strong>EIP-7702 signer authority widening</strong> — <code>Multisig._isValidAccountSig</code> — Code smells: <code>signer.code.length</code> is re-read live on every verification (L346), not pinned at registration time, so an EOA signer registered when codeless can later acquire code via an EIP-7702 delegation the multisig has no visibility into, silently shifting that slot&#39;s authentication from &quot;this key signs&quot; to &quot;whatever the delegated code approves.&quot; Demoted from a top-level finding during reconciliation: the contract&#39;s own NatSpec (L14-17) explicitly lists &quot;EIP-7702-delegated EOA&quot; as a supported Account-signer flavor and documents the ECDSA-then-ERC-1271 fallback as intentional — the residual risk is scoped to an individual signer&#39;s own wallet/authorization hygiene, the same accepted trust boundary as any Safe/nested-Multisig signer, rather than a distinct code defect.</li>
+<li><strong>Unvalidated secp256r1 curve point for passkey registration</strong> — <code>Multisig.addPasskeySigner</code> / <code>_addSigner</code> (via <code>initialize</code>) — Code smells: only <code>qx != 0 &amp;&amp; qy != 0</code> is checked (L128, L186); no on-chain validation that <code>(qx, qy)</code> is actually a point on the curve. A garbage pair permanently burns a signer slot that can never produce a valid signature but still counts toward the threshold denominator. Registration is cooperative/self-selected, so this is self-harm-adjacent — flagged for defense-in-depth.</li>
+<li><strong>Passkey registration path missing the self-reference guard that the Account path has</strong> — <code>Multisig._addSigner</code> (via <code>addPasskeySigner</code>/<code>initialize</code>) — Code smells: <code>_addAccountSigner</code> rejects <code>signer == address(this)</code> (L225); the passkey path has no equivalent check against <code>getPasskeyAddress(qx,qy) == address(this)</code>. Exploiting this requires a ~2^160 preimage search — infeasible with current hash functions; flagged as a consistency/defense-in-depth gap only.</li>
+<li><strong>CREATE2 address squatting if <code>createMultisig</code> is ever invoked through a shared relayer/forwarder</strong> — <code>MultisigFactory.createMultisig</code> / <code>_effectiveSalt</code> — Code smells: <code>effectiveSalt = keccak256(msg.sender, salt)</code> isolates addresses per literal <code>msg.sender</code>; safe for direct EOA calls (the only pattern demonstrated in the in-scope code), but would allow front-running/address-squatting if a shared relayer or meta-tx forwarder were ever the caller on behalf of multiple end users. Not reachable in the code as scoped — noted as a deployment-pattern caveat for any future integration, not a finding against the current contracts.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Writes</th>
+<th>Value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>initialize</code></td>
+<td><code>initializer</code> (one-shot)</td>
+<td>anyone (factory calls it atomically at deploy)</td>
+<td>signerInfo, _signers, credentialId*, threshold</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>addAccountSigner</code> / <code>addPasskeySigner</code> / <code>removeSigner</code> / <code>changeThreshold</code></td>
+<td><code>onlySelf</code> (<code>msg.sender == address(this)</code>)</td>
+<td>only reachable via a threshold-signed self-targeted exec</td>
+<td>signerInfo, _signers, credentialId*, threshold</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>execTransaction</code> / <code>execBatchTransaction</code></td>
+<td><code>nonReentrant</code>; authorization is signature-based, not caller-based</td>
+<td>anyone holding ≥threshold valid sorted signatures</td>
+<td><code>nonce++</code></td>
+<td><strong>yes</strong> — arbitrary <code>target.call{value}</code></td>
+</tr>
+<tr>
+<td><code>isValidSignature</code></td>
+<td>none (view); validates internally</td>
+<td>anyone</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>receive</code> / <code>onERC721Received</code> / <code>onERC1155Received(Batch)</code></td>
+<td>none</td>
+<td>anyone</td>
+<td>none (accepts ETH/NFTs)</td>
+<td>value in</td>
+</tr>
+<tr>
+<td><code>MultisigFactory.createMultisig</code></td>
+<td>none</td>
+<td>anyone</td>
+<td>deploys + atomically initializes a new clone</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>MultisigFactory.getMultisigAddress</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>Clones.*</code></td>
+<td>internal only</td>
+<td>not externally callable</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles.</strong> No <code>Ownable</code>/<code>AccessControl</code>, no owner EOA. Authority is held by (1) the <strong>signer set</strong> — added at <code>initialize</code> or via <code>onlySelf</code> add functions, removed via <code>onlySelf removeSigner</code>, no two-step handover or renounce path; and (2) <strong><code>address(this)</code></strong> — the fixed self-call identity gating the four admin functions, reachable only when the wallet calls itself as the target of its own signed execution. <code>threshold</code> is bounded <code>1 &lt;= threshold &lt;= _signers.length</code> at init, on change, and on removal. <code>MultisigFactory.implementation</code> is immutable, checked for code once at construction — no admin role on the factory.</p>
+<p><strong>Unguarded (arbitrary-caller-reachable, state-changing):</strong> <code>initialize</code> (but <code>initializer</code>-gated to one call — see Finding 1 for the one instance where this matters); <code>execTransaction</code>/<code>execBatchTransaction</code> (caller-open, signature-gated); <code>MultisigFactory.createMultisig</code>; <code>receive</code>.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary external caller</td>
+<td><code>execTransaction</code>/<code>execBatchTransaction</code> with forged/insufficient signatures</td>
+<td>Unauthorized transfer</td>
+<td>Invariant holds for live clones — <strong>but bypassed on the raw implementation contract</strong> → <strong>Finding 1</strong></td>
+</tr>
+<tr>
+<td>Phished/socially-engineered signer</td>
+<td>signs an opaque hash believing it&#39;s a login/message request</td>
+<td>Attacker collects a valid signature set for a live spend</td>
+<td>→ <strong>Finding 2</strong></td>
+</tr>
+<tr>
+<td>A malicious <code>target</code> contract</td>
+<td>reentrancy during <code>target.call</code> in exec</td>
+<td>Consume signatures out of order, drain twice</td>
+<td>Invariant holds — <code>nonReentrant</code> covers both exec functions, verified by every phase-2 agent that inverted against it</td>
+</tr>
+<tr>
+<td>A registered ERC-1271 signer (proxy/nested wallet)</td>
+<td>its own <code>isValidSignature</code>, staticcalled by the parent</td>
+<td>Approve something its &quot;true&quot; owner didn&#39;t intend</td>
+<td>Accepted trust boundary on registered signer contracts; EIP-7702 variant — see <strong>Lead: EIP-7702 signer authority widening</strong></td>
+</tr>
+<tr>
+<td>Nested Multisig registered as a signer</td>
+<td>recursive <code>isValidSignature</code> chain</td>
+<td>Unbounded recursion / gas griefing, or shared-key double-counting</td>
+<td>→ <strong>Finding 5</strong> (DoS) and <strong>Finding 8</strong> (double-counting)</td>
+</tr>
+<tr>
+<td>Quorum of signers (self-governance)</td>
+<td><code>onlySelf</code> admin functions via self-call</td>
+<td>Add/remove signers, change threshold — by design</td>
+<td>Intended governance; concentration/lockout risk noted in <strong>Findings 6, 7</strong></td>
+</tr>
+<tr>
+<td>Factory caller</td>
+<td><code>createMultisig</code> with a crafted salt</td>
+<td>Predict/front-run another deployer&#39;s clone address</td>
+<td>Invariant holds — deployer-bound salt verified by 3+ independent agents; relayer-specific caveat in <strong>Leads</strong></td>
+</tr>
+<tr>
+<td>Anyone</td>
+<td>duplicate <code>credentialIdHash</code> across two passkey signers</td>
+<td>Corrupt an unrelated signer&#39;s off-chain lookup entry</td>
+<td>→ <strong>Finding 4</strong></td>
+</tr>
+</tbody></table></div>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI audit pipeline (context-mapping + breadth + depth agents with cross-phase reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, and/or a bug bounty program, is strongly recommended before this contract is used to custody meaningful value — particularly to confirm Finding 1 and Finding 2 against the project&#39;s actual deployment and signer-onboarding flows.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiehek3bocfebv7cvqaqjbrffpzz6lw3verdtzcntfspf6tot6ml5y.ipfs.community.bgipfs.com/"><code>https://bafkreiehek3bocfebv7cvqaqjbrffpzz6lw3verdtzcntfspf6tot6ml5y.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/373">#373</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireForumRegistry — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #333">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireForumRegistry</h1>
+    <p class="job-sub">Job #333 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/333"><b>Job page</b> #333</a>
+      <a class="chip" href="https://bafkreigxn3bmp3a6vai5xqyog7hvxutubcnpuedpy23gqtnjrw5e6jqt4i.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#out-of-scope-not-applicable-verified-not-omitted-by-oversight">Out of scope / not applicable (verified, not omitted by oversight)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Audit — VaultfireForumRegistry</h1>
+<p><strong>Target</strong>: <code>VaultfireForumRegistry</code> at <code>0xB6Ac5aFfF7e5934fc19b16007F26b1866B976240</code> (Base, chain 8453)<br><strong>Source</strong>: Verified exact match on Sourcify, single file, 127 lines (<code>contracts/VaultfireForumRegistry.sol</code>)<br><strong>Client focus areas</strong>: spam-prevention accounting, moderation authorization, admin-only mutation of user content<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (ethskills checklist, 4 domain agents: general, precision-math, access-control, dos) → Phase 2 depth (pashov attacker-mindset, 12 blind agents: 9 specialty + 3 gap-hunter) → hybrid reconciliation.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Full contract (single file)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>contracts/VaultfireForumRegistry.sol</code></td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>80</td>
+</tr>
+</tbody></table></div>
+<h2 id="summary">Summary</h2>
+<p><code>VaultfireForumRegistry</code> is a small, non-custodial, permissionless registry mapping human-readable forum &quot;category&quot; strings to opaque XMTP MLS <code>groupId</code> bytes, with a first-write-wins ownership model and no admin/owner/upgradeability. It holds no funds and has no external calls — most of the standard checklist surface (reentrancy, token handling, proxies, oracles, signatures, precision math) is genuinely not applicable, confirmed independently by both audit phases (the precision-math and numerical-gap agents in phases 1 and 2 both returned clean results).</p>
+<p>The contract&#39;s actual risk is concentrated entirely in its trust model for the <code>category</code> string namespace: <strong>no on-chain normalization</strong> and <strong>no protection against pre-emptive/racing registration</strong>, both of which contradict claims made in the contract&#39;s own NatSpec. A third issue is a classic unbounded-array spam-DoS on the discovery function.</p>
+<p><strong>Reconciliation summary</strong>: Overlap: 3 findings in both phases · Phase-1-only: 0 · Phase-2-only: 0 · Re-examined leads kept: 0, demoted: 0 (no phase-unique leads existed — both phases independently converged on the identical 3 issues).</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[90] <strong>1. Unbounded, fee-free <code>_categories</code> growth permanently DoSes <code>listCategories()</code></strong></p>
+<p><code>VaultfireForumRegistry.listCategories</code> · Confidence: 90 · <strong>Severity: High</strong> · <code>[both: phase1 evm-audit-dos+evm-audit-general / phase2 agents 3,4,6,8,9,12]</code></p>
+<p><strong>Description</strong><br><code>registerGroup()</code> is fully permissionless and feeless with no cap, bond, or rate limit, and pushes to the storage array <code>_categories</code> on every fresh category registration (line 85). <code>listCategories()</code> (lines 119-121) copies the <em>entire</em> array to memory in a single call, and there is no removal path and no admin/upgrade mechanism to ever add one. An attacker can spam-register minimal-size junk categories at roughly 150k gas each; at an estimated ~5,000–6,000 entries the memory-copy cost exceeds typical block-gas / <code>eth_call</code> gas caps, permanently bricking the registry&#39;s only bulk-discovery function — for an estimated one-time cost on the order of a few hundred dollars on Base. <code>getGroup()</code>/<code>isRegistered()</code> (O(1) mapping lookups) are unaffected; the damage is specifically to bulk enumeration, which the contract&#39;s own NatSpec states is its core purpose (&quot;allow new users to discover... a category&#39;s group&quot;).</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Attacker loops <code>registerGroup(uniqueShortString_i, minimalGroupId)</code> for i = 1..N using 1-4 byte throwaway category strings and 1-byte <code>groupId</code>, each call costing ~150k gas.</li>
+<li><code>_categories.length</code> grows unbounded — no code path ever checks or caps it.</li>
+<li>At sufficiently large N (~5,000-6,000+), any on-chain caller of <code>listCategories()</code> exceeds the block gas limit and reverts; off-chain <code>eth_call</code> callers hit RPC-provider gas caps or timeouts.</li>
+<li>This is permanent: no owner exists to prune, cap, or upgrade the contract.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- function listCategories() external view returns (string[] memory) {
+-     return _categories;
+- }
++ function listCategories(uint256 offset, uint256 limit) external view returns (string[] memory page) {
++     uint256 end = offset + limit;
++     if (end &gt; _categories.length) end = _categories.length;
++     page = new string[](end - offset);
++     for (uint256 i = offset; i &lt; end; i++) {
++         page[i - offset] = _categories[i];
++     }
++ }
+</code></pre>
+<p>No-code-change mitigation: off-chain consumers (e.g. the XMTP client) should index via <code>GroupRegistered</code>/<code>GroupRotated</code> events rather than calling <code>listCategories()</code>.</p>
+<hr>
+<p>[85] <strong>2. Missing category-string normalization enables case/whitespace/homoglyph squatting</strong></p>
+<p><code>VaultfireForumRegistry.registerGroup</code> · Confidence: 85 · <strong>Severity: Medium</strong> · <code>[both: phase1 evm-audit-general+evm-audit-access-control / phase2 agents 2,4,5,6,7,8,9,11,12]</code></p>
+<p><strong>Description</strong><br><code>_entries</code> (line 41) is keyed by exact-byte string equality. <code>registerGroup()</code> validates only byte length (<code>&gt;0</code>, <code>&lt;=64</code>, lines 72-73) — there is no case-folding, whitespace-trimming, or Unicode/homoglyph normalization, despite the NatSpec&#39;s documented convention (&quot;Lowercase category slug&quot;, line 68) and its &quot;prevents drive-by hijacks&quot; claim (line 18). <code>&quot;general&quot;</code>, <code>&quot;General&quot;</code>, <code>&quot;general &quot;</code> (trailing space), zero-width-character variants, and Cyrillic-homoglyph lookalikes (e.g. U+0435 in place of Latin &#39;e&#39;) are all distinct, independently-registrable mapping keys.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Legitimate publisher registers <code>&quot;general&quot;</code> with the real MLS <code>groupId</code>.</li>
+<li>Attacker calls <code>registerGroup(&quot;General&quot;, attackerGroupId)</code> — a byte-distinct key, so it hits the fresh-registration branch (<code>e.publisher == address(0)</code> for this key) and succeeds unconditionally; no check anywhere rejects it.</li>
+<li>Both entries coexist in <code>listCategories()</code>/<code>getGroup()</code>. Any client or user that doesn&#39;t strictly canonicalize before display/lookup can be shown or steered into joining the attacker-controlled XMTP MLS group under what appears to be the same category name.</li>
+<li>The attacker&#39;s entry is permanent and independently rotatable by them forever (<code>e.publisher == msg.sender</code> on their own key).</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ function _validateCategory(string calldata category) private pure {
++     bytes memory b = bytes(category);
++     for (uint256 i = 0; i &lt; b.length; i++) {
++         bytes1 c = b[i];
++         require(
++             (c &gt;= 0x61 &amp;&amp; c &lt;= 0x7A) || (c &gt;= 0x30 &amp;&amp; c &lt;= 0x39) || c == 0x2D || c == 0x5F,
++             &quot;invalid character&quot;
++         );
++     }
++ }
+  function registerGroup(string calldata category, bytes calldata groupId) external {
+      require(bytes(category).length &gt; 0,  &quot;category required&quot;);
+      require(bytes(category).length &lt;= 64, &quot;category too long&quot;);
++     _validateCategory(category);
+      ...
+</code></pre>
+<p>Confines the key space to lowercase ASCII + digits/hyphen/underscore, eliminating case/whitespace/homoglyph collisions at the contract level.</p>
+<hr>
+<p>[85] <strong>3. Front-running / pre-emptive squatting of not-yet-registered category names</strong></p>
+<p><code>VaultfireForumRegistry.registerGroup</code> · Confidence: 85 · <strong>Severity: Medium</strong> · <code>[both: phase1 evm-audit-access-control+evm-audit-dos / phase2 agents 2,3,4,7,8,9,11]</code></p>
+<p><strong>Description</strong><br>Ownership of a brand-new category name is decided purely by transaction ordering. A pending legitimate <code>registerGroup(category, ...)</code> transaction is visible in the public Base mempool before confirmation; an attacker can front-run it with the identical category string and a higher priority fee, or simply pre-register predictable/valuable names (e.g. <code>&quot;general&quot;</code>, <code>&quot;support&quot;</code>) before a legitimate community claims them. This directly contradicts the contract&#39;s own NatSpec claim (&quot;First-write-wins: prevents drive-by hijacks&quot;, line 18) — that claim only protects an <em>already-confirmed</em> entry from being overwritten, not the initial registration race. Once won, <code>require(e.publisher == msg.sender)</code> (line 89) permanently locks out the rightful party; there is no owner, dispute mechanism, or timeout to reclaim a squatted or abandoned category.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Victim (legitimate community organizer) submits <code>registerGroup(&quot;general&quot;, realGroupId)</code>.</li>
+<li>Attacker observes it in the mempool (or simply front-runs preemptively without observing anything, given common category names are predictable) and submits <code>registerGroup(&quot;general&quot;, attackerGroupId)</code> with higher gas/priority fee.</li>
+<li>Attacker&#39;s transaction mines first, setting <code>e.publisher = attacker</code> permanently.</li>
+<li>Victim&#39;s transaction then executes against the now-non-zero <code>e.publisher</code>, hits <code>require(e.publisher == msg.sender, &quot;not original publisher&quot;)</code>, and reverts.</li>
+<li>Attacker permanently owns <code>&quot;general&quot;</code>&#39;s publish/rotation rights and can point it at any <code>groupId</code>, including a malicious or dead MLS group, with no recourse for the community.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ mapping(bytes32 =&gt; address) private _commitments;
++
++ function commitRegistration(bytes32 commitment) external {
++     _commitments[commitment] = msg.sender;
++ }
++
+- function registerGroup(string calldata category, bytes calldata groupId) external {
++ function registerGroup(string calldata category, bytes calldata groupId, bytes32 salt) external {
++     bytes32 commitment = keccak256(abi.encodePacked(category, salt, msg.sender));
++     require(_commitments[commitment] == msg.sender, &quot;no valid commitment&quot;);
+      ...
+</code></pre>
+<p>This is partly an accepted design tradeoff the contract&#39;s own NatSpec discloses (&quot;zero-trust... anyone can register an unset category&quot;); at minimum, the NatSpec&#39;s &quot;prevents drive-by hijacks&quot; wording should be corrected to accurately scope the guarantee to post-registration overwrites only, so integrators don&#39;t rely on protection the code doesn&#39;t provide for the initial claim.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[90]</td>
+<td><span class="pill high">High</span></td>
+<td>Unbounded <code>_categories</code> growth permanently DoSes <code>listCategories()</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>[85]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Missing category-string normalization enables squatting</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[85]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Front-running / pre-emptive squatting of category names</td>
+</tr>
+</tbody></table></div>
+<h2 id="leads">Leads</h2>
+<p><em>None outstanding. All leads raised by either phase were either promoted into the three findings above via multi-agent/cross-phase convergence, or fully subsumed by them.</em></p>
+<hr>
+<h2 id="out-of-scope-not-applicable-verified-not-omitted-by-oversight">Out of scope / not applicable (verified, not omitted by oversight)</h2>
+<p>Both phases independently confirmed the following are not applicable to this contract and produced no findings: reentrancy (no external calls anywhere in the contract), ERC20/token handling (contract holds no funds), proxy/upgrade patterns (no upgradeability, immutable deployment), price oracles, off-chain signatures, governance/multisig, precision/rounding math (only arithmetic is direct <code>block.timestamp</code> assignment and two inclusive-bound length checks), and integer overflow/underflow (no <code>unchecked</code> blocks, no arithmetic operations at risk).</p>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant (two-phase automated audit: ethskills breadth + pashov depth, 16 total sub-agent passes). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review is recommended before treating any category name in this registry as authoritative, particularly for high-value/well-known category strings.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreigxn3bmp3a6vai5xqyog7hvxutubcnpuedpy23gqtnjrw5e6jqt4i.ipfs.community.bgipfs.com/"><code>https://bafkreigxn3bmp3a6vai5xqyog7hvxutubcnpuedpy23gqtnjrw5e6jqt4i.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/333">#333</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

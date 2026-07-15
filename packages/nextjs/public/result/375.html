@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIPartnershipBondsV2 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #375">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">AIPartnershipBondsV2</h1>
+    <p class="job-sub">Job #375 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/375"><b>Job page</b> #375</a>
+      <a class="chip" href="https://bafkreibbxkqsqyogzbzgnrlgqs7lppzjammhr6jz4ou7nkqgg6gxuuncbi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — AIPartnershipBondsV2</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>AIPartnershipBondsV2</code> on Base (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Address</strong></td>
+<td><code>0x01C479F0c039fEC40c0Cf1c5C921bab457d57441</code></td>
+</tr>
+<tr>
+<td><strong>Verification</strong></td>
+<td>Full match (creation + runtime bytecode) — Sourcify</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>AIPartnershipBondsV2.sol</code> (962 lines) · <code>BaseYieldPoolBond.sol</code> (328 lines)<br><code>BaseDignityBond.sol</code> (183 lines) · <code>MissionEnforcement.sol</code> (323 lines)</td>
+</tr>
+<tr>
+<td><strong>Out of scope</strong></td>
+<td><code>@openzeppelin/contracts/utils/{ReentrancyGuard,Pausable,Context}.sol</code> (trusted, unmodified)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: Phase 0 context (protocol map, access-control inventory, threat catalog) → Phase 1 breadth (4 ethskills domains: general, precision-math, access-control, dos) → Phase 2 depth (12 blind pashov attack agents) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>On-chain state at audit time</strong></td>
+<td><code>nextBondId=6</code> (5 bonds created), <code>yieldPool=0</code>, <code>totalActiveBondValue=0.0014 ETH</code>, <code>partnershipFund=0</code> — no distributions executed yet</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p>Phase 1 (breadth, 4 domain agents) produced 22 raw findings/notes. Phase 2 (depth, 12 blind attack agents) produced findings converging overwhelmingly on the same root causes — most notably <strong>12/12 agents independently found the self-dealing yield-pool drain</strong> (finding #1 below) with concrete numeric proofs, and 6/12 independently found the snapshot/live-penalty desync (finding #2), which Phase 1 did not catch.</p>
+<ul>
+<li><strong>Overlap</strong> (found by both phases, root-cause identical): 6 findings</li>
+<li><strong>Phase-1-only</strong>: 6 findings (access-control-4, access-control-5, access-control-6, precision-math-1/3/4, general-6, dos-1)</li>
+<li><strong>Phase-2-only</strong> (novel — not in Phase 1&#39;s routing): 2 findings (snapshot/live-penalty desync; yield-pool circuit-breaker off-by-decrement)</li>
+<li><strong>Re-examined leads kept</strong>: 10 (promoted via multi-agent convergence per judging.md) · <strong>demoted</strong>: 0</li>
+<li><strong>Coverage</strong>: 24 entrypoints in inventory, 24 addressed (examined-with-finding or examined-no-issue). 7 threat-catalog rows, 7 answered. 5 open questions from Phase 0, 5 resolved. <strong>Coverage holes closed this pass: 0</strong> (both phases already covered the full inventory/catalog independently).</li>
+<li><strong>Confidence floor</strong>: findings below confidence 50 are listed under Leads, not as findings. All findings below carry a confidence score.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="96-1-self-dealing-valuation-drain-self-reported-metrics-permissi">[96] 1. Self-dealing valuation drain — self-reported metrics + permissionless verification let one actor mint appreciation and drain the community-funded yield pool</h3>
+<p><strong>Severity: Critical</strong> · <code>AIPartnershipBondsV2.createBond / submitPartnershipMetrics / submitHumanVerification / distributeBond</code> · Confidence: 96 · <strong>[both — 12/12 phase-2 agents + phase-1 access-control-2]</strong></p>
+<p><strong>Description</strong><br><code>createBond</code> only enforces <code>aiAgent != msg.sender</code> (AIPartnershipBondsV2.sol:222) — two wallets controlled by one actor satisfy this trivially. <code>submitPartnershipMetrics</code> (<code>onlyParticipants</code>, :272-288) accepts any self-reported score 0-10000 with no oracle or external validation. <code>submitHumanVerification</code>/<code>Hashed</code> (:349-405) have <strong>no caller restriction whatsoever</strong> beyond <code>bondExists</code>+<code>whenNotPaused</code> — any address, including the attacker&#39;s own third wallet, can attest <code>confirmsPartnership/Growth/Autonomy = true</code>, and <code>humanVerificationBonus()</code> (:569-612) reads only the <em>latest</em> entry. Both self-controlled inputs chain into <code>partnershipQualityScore()</code> → <code>calculateBondValue()</code> → <code>calculateAppreciation()</code>, and the result is paid in real ETH from <code>yieldPool</code> — a pool anyone can fund via <code>fundYieldPool()</code> (BaseYieldPoolBond.sol:87-93), i.e. funded by unrelated third parties (community/treasury per the contract&#39;s own docs).</p>
+<p><strong>Proof of Concept</strong><br>Stake <code>S</code>. Self-submit all four metrics = 10000 (<code>submitPartnershipMetrics</code>, L272) → <code>baseQuality = (10000×4)/4 = 10000</code> (L634). Self-submit an all-true verification from any wallet (<code>submitHumanVerification</code>, L349, unguarded) → <code>verificationBonus = 2000</code> (L577) → <code>quality = 10000×(10000+2000)/10000 = 12000</code> (L640). At <code>loyaltyMultiplier = 100</code> (immediate, no wait — L545): <code>calculateBondValue = S×12000×100/500000 = 2.4S</code> (L666). <code>appreciation = 2.4S − S = 1.4S</code> (L670). No domination penalty triggers (<code>humanAutonomy=10000≥3000</code>, <code>quality=12000≥4000</code>, L677-679). <code>requestDistribution</code> (L407-419) snapshots <code>+1.4S</code> (requires <code>yieldPool ≥ 1.4S</code>, BaseYieldPoolBond.sol:201). After the 7-day timelock, <code>distributeBond</code> (L445-521): <code>_useYieldPool</code> deducts <code>1.4S</code> from <code>yieldPool</code> (L470); <code>humanShare = 1.4S×60/100 = 0.84S</code> → attacker wallet H (L507); <code>aiShare = 1.4S×30/100 = 0.42S</code> → attacker wallet A (L512). <strong>Attacker receives 1.26S for a 1S stake — net +0.26S profit on day one</strong>, with 1.4S drained from the shared pool. Profit and pool drain scale with stake size (bounded only by the pool&#39;s solvency checks) and improve further with elapsed time (up to 7.2× stake at the 5-year loyalty tier).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function submitHumanVerification(
+         uint256 bondId,
+         bool confirmsPartnership,
+         bool confirmsGrowth,
+         bool confirmsAutonomy,
+         string memory relationship,
+         string memory notes
+-    ) external bondExists(bondId) whenNotPaused {
++    ) external bondExists(bondId) whenNotPaused {
++        require(msg.sender != bonds[bondId].human &amp;&amp; msg.sender != bonds[bondId].aiAgent, &quot;Verifier must be independent&quot;);
+         require(bytes(relationship).length &gt; 0 &amp;&amp; bytes(relationship).length &lt;= 100, &quot;Relationship invalid&quot;);
+</code></pre>
+<p>Apply the same guard to <code>submitHumanVerificationHashed</code>. This closes the cheapest self-attestation path; for full mitigation, appreciation should not be payable from a communal pool based on self-reported metrics at all — consider bond-specific escrowed funding or an independent oracle/attestor role instead of participant self-report.</p>
+<hr>
+<h3 id="88-2-domination-penalty-branch-recomputed-live-at-distribution-t">[88] 2. Domination-penalty branch recomputed live at distribution time despite the payout amount being snapshotted — lets a participant redirect the counterparty&#39;s share after the amount is locked</h3>
+<p><strong>Severity: High</strong> · <code>AIPartnershipBondsV2.distributeBond</code> · Confidence: 88 · <strong>[phase2 only — 6/12 agents independently, concrete numeric traces]</strong></p>
+<p><strong>Description</strong><br>The documented HIGH-002 fix snapshots the appreciation <em>amount</em> (<code>snapshotAppreciation[bondId]</code>, read at L454) specifically to prevent timelock manipulation. But the <em>split</em> — whether the 100%-to-human domination penalty applies — is decided by <code>shouldActivateDominationPenalty(bondId)</code> called <strong>live</strong> at L463, which reads the then-current <code>bondMetrics[bondId][last]</code>. <code>requestDistribution</code> (L407-419) does not block further <code>submitPartnershipMetrics</code>/<code>submitHumanVerification</code> calls while <code>distributionPending == true</code>.</p>
+<p><strong>Proof of Concept</strong><br>Request while <code>humanAutonomy=2999</code> (penalty active; snapshot locks in <code>+0.98·stake</code>, human nominally owed 100%). During the 7-day timelock, the AI agent (a valid participant, <code>onlyParticipants</code> passes, no pending-guard exists) calls <code>submitPartnershipMetrics(bondId, 10000,10000,10000,0,10000,&quot;&quot;)</code>. At distribute time, <code>shouldActivateDominationPenalty</code> now reads <code>humanAutonomy=10000≥3000</code> and recomputed <code>quality≥4000</code> → returns <code>(false, &quot;&quot;)</code>. <code>distributeBond</code> takes the <strong>non-penalty</strong> branch: <code>humanShare=0.588·stake</code>, <code>aiShare=0.294·stake</code>, <code>fund=0.098·stake</code> — the AI captures 0.294·stake that the domination penalty existed specifically to deny it. The attack is symmetric: a human can submit <code>humanAutonomy=2999</code> after a clean request to strip the AI&#39;s legitimate 30% and the fund&#39;s 10%, or exploit the unguarded <code>submitHumanVerification</code> (finding #5) to swing quality across the 4000 threshold without even being a participant.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function requestDistribution(uint256 bondId) external onlyParticipants(bondId) bondExists(bondId) whenNotPaused {
+         _requireMissionCompliance();
+         Bond storage bond = bonds[bondId];
+         require(!bond.distributionPending, &quot;Distribution already pending&quot;);
+
+         int256 appreciation = calculateAppreciation(bondId);
+         _trackPendingDistribution(bondId, appreciation);
++        (bool penaltyActive, string memory penaltyReason) = shouldActivateDominationPenalty(bondId);
++        snapshotPenaltyActive[bondId] = penaltyActive;
++        snapshotPenaltyReason[bondId] = penaltyReason;
+
+         bond.distributionRequestedAt = block.timestamp;
+</code></pre>
+<p>and consume <code>snapshotPenaltyActive[bondId]</code> (not a live call) at L463 in <code>distributeBond</code>. Alternatively, block metric/verification submissions on a bond while its distribution is pending.</p>
+<hr>
+<h3 id="80-3-staked-principal-is-never-returned-to-the-human-under-any-c">[80] 3. Staked principal is never returned to the human under any code path — permanently stranded ETH</h3>
+<p><strong>Severity: High</strong> · <code>AIPartnershipBondsV2.createBond / distributeBond</code> · Confidence: 90 · <strong>[both — 3 phase-2 findings + 5 corroborating leads + phase-1 general-1]</strong></p>
+<p><strong>Description</strong><br><code>createBond</code> (L219-244) takes <code>msg.value</code> as <code>stakeAmount</code>, which enters <code>address(this).balance</code> and is credited to no withdrawable bucket (not <code>yieldPool</code>, not <code>partnershipFund</code>). Neither branch of <code>distributeBond</code> (L445-521) transfers <code>bond.stakeAmount</code> — only the appreciation delta (positive branch) or the loss magnitude, itself strictly ≤ stake (negative branch), is ever paid. Once <code>bond.active = false</code> (L497), the bond can never be revisited — no re-open, no sweep. <code>withdrawYieldPool</code> is bounded by <code>yieldPool</code>; <code>withdrawPartnershipFund</code> is bounded by <code>partnershipFund</code>; neither is ever credited with stake ETH, so not even the owner can recover it. Stranded stakes are, structurally, what backs finding #1&#39;s extractions.</p>
+<p><strong>Proof of Concept</strong><br>Honest human stakes 10 ETH. With default metrics (quality=5000) and loyalty=110 (after 30 days): <code>value = 10×5000×110/500000 = 11 ETH</code>, <code>appreciation = 1 ETH</code>. <code>distributeBond</code> pays <code>humanShare = 0.6 ETH</code> (L478). Net: staked 10 ETH, received 0.6 ETH — a 9.4 ETH stranded, permanent loss. At exact-neutral value (quality×loyalty = 500000, e.g. default metrics at <code>t=0</code>), <code>appreciation=0</code> and <code>distributeBond</code> reverts with &quot;No appreciation&quot; (L455) — the stake is frozen forever with <strong>no distribution possible at all</strong>.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">         // Effects: update baseline before external interactions (CEI).
+         lastDistributedValue[bondId] = currentValue;
++        // Return the original stake to the human alongside their appreciation share.
++        uint256 stakeRefund = bond.stakeAmount;
+</code></pre>
+<p>and add <code>stakeRefund</code> to <code>humanShare</code> before the balance check/transfer at L502-509 (funded from the stake ETH already held by the contract). If principal-forfeiture on distribution is genuinely intended tokenomics, this must be documented explicitly and disclosed to users pre-deposit — as written it is indistinguishable from an unintended fund lock.</p>
+<hr>
+<h3 id="72-4-yield-pool-minimum-balance-circuit-breaker-checks-the-balan">[72] 4. Yield-pool minimum-balance circuit breaker checks the balance <em>before</em> the deduction, not after — a single distribution can drive the pool arbitrarily below its configured floor</h3>
+<p><strong>Severity: Medium</strong> · <code>BaseYieldPoolBond._useYieldPool</code> · Confidence: 72 · <strong>[phase2 only — 2 findings + 2 corroborating leads, promoted via multi-agent convergence]</strong></p>
+<p><strong>Description</strong><br><code>_useYieldPool()</code> (BaseYieldPoolBond.sol:156-185) checks <code>require(yieldPool &gt;= minimumYieldPoolBalance)</code> at L162-165 <strong>before</strong> <code>yieldPool -= amount</code> at L168. Contrast with <code>canYieldPoolCover()</code> (:245-248), whose <code>wouldBeHealthy</code> correctly checks the <strong>post-state</strong> <code>(yieldPool - amount) &gt;= minimum</code> — proving the floor was intended to survive each distribution, not just gate entry into it. This directly compounds finding #1: without this bug, a single self-dealing extraction would be capped near <code>yieldPool - minimum</code>; with it, the pool can be driven to near-zero in one call as long as the pre-state check passes.</p>
+<p><strong>Proof of Concept</strong><br><code>yieldPool = minimumYieldPoolBalance = 10 ETH</code>. A distribution requests <code>abs = 9.9 ETH</code>. <code>require(yieldPool &gt;= amount)</code>: 10≥9.9 ✓. <code>require(yieldPool &gt;= minimumYieldPoolBalance)</code>: 10≥10 ✓. Then <code>yieldPool -= 9.9</code> → <code>0.1 ETH</code> — 99% below the configured floor in one transaction.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">         if (yieldPoolEnforced) {
+             require(
+-                yieldPool &gt;= minimumYieldPoolBalance,
++                yieldPool - amount &gt;= minimumYieldPoolBalance,
+                 &quot;Yield pool below minimum - distributions paused&quot;
+             );
+         }
+</code></pre>
+<hr>
+<h3 id="78-5-submithumanverificationhashed-fully-unguarded-latest-entry-">[78] 5. <code>submitHumanVerification</code>/<code>Hashed</code> fully unguarded, latest-entry-wins — independently exploitable griefing vector</h3>
+<p><strong>Severity: High</strong> · <code>AIPartnershipBondsV2.submitHumanVerification / humanVerificationBonus</code> · Confidence: 78 · <strong>[both — 3 phase-2 findings + phase-1 access-control-1]</strong></p>
+<p><strong>Description</strong><br>Beyond enabling finding #1&#39;s self-attestation, <code>submitHumanVerification</code>/<code>Hashed</code> (L349-405) is independently exploitable by a non-participant third party, since <code>humanVerificationBonus()</code> (L569-612) reads only <code>verifications[verifications.length - 1]</code> — the single latest entry.</p>
+<p><strong>Proof of Concept</strong><br>Victim bond has a legitimate all-true verification (bonus 2000, quality 12000, value 2.4×stake). A griefer front-runs the victim&#39;s <code>requestDistribution</code> with <code>submitHumanVerification(bondId, false, false, false, &quot;x&quot;, &quot;&quot;)</code> — no cost beyond gas. The latest entry now confirms nothing → bonus 0 → quality 10000 → value 2.0×stake. The victim&#39;s next <code>requestDistribution</code> snapshots the reduced appreciation (0.4×stake permanently lost — the snapshot cannot be undone by re-verifying after the fact).</p>
+<p><strong>Fix</strong>: Same guard as finding #1 — <code>msg.sender</code> must not be <code>bond.human</code> or <code>bond.aiAgent</code>; consider also requiring a minimum number of distinct non-participant confirmations rather than trusting only the latest single entry.</p>
+<hr>
+<h3 id="60-6-owner-can-drain-the-community-funded-yield-pool-with-no-tim">[60] 6. Owner can drain the community-funded yield pool with no timelock</h3>
+<p><strong>Severity: Medium</strong> · <code>BaseYieldPoolBond.setMinimumYieldPoolBalance / withdrawYieldPool</code> · Confidence: 60 · <strong>[phase1 only — access-control-4]</strong></p>
+<p><strong>Description</strong><br><code>fundYieldPool()</code> is permissionless and documented as community/treasury-funded. <code>setMinimumYieldPoolBalance(newMinimum)</code> only requires <code>0 &lt; newMinimum ≤ yieldPool</code> (BaseYieldPoolBond.sol:123-131); <code>withdrawYieldPool(amount)</code> only requires <code>amount ≤ yieldPool</code> and <code>yieldPool - amount ≥ minimumYieldPoolBalance</code> (:102-116). Chaining <code>setMinimumYieldPoolBalance(1 wei)</code> then <code>withdrawYieldPool(yieldPool - 1)</code> transfers nearly the entire pool to the owner in two transactions with no delay for depositors to react. This is an owner/admin-triggered action (Do-Not-Report &quot;admin privileges by design&quot; would normally apply), but is flagged because <code>fundYieldPool</code> is explicitly marketed as third-party/community funding with no matching withdrawal protection for those funders — a documentation-vs-trust-model gap, not merely routine admin capability.</p>
+<p><strong>Fix</strong>: Add a timelock/governance delay to <code>withdrawYieldPool</code>, <code>setMinimumYieldPoolBalance</code>, and <code>setYieldPoolEnforcement</code>; disallow lowering the minimum while <code>totalPendingDistributions &gt; 0</code>.</p>
+<hr>
+<h3 id="55-7-depreciation-branch-distributions-reserve-yield-pool-capaci">[55] 7. Depreciation-branch distributions reserve yield-pool capacity they never draw from — cheap, renewable DoS on other bonds&#39; <code>requestDistribution</code></h3>
+<p><strong>Severity: Medium</strong> · <code>BaseYieldPoolBond._trackPendingDistribution</code>, <code>AIPartnershipBondsV2.distributeBond</code> · Confidence: 65 · <strong>[both — phase2 numeric DoS trace + phase-1 general-4/dos-2]</strong></p>
+<p><strong>Description</strong><br><code>_trackPendingDistribution()</code> (BaseYieldPoolBond.sol:194-210) reserves <code>|appreciationValue|</code> against <code>yieldPool</code> for <strong>both</strong> signs of appreciation. But <code>distributeBond</code>&#39;s depreciation branch (:483-489) pays <code>humanShare = uint256(-appreciation)</code> from <code>address(this).balance</code> and calls <code>_clearPendingDistribution</code> — <strong>never</strong> <code>_useYieldPool</code>. The reservation is released without ever having been drawn from the pool it was checked against. Separately, no cancel/expiry function exists for a pending request (phase-1 dos-2) — the only way to clear <code>distributionPending</code> is a successful <code>distributeBond</code>.</p>
+<p><strong>Proof of Concept</strong><br>Attacker submits all-zero metrics on N bonds (<code>appreciation = -stake</code> each), calls <code>requestDistribution</code> on each. Each reservation is checked and added to <code>totalPendingDistributions</code> against <code>yieldPool</code>, even though the eventual payout draws from the attacker&#39;s own stake, not the pool. As reservations approach <code>yieldPool</code>, every other bond&#39;s <code>requestDistribution</code> reverts (&quot;Insufficient yield pool for all pending distributions&quot;, BaseYieldPoolBond.sol:201-203). The attacker&#39;s capital is recoverable via their own <code>distributeBond</code> after the timelock, making the griefing renewable at near-zero net cost.</p>
+<p><strong>Fix</strong>: Do not reserve <code>totalPendingDistributions</code>/<code>yieldPool</code> capacity for negative-appreciation requests, since that payout is never sourced from the pool. Add a participant-callable <code>cancelDistributionRequest(bondId)</code> to release stuck reservations.</p>
+<hr>
+<h3 id="50-8-emergency-pause-can-indefinitely-freeze-already-matured-alr">[50] 8. Emergency pause can indefinitely freeze already-matured, already-requested distributions</h3>
+<p><strong>Severity: Medium</strong> · <code>BaseDignityBond.pause</code>, <code>AIPartnershipBondsV2.distributeBond</code> · Confidence: 50 · <strong>[phase1 only — access-control-5]</strong></p>
+<p><strong>Description</strong><br><code>distributeBond</code> carries <code>whenNotPaused</code>. The owner can <code>pause()</code> at any time — including after a user&#39;s 7-day timelock has expired and appreciation is fully matured/snapshotted — and there is no un-pausable &quot;withdraw my matured distribution&quot; path.</p>
+<p><strong>Fix</strong>: Exempt distributions whose timelock has already expired from the pause check, or add a guardian-bounded auto-unpause.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be independently completed to Finding-confidence in this pass. Not scored.</em></p>
+<ul>
+<li><strong>AI participant can unilaterally tank self-reported metrics pre-request, forcing bond closure/loss with no human veto</strong> — <code>AIPartnershipBondsV2.submitPartnershipMetrics</code> — Code smells: <code>onlyParticipants</code> includes the AI; only the latest metric entry is read; no minimum-consent mechanism before <code>requestDistribution</code> locks in a snapshot. Shares root cause with findings #1/#2/#5 (unrestricted self-reported inputs) but frames intra-partnership griefing between legitimate counterparties rather than external theft — phase-1 general-2.</li>
+<li><strong><code>getReserveRatio</code>/<code>totalActiveBondValue</code> measure staked principal, not appreciation exposure</strong> — <code>BaseYieldPoolBond.getReserveRatio</code> — Code smells: denominator sums stakes (1×) while true obligation (<code>calculateBondValue</code>) reaches 7.2× stake; can report &quot;healthy&quot; while deeply under-reserved. Informational only, no fund-moving path enforces it — phase-1 precision-math-2 + phase-2 corroboration (2 agents).</li>
+<li><strong><code>bondMetricsHashed</code>/hashed metrics silently excluded from valuation and penalty logic</strong> — <code>AIPartnershipBondsV2.partnershipQualityScore</code> / <code>shouldActivateDominationPenalty</code> — Code smells: both read only plaintext <code>bondMetrics</code>, never <code>bondMetricsHashed</code>, while <code>humanVerificationBonus</code> does fall back to hashed verifications — inconsistent privacy-path behavior; a bond using only the hashed path is pinned at neutral quality 5000 — phase-2, 2 agents.</li>
+<li><strong><code>lastDistributedValue</code> written but never read</strong> — <code>AIPartnershipBondsV2</code> (L127, 233, 461) — Code smells: documented as an anti-double-payout baseline; actual protection is <code>bond.active=false</code>. Benign today (bonds are one-shot) but a latent trap if repeat/partial distributions are ever added — corroborated by 9/12 phase-2 agents + phase-1 general-5.</li>
+<li><strong>Reverting <code>bond.human</code>/<code>bond.aiAgent</code> recipient permanently bricks <code>distributeBond</code> for that bond</strong> — <code>AIPartnershipBondsV2.distributeBond</code> (L505-514) — Code smells: atomic dual push-payment via <code>.call</code>, <code>require(success)</code> on each leg, no pull-payment fallback, no recipient-change path — phase-1 dos-1.</li>
+<li><strong><code>getProtocolOverview</code>/<code>getBondsByParticipant</code> unbounded loops, cheaply inflatable on Base L2</strong> — <code>AIPartnershipBondsV2.getProtocolOverview</code> (L871-873) / <code>getBondsByParticipant</code> (L761-764) — Code smells: unbounded iteration over attacker-growable state (<code>nextBondId</code>, <code>participantBondIds[victim]</code> via arbitrary <code>aiAgent</code> naming); paginated alternatives exist and are safe. View-only, no on-chain consumer found — phase-1 general-7/dos-3/dos-4.</li>
+<li><strong><code>AI_PROFIT_CAP</code> constant and <code>MissionEnforcement.verifyAIProfitCap</code>/<code>verifyHumanFinalSay</code> are declared but never referenced by the actual distribution logic</strong> — <code>AIPartnershipBondsV2.sol:106</code>, <code>MissionEnforcement.sol</code> — Code smells: 30/60/10 split is hardcoded, not derived from <code>AI_PROFIT_CAP</code>; the &quot;cryptographically enforced&quot; principles described in NatSpec correspond in practice to a manually-toggled owner boolean (<code>missionCompliance</code>) — phase-1 general-6.</li>
+<li><strong>Division-before-multiplication in <code>partnershipQualityScore</code> truncates quality before the verification bonus is applied</strong> — <code>AIPartnershipBondsV2.sol:634-640</code> — Code smells: <code>baseQuality = sum/4</code> computed before scaling by <code>(10000+bonus)/10000</code>; loses up to 0.75 quality units pre-scaling, amplified by loyalty up to 300×. Consistently protocol-favoring (user receives less), not attacker-extractable — phase-1 precision-math-1.</li>
+<li><strong><code>calculateBondValue</code> reaches 7.2× stake, exceeding the NatSpec-documented 6.0× maximum</strong> — <code>AIPartnershipBondsV2.sol:663-667</code> — Code smells: max quality is actually 12000 (10000 base + 2000 verification bonus), not the 10000 the divisor&#39;s comment assumes — phase-1 precision-math-3.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><em>(From Phase 0 — structural context, cross-referenced against findings above.)</em></p>
+<p>24 external/public state-changing functions total (source count matches inventory — verified). Two <strong>independent</strong> owner roles: <code>AIPartnershipBondsV2.owner</code> (2-step transfer: <code>transferOwnership</code>→<code>acceptOwnership</code>, cancelable) controls pause/unpause, <code>withdrawPartnershipFund</code>, <code>withdrawYieldPool</code>, <code>setMinimumYieldPoolBalance</code>, <code>setYieldPoolEnforcement</code>, <code>setMissionEnforcement(Enabled)</code>. <code>MissionEnforcement.owner</code> (separate 2-step transfer, no cancel) controls <code>certifyModuleMissionCompliant</code>/<code>adjudicateMissionViolation</code> (see finding #7). The two owners are linked only by deployment coincidence, not by code.</p>
+<p>Per-bond role: <code>human</code>/<code>aiAgent</code>, fixed immutably at <code>createBond</code>, gated by <code>onlyParticipants</code> for <code>submitPartnershipMetrics(Hashed)</code>, <code>requestDistribution</code>, <code>distributeBond</code>.</p>
+<p><strong>Unguarded (arbitrary caller, state-changing):</strong> <code>createBond</code> (input-validated only) · <code>submitHumanVerification</code>/<code>Hashed</code> (<strong>see finding #5</strong> — no participant check at all) · <code>fundYieldPool</code> (by design — community funding) · <code>MissionEnforcement.reportMissionViolation</code> (by design — explicitly non-binding).</p>
+<h2 id="threat-model">Threat Model</h2>
+<p><em>(From Phase 0, each row marked with its resolution from this audit.)</em></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reach</th>
+<th>Potential gain</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Any address, 2 self-controlled wallets</td>
+<td>createBond→self-report metrics→self-verify→distribute</td>
+<td>Drain shared <code>yieldPool</code></td>
+<td><strong>Addressed by finding #1 (Critical)</strong></td>
+</tr>
+<tr>
+<td>Any address</td>
+<td><code>submitHumanVerification</code> on any bond</td>
+<td>Manipulate any bond&#39;s valuation up or down</td>
+<td><strong>Addressed by finding #5 (High)</strong></td>
+</tr>
+<tr>
+<td>Bond&#39;s human/AI, on depreciation</td>
+<td>requestDistribution+distributeBond</td>
+<td>N/A (self-harm) but stake stranding</td>
+<td><strong>Addressed by finding #3 (High)</strong></td>
+</tr>
+<tr>
+<td>AIPartnershipBondsV2 owner</td>
+<td>setMissionEnforcement(Enabled)</td>
+<td>Point compliance at a no-op contract</td>
+<td>Invariant holds — docs/code mismatch only, no fund-moving path (see Leads, general-6)</td>
+</tr>
+<tr>
+<td>AIPartnershipBondsV2 owner</td>
+<td>withdrawYieldPool/withdrawPartnershipFund</td>
+<td>Bounded by tracked buckets</td>
+<td><strong>Addressed by finding #6 (Medium)</strong> — bounded but the floor itself is owner-adjustable with no delay</td>
+</tr>
+<tr>
+<td>Any address</td>
+<td>fundYieldPool</td>
+<td>Subsidizes finding-#1 attacker</td>
+<td><strong>Addressed by finding #1</strong></td>
+</tr>
+<tr>
+<td>MissionEnforcement owner (independent)</td>
+<td>adjudicateMissionViolation</td>
+<td>Freeze bonds-contract distributions</td>
+<td><strong>Addressed by finding #7 (Medium)</strong>, corroborated in both phases</td>
+</tr>
+</tbody></table></div>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-building → breadth checklist review → blind depth attack-agent review → hybrid reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human-led security review, bug bounty program, and on-chain monitoring are strongly recommended before this contract is trusted with material value — particularly given finding #1&#39;s Critical severity and unanimous 12/12 independent agent convergence.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibbxkqsqyogzbzgnrlgqs7lppzjammhr6jz4ou7nkqgg6gxuuncbi.ipfs.community.bgipfs.com/"><code>https://bafkreibbxkqsqyogzbzgnrlgqs7lppzjammhr6jz4ou7nkqgg6gxuuncbi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/375">#375</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

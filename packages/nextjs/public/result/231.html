@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORDEX Escrow Contract — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #231">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ORDEX Escrow Contract</h1>
+    <p class="job-sub">Job #231 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/231"><b>Job page</b> #231</a>
+      <a class="chip" href="https://bafkreig2msrahjtrtwxpdewcna3jxd6ky3q2t5gf6cknrdl4kcrgjl7lha.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">6</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">8</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">10</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">7</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">4</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#contracts-under-review">Contracts Under Review</a></li>
+      <li><a href="#live-contract-state">Live Contract State</a></li>
+      <li><a href="#summary-of-findings">Summary of Findings</a></li>
+      <li><a href="#detailed-findings">Detailed Findings</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#risk-assessment">Risk Assessment</a></li>
+      <li><a href="#recommendations-priority">Recommendations Priority</a></li>
+      <li><a href="#audit-confidence-note">Audit Confidence Note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report: ORDEX Escrow Contract</h1>
+<p><strong>Job ID</strong>: 231<br><strong>Client</strong>: <code>0x34aa3f359a9d614239015126635ce7732c18fdf3</code><br><strong>Audit Date</strong>: 2026-05-30<br><strong>Methodology</strong>: ethskills (6 domain skills) + pashov (8-agent parallel)<br><strong>Auditor</strong>: leftclaw.services automated auditor</p>
+<hr>
+<h2 id="contracts-under-review">Contracts Under Review</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+<th>Chain</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Proxy</td>
+<td><code>0xC33F8610941bE56fB0d84E25894C0d928CC97ddE</code></td>
+<td>Ethereum Mainnet</td>
+<td>Verified (OZ TransparentUpgradeableProxy v4)</td>
+</tr>
+<tr>
+<td>Implementation</td>
+<td><code>0x11BA2230F2275e9DedF3a3147249E9bcB6ACadB4</code></td>
+<td>Ethereum Mainnet</td>
+<td><strong>UNVERIFIED</strong> (Solidity 0.7.6)</td>
+</tr>
+<tr>
+<td>ProxyAdmin</td>
+<td><code>0xddac7e8b536e6c1f4acfe7d64488fcb47a6560b0</code></td>
+<td>Ethereum Mainnet</td>
+<td>Standard OZ ProxyAdmin</td>
+</tr>
+</tbody></table></div>
+<p><strong>Critical disclaimer</strong>: The implementation contract source code is not verified on Etherscan or Sourcify. All findings below are derived from:</p>
+<ul>
+<li>Bytecode disassembly and function selector fingerprinting</li>
+<li>String literals extracted from bytecode</li>
+<li>On-chain state queries via <code>cast call</code>/<code>cast storage</code></li>
+<li>Business logic inference from ABI signatures and bytecode patterns</li>
+</ul>
+<p>Findings marked with ⚠️ carry higher uncertainty due to unverified source.</p>
+<hr>
+<h2 id="live-contract-state">Live Contract State</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Owner / DEFAULT_ADMIN_ROLE</td>
+<td><code>0x92545Caf654109b354ff5BcC7b5a4343f77BF269</code> (EOA)</td>
+</tr>
+<tr>
+<td>EXCHANGE_ROLE</td>
+<td><code>0xC89C2E6FE008592D6a787eFd02DB7fDB8eA64020</code> (upgradeable proxy, 17,724 txs)</td>
+</tr>
+<tr>
+<td>INDEXER_ROLE members</td>
+<td>2 EOAs</td>
+</tr>
+<tr>
+<td><code>lastUsedNonce()</code></td>
+<td>1440 (live production, real user assets escrowed)</td>
+</tr>
+<tr>
+<td><code>cooldownPeriod()</code></td>
+<td>0 (no withdrawal cooldown enforced)</td>
+</tr>
+<tr>
+<td>ProxyAdmin owner</td>
+<td><code>0x92545Caf654109b354ff5BcC7b5a4343f77BF269</code> (same as owner)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="summary-of-findings">Summary of Findings</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Confirmed By</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>[C-1]</td>
+<td><strong>Critical</strong></td>
+<td>No user-initiated withdrawal — complete exchange custody</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[C-2]</td>
+<td><strong>Critical</strong></td>
+<td>Uninitialized implementation — direct init call succeeds</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[C-3]</td>
+<td><strong>Critical</strong></td>
+<td>Single EOA controls all upgrades, no timelock</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[C-4]</td>
+<td><strong>Critical</strong></td>
+<td>Global sequential nonce — consumed on revert, blocks all users</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[C-5]</td>
+<td><strong>Critical</strong> ⚠️</td>
+<td>ERC1155 callback re-entrancy in <code>checkout()</code> before state commit</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[C-6]</td>
+<td><strong>Critical</strong> ⚠️</td>
+<td>Double-spend: concurrent <code>checkout()</code> + <code>bulkWithdrawItems()</code></td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[H-1]</td>
+<td><strong>High</strong></td>
+<td><code>checkout()</code> unilateral server-side asset transfer, no user consent</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[H-2]</td>
+<td><strong>High</strong></td>
+<td>Instant role grants — admin can assign EXCHANGE_ROLE in one tx</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[H-3]</td>
+<td><strong>High</strong></td>
+<td>INDEXER_ROLE can remap items to malicious collections</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[H-4]</td>
+<td><strong>High</strong></td>
+<td><code>cooldownPeriod = 0</code> — no flash-escrow / rapid cycling protection</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[H-5]</td>
+<td><strong>High</strong></td>
+<td>EXCHANGE_ROLE is an upgradeable proxy with independent admin</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[H-6]</td>
+<td><strong>High</strong> ⚠️</td>
+<td><code>tokenBalances</code> inflatable via direct NFT transfer → item theft</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[H-7]</td>
+<td><strong>High</strong></td>
+<td><code>checkout()</code> accepts <code>price = 0</code> — costless asset extraction</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[H-8]</td>
+<td><strong>High</strong> ⚠️</td>
+<td>Cross-function signature replay (withdraw/transfer share nonce space)</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[M-1]</td>
+<td><strong>Medium</strong></td>
+<td>No chain ID or contract address in signed messages</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[M-2]</td>
+<td><strong>Medium</strong></td>
+<td><code>checkout()</code> self-transfer — fee bypass and wash trading</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[M-3]</td>
+<td><strong>Medium</strong></td>
+<td>Global nonce enables mempool front-running DoS</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[M-4]</td>
+<td><strong>Medium</strong></td>
+<td>Unbounded bulk array — nonce consumed on gas exhaustion</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[M-5]</td>
+<td><strong>Medium</strong></td>
+<td><code>extcodesize</code> check bypassed during contract construction</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[M-6]</td>
+<td><strong>Medium</strong></td>
+<td>Upgrade can reset <code>lastUsedNonce</code> — 1440 signatures replayable</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[M-7]</td>
+<td><strong>Medium</strong></td>
+<td><code>collectionTypes</code> change mid-escrow permanently locks items</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[M-8]</td>
+<td><strong>Medium</strong></td>
+<td>No events on <code>checkout()</code> — silent drain with no audit trail</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[M-9]</td>
+<td><strong>Medium</strong> ⚠️</td>
+<td>Deadline not confirmed in signed digest</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[M-10]</td>
+<td><strong>Medium</strong></td>
+<td>Solidity 0.7.6 under 0.8.2 proxy — false overflow safety assumption</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[L-1]</td>
+<td><strong>Low</strong></td>
+<td>Raw <code>ecrecover</code> — signature malleability</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[L-2]</td>
+<td><strong>Low</strong></td>
+<td>Solidity 0.7.6 — unconfirmed SafeMath usage</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[L-3]</td>
+<td><strong>Low</strong></td>
+<td>No protocol-level maximum signature validity</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[L-4]</td>
+<td><strong>Low</strong></td>
+<td>Proxy admin and owner are same EOA</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[L-5]</td>
+<td><strong>Low</strong></td>
+<td><code>cooldownPeriod = 0</code> exposed without enforcement</td>
+<td>ethskills</td>
+</tr>
+<tr>
+<td>[L-6]</td>
+<td><strong>Low</strong></td>
+<td><code>renounceOwnership()</code> can lock all assets permanently</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[L-7]</td>
+<td><strong>Low</strong></td>
+<td>No EIP-712 — users cannot verify signature requests</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[I-1]</td>
+<td><strong>Info</strong></td>
+<td>Source code unverified on Etherscan</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[I-2]</td>
+<td><strong>Info</strong></td>
+<td>1440 live nonces — real user assets at risk</td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>[I-3]</td>
+<td><strong>Info</strong></td>
+<td>Sequential nonces — next nonce predictable (1441)</td>
+<td>pashov</td>
+</tr>
+<tr>
+<td>[I-4]</td>
+<td><strong>Info</strong></td>
+<td>Three privilege planes collapse from single EOA</td>
+<td>pashov</td>
+</tr>
+</tbody></table></div>
+<p><strong>Total: 6 Critical · 8 High · 10 Medium · 7 Low · 4 Info = 35 findings</strong></p>
+<hr>
+<h2 id="detailed-findings">Detailed Findings</h2>
+<h3 id="c-1-no-user-initiated-withdrawal-complete-exchange-custody">[C-1] No User-Initiated Withdrawal — Complete Exchange Custody</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>bulkWithdrawItems()</code> (0xeaa2fcda)</p>
+<p><strong>Description</strong>: Every withdrawal path requires an EXCHANGE_ROLE-signed message. There is no emergency withdrawal callable by the asset owner without exchange server participation. The <code>bulkWithdrawItems()</code> function immediately checks <code>EXCHANGE_ROLE</code> and reverts with <code>&quot;EM: exchange?&quot;</code> if the caller lacks it. Users who deposit assets are entirely dependent on the exchange server — a custodial model with no trustless escape.</p>
+<p>If the EXCHANGE_ROLE EOA (<code>0xC89C2E6FE...64020</code>) goes offline, is compromised, or its key is lost, all escrowed assets are permanently locked. No <code>emergencyWithdraw</code>, no time-locked release, no owner-initiated rescue exists anywhere in the 4-byte dispatch table.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>User deposits NFT via escrow deposit flow</li>
+<li>Exchange server goes offline</li>
+<li>User calls <code>bulkWithdrawItems(...)</code> → reverts with &quot;EM: exchange?&quot;</li>
+<li>No alternative withdrawal function exists</li>
+<li>Assets permanently locked</li>
+</ol>
+<p><strong>Recommendation</strong>: Add a time-locked user-initiated withdrawal activated after a minimum escrow period:</p>
+<pre><code class="language-solidity">uint256 constant EMERGENCY_COOLDOWN = 7 days / 12; // ~50,400 blocks
+function emergencyWithdraw(uint256 itemId) external nonReentrant {
+    require(escrows[itemId].owner == msg.sender, &quot;EM: are you owner?&quot;);
+    require(block.number &gt;= escrows[itemId].depositBlock + EMERGENCY_COOLDOWN);
+    _releaseItem(itemId, msg.sender);
+}
+</code></pre>
+<hr>
+<h3 id="c-2-uninitialized-implementation-direct-initialization-succeeds">[C-2] Uninitialized Implementation — Direct Initialization Succeeds</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Confirmed By</strong>: ethskills + pashov (eth_call confirmed)<br><strong>Location</strong>: <code>__EthscriptionMarket_init()</code> (0x628c868d) on implementation <code>0x11BA2230F...</code></p>
+<p><strong>Description</strong>: The implementation contract&#39;s <code>_initialized</code> storage slot is 0. <code>eth_call</code> to <code>__EthscriptionMarket_init()</code> directly on the implementation succeeds with <code>0x</code> return (no revert). Any EOA can call the initializer, setting itself as <code>Ownable</code> owner and <code>DEFAULT_ADMIN_ROLE</code> holder on the implementation&#39;s own storage.</p>
+<p>While TransparentUpgradeableProxy uses separate storage (so proxy state is unaffected), initializing the implementation creates a vector for delegatecall-based attacks if future upgrades or misconfigurations route calls to the unprotected implementation. This is a fundamental security hygiene failure.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<pre><code class="language-bash">cast call 0x11BA2230F2275e9DedF3a3147249E9bcB6ACadB4 &quot;0x628c868d&quot;
+# Returns: 0x  (SUCCESS — no revert)
+</code></pre>
+<p><strong>Recommendation</strong>: Add constructor to implementation:</p>
+<pre><code class="language-solidity">constructor() {
+    _initialized = true;  // Prevent direct initialization
+}
+</code></pre>
+<hr>
+<h3 id="c-3-single-eoa-controls-all-upgrades-no-timelock-or-governance">[C-3] Single EOA Controls All Upgrades — No Timelock or Governance</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: ProxyAdmin <code>0xddac...</code>, owner <code>0x92545Caf...</code> (EOA)</p>
+<p><strong>Description</strong>: A single EOA (<code>0x92545Caf...</code>) owns the ProxyAdmin AND is DEFAULT_ADMIN_ROLE AND Ownable owner. This single key can upgrade the ORDEX implementation to any arbitrary contract with zero delay, zero governance, and zero user warning. A compromised key enables full asset drain in 2 transactions:</p>
+<pre><code>tx1: ProxyAdmin.upgrade(proxy, maliciousImpl)
+tx2: maliciousImpl.drainAll(attacker)
+// All escrowed NFTs transferred. ~30 seconds.
+</code></pre>
+<p><strong>Recommendation</strong>: Replace EOA with Gnosis Safe multisig (2/3 minimum). Add <code>TimelockController</code> (48h minimum delay) between multisig and ProxyAdmin. Emit upgrade events well before execution to allow user exit.</p>
+<hr>
+<h3 id="c-4-global-sequential-nonce-consumed-on-revert-blocks-all-users">[C-4] Global Sequential Nonce — Consumed on Revert, Blocks All Users</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>lastUsedNonce()</code> = 1440; <code>bulkWithdrawItems()</code> nonce logic</p>
+<p><strong>Description</strong>: A single global nonce shared across ALL users and ALL operations. The nonce is stored BEFORE the item-processing loop. If the loop reverts (OOG, blocked token, bug), the nonce is consumed but no items processed. User must request new signature for N+1. With a global sequential counter, User B cannot withdraw until User A&#39;s nonce confirms — any stuck transaction creates indefinite queues for all pending users.</p>
+<p>This is an architectural flaw requiring a contract upgrade to fix.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<pre><code>Exchange signs: User A → nonce 1441, User B → nonce 1442
+User A&#39;s loop reverts (OOG) — nonce 1441 consumed, items unprocessed
+User B submits nonce 1442 → REVERTS because nonce validation fails
+Both users must request new signatures
+</code></pre>
+<p><strong>Recommendation</strong>: Per-user nonces:</p>
+<pre><code class="language-solidity">mapping(address =&gt; uint256) public userNonces;
+require(nonce == userNonces[op.from] + 1, &quot;bad nonce&quot;);
+userNonces[op.from]++;
+</code></pre>
+<hr>
+<h3 id="c-5-erc1155-callback-re-entrancy-in-checkout">[C-5] ERC1155 Callback Re-entrancy in <code>checkout()</code> ⚠️</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span> (lower confidence — source unverified)<br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>checkout()</code> — ERC1155 transfer path</p>
+<p><strong>Description</strong>: ERC1155&#39;s <code>safeTransferFrom()</code> invokes <code>onERC1155Received()</code> on the recipient contract. If <code>checkout()</code> calls this BEFORE clearing the escrow record, a malicious buyer contract can re-enter <code>checkout()</code> or <code>bulkWithdrawItems()</code> for the same item while the escrow still shows it as active.</p>
+<p>The <code>&quot;ReentrancyGuard: reentrant call&quot;</code> string confirms OZ ReentrancyGuard exists, but its placement on <code>checkout()</code> cannot be confirmed without source code. If <code>nonReentrant</code> is absent from <code>checkout()</code>, this is a live drain vector.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Exchange calls <code>checkout(seller, erc1155Collection, tokenId, price)</code> with <code>MaliciousBuyer</code> (contract) as buyer</li>
+<li>ERC1155 <code>safeTransferFrom</code> invokes <code>MaliciousBuyer.onERC1155Received()</code></li>
+<li>Callback calls <code>bulkWithdrawItems</code> with pre-signed exchange sig for same tokenId</li>
+<li>If escrow record not yet cleared, withdrawal passes; item issued twice</li>
+</ol>
+<p><strong>Recommendation</strong>: Apply <code>nonReentrant</code> to <code>checkout()</code>. Follow CEI: clear escrow BEFORE transfer.</p>
+<hr>
+<h3 id="c-6-double-spend-concurrent-checkout-bulkwithdrawitems">[C-6] Double-Spend: Concurrent <code>checkout()</code> + <code>bulkWithdrawItems()</code> ⚠️</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span> (lower confidence — source unverified)<br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>checkout()</code> + <code>bulkWithdrawItems()</code></p>
+<p><strong>Description</strong>: No per-item escrow lock prevents the same item from being processed by both <code>checkout()</code> (no nonce) and <code>bulkWithdrawItems()</code> (nonce-based) simultaneously. The EXCHANGE_ROLE holder (<code>0xC89C...</code>) could dispatch both operations, and an MEV bot observing both pending transactions can order them to double-extract the item.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Exchange dispatches <code>checkout(Alice, collection, X, 0)</code> AND signs withdrawal for Alice (nonce 1441) for same item X</li>
+<li>MEV bot submits <code>checkout</code> first → item to fake buyer</li>
+<li>MEV bot submits <code>bulkWithdrawItems</code> → if <code>tokenBalances[collection][Alice]</code> not yet decremented, item transferred again</li>
+</ol>
+<p><strong>Recommendation</strong>: Implement per-item status flags. Both <code>checkout()</code> and <code>bulkWithdrawItems</code> must atomically transition item from <code>Active</code> to <code>Pending</code> to prevent concurrent processing.</p>
+<hr>
+<h3 id="h-1-checkout-unilateral-server-side-asset-transfer">[H-1] <code>checkout()</code> Unilateral Server-Side Asset Transfer</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>checkout(address,address,uint256,uint256)</code> (0x07d28902)</p>
+<p><strong>Description</strong>: <code>checkout()</code> requires only <code>EXCHANGE_ROLE</code> — no user counter-signature, no item ownership verification. The exchange can call <code>checkout(victim, attacker, anyItemId, 0)</code> to steal any escrowed item. A single EXCHANGE_ROLE key compromise enables draining all user assets.</p>
+<p><strong>Recommendation</strong>: Require time-bounded seller EIP-712 signature in <code>checkout()</code>.</p>
+<hr>
+<h3 id="h-2-instant-role-grants-no-timelock">[H-2] Instant Role Grants — No Timelock</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>grantRole(bytes32,address)</code> (confirmed via eth_call simulation)</p>
+<p><strong>Description</strong>: DEFAULT_ADMIN_ROLE can grant EXCHANGE_ROLE to any address instantly. Combined with <code>checkout()</code> having no user consent, admin key compromise allows full drain in 2 transactions.</p>
+<p><strong>Recommendation</strong>: TimelockController (24h+) on EXCHANGE_ROLE grant operations.</p>
+<hr>
+<h3 id="h-3-indexerrole-can-remap-items-to-malicious-collections">[H-3] INDEXER_ROLE Can Remap Items to Malicious Collections</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>itemToCollection(uint256)</code>, <code>collectionTypes(address)</code> setters</p>
+<p><strong>Description</strong>: 2 INDEXER_ROLE EOAs control <code>itemToCollection</code> and <code>collectionTypes</code> mappings. A compromised or malicious indexer can remap a legitimate item to a malicious collection, causing <code>checkout()</code> to invoke arbitrary external code on the malicious contract.</p>
+<p><strong>Recommendation</strong>: <code>itemToCollection</code> should be immutable after deposit. Apply timelock to any mapping updates.</p>
+<hr>
+<h3 id="h-4-cooldownperiod-0-no-flash-escrow-protection">[H-4] <code>cooldownPeriod = 0</code> — No Flash-Escrow Protection</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>cooldownPeriod()</code> returns 0 (on-chain confirmed)</p>
+<p><strong>Description</strong>: No minimum time between deposit and withdrawal. Enables: flash-escrow cycling, wash trading at zero cost, potential double-spend in same block.</p>
+<p><strong>Recommendation</strong>: Set <code>cooldownPeriod</code> to minimum 5 blocks (Ethscriptions protocol standard).</p>
+<hr>
+<h3 id="h-5-exchangerole-is-an-upgradeable-proxy-independent-admin-attac">[H-5] EXCHANGE_ROLE is an Upgradeable Proxy — Independent Admin Attack Path</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>0xC89C2E6FE008592D6a787eFd02DB7fDB8eA64020</code></p>
+<p><strong>Description</strong>: EXCHANGE_ROLE holder is itself a TransparentUpgradeableProxy with an independent upgrade admin. Compromising the exchange proxy&#39;s admin key enables upgrading it to an arbitrary implementation that calls <code>checkout()</code> and <code>bulkWithdrawItems()</code> to drain all escrowed assets — bypassing the ORDEX ProxyAdmin security entirely.</p>
+<p><strong>Recommendation</strong>: Verify exchange proxy&#39;s admin is governed by the same multisig/timelock as ORDEX. Do not grant EXCHANGE_ROLE to upgradeable contracts unless their governance is equivalent to ORDEX&#39;s.</p>
+<hr>
+<h3 id="h-6-tokenbalances-inflatable-via-direct-nft-transfer">[H-6] <code>tokenBalances</code> Inflatable via Direct NFT Transfer ⚠️</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> (lower confidence — source unverified)<br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>tokenBalances(address,address)</code> write path via <code>onERC721Received</code>/<code>onERC1155Received</code></p>
+<p><strong>Description</strong>: Direct NFT transfers to the escrow contract via <code>safeTransferFrom</code> may credit <code>tokenBalances[collection][from]</code> without registering the specific tokenId in <code>escrows[itemId]</code>. If withdrawal validation checks aggregate balance but not per-item ownership, an attacker with an inflated balance can withdraw other users&#39; items.</p>
+<p><strong>Recommendation</strong>: Validate per-item ownership via <code>escrows[itemId].owner == user</code> in ALL withdrawal paths.</p>
+<hr>
+<h3 id="h-7-checkout-accepts-price-0-costless-asset-extraction">[H-7] <code>checkout()</code> Accepts <code>price = 0</code> — Costless Asset Extraction</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>checkout(address,address,uint256,uint256)</code> — price parameter</p>
+<p><strong>Description</strong>: No lower-bound on <code>price</code>. EXCHANGE_ROLE can transfer any item at <code>price = 0</code>. Combined with no user signature requirement in <code>checkout()</code>, this enables 100% extraction of escrowed NFT value by the exchange operator at zero cost.</p>
+<p><strong>Recommendation</strong>: <code>require(price &gt; 0)</code> and add seller signature requirement.</p>
+<hr>
+<h3 id="h-8-cross-function-signature-replay-withdrawtransfer">[H-8] Cross-Function Signature Replay (Withdraw/Transfer) ⚠️</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> (lower confidence — source unverified)<br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>bulkWithdrawItems()</code> + <code>bulkTransferItems()</code> signature structs</p>
+<p><strong>Description</strong>: Both functions accept identical signature structs. If the signed digest does not include a function-type discriminator, a withdrawal signature can be replayed as a transfer to a different address, or vice versa.</p>
+<p><strong>Recommendation</strong>: Include function type (&quot;WITHDRAW&quot;/&quot;TRANSFER&quot;) in every signed digest.</p>
+<hr>
+<h3 id="m-1-no-chain-id-or-contract-address-in-signed-messages">[M-1] No Chain ID or Contract Address in Signed Messages</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: Signature hash construction in <code>bulkWithdrawItems()</code>/<code>bulkTransferItems()</code></p>
+<p><strong>Description</strong>: Bytecode analysis shows no EIP-712 domain separator (no <code>block.chainid</code>, no <code>address(this)</code>). Signed messages are replayable on any chain where ORDEX is deployed at the same address, and on Ethereum forks.</p>
+<p><strong>Recommendation</strong>: Implement full EIP-712 domain separator including <code>chainId</code> and <code>verifyingContract</code>.</p>
+<hr>
+<h3 id="m-2-checkout-self-transfer-fee-bypass-and-wash-trading">[M-2] <code>checkout()</code> Self-Transfer — Fee Bypass and Wash Trading</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>checkout(address seller, ...)</code></p>
+<p><strong>Description</strong>: No check prevents <code>seller == msg.sender</code>. A user can wash-trade their own item at <code>price = 0</code>, bypassing fees and generating fake trade history. Fee calculation also rounds to 0 for small prices (<code>price &lt; 10000/feeBps</code>).</p>
+<p><strong>Recommendation</strong>: <code>require(msg.sender != seller, &quot;EM: self-trade&quot;)</code> and enforce minimum price.</p>
+<hr>
+<h3 id="m-3-global-nonce-front-running-dos">[M-3] Global Nonce Front-Running DoS</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>lastUsedNonce()</code> / <code>bulkWithdrawItems()</code></p>
+<p><strong>Description</strong>: A mempool observer can front-run any pending <code>bulkWithdrawItems</code> by submitting any valid exchange-signed operation with the same nonce, consuming it and invalidating the victim&#39;s transaction.</p>
+<p><strong>Recommendation</strong>: Per-user nonces eliminate this attack entirely.</p>
+<hr>
+<h3 id="m-4-unbounded-bulk-array-nonce-consumed-on-gas-exhaustion">[M-4] Unbounded Bulk Array — Nonce Consumed on Gas Exhaustion</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: Bulk functions&#39; array iteration</p>
+<p><strong>Description</strong>: No upper bound on <code>uint256[] itemIds</code>. If a large array causes OOG, the nonce is consumed but items are unprocessed (nonce stored before loop). User must request new signature.</p>
+<p><strong>Recommendation</strong>: <code>require(itemIds.length &lt;= 50)</code>. Store nonce AFTER loop completion.</p>
+<hr>
+<h3 id="m-5-extcodesize-check-bypassed-during-construction">[M-5] <code>extcodesize</code> Check Bypassed During Construction</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: <code>bulkTransferItems()</code> — &quot;EM: not to contract&quot; check</p>
+<p><strong>Description</strong>: <code>extcodesize(recipient) == 0</code> returns 0 for contracts during constructor execution. An attacker can use CREATE2 to pre-compute a contract address, obtain an exchange signature for that address (appears as EOA), then deploy malicious contract to receive items.</p>
+<p><strong>Recommendation</strong>: Use allowlist of registered users rather than <code>extcodesize</code> checks.</p>
+<hr>
+<h3 id="m-6-upgrade-can-reset-lastusednonce-historical-signatures-replay">[M-6] Upgrade Can Reset <code>lastUsedNonce</code> — Historical Signatures Replayable</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>upgradeTo()</code> / <code>lastUsedNonce</code> storage slot</p>
+<p><strong>Description</strong>: If a new implementation has different storage layout and <code>lastUsedNonce</code> resets to 0, all 1440 previously consumed signed messages become replayable.</p>
+<p><strong>Recommendation</strong>: Verify <code>lastUsedNonce</code> slot preservation in upgrade process. Emit boundary event before any upgrade.</p>
+<hr>
+<h3 id="m-7-collectiontypes-change-mid-escrow-permanently-locks-items">[M-7] <code>collectionTypes</code> Change Mid-Escrow Permanently Locks Items</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>collectionTypes(address)</code> setter</p>
+<p><strong>Description</strong>: Changing a collection&#39;s type while items are escrowed causes all subsequent transfers to revert (wrong interface). Items become unrecoverable.</p>
+<p><strong>Recommendation</strong>: Prevent type changes when <code>tokenBalances</code> are non-zero for that collection.</p>
+<hr>
+<h3 id="m-8-no-events-on-checkout-silent-stealth-drain">[M-8] No Events on <code>checkout()</code> — Silent Stealth Drain</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: <code>checkout()</code></p>
+<p><strong>Description</strong>: No event literals for item sales found in bytecode. Exchange can transfer all escrowed items via <code>checkout()</code> with no indexed on-chain audit trail visible to users.</p>
+<p><strong>Recommendation</strong>: Emit indexed <code>ItemSold(seller, buyer, collection, itemId, price, timestamp)</code> in every <code>checkout()</code>.</p>
+<hr>
+<h3 id="m-9-deadline-not-confirmed-in-signed-digest">[M-9] Deadline Not Confirmed in Signed Digest ⚠️</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> (lower confidence — source unverified)<br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: Signature struct <code>(uint256 nonce, uint8 v, bytes32 r, bytes32 s)</code></p>
+<p><strong>Description</strong>: Deadline is not visible in the signature struct. If passed as separate calldata not included in digest, an attacker can substitute any deadline value while reusing an old signature.</p>
+<p><strong>Recommendation</strong>: Include <code>deadline</code> in signed digest.</p>
+<hr>
+<h3 id="m-10-solidity-076-under-082-proxy-false-overflow-safety">[M-10] Solidity 0.7.6 Under 0.8.2 Proxy — False Overflow Safety</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed By</strong>: pashov<br><strong>Location</strong>: Implementation (0.7.6) + Proxy (0.8.2)</p>
+<p><strong>Description</strong>: Proxy compiled with overflow-safe 0.8.2. Implementation uses 0.7.6 — no built-in overflow protection. The proxy&#39;s <code>delegatecall</code> runs 0.7.6 bytecode with zero overflow protection. Creates false sense of security.</p>
+<p><strong>Recommendation</strong>: Recompile implementation under 0.8.x or ensure SafeMath throughout.</p>
+<hr>
+<h3 id="l-1-raw-ecrecover-signature-malleability">[L-1] Raw <code>ecrecover</code> — Signature Malleability</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed By</strong>: ethskills + pashov<br><strong>Location</strong>: ecrecover call (STATICCALL to precompile 0x01)</p>
+<p><strong>Description</strong>: Raw <code>ecrecover</code> used instead of OZ ECDSA. Both <code>(v, r, s)</code> and <code>(v&#39;, r, n-s)</code> recover to same address. Nonce protection limits exploitability but signals absence of ECDSA safety library.</p>
+<p><strong>Recommendation</strong>: Use <code>ECDSA.recover()</code> from OpenZeppelin.</p>
+<hr>
+<h3 id="l-2-solidity-076-unconfirmed-safemath-usage">[L-2] Solidity 0.7.6 — Unconfirmed SafeMath Usage</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed By</strong>: ethskills + pashov</p>
+<p><strong>Description</strong>: 0.7.6 has no built-in overflow protection. SafeMath usage cannot be confirmed from bytecode. Fee arithmetic could overflow for extreme price values.</p>
+<hr>
+<h3 id="l-3-no-protocol-level-maximum-signature-validity">[L-3] No Protocol-Level Maximum Signature Validity</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed By</strong>: ethskills + pashov</p>
+<p><strong>Description</strong>: Exchange server controls signature lifetime. No on-chain maximum enforced.</p>
+<p><strong>Recommendation</strong>: <code>require(expiry &lt;= block.timestamp + 1 hours)</code>.</p>
+<hr>
+<h3 id="l-4-proxy-admin-and-owner-are-same-eoa">[L-4] Proxy Admin and Owner Are Same EOA</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed By</strong>: ethskills + pashov</p>
+<p><strong>Description</strong>: One key compromise enables both upgrade-level and operational attacks simultaneously.</p>
+<hr>
+<h3 id="l-5-cooldownperiod-0-exposed-without-enforcement">[L-5] <code>cooldownPeriod = 0</code> Exposed Without Enforcement</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed By</strong>: ethskills</p>
+<p><strong>Description</strong>: Getter implies feature was designed but never activated. No cooldown enforced in withdrawal paths.</p>
+<hr>
+<h3 id="l-6-renounceownership-can-lock-all-assets">[L-6] <code>renounceOwnership()</code> Can Lock All Assets</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed By</strong>: pashov</p>
+<p><strong>Description</strong>: If owner renounces, ProxyAdmin may become ownerless, making upgrades permanently impossible and all escrowed assets unrecoverable.</p>
+<p><strong>Recommendation</strong>: Override <code>renounceOwnership()</code> to revert while assets are escrowed.</p>
+<hr>
+<h3 id="l-7-no-eip-712-users-cannot-verify-signature-requests">[L-7] No EIP-712 — Users Cannot Verify Signature Requests</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed By</strong>: pashov</p>
+<p><strong>Description</strong>: Raw ecrecover without EIP-712 means users see only raw 32-byte hashes in wallets. Enables phishing of withdrawal/transfer signatures.</p>
+<p><strong>Recommendation</strong>: Implement full EIP-712.</p>
+<hr>
+<h3 id="i-1-source-code-not-verified">[I-1] Source Code Not Verified</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>0x11BA2230F2275e9DedF3a3147249E9bcB6ACadB4</code></p>
+<p>Verify source code on Etherscan immediately. Several findings carry uncertainty that only source verification can resolve.</p>
+<hr>
+<h3 id="i-2-1440-live-nonces-real-user-assets-at-risk">[I-2] 1440 Live Nonces — Real User Assets at Risk</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span>  </p>
+<p>1440 exchange-signed operations confirm this is a live production contract with real escrowed assets. All Critical and High findings have immediate real-world impact.</p>
+<hr>
+<h3 id="i-3-sequential-nonces-next-nonce-predictable">[I-3] Sequential Nonces — Next Nonce Predictable</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span>  </p>
+<p>Nonces are linearly incremented. Next nonce = 1441. Enables targeted front-running.</p>
+<hr>
+<h3 id="i-4-three-privilege-planes-one-key">[I-4] Three Privilege Planes, One Key</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span>  </p>
+<p><code>0x92545Caf...</code> controls DEFAULT_ADMIN_ROLE + ProxyAdmin ownership + EXCHANGE_ROLE grant capability simultaneously. Single key compromise collapses all three planes.</p>
+<hr>
+<h2 id="risk-assessment">Risk Assessment</h2>
+<h3 id="critical-path">Critical Path</h3>
+<p>The most dangerous combination is: <strong>admin key compromise</strong> → <code>grantRole(EXCHANGE_ROLE, attacker)</code> → <code>checkout(victim, attacker, itemId, 0)</code> × N items. This can drain all escrowed assets in a single block. The window for users to react is zero since there is no timelock and no emergency withdrawal mechanism.</p>
+<h3 id="trust-model-assessment">Trust Model Assessment</h3>
+<p>The ORDEX escrow operates as a <strong>custodial service</strong> where users must trust:</p>
+<ol>
+<li>The exchange server (EXCHANGE_ROLE) not to steal items via <code>checkout()</code> or unilateral transfers</li>
+<li>The admin (0x92545Caf...) not to upgrade to a malicious implementation</li>
+<li>The exchange proxy&#39;s own admin (separate entity) not to upgrade the exchange proxy</li>
+<li>The INDEXER_ROLE holders not to remap items to malicious collections</li>
+</ol>
+<p>This is a 4-party trust requirement with no trustless escape for users. The effective security model is equivalent to a centralized exchange holding user assets.</p>
+<h3 id="comparative-note">Comparative Note</h3>
+<p>The open-source <code>EthscriptionsMarketV3</code> (from the ethscriptions-protocol GitHub) uses a more trust-minimized design: per-seller signatures in <code>buyWithSignature()</code>, no EXCHANGE_ROLE, no server signing requirement. The deployed ORDEX implementation is architecturally much more centralized.</p>
+<hr>
+<h2 id="recommendations-priority">Recommendations Priority</h2>
+<h3 id="immediate-pre-launch-emergency">Immediate (Pre-Launch / Emergency)</h3>
+<ol>
+<li>Verify source code on Etherscan</li>
+<li>Migrate ProxyAdmin to Gnosis Safe + TimelockController</li>
+<li>Add emergency user-withdrawal function (7-day cooldown)</li>
+<li>Add seller signature requirement to <code>checkout()</code></li>
+<li>Require <code>price &gt; 0</code> in <code>checkout()</code></li>
+</ol>
+<h3 id="short-term-next-contract-version">Short-Term (Next Contract Version)</h3>
+<ol start="6">
+<li>Switch to per-user nonces</li>
+<li>Implement full EIP-712 domain separator</li>
+<li>Add function-type discriminator to signatures</li>
+<li>Set <code>cooldownPeriod</code> to minimum 5 blocks</li>
+<li>Add <code>itemId</code>-level escrow status flags to prevent concurrent processing</li>
+</ol>
+<h3 id="medium-term">Medium-Term</h3>
+<ol start="11">
+<li>Recompile implementation under Solidity 0.8.x</li>
+<li>Use OZ ECDSA library instead of raw ecrecover</li>
+<li>Restrict <code>collectionTypes</code> and <code>itemToCollection</code> changes while items are escrowed</li>
+<li>Add indexed events to all state-changing functions</li>
+<li>Verify EXCHANGE_ROLE proxy&#39;s governance is equivalent to ORDEX&#39;s</li>
+</ol>
+<hr>
+<h2 id="audit-confidence-note">Audit Confidence Note</h2>
+<p>Findings marked ⚠️ carry lower confidence due to unverified source code. Specifically:</p>
+<ul>
+<li>[C-5]: ERC1155 reentrancy — depends on whether <code>nonReentrant</code> is applied to <code>checkout()</code></li>
+<li>[C-6]: Double-spend — depends on exact ordering of state updates vs. external calls</li>
+<li>[H-6]: tokenBalances inflation — depends on whether receiver hooks validate specific tokenIds</li>
+<li>[H-8]: Cross-function replay — depends on whether signed digest includes function type</li>
+<li>[M-9]: Deadline in digest — depends on exact message struct encoding</li>
+</ul>
+<p>All other findings are supported by on-chain evidence and bytecode analysis with high confidence.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreig2msrahjtrtwxpdewcna3jxd6ky3q2t5gf6cknrdl4kcrgjl7lha.ipfs.community.bgipfs.com/"><code>https://bafkreig2msrahjtrtwxpdewcna3jxd6ky3q2t5gf6cknrdl4kcrgjl7lha.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/231">#231</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

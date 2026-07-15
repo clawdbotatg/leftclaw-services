@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireMissionEnforcement — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #334">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireMissionEnforcement</h1>
+    <p class="job-sub">Job #334 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/334"><b>Job page</b> #334</a>
+      <a class="chip" href="https://bafkreifzmstj5uatl4fcc7ntu3r5zafcq3b53tkwhblypea3c3s2s5fonq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#out-of-scope-not-applicable-verified-not-omitted-by-oversight">Out of scope / not applicable (verified, not omitted by oversight)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Audit — VaultfireMissionEnforcement</h1>
+<p><strong>Target</strong>: <code>MissionEnforcement</code> at <code>0xBc4208A7A59af3B7E438d3308C3dc0d299d739a7</code> (Base, chain 8453)<br><strong>Source</strong>: Verified exact match on Sourcify (part of a larger Vaultfire monorepo compilation unit), single file in scope, 324 lines / 154 code lines, no imports<br><strong>Client focus areas</strong>: bypass of the enforcement hook, correct integration with bond contracts, access control on mission-parameter updates<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (ethskills checklist, 4 domain agents: general, precision-math, access-control, dos) → Phase 2 depth (pashov attacker-mindset, 12 blind agents: 9 specialty + 3 gap-hunter) → hybrid reconciliation, including one targeted re-read of <code>ERC8004IdentityRegistry.sol</code> (out of scope, referenced only for integration context) to verify a phase-1-only lead.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Single named contract</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>contracts/MissionEnforcement.sol</code></td>
+</tr>
+<tr>
+<td><strong>Context only (not audited)</strong></td>
+<td><code>AIAccountabilityBondsV2.sol</code>, <code>AIPartnershipBondsV2.sol</code>, <code>ERC8004IdentityRegistry.sol</code> — read only to assess real-world integration impact; each has (or will have) its own separate audit engagement</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>80</td>
+</tr>
+</tbody></table></div>
+<h2 id="summary">Summary</h2>
+<p><code>MissionEnforcement</code> is a standalone singleton registry meant to record whether other Vaultfire &quot;bond&quot; contracts comply with 8 named ethical principles (AI profit caps, no-KYC, privacy, human-verification-final-say, etc.). It holds no funds and makes no external calls, so there is no reentrancy, token, or fund-loss surface — confirmed independently by both audit phases across all 16 sub-agent passes.</p>
+<p>The real findings are architectural: the contract&#39;s NatSpec makes strong claims (&quot;cryptographically enforces,&quot; &quot;IMMUTABLE,&quot; &quot;cannot be bypassed, even by governance&quot;) that the code does not back up. The one modifier that would give compliance flags teeth (<code>enforceMission</code>) is never applied to anything; the certification function never verifies anything before recording compliance; the one concrete, quantifiable check available (<code>verifyAIProfitCap</code>) accepts a caller-controlled cap and is never invoked by certification anyway; and the violation-tracking mapping has three separate correctness bugs. None of these are directly fund-draining from within this file — impact is realized only when a downstream bond contract or off-chain consumer trusts this registry&#39;s output — but they represent real, demonstrable gaps between what the contract claims to guarantee and what it actually does.</p>
+<p><strong>Reconciliation summary</strong>: Overlap: 5 findings in both phases · Phase-1-only: 1 (re-examined, confirmed) · Phase-2-only: 0 · Re-examined leads kept: 1, demoted: 0.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[85] <strong>1. <code>enforceMission</code> modifier is dead code — the contract&#39;s sole enforcement primitive gates nothing</strong></p>
+<p><code>MissionEnforcement.enforceMission</code> · Confidence: 85 · <strong>Severity: Medium</strong> · <code>[both: phase1 evm-audit-access-control+evm-audit-general / phase2 agents 1,2,3,6,7,8,9,11,12]</code></p>
+<p><strong>Description</strong><br>The modifier defined to block an operation on non-compliance (<code>require(missionCompliance[module][principle], &quot;Mission principle violation&quot;)</code>, lines 135-138) is applied to zero functions anywhere in the contract — confirmed by full-file grep, independently, by multiple agents in both phases. Because <code>MissionEnforcement</code> is deployed as a standalone singleton referenced by address from separate bond contracts, a modifier defined here is structurally incapable of gating functions in those external contracts anyway — each integrator must independently call <code>isCompliantWithPrinciple()</code> and write their own <code>require</code>. The contract&#39;s NatSpec (&quot;Cryptographically enforces &#39;Morals over Metrics&#39;... cannot be bypassed, even by governance&quot;) materially overstates what the code delivers.</p>
+<p><strong>Proof of Concept</strong><br><code>grep -rn &quot;enforceMission&quot; contracts/MissionEnforcement.sol</code> returns only the modifier&#39;s own declaration. No state-changing function in the file — <code>reportMissionViolation</code>, <code>adjudicateMissionViolation</code>, <code>certifyModuleMissionCompliant</code>, <code>transferOwnership</code>, <code>acceptOwnership</code> — carries it.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- modifier enforceMission(address module, CorePrinciple principle) {
+-     require(missionCompliance[module][principle], &quot;Mission principle violation&quot;);
+-     _;
+- }
++ // Remove the misleading modifier, or ship a companion abstract base /
++ // interface that integrators inherit to correctly gate their own
++ // functions against the deployed singleton&#39;s isCompliantWithPrinciple().
++ // Correct the NatSpec to state enforcement is the integrator&#39;s responsibility.
+</code></pre>
+<hr>
+<p>[85] <strong>2. Certification is a fully unverified, unilateral owner rubber-stamp — no on-chain proof is ever checked</strong></p>
+<p><code>MissionEnforcement.certifyModuleMissionCompliant</code> / <code>MissionEnforcement.adjudicateMissionViolation</code> · Confidence: 85 · <strong>Severity: Medium</strong> · <code>[both: phase1 evm-audit-access-control / phase2 agent 11 (direct finding), corroborated broadly]</code></p>
+<p><strong>Description</strong><br><code>certifyModuleMissionCompliant</code> lets <code>onlyOwner</code> set <code>missionCompliance[module][principle] = true</code> for any module/principle combination in a bare loop with zero verification — no proof, oracle, attestation, or on-chain check of the underlying claim. None of the three <code>verify*</code> helper functions (<code>verifyAIProfitCap</code>, <code>verifyHumanFinalSay</code>, <code>verifyNoKYC</code>) — the only code in the file capable of actually checking a claim — are ever called from the certification path. <code>adjudicateMissionViolation</code> can just as instantly revoke any principle with only a free-text, unvalidated <code>evidence</code> string. There is no timelock, no multisig requirement in code, and no mechanism honoring <code>reportMissionViolation</code>&#39;s community input despite <code>COMMUNITY_CHALLENGES</code> being principle #4.</p>
+<p><strong>Proof of Concept</strong><br>Owner calls <code>certifyModuleMissionCompliant(maliciousModule, [NO_KYC_WALLET_ONLY, PRIVACY_DEFAULT, NO_DATA_SALE, AI_PROFIT_CAPS])</code> with no supporting evidence of any kind — all four flip <code>true</code> in one transaction, with none of the corresponding <code>verify*</code> checks ever invoked to confirm the module actually behaves as claimed.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function certifyModuleMissionCompliant(
+      address module,
+      CorePrinciple[] memory principles
+  ) external onlyOwner {
+      require(module != address(0), &quot;Module cannot be zero&quot;);
+      require(principles.length &gt; 0, &quot;Must verify at least one principle&quot;);
++     // Require verifiable evidence per principle (e.g. a call to the matching
++     // verify* helper with concrete inputs, reverting on failure) and/or a
++     // timelock + multisig-backed role before compliance state takes effect,
++     // so certification cannot diverge from the on-chain checks it claims to represent.
+      for (uint256 i = 0; i &lt; principles.length; i++) {
+          missionCompliance[module][principles[i]] = true;
+      }
+      ...
+</code></pre>
+<hr>
+<p>[85] <strong>3. <code>verifyAIProfitCap</code>&#39;s caller-controlled <code>capPercentage</code> never actually enforces the documented 30%/50% caps</strong></p>
+<p><code>MissionEnforcement.verifyAIProfitCap</code> · Confidence: 85 · <strong>Severity: Medium</strong> · <code>[both: phase1 evm-audit-precision-math+evm-audit-access-control / phase2 agents 2,5 (direct findings), 1,12 (leads)]</code></p>
+<p><strong>Description</strong><br>Independent of Finding 2 (the fact this function is never even called by certification), the function itself is gameable: <code>capPercentage</code> is a fully caller-controlled <code>uint256</code> sanity-bounded only to <code>&lt;=100</code>, with no constant anywhere tying it to the documented 30%/50% figures. Any caller — including a legitimately-integrated but misconfigured or compromised bond contract — can pass <code>capPercentage=100</code> and receive <code>true</code> for a 100%-to-AI split.</p>
+<p><strong>Proof of Concept</strong><br><code>verifyAIProfitCap(totalAmount, totalAmount, 100)</code> → <code>require(100 &lt;= 100)</code> passes → <code>maxAIShare = (totalAmount * 100) / 100 = totalAmount</code> → <code>aiShare &lt;= maxAIShare</code> is <code>true</code> — &quot;mission compliant&quot; for 100% going to the AI party.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ uint256 public constant PARTNERSHIP_CAP_PCT = 30;
++ uint256 public constant ACCOUNTABILITY_CAP_PCT = 50;
++
++ enum ProfitCapContext { PARTNERSHIP, ACCOUNTABILITY }
++
+  function verifyAIProfitCap(
+      uint256 aiShare,
+      uint256 totalAmount,
+-     uint256 capPercentage
++     ProfitCapContext context
+  ) public pure returns (bool) {
+-     require(capPercentage &lt;= 100, &quot;Invalid cap percentage&quot;);
+      require(totalAmount &gt; 0, &quot;Invalid total amount&quot;);
++     uint256 capPercentage = context == ProfitCapContext.PARTNERSHIP
++         ? PARTNERSHIP_CAP_PCT : ACCOUNTABILITY_CAP_PCT;
+      uint256 maxAIShare = (totalAmount * capPercentage) / 100;
+      return aiShare &lt;= maxAIShare;
+  }
+</code></pre>
+<hr>
+<p>[80] <strong>4. <code>missionViolations</code> single-slot enum mapping is lossy and ambiguous — zero-value collision, overwrite on re-adjudication, never cleared on remediation</strong></p>
+<p><code>MissionEnforcement.missionViolations</code> / <code>MissionEnforcement.adjudicateMissionViolation</code> · Confidence: 80 · <strong>Severity: Medium</strong> · <code>[both: phase1 evm-audit-general (General-3) / phase2 — 12 of 12 agents, the single strongest-corroborated issue in the entire sweep]</code></p>
+<p><strong>Description</strong><br><code>missionViolations</code> is <code>mapping(address =&gt; CorePrinciple)</code> with no companion existence flag, producing three distinct, concretely-provable failure modes sharing one root cause: (1) <code>CorePrinciple.HUMAN_VERIFICATION_FINAL_SAY</code> is enum index 0 — identical to Solidity&#39;s default value for an unset mapping slot, so a never-adjudicated module is indistinguishable from one formally adjudicated as violating the contract&#39;s own stated #1 principle; (2) a second <code>adjudicateMissionViolation</code> call for a different principle on the same module silently overwrites the first violation record, permanently losing it from this mapping; (3) if the module is later re-certified compliant, <code>missionViolations</code> is never cleared and keeps reporting a stale, contradicted violation.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Deploy; never adjudicate module <code>0xBEEF</code>. <code>missionViolations(0xBEEF)</code> returns <code>0</code> = <code>HUMAN_VERIFICATION_FINAL_SAY</code> — identical to an explicit adjudication of that exact principle.</li>
+<li>Owner adjudicates module <code>M</code> for <code>NO_KYC_WALLET_ONLY</code> (index 5), then later for <code>PRIVACY_DEFAULT</code> (index 2). <code>missionViolations(M)</code> now reads <code>2</code> only — the <code>NO_KYC_WALLET_ONLY</code> record is gone.</li>
+<li>Owner re-certifies <code>M</code> compliant for <code>PRIVACY_DEFAULT</code>. <code>missionCompliance[M][PRIVACY_DEFAULT]</code> correctly flips back to <code>true</code>, but <code>missionViolations(M)</code> still reads <code>PRIVACY_DEFAULT</code> — a stale record contradicting the current compliance state.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- mapping(address =&gt; CorePrinciple) public missionViolations;
++ mapping(address =&gt; mapping(CorePrinciple =&gt; bool)) public missionViolations;
++ mapping(address =&gt; bool) public hasAnyViolation;
+
+  function adjudicateMissionViolation(...) external onlyOwner {
+      ...
+-     missionViolations[module] = principle;
++     missionViolations[module][principle] = true;
++     hasAnyViolation[module] = true;
+      missionCompliance[module][principle] = false;
+      ...
+  }
+</code></pre>
+<hr>
+<p>[80] <strong>5. <code>missionCompliantModules</code> &quot;certified&quot; timestamp is never invalidated when a violation is later adjudicated</strong></p>
+<p><code>MissionEnforcement.certifyModuleMissionCompliant</code> / <code>MissionEnforcement.adjudicateMissionViolation</code> · Confidence: 80 · <strong>Severity: Medium</strong> · <code>[both: phase1 evm-audit-general (General-3) / phase2 agents 8,9,12 (direct findings), 4,7 (leads)]</code></p>
+<p><strong>Description</strong><br><code>certifyModuleMissionCompliant</code> sets a module-level <code>missionCompliantModules[module] = block.timestamp</code> marker, documented as tracking &quot;modules that have been verified as mission-compliant.&quot; <code>adjudicateMissionViolation</code> correctly flips the specific per-principle <code>missionCompliance</code> bit to <code>false</code> but never touches <code>missionCompliantModules</code>, so a module with an active, adjudicated violation still reads as &quot;certified&quot; via this coarser field.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Owner certifies module <code>M</code> for all 8 principles at <code>T1</code> → <code>missionCompliantModules[M] = T1</code>.</li>
+<li>Owner later adjudicates a violation of <code>NO_KYC_WALLET_ONLY</code> for <code>M</code> → <code>missionCompliance[M][NO_KYC_WALLET_ONLY] = false</code>.</li>
+<li><code>missionCompliantModules[M]</code> still reads <code>T1</code> (nonzero/&quot;certified&quot;). Any consumer trusting the cheap single-SLOAD check <code>missionCompliantModules[module] != 0</code> rather than iterating all 8 per-principle flags receives a false positive.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function adjudicateMissionViolation(...) external onlyOwner {
+      ...
+      missionCompliance[module][principle] = false;
++     missionCompliantModules[module] = 0;
+      emit MissionViolationDetected(module, principle, evidence, block.timestamp);
+  }
+</code></pre>
+<hr>
+<p>[75] <strong>6. Inheriting <code>MissionEnforcement</code> (as <code>ERC8004IdentityRegistry</code> does) creates a disconnected shadow registry, not a reference to the canonical singleton</strong></p>
+<p><code>MissionEnforcement</code> (design-level) · Confidence: 75 · <strong>Severity: Low</strong> · <code>[phase1-only: evm-audit-general — re-examined via targeted re-read of ERC8004IdentityRegistry.sol, confirmed]</code></p>
+<p><strong>Description</strong><br><code>MissionEnforcement</code> is designed as a singleton referenced by address (the correct pattern used by <code>AIAccountabilityBondsV2</code>/<code>AIPartnershipBondsV2</code>, both of which hold <code>MissionEnforcement public missionEnforcement</code> and call it externally). However, <code>contracts/ERC8004IdentityRegistry.sol</code> instead declares <code>contract ERC8004IdentityRegistry is PrivacyGuarantees, MissionEnforcement</code> (confirmed by direct read, line 25) — true inheritance, not reference. This gives that contract its own independent, unsynchronized copy of <code>owner</code>, <code>missionCompliance</code>, and all other governance state, completely disconnected from the real deployed singleton at <code>0xBc42...</code>, while also inheriting the full owner-gated public surface (<code>certifyModuleMissionCompliant</code>, <code>adjudicateMissionViolation</code>, <code>transferOwnership</code>) as its own callable functions controlled by its own deployer.</p>
+<p><strong>Proof of Concept</strong><br><code>ERC8004IdentityRegistry.owner()</code> returns that contract&#39;s own deployer, not the singleton&#39;s owner. Certifying a module against the real singleton has zero effect on <code>ERC8004IdentityRegistry</code>&#39;s copy of <code>missionCompliance</code>, and vice versa — despite <code>ERC8004IdentityRegistry</code>&#39;s own NatSpec claiming <code>@custom:security Inherits PrivacyGuarantees and MissionEnforcement</code>.</p>
+<p><strong>Fix</strong><br>Split an abstract/interface-only piece (just the <code>enforceMission</code> modifier + an external call to the fixed singleton address) for contracts that want to gate their own functions against the canonical registry; don&#39;t make the concrete, owner-mutating <code>MissionEnforcement</code> contract freely inheritable.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[85]</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>enforceMission</code> modifier is dead code</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[85]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Certification is an unverified owner rubber-stamp</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[85]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>AI profit-cap caller-controlled parameter bypass</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[80]</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>missionViolations</code> lossy/ambiguous single-slot mapping</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[80]</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>missionCompliantModules</code> stale after adjudication</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[75]</td>
+<td><span class="pill low">Low</span></td>
+<td>Shadow registry via <code>ERC8004IdentityRegistry</code> inheritance</td>
+</tr>
+</tbody></table></div>
+<h2 id="leads">Leads</h2>
+<ul>
+<li><strong>Permissionless report-spam griefing</strong> (<code>reportMissionViolation</code>, Low) — no fee/rate-limit, unbounded array growth per module; binding compliance state is provably unaffected. <code>[both]</code> — phase 1 dos+general agents, phase 2 agents 9, 11.</li>
+<li><strong><code>COMMUNITY_CHALLENGES</code> listed as &quot;cryptographically enforced&quot; yet purely advisory</strong> — spec-vs-mechanics inconsistency, subsumed into Finding 1/2&#39;s framing.</li>
+</ul>
+<hr>
+<h2 id="out-of-scope-not-applicable-verified-not-omitted-by-oversight">Out of scope / not applicable (verified, not omitted by oversight)</h2>
+<p>Both phases independently confirmed: no reentrancy surface (zero external calls anywhere in the file), no fund handling (no <code>payable</code>, no ETH/token transfer), no proxy/upgrade pattern, no overflow risk (checked arithmetic in 0.8.25, <code>capPercentage&lt;=100</code> bound prevents multiplication overflow), correct two-step ownership transfer (<code>transferOwnership</code>/<code>acceptOwnership</code> matches the safe OZ pattern with no hijack/brick vectors), and consistent <code>onlyOwner</code> gating on every state-mutating admin function with no bypass path.</p>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant (two-phase automated audit: ethskills breadth + pashov depth, 16 total sub-agent passes, plus one targeted re-read for cross-phase reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review is recommended, particularly around whether the &quot;cryptographically enforced&quot; marketing language should be corrected or whether the intended architecture (real per-principle verification, timelocked adjudication) should be implemented in code.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifzmstj5uatl4fcc7ntu3r5zafcq3b53tkwhblypea3c3s2s5fonq.ipfs.community.bgipfs.com/"><code>https://bafkreifzmstj5uatl4fcc7ntu3r5zafcq3b53tkwhblypea3c3s2s5fonq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/334">#334</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

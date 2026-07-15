@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlourishingMetricsOracle — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #340">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">FlourishingMetricsOracle</h1>
+    <p class="job-sub">Job #340 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/340"><b>Job page</b> #340</a>
+      <a class="chip" href="https://bafkreihzm3yczelyll76qie54ixa3xqqnpa7nrsvemgr5zzskvdzpffjv4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">3</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads-not-independently-rated-informational-trails-for-the-team">Leads (not independently rated — informational trails for the team)</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#non-findings-checked-no-issue">Non-Findings (checked, no issue)</a></li>
+      <li><a href="#summary-table">Summary Table</a></li>
+      <li><a href="#client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — FlourishingMetricsOracle</h1>
+<p><strong>Contract</strong>: <code>FlourishingMetricsOracle</code><br><strong>Address</strong>: <code>0xf7B2dC73Ec69528F171F4a0ded62da557866BaA5</code> (Base, chain 8453)<br><strong>Source</strong>: verified on Sourcify (full match), single file, Solidity 0.8.25, <code>viaIR</code>, optimizer 200 runs<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (5 ethskills domain agents: general, precision-math, oracles, access-control, DoS) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation<br><strong>Scope</strong>: <code>FlourishingMetricsOracle.sol</code> (346 lines) in full</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Overlap: 4 findings corroborated by both phases · Phase-1-only: 4 · Phase-2-only: 2 leads · Re-examined leads kept: 6, demoted: 0</strong></p>
+<p>The two independent phases converged strongly on the same two root defects — a stale-round finalization overwrite and a missing bound/deviation check enabling median manipulation — with the stale-overwrite bug independently rediscovered by <strong>12 of the combined 17 agents</strong> across both phases, the strongest corroboration signal possible from this methodology. Phase 2&#39;s stricter admin-action gate (pashov&#39;s <code>judging.md</code>) would formally reject the owner-Sybil-registration finding as &quot;centralization without a named unprivileged amplifier&quot;; it is retained here because Phase 1&#39;s ethskills methodology explicitly treats trust-model violations as reportable (Medium), and one Phase 2 agent (trust-gap) independently surfaced the identical code-level gap with a full proof, satisfying this report&#39;s own verification standard.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="f-1-permissionless-finalizeround-has-no-monotonicity-guard-a-sta">[F-1] Permissionless <code>finalizeRound</code> has no monotonicity guard — a stale round can silently overwrite a fresher published consensus</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (General-1, Oracle-1, AccessControl-2) · Phase 2 (9 of 12 agents: access-control, economic-security, execution-trace, periphery, first-principles, asymmetry, boundary, numerical-gap, trust-gap)<br><strong>Location</strong>: <code>startRound()</code> (lines 189-206), <code>finalizeRound()</code> (lines 232-255)</p>
+<p><strong>Description</strong>: <code>startRound(metricId)</code> never checks whether a previous round for the same <code>metricId</code> is still open or unfinalized. <code>finalizeRound(roundId)</code> is <code>external</code> with no access-control modifier, and once <code>block.timestamp &gt; round.deadline</code> and quorum was met, it unconditionally executes:</p>
+<pre><code class="language-solidity">latestValue[round.metricId] = median;
+latestRoundForMetric[round.metricId] = roundId;
+</code></pre>
+<p>with no comparison against the <code>roundId</code> already recorded in <code>latestRoundForMetric[round.metricId]</code>. Because finalization is permissionless and has no time upper bound (an unfinalized round can be finalized at any point in the future, however much later), any round that reached quorum but was never promptly finalized remains a live &quot;time bomb&quot; that can roll the published feed backward at a time of any caller&#39;s choosing.</p>
+<p><strong>Proof of Concept</strong> (one of many equivalent traces produced independently across both phases):</p>
+<ol>
+<li><code>t=0</code>: owner calls <code>startRound(M)</code> → round 1, deadline <code>t+24h</code>. 3 oracles submit <code>40, 50, 60</code>. Nobody calls <code>finalizeRound(1)</code> yet — there is no obligation to.</li>
+<li><code>t=5h</code>: owner calls <code>startRound(M)</code> again for the same metric <code>M</code> (nothing in <code>startRound</code> prevents this — a plausible, non-malicious operational occurrence, e.g. an automated daily round-opener, or the owner believing round 1 stalled) → round 2, deadline <code>t+29h</code>. 3 oracles submit <code>70, 80, 90</code>.</li>
+<li><code>t=29h+1s</code>: anyone calls <code>finalizeRound(2)</code> → median <code>80</code> published; <code>latestValue[M]=80</code>, <code>latestRoundForMetric[M]=2</code>.</li>
+<li><code>t=1000h</code>: anyone (any unprivileged address — <code>finalizeRound</code> has zero access restriction) calls <code>finalizeRound(1)</code>. It passes every check (<code>startTime != 0</code>, <code>!finalized</code>, deadline long past, quorum was met at 3) and <strong>unconditionally overwrites</strong> <code>latestValue[M]</code> back to round 1&#39;s stale median <code>50</code>, rolling <code>latestRoundForMetric[M]</code> back down to <code>1</code>. <code>ConsensusReached</code> fires normally — indistinguishable on its face from a legitimate update.</li>
+</ol>
+<p>This requires no oracle collusion and no admin misbehavior — only that overlapping rounds exist for a metric (plausible under ordinary operational cadence) combined with any address calling <code>finalizeRound</code> out of round-ID order, which anyone can trigger at will.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">-    latestValue[round.metricId] = median;
+-    latestRoundForMetric[round.metricId] = roundId;
++    if (roundId &gt;= latestRoundForMetric[round.metricId]) {
++        latestValue[round.metricId] = median;
++        latestRoundForMetric[round.metricId] = roundId;
++    }
+</code></pre>
+<p>Additionally (defense in depth), prevent <code>startRound</code> from opening a new round for a <code>metricId</code> while a prior round for that metric is unfinalized, e.g. via a <code>mapping(bytes32 =&gt; uint256) activeRoundForMetric</code> that must be finalized before a new round starts.</p>
+<hr>
+<h3 id="f-2-no-commit-reveal-and-no-value-boundsdeviation-enforcement-a-">[F-2] No commit-reveal and no value bounds/deviation enforcement — a last-mover oracle or a 2-of-3 colluding pair can dictate the published median</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (Precision-2, Oracle-2, Oracle-3) · Phase 2 (agents 1, 3, 5, 10 as FINDINGs; agent 11 as a corroborating lead)<br><strong>Location</strong>: <code>submitMetric()</code> (lines 211-228), <code>_calculateMedian()</code> (lines 313-345)</p>
+<p><strong>Description</strong>: All submissions are readable in real time via the public <code>getSubmissions(roundId)</code> view and the <code>MetricSubmitted</code> event, with the submission window staying open until <code>block.timestamp &gt; round.deadline</code>. There is no commit-reveal scheme, and <code>submitMetric</code> performs zero validation on <code>value</code> — no bound tied to what a &quot;flourishing score&quot; should plausibly be (e.g. 0-100), despite the docstring implying such scores are meaningfully bounded. <code>MINIMUM_QUORUM</code> is a flat constant of 3, independent of <code>oracleCount</code> (which can scale up to 50). Two independent, mutually reinforcing exploit mechanisms result:</p>
+<ul>
+<li><strong>Mechanism A — last-mover timing</strong> (proven independently by 3 phase-2 agents plus Phase 1&#39;s Oracle-3): with two already-visible honest submissions <code>a &lt; b</code>, a third submitter can read them and submit any <code>x</code> with <code>a ≤ x ≤ b</code>; the sorted median becomes exactly <code>x</code> — the last mover&#39;s own chosen number, verbatim. Concrete trace: honest submissions <code>1000</code> and <code>1200</code> are visible on-chain; the last submitter reads them and submits <code>1199</code> → sorted <code>[1000, 1199, 1200]</code> → median = <code>1199</code>.</li>
+<li><strong>Mechanism B — static 2-of-3 collusion, no timing required</strong> (proven structurally by a Phase 2 agent): if 2 of 3 submitters in a round post the <em>same</em> value, that value structurally cannot be dislodged from the middle position of a 3-element sorted array by any third value, in any order. Concrete trace: Alice and Bob both submit <code>7</code>; Carol (honest) submits <code>1,000,000</code> → sorted <code>[7, 7, 1000000]</code> → median = <code>7</code>, entirely ignoring Carol&#39;s honest report regardless of what she submits.</li>
+</ul>
+<p>Either mechanism lets as few as 1 (Mechanism A) or 2 (Mechanism B) participants in a given round — out of however many of the up to 50 registered oracles happen to submit — fully determine the &quot;consensus&quot; value stored in <code>latestValue</code> and emitted via <code>ConsensusReached</code> as the authoritative flourishing score, with no revert, no flag, and no bound on the resulting magnitude.</p>
+<p><strong>Recommendation</strong>: Require a commit-reveal pattern (submit <code>keccak256(value, salt)</code> during the window; reveal <code>value</code> + <code>salt</code> only in a separate post-deadline window) so no submitter can condition its value on others&#39; already-visible submissions. Add explicit bounds validation in <code>submitMetric</code> (e.g. <code>require(value &lt;= MAX_SCORE)</code>). Implement the deviation-band check implied by <code>MAX_DEVIATION_BPS</code> (see F-3) so anomalous submissions are excluded before affecting the median. Consider scaling quorum with <code>oracleCount</code> (e.g. a percentage) rather than a fixed absolute floor of 3.</p>
+<hr>
+<h3 id="f-3-maxdeviationbps-is-declared-and-documented-but-never-enforce">[F-3] <code>MAX_DEVIATION_BPS</code> is declared and documented but never enforced anywhere in the contract</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (Precision-1, General-3, Oracle-6) · Phase 2 (9 of 12 agents flagged this; promoted per multi-agent-convergence rule)<br><strong>Location</strong>: line 97 (declaration), line 18 (NatSpec claim)</p>
+<p><strong>Description</strong>: The contract-level NatSpec states <em>&quot;Submissions outside the acceptable deviation band are flagged&quot;</em> and defines <code>MAX_DEVIATION_BPS = 2000</code> (20%). A full-file grep confirms <code>MAX_DEVIATION_BPS</code> is referenced exactly once — its own declaration. It is never read in <code>submitMetric</code>, <code>_calculateMedian</code>, or <code>finalizeRound</code>; there is no comparison, no flagging event, no exclusion path. This is the one control that would have mitigated F-2, and its complete absence directly contradicts the contract&#39;s own documented security model — any integrator reading the NatSpec would reasonably, and incorrectly, believe outlier submissions are screened before affecting consensus.</p>
+<p><strong>Proof of Concept</strong>: Register 3 oracles, start a round, submit <code>1</code>, <code>50</code>, <code>52</code> (&gt;98% mutual deviation) — all three succeed silently with no flag, event, or rejection.</p>
+<p><strong>Recommendation</strong>: Either implement the deviation-band check (compare each submission against the round&#39;s running median/mean; reject or flag/exclude if it exceeds <code>MAX_DEVIATION_BPS</code>), or remove the constant and correct the NatSpec so integrators do not rely on a non-existent guarantee.</p>
+<hr>
+<h3 id="f-4-owner-can-register-itself-or-sybil-addresses-it-controls-as-">[F-4] Owner can register itself (or Sybil addresses it controls) as an oracle, contradicting the contract&#39;s own documented trust model</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (General-2, Oracle-5, AccessControl-1) · Phase 2 (trust-gap agent, filed as a FINDING)<br><strong>Location</strong>: <code>addOracle()</code> (lines 150-160), <code>submitMetric()</code> (line 211), NatSpec (lines 14-19)</p>
+<p><strong>Description</strong>: The header NatSpec explicitly claims <em>&quot;eliminates single-oracle dependency by requiring multiple independent oracles&quot;</em> and <em>&quot;The owner can register/remove oracles but cannot submit data.&quot;</em> Neither is enforced in code: <code>addOracle</code> never checks <code>oracle != owner</code> or any proof of independence, has no timelock, and no cooldown before a newly-added oracle can submit. Since <code>MINIMUM_QUORUM</code> is only 3, the owner can register 3 addresses it controls, start a round, and submit whatever values it wants from all three — the median of 3 owner-controlled submissions is fully owner-determined, with zero external oracle participation required.</p>
+<p><strong>Proof of Concept</strong>: Owner calls <code>addOracle(ownerAddr)</code>, <code>addOracle(sybil1)</code>, <code>addOracle(sybil2)</code> — all succeed (no guard exists). Owner calls <code>startRound(metricId)</code> (<code>oracleCount &gt;= 3</code>, passes). Owner submits from all three addresses (e.g. <code>0, 0, 0</code>). Any address calls <code>finalizeRound</code>; median = <code>0</code>, published as the authoritative flourishing metric, fully owner-controlled with no independent validation.</p>
+<p><strong>Note on methodology</strong>: Phase 2&#39;s stricter attacker-gate (<code>judging.md</code>) formally rejects admin-action findings unless an unprivileged actor completes the harm chain — since every step here (register, start round, submit) is an owner action, that gate alone would drop this finding. It is retained because Phase 1&#39;s breadth methodology explicitly treats trust-model violations as a reportable Medium-severity category, and because a second, independent Phase 2 agent (blind to Phase 1) reached the identical code-level conclusion with a full proof, meeting this report&#39;s own two-source verification bar.</p>
+<p><strong>Recommendation</strong>: Prevent <code>oracle == owner</code> registration in <code>addOracle</code>, and/or add a registration-to-first-submission cooldown, and/or move oracle registration behind a timelock/multisig/governance gate rather than a single EOA <code>owner</code>. At minimum, correct the NatSpec to disclose the owner is a fully trusted party under the current design.</p>
+<hr>
+<h3 id="f-5-getlatestvalue-exposes-no-timestampage-and-there-is-no-enfor">[F-5] <code>getLatestValue</code> exposes no timestamp/age and there is no enforced maximum staleness</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1 only]</code> (Oracle-4) — re-examined against source and confirmed<br><strong>Location</strong>: <code>getLatestValue()</code> (lines 263-269), <code>latestValue</code>/<code>latestRoundForMetric</code> mappings (lines 121-124)</p>
+<p><strong>Description</strong>: <code>getLatestValue(metricId)</code> returns only <code>(value, roundId)</code> — no timestamp. A consumer wanting to know data age must make a second call (<code>getRound(roundId)</code>) and derive an age proxy from <code>round.deadline</code>, a pattern the single-call, obviously-named <code>getLatestValue</code> doesn&#39;t invite. There is no enforced maximum age anywhere: if the owner stops calling <code>startRound</code> for a metric, <code>latestValue</code>/<code>latestRoundForMetric</code> remain frozen forever with no expiry or flag. Separately, if a metric has never been finalized, <code>getLatestValue</code> returns <code>(0, 0)</code> — indistinguishable from a legitimately submitted score of <code>0</code>, since nothing bounds submitted values (F-2).</p>
+<p><strong>Proof of Concept</strong>: Metric <code>education_score</code> finalized once at round 7 with value 72. Owner never calls <code>startRound</code> again (key loss, abandonment, or simply no further updates scheduled). Any consumer calling <code>getLatestValue(&quot;education_score&quot;)</code> continuously receives <code>(72, 7)</code> with no on-chain indication the figure is arbitrarily stale.</p>
+<p><strong>Recommendation</strong>: Add a <code>lastUpdatedAt</code> timestamp directly to <code>getLatestValue</code>&#39;s return tuple. Consider a <code>getLatestValueChecked(metricId, maxAge)</code> variant that reverts if stale, and a way to distinguish &quot;never finalized&quot; from a genuine zero-valued consensus (e.g. a <code>bool initialized</code> return).</p>
+<hr>
+<h3 id="f-6-owner-can-front-runcensor-a-pending-oracle-submission-via-re">[F-6] Owner can front-run/censor a pending oracle submission via <code>removeOracle</code>, and can deny quorum mid-round</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1 only]</code> (AccessControl-3) — re-examined against source and confirmed<br><strong>Location</strong>: <code>removeOracle()</code> (lines 164-182), <code>submitMetric()</code> (lines 211-228)</p>
+<p><strong>Description</strong>: <code>removeOracle</code> has no restriction based on round state and takes effect immediately. Since <code>onlyOracle</code> in <code>submitMetric</code> is evaluated at transaction execution time (not signing time), the owner can watch the mempool for a pending <code>submitMetric</code> call carrying a value it dislikes and front-run it with <code>removeOracle(thatOracle)</code>, causing the submission to revert (<code>OnlyOracle</code>). This is a direct censorship primitive over which values can join the consensus. Separately, the owner can remove enough oracles mid-round to drop the count of still-eligible submitters below <code>MINIMUM_QUORUM</code>, forcing <code>RoundExpired</code> and denying publication entirely. (Submissions already recorded before removal are not retracted — this only blocks not-yet-submitted values.)</p>
+<p><strong>Proof of Concept</strong>: Oracle O has a pending <code>submitMetric(roundId, badValue)</code> transaction in the mempool. Owner observes it and submits <code>removeOracle(O)</code> with higher priority so it lands first; O&#39;s transaction then reverts.</p>
+<p><strong>Recommendation</strong>: Snapshot the eligible-oracle set at <code>startRound</code> time rather than checking <code>isOracle</code> live in <code>submitMetric</code>, so removals only apply prospectively to future rounds. At minimum, document this as an accepted owner trust assumption.</p>
+<hr>
+<h3 id="f-7-no-emergency-pause-round-cancellation-mechanism">[F-7] No emergency pause / round-cancellation mechanism</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> (AccessControl-5)<br><strong>Location</strong>: contract-wide; <code>submitMetric()</code>, <code>finalizeRound()</code></p>
+<p><strong>Description</strong>: There is no pause mechanism and no way to cancel/invalidate an in-flight round. If the owner detects manipulation mid-round (e.g. via F-2/F-4), the only lever is <code>removeOracle</code>, which blocks further submissions from an address but cannot retract already-recorded submissions or stop a permissionless <code>finalizeRound</code> from publishing them once the deadline passes.</p>
+<p><strong>Recommendation</strong>: Add an owner-gated <code>cancelRound(roundId)</code> (only callable before finalization) that marks a round finalized without computing/publishing a consensus value, mirroring the existing <code>RoundExpired</code> path.</p>
+<hr>
+<h3 id="f-8-oracle-churn-during-an-open-round-can-push-a-rounds-submissi">[F-8] Oracle churn during an open round can push a round&#39;s submission count past the intended <code>MAXIMUM_ORACLES</code> cap</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (DoS-2) · Phase 2 (numerical-gap agent&#39;s lead, &quot;quorum-recheck-gap&quot;)<br><strong>Location</strong>: <code>submitMetric()</code>, <code>removeOracle()</code>, <code>addOracle()</code>, <code>_submissions</code> mapping (line 115)</p>
+<p><strong>Description</strong>: <code>hasSubmitted</code> is keyed by address, not by &quot;oracle slot.&quot; If the owner calls <code>removeOracle(A)</code> then <code>addOracle(B)</code> while a round is still open, both <code>A</code> and <code>B</code> can each submit once to that round, since removal doesn&#39;t clear per-round history and the new address has no submission recorded yet. Repeated churn cycles can push <code>_submissions[roundId].length</code> past 50. This requires sustained, deliberate owner cooperation (each cycle costs ~3 owner/oracle transactions); it does not brick the contract or affect other rounds — worst case is one round&#39;s <code>_calculateMedian</code> sort getting gradually more expensive (still negligible in absolute gas terms at any realistically achievable churn count).</p>
+<p><strong>Recommendation</strong>: Enforce the cap explicitly in <code>submitMetric</code> (<code>revert if _submissions[roundId].length &gt;= MAXIMUM_ORACLES</code>), or snapshot the eligible oracle set at <code>startRound</code> time.</p>
+<hr>
+<h3 id="f-9-floating-pragma">[F-9] Floating pragma</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only]</code> (General-4)<br><strong>Location</strong>: line 2, <code>pragma solidity ^0.8.25;</code></p>
+<p><strong>Description</strong>: <code>^0.8.25</code> allows compilation with any 0.8.x version ≥ 0.8.25, a minor reproducibility hazard for production deployments.</p>
+<p><strong>Recommendation</strong>: Lock to the exact deployed compiler version, <code>pragma solidity 0.8.25;</code>.</p>
+<hr>
+<h2 id="leads-not-independently-rated-informational-trails-for-the-team">Leads (not independently rated — informational trails for the team)</h2>
+<ul>
+<li><strong>Check-order asymmetry in <code>submitMetric</code></strong> <code>[phase2 only]</code> — re-examined and confirmed against source: the deadline check (line 214, <code>block.timestamp &gt; round.deadline</code>) is evaluated before the <code>round.finalized</code> check (line 215), but <code>finalizeRound</code> only ever sets <code>finalized = true</code> after its own deadline check (line 236) has already passed — so once a round is finalized, <code>submitMetric</code>&#39;s deadline check will always fire first, meaning the <code>RoundAlreadyFinalized</code> revert path is unreachable dead code, masked by <code>RoundNotOpen</code>. Purely cosmetic (wrong revert reason surfaced to integrators); no fund/data impact.</li>
+<li><strong>Ambiguous zero-value on expired rounds</strong> <code>[phase2 only]</code> — re-examined and confirmed against source: an expired round (<code>subs.length &lt; MINIMUM_QUORUM</code>, lines 239-243) is marked <code>finalized = true</code> with <code>consensusValue</code> left at its struct default of <code>0</code>, indistinguishable from a round that legitimately reached consensus on the value <code>0</code>. Note <code>latestValue</code>/<code>latestRoundForMetric</code> are <em>not</em> touched in this path, so <code>getLatestValue</code> consumers are unaffected — only direct <code>getRound(roundId).consensusValue</code> callers who don&#39;t also check <code>submissionCount</code> could be confused.</li>
+</ul>
+<hr>
+<h2 id="non-findings-checked-no-issue">Non-Findings (checked, no issue)</h2>
+<ul>
+<li><strong>Even-length median formula</strong> (<code>a/2 + b/2 + (a%2+b%2)/2</code>) — verified by two independent agents (exhaustive parity-case analysis and algebraic proof) to be exactly equivalent to truncating <code>(a+b)/2</code> for all <code>uint256 a,b</code>, with no overflow at any input including <code>a=b=type(uint256).max</code>.</li>
+<li><strong><code>removeOracle</code>/<code>oracleList</code> array-mapping consistency</strong> — verified sound across all edge cases (single-element list, removing the last element, removing a non-last element); the <code>isOracle[a] == true ⟺ a appears exactly once in oracleList</code> invariant holds for all reachable states.</li>
+<li><strong>Bounded loops</strong> in <code>removeOracle</code> (linear scan) and <code>_calculateMedian</code> (insertion sort) — hard-capped at <code>MAXIMUM_ORACLES = 50</code>; gas cost at n=50 is negligible against the block gas limit, not a DoS vector.</li>
+<li><strong>No external calls anywhere in the contract</strong> — reentrancy, force-feeding, returndata-bombing, and try/catch-related checklist categories are not applicable.</li>
+<li><strong>Two-step ownership transfer</strong> (<code>transferOwnership</code>/<code>acceptOwnership</code>) — correctly implemented with a zero-address check.</li>
+</ul>
+<hr>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F-1</td>
+<td><span class="pill high">High</span></td>
+<td>Permissionless <code>finalizeRound</code> — stale round overwrites fresher consensus</td>
+<td>both (12/17 agents)</td>
+</tr>
+<tr>
+<td>F-2</td>
+<td><span class="pill high">High</span></td>
+<td>No commit-reveal/bounds — last-mover or 2-of-3 collusion dictates median</td>
+<td>both</td>
+</tr>
+<tr>
+<td>F-3</td>
+<td><span class="pill low">Low</span></td>
+<td><code>MAX_DEVIATION_BPS</code> declared but never enforced</td>
+<td>both</td>
+</tr>
+<tr>
+<td>F-4</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Owner can Sybil the oracle set (<code>addOracle</code> self-registration)</td>
+<td>both</td>
+</tr>
+<tr>
+<td>F-5</td>
+<td><span class="pill medium">Medium</span></td>
+<td>No staleness signal exposed to consumers</td>
+<td>phase1 only</td>
+</tr>
+<tr>
+<td>F-6</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Owner can front-run/censor pending submissions via <code>removeOracle</code></td>
+<td>phase1 only</td>
+</tr>
+<tr>
+<td>F-7</td>
+<td><span class="pill low">Low</span></td>
+<td>No emergency pause / round cancellation</td>
+<td>phase1 only</td>
+</tr>
+<tr>
+<td>F-8</td>
+<td><span class="pill low">Low</span></td>
+<td>Oracle churn can push submission count past 50-cap</td>
+<td>both</td>
+</tr>
+<tr>
+<td>F-9</td>
+<td><span class="pill info">Info</span></td>
+<td>Floating pragma</td>
+<td>phase1 only</td>
+</tr>
+</tbody></table></div>
+<p><strong>Total: 2 High, 2 Medium, 3 Low, 1 Info, 1 promoted-Low (F-3), plus 2 informational leads.</strong></p>
+<hr>
+<h2 id="client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</h2>
+<p>The job description asked specifically about three areas. Direct answers, cross-referenced to the findings above:</p>
+<ol>
+<li><strong>&quot;Oracle staleness checks by consumers&quot;</strong> — Not implemented. <code>getLatestValue</code> exposes no timestamp and there is no enforced maximum age (F-5); compounded by F-1, which means &quot;latest&quot; isn&#39;t even guaranteed to be chronologically latest.</li>
+<li><strong>&quot;Score-range validation (should be bounded)&quot;</strong> — Not implemented. <code>submitMetric</code> accepts any <code>uint256</code> with zero bounds, and the one control that suggests bounds were intended (<code>MAX_DEVIATION_BPS</code>) is dead code (F-3), directly enabling F-2.</li>
+<li><strong>&quot;Access control on <code>updateScore</code>&quot;</strong> — No function named <code>updateScore</code> exists in the deployed contract; the functional equivalent is <code>submitMetric</code>, which is correctly gated by <code>onlyOracle</code>. The more material access-control gaps are in the surrounding oracle-management functions: <code>addOracle</code> doesn&#39;t prevent owner self-registration (F-4), and <code>removeOracle</code> can be used to front-run/censor submissions (F-6).</li>
+</ol>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-driven two-phase audit (ethskills breadth + pashov depth, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, bug bounty program, and on-chain monitoring are strongly recommended before this oracle is relied upon for consequential downstream decisions.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihzm3yczelyll76qie54ixa3xqqnpa7nrsvemgr5zzskvdzpffjv4.ipfs.community.bgipfs.com/"><code>https://bafkreihzm3yczelyll76qie54ixa3xqqnpa7nrsvemgr5zzskvdzpffjv4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/340">#340</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

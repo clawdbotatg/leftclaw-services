@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — PawthereumMamoYieldModule — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #92">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — PawthereumMamoYieldModule</h1>
+    <p class="job-sub">Job #92 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/92"><b>Job page</b> #92</a>
+      <a class="chip" href="https://bafkreif7f5aiio3hzs2vrpsiszfvwu4xvudh3tv7lal56z7kgu6ms5loxe.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#contract-overview">Contract Overview</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#key-risk-pull-payment-architecture-required">Key Risk: Pull-Payment Architecture Required</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — PawthereumMamoYieldModule</h1>
+<p><strong>Contract</strong>: <code>0x12D661f977249778d78985f6ca860f42d7cAC9De</code> on Base<br><strong>Contract Name</strong>: <code>PawthereumMamoYieldModule</code><br><strong>Compiler</strong>: Solidity 0.8.28, EVM: Cancun<br><strong>Audit Date</strong>: 2026-05-06<br><strong>Methodologies</strong>: ethskills (6 domain agents) + pashov (8 specialized agents, 4-gate evaluation)</p>
+<hr>
+<h2 id="contract-overview">Contract Overview</h2>
+<p><code>PawthereumMamoYieldModule</code> is a Gnosis Safe module that captures yield from a MetaMorpho/Moonwell USDC strategy and distributes it to configured recipients. The SAFE (multisig at <code>0x10f76316eB9f132a72E62481018F00cfEe326E15</code>) manages recipients and parameters; <code>executeYieldCapture()</code> is permissionless and callable by anyone.</p>
+<p>The strategy holds USDC across three sources: a MetaMorpho ERC4626 vault (<code>0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca</code>), a Moonwell mToken (<code>0xEdc817A28E8B93B03976FBd4a3dDBc9f7D176c22</code>), and idle USDC in the MAMO_STRATEGY (<code>0xA5CF54d5EE226F695BC6Ad2931F9520d0f2C1B53</code>). Yield above <code>protectedPrincipal</code> is distributed to recipients according to BPS allocations; unallocated yield compounds into <code>protectedPrincipal</code>.</p>
+<p><strong>State at audit</strong>: 2 recipients (SAFE @ 4500 BPS, <code>0xceb30...</code> @ 4500 BPS), <code>protectedPrincipal</code> = 1,500 USDC, <code>executionInterval</code> = 60s, <code>minimumClaimAmount</code> = 1.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="high-1-usdc-blacklisted-recipient-permanently-freezes-all-yield-">[HIGH-1] USDC Blacklisted Recipient Permanently Freezes All Yield Distribution</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confirmed by</strong>: ethskills (ERC20-1/DOS-2) + pashov (Finding 1, confidence 90, [agents: 5])<br><strong>Location</strong>: <code>_payRecipients()</code>, <code>_safeExec()</code></p>
+<p><strong>Description</strong>: <code>_payRecipients()</code> iterates over all recipients calling <code>_safeExec(USDC, transfer(to, amt))</code>. Circle USDC v2.2 on Base <strong>reverts</strong> (does not return false) when transferring to a blacklisted address. Gnosis Safe&#39;s <code>execTransactionFromModuleReturnData</code> captures this revert and returns <code>(false, revertData)</code>. The <code>_safeExec</code> wrapper then reverts with <code>SafeCallFailed</code>, rolling back the entire <code>executeYieldCapture()</code> transaction including the already-completed strategy withdrawal. Because <code>lastExecutionTimestamp</code> only updates on success, the module enters a permanent DoS state where no yield reaches any recipient.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>OFAC or Circle blacklists <code>0xceb30...</code> (current second recipient).</li>
+<li>Any caller calls <code>executeYieldCapture()</code>.</li>
+<li>Strategy withdrawal succeeds; SAFE receives USDC.</li>
+<li><code>transfer(SAFE, amt0)</code> succeeds; <code>transfer(0xceb30..., amt1)</code> reverts inside USDC.</li>
+<li>Safe returns <code>(false, revertData)</code> → <code>SafeCallFailed</code> → full tx revert.</li>
+<li>Every subsequent call hits the same path. All yield is permanently frozen.</li>
+<li>Recovery requires the SAFE to call <code>setRecipients()</code> to remove the blacklisted address.</li>
+</ol>
+<p><strong>Recommendation</strong>: Adopt a pull-payment model — compute owed amounts during <code>executeYieldCapture()</code> into a <code>claimable[addr]</code> mapping, then let each recipient call <code>claim()</code> independently. Alternatively, wrap each individual transfer in a try/catch and accumulate undelivered amounts into <code>failedPayments[addr]</code>.</p>
+<hr>
+<h3 id="med-1-permissionless-executeyieldcapture-enables-front-running-a">[MED-1] Permissionless <code>executeYieldCapture()</code> Enables Front-Running and Forced Distributions</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: ethskills (GEN-1/AC-1/DOS-1) + pashov (Finding 2, confidence 85, [agents: 4])<br><strong>Location</strong>: <code>executeYieldCapture()</code></p>
+<p><strong>Description</strong>: <code>executeYieldCapture()</code> lacks any caller restriction. Any EOA can force yield distribution every 60 seconds, enabling: (a) front-running of <code>setRecipients</code> SAFE transactions so stale recipients receive the current epoch&#39;s yield, and (b) MEV extraction by sandwiching the MetaMorpho vault withdrawal.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>SAFE broadcasts <code>setRecipients([newRecipients])</code> to mempool.</li>
+<li>Attacker sees it and submits <code>executeYieldCapture()</code> with higher gas priority.</li>
+<li>Attacker&#39;s tx lands first, distributing yield to old recipients.</li>
+<li>SAFE&#39;s tx lands second, updating recipients for future epochs only.</li>
+<li>Cost to attacker: ~$0.001 Base gas. Loss: one epoch of yield to wrong recipients.</li>
+</ol>
+<p><strong>Recommendation</strong>: Add a <code>keeper</code> address (set by SAFE, zero address = permissionless) and gate <code>executeYieldCapture()</code> on <code>msg.sender == keeper || keeper == address(0)</code>. If truly permissionless execution is required by design, increase <code>executionInterval</code> to at least 900 seconds and document the trust model.</p>
+<hr>
+<h3 id="med-2-dual-getstrategyvalue-calls-create-inconsistent-oracle-sta">[MED-2] Dual <code>getStrategyValue()</code> Calls Create Inconsistent Oracle State Within One Transaction</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: ethskills (GEN-4/CHAIN-2) + pashov (Finding 3, confidence 80, [agents: 4])<br><strong>Location</strong>: <code>executeYieldCapture()</code> lines 97 and 112</p>
+<p><strong>Description</strong>: <code>getStrategyValue()</code> is called twice in <code>executeYieldCapture()</code>. The function calls <code>IMToken.balanceOfUnderlying()</code> on Moonwell (a Compound fork), which is <strong>not</strong> a view function — it accrues interest by writing to Moonwell storage. The two calls may therefore return different values, causing: (a) the post-execution <code>PrincipalViolation</code> guard to compare against a stale <code>protectedPrincipal</code> value, potentially masking a real violation, or (b) a spurious <code>PrincipalViolation</code> revert on a valid execution if Morpho rounds down on the second read.</p>
+<p><strong>Recommendation</strong>: Cache <code>getStrategyValue()</code> once at the start. For the post-execution check, derive the expected strategy value deterministically: <code>expectedStrategyValue = strategyValueBefore - totalDistributed</code>. Use this cached computation rather than re-querying live protocol state.</p>
+<hr>
+<h3 id="med-3-admin-parameters-lack-timelock-safe-compromise-enables-ins">[MED-3] Admin Parameters Lack Timelock — SAFE Compromise Enables Instant Full Drain</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: ethskills (AC-2/AC-4); pashov demoted to Lead (requires privileged SAFE compromise)<br><strong>Location</strong>: <code>setRecipients()</code>, <code>setProtectedPrincipal()</code></p>
+<p><strong>Description</strong>: <code>setRecipients()</code> and <code>setProtectedPrincipal()</code> are callable by SAFE with immediate effect and no time delay. A compromised SAFE quorum can atomically: call <code>setProtectedPrincipal(0)</code> (making entire strategy value distributable as &quot;yield&quot;), call <code>setRecipients([{attacker, 9000}])</code> (redirecting 90% to attacker), then trigger <code>executeYieldCapture()</code> — extracting ~90% of total strategy value (~1,350 USDC at current principal) within a single block.</p>
+<p><strong>Note</strong>: pashov strict gate evaluation demotes this to a Lead because it requires SAFE compromise (privileged action). However, the complete absence of any on-chain defense-in-depth (no timelock, no rate-limit, no floor) means there is no opportunity for honest parties to react if a SAFE signer key is stolen.</p>
+<p><strong>Recommendation</strong>: Implement a 24–48 hour timelock for <code>setRecipients</code> and <code>setProtectedPrincipal</code> changes. At minimum, enforce that <code>protectedPrincipal</code> cannot be reduced by more than a configurable percentage (e.g., 20%) per governance action.</p>
+<hr>
+<h3 id="med-4-integer-division-truncation-silently-inflates-protectedpri">[MED-4] Integer Division Truncation Silently Inflates <code>protectedPrincipal</code> Beyond Strategy Value</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: ethskills (PRECISION-1/GEN-2) + pashov (Finding 4, confidence 75, [agents: 2])<br><strong>Location</strong>: <code>_computeAmounts()</code>, <code>executeYieldCapture()</code> — <code>protectedPrincipal += compoundedAmount</code></p>
+<p><strong>Description</strong>: Each recipient&#39;s payout is floored by <code>(totalYield * bps) / BPS</code>. The sum of all truncation remainders accumulates in <code>compoundedAmount</code> and is added to <code>protectedPrincipal</code>, but the truncated dust was never deposited into the strategy. Over many executions (up to 1,440/day at 60-second intervals), <code>protectedPrincipal</code> drifts above actual strategy value, eventually causing all future calls to revert with <code>NoYield</code>. Recovery requires the SAFE to manually call <code>setProtectedPrincipal()</code> to correct the drift.</p>
+<p><strong>Recommendation</strong>: Assign the last recipient&#39;s amount as <code>totalYield - sum(amounts[0..n-2])</code> to eliminate truncation remainder. Alternatively, set <code>minimumClaimAmount</code> to at least <code>1e6</code> (1 USDC) so dust-level executions that amplify the drift are blocked.</p>
+<hr>
+<h3 id="med-5-principalviolation-safety-guard-is-mathematically-trivial-">[MED-5] <code>PrincipalViolation</code> Safety Guard Is Mathematically Trivial After Normal Execution</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Found by</strong>: pashov (Finding 5, confidence 75, [agents: 3]); not in ethskills<br><strong>Location</strong>: <code>executeYieldCapture()</code> line 112 — <code>if (getStrategyValue() + getSafeUSDC() &lt; protectedPrincipal)</code></p>
+<p><strong>Description</strong>: After a normal execution, <code>protectedPrincipal</code> is set to <code>strategyValueBefore - totalDistributed</code>. The second <code>getStrategyValue()</code> call returns approximately the same value (strategy had exactly <code>totalDistributed</code> withdrawn). Adding <code>getSafeUSDC()</code> (always ≥ 0, representing idle USDC in the SAFE unrelated to strategy principal) makes the left side structurally ≥ the right side. The guard can only trigger if Morpho and Moonwell simultaneously suffer losses mid-transaction — a near-impossible scenario. This means the invariant check provides false confidence: a real strategy undercollateralization would not be caught.</p>
+<p><strong>Recommendation</strong>: Replace with a deterministic check: <code>if (strategyValueBefore - totalDistributed &lt; protectedPrincipal) revert PrincipalViolation()</code>. Do not include <code>getSafeUSDC()</code> in the comparison, as idle SAFE USDC is not part of the strategy principal accounting.</p>
+<hr>
+<h3 id="low-1-getstrategyvalue-is-non-view-accrues-moonwell-interest-as-">[LOW-1] <code>getStrategyValue()</code> Is Non-View — Accrues Moonwell Interest as Side Effect</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: ethskills (GEN-3) + pashov (Lead)<br><strong>Location</strong>: <code>getStrategyValue()</code> — calls <code>IMToken.balanceOfUnderlying()</code></p>
+<p><strong>Description</strong>: <code>IMToken.balanceOfUnderlying()</code> on Moonwell (a Compound fork) calls <code>accrueInterest()</code> internally, which writes to Moonwell&#39;s borrowIndex and supplyIndex in storage. This makes <code>getStrategyValue()</code> and <code>previewYieldCapture()</code> state-mutating despite their usage as &quot;view&quot; functions. Off-chain callers using <code>eth_call</code> will experience unexpected storage writes and may get results inconsistent with the live deployment state.</p>
+<p><strong>Recommendation</strong>: Either use <code>mToken.exchangeRateStored()</code> (which IS view) to compute the underlying balance from shares, or add NatSpec documentation marking both functions as state-mutating.</p>
+<hr>
+<h3 id="low-2-60-second-executioninterval-below-reliable-op-stack-timest">[LOW-2] 60-Second <code>executionInterval</code> Below Reliable OP Stack Timestamp Threshold</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: ethskills (CHAIN-1); pashov (Lead — sequencer is privileged role)<br><strong>Location</strong>: <code>executionInterval</code> constructor parameter / current on-chain value</p>
+<p><strong>Description</strong>: The Base (OP Stack) sequencer controls <code>block.timestamp</code> with practical latitude before L1 finality enforces ordering. A 60-second interval is below the ~900-second threshold for reliable timestamp-based access control on OP Stack chains. A malicious or MEV-incentivized sequencer could advance timestamps to allow early re-execution.</p>
+<p><strong>Recommendation</strong>: Set <code>executionInterval</code> to at least 900 seconds via <code>setExecutionInterval()</code>.</p>
+<hr>
+<h3 id="low-3-safeexec-silent-success-on-zero-length-return-data">[LOW-3] <code>_safeExec</code> Silent Success on Zero-Length Return Data</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: ethskills (GEN-5); pashov (Lead — requires USDC contract change)<br><strong>Location</strong>: <code>_safeExec()</code> — <code>if (ret.length != 0 &amp;&amp; !abi.decode(ret, (bool)))</code></p>
+<p><strong>Description</strong>: When <code>ret.length == 0</code>, the return-data check is skipped and the call is assumed successful. This is correct for <code>IMamoStrategy.withdraw()</code> (void return) but creates a latent assumption that USDC always returns a 32-byte bool. If Circle upgrades the USDC proxy to a no-return variant (as seen in some ERC20 implementations) and the transfer fails, <code>_safeExec</code> would silently pass.</p>
+<p><strong>Recommendation</strong>: Use separate wrappers: one for ERC20 calls asserting <code>ret.length == 32</code>, one for void calls asserting <code>ret.length == 0</code>.</p>
+<hr>
+<h3 id="low-4-minimumclaimamount-1-allows-economically-wasteful-dust-exe">[LOW-4] <code>minimumClaimAmount = 1</code> Allows Economically Wasteful Dust Executions</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> / Advisory<br><strong>Confirmed by</strong>: ethskills (PRECISION-2); pashov rejected (self-harm only per Gate 4)<br><strong>Location</strong>: <code>executeYieldCapture()</code> — minimum threshold check</p>
+<p><strong>Description</strong>: <code>minimumClaimAmount = 1</code> (1 μUSDC = $0.000001) allows the full execution pipeline — two <code>getStrategyValue()</code> calls, a Safe-mediated strategy withdrawal, and N Safe-mediated USDC transfers — for effectively zero value distributed. The gas cost ($0.01–$0.10 on Base) vastly exceeds the distributed amount. Permissionless callers can loop this indefinitely.</p>
+<p><strong>Recommendation</strong>: Set <code>minimumClaimAmount</code> to at least <code>1_000_000</code> (1 USDC in 6-decimal representation) and add a floor validation in <code>setMinimumClaimAmount()</code>.</p>
+<hr>
+<h3 id="info-1-no-on-chain-safe-module-self-removal-path">[INFO-1] No On-Chain Safe Module Self-Removal Path</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confirmed by</strong>: ethskills (AC-3)<br><strong>Location</strong>: Contract-wide</p>
+<p><strong>Description</strong>: The module can only be disabled via a separate Gnosis Safe governance transaction (<code>ISafe.disableModule</code>). If a critical vulnerability is discovered and the SAFE is unavailable, the module remains permanently enabled with full <code>execTransactionFromModuleReturnData</code> rights.</p>
+<p><strong>Recommendation</strong>: Consider adding <code>emergencyDisableSelf()</code> callable only by SAFE that invokes <code>ISafe(SAFE).disableModule(prevModule, address(this))</code>.</p>
+<hr>
+<h3 id="info-2-compiler-bugs-flagged-by-basescan-confirmed-not-applicabl">[INFO-2] Compiler Bugs Flagged by BaseScan — Confirmed Not Applicable</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confirmed by</strong>: ethskills (CHAIN-3) + pashov (first-principles agent)</p>
+<p><strong>Description</strong>: BaseScan flags two Solidity 0.8.28 compiler bugs: <code>TransientStorageClearingHelperCollision</code> (high severity in compiler) and <code>LostStorageArrayWriteOnSlotOverflow</code> (low severity). Neither applies: the contract does not use transient storage (<code>TSTORE</code>/<code>TLOAD</code>), and the storage array (<code>_recipients</code>) is bounded to 16 elements — far below any overflow threshold. No action required.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Methodologies</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HIGH-1</td>
+<td>USDC blacklist permanently freezes all yield distribution</td>
+<td><strong>High</strong></td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>MED-1</td>
+<td>Permissionless <code>executeYieldCapture</code> enables front-running</td>
+<td><span class="pill medium">Medium</span></td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>MED-2</td>
+<td>Dual <code>getStrategyValue()</code> calls produce inconsistent reads</td>
+<td><span class="pill medium">Medium</span></td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>MED-3</td>
+<td>No timelock on admin params — SAFE compromise = instant drain</td>
+<td><span class="pill medium">Medium</span></td>
+<td>ethskills (pashov: Lead)</td>
+</tr>
+<tr>
+<td>MED-4</td>
+<td>Integer division truncation inflates <code>protectedPrincipal</code></td>
+<td><span class="pill medium">Medium</span></td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>MED-5</td>
+<td><code>PrincipalViolation</code> guard always passes — logically broken</td>
+<td><span class="pill medium">Medium</span></td>
+<td>pashov only</td>
+</tr>
+<tr>
+<td>LOW-1</td>
+<td><code>getStrategyValue()</code> non-view, Moonwell interest side effect</td>
+<td><span class="pill low">Low</span></td>
+<td>ethskills + pashov</td>
+</tr>
+<tr>
+<td>LOW-2</td>
+<td>60s interval below OP Stack timestamp threshold</td>
+<td><span class="pill low">Low</span></td>
+<td>ethskills (pashov: Lead)</td>
+</tr>
+<tr>
+<td>LOW-3</td>
+<td><code>_safeExec</code> silent success on zero-length return data</td>
+<td><span class="pill low">Low</span></td>
+<td>ethskills (pashov: Lead)</td>
+</tr>
+<tr>
+<td>LOW-4</td>
+<td><code>minimumClaimAmount = 1</code> allows dust executions</td>
+<td><span class="pill low">Low</span></td>
+<td>ethskills (pashov: rejected)</td>
+</tr>
+<tr>
+<td>INFO-1</td>
+<td>No on-chain Safe module self-removal path</td>
+<td><span class="pill info">Info</span></td>
+<td>ethskills</td>
+</tr>
+<tr>
+<td>INFO-2</td>
+<td>Compiler bugs — confirmed not applicable</td>
+<td><span class="pill info">Info</span></td>
+<td>ethskills + pashov</td>
+</tr>
+</tbody></table></div>
+<p><strong>Totals</strong>: 1 High · 5 Medium · 4 Low · 2 Info</p>
+<hr>
+<h2 id="key-risk-pull-payment-architecture-required">Key Risk: Pull-Payment Architecture Required</h2>
+<p>The single highest-priority remediation is replacing the push-payment model in <code>_payRecipients()</code> with a pull-payment model. This one change eliminates HIGH-1 (blacklist DoS) entirely and also mitigates MED-1 (front-running has less impact if recipients pull individually). All other findings are significant but individually less urgent.</p>
+<hr>
+<p><em>This report was produced by dual-methodology AI audit: ethskills (6 domain specialists) and pashov (8 attack-surface agents with 4-gate gate evaluation). AI audits cannot guarantee the absence of vulnerabilities. Manual review, formal verification, and bug bounty programs are recommended for production contracts.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreif7f5aiio3hzs2vrpsiszfvwu4xvudh3tv7lal56z7kgu6ms5loxe.ipfs.community.bgipfs.com/"><code>https://bafkreif7f5aiio3hzs2vrpsiszfvwu4xvudh3tv7lal56z7kgu6ms5loxe.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/92">#92</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

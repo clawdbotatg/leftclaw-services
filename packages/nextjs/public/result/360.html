@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentSafetyManager — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #360">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">AgentSafetyManager</h1>
+    <p class="job-sub">Job #360 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/360"><b>Job page</b> #360</a>
+      <a class="chip" href="https://bafkreihwie7cxuhzub2n7qrheipqccp7s77imc2edghqqcdutbo4yfwiia.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#methodology-note-read-this-before-the-findings-below">Methodology Note — Read This Before The Findings Below</a></li>
+      <li><a href="#confirmed-contract-mechanics">Confirmed Contract Mechanics</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#non-findings-explicitly-checked">Non-Findings / Explicitly Checked</a></li>
+      <li><a href="#summary-table">Summary Table</a></li>
+      <li><a href="#client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — AgentSafetyManager</h1>
+<p><strong>Contract</strong>: <code>AgentSafetyManager</code> (name per job description; not independently confirmed on-chain since no verified source exists)<br><strong>Address</strong>: <code>0x6B580f08ecA90778AC41FA1290557c86DeEfB1F5</code> (Base, chain 8453)<br><strong>Source availability</strong>: <strong>Unverified.</strong> No match on Sourcify (v2 API queried directly against chain 8453). Base Blockscout (<code>/api/v2/smart-contracts/{address}</code>) was queried after an initial transient 500 error resolved on retry, and confirmed the contract has <strong>no verified source</strong> (bytecode fields only — <code>is_verified</code>/<code>source_code</code>/<code>abi</code> all absent). No Etherscan/Basescan API key was available in this environment to query that fallback. Per audit methodology, this report falls back to <strong>bytecode-level analysis</strong>.</p>
+<hr>
+<h2 id="methodology-note-read-this-before-the-findings-below">Methodology Note — Read This Before The Findings Below</h2>
+<p>This is <strong>not</strong> the standard two-phase (ethskills + pashov) source-level audit used for verified contracts, because no Solidity source could be obtained. Instead, this review is based on:</p>
+<ul>
+<li>The deployed runtime bytecode (11,218 bytes), disassembled via <code>cast disassemble</code>.</li>
+<li>Manual reconstruction of the function dispatch table (26 confirmed 4-byte selectors) and cross-referencing against the public 4byte.directory signature database and candidate signatures derived from the job&#39;s own description.</li>
+<li>Direct on-chain calls (<code>cast call</code>) to confirm hypotheses about getter functions and constructor/dependency addresses.</li>
+<li>Opcode-level tracing of the three areas most relevant to the client&#39;s stated focus: the <code>checkAndEnforceSafety(address)</code> pre-flight function, the contract&#39;s other state-mutating functions (to assess access control), and the two-stage escalation logic embedded in <code>checkAndEnforceSafety</code>.</li>
+</ul>
+<p><strong>Confidence is inherently lower than a source-level audit.</strong> Bytecode analysis can confirm control flow, storage-layout patterns, and external call targets with high fidelity, but cannot fully verify intent or every edge case with the same certainty as reading the original Solidity. Findings below are scoped to what could be concretely traced; anything not fully traceable is marked as a <strong>Lead</strong> rather than a rated Finding, per this audit&#39;s verification standard.</p>
+<p><strong>If verified source becomes available, this contract should be re-audited with the standard two-phase methodology</strong> — this report should not be treated as an equivalent substitute.</p>
+<hr>
+<h2 id="confirmed-contract-mechanics">Confirmed Contract Mechanics</h2>
+<p>Via selector recovery, disassembly, and on-chain calls, the following was established with high confidence:</p>
+<ul>
+<li><strong>26 external functions.</strong> Selector recovery confirmed <code>checkAndEnforceSafety(address)</code> (<code>0x232a30e1</code>) — the exact function named in the job description — plus <code>getAgentStatus(address)</code> (<code>0xdc10a652</code>), <code>owner()</code> (<code>0x8da5cb5b</code>), <code>identityRegistry()</code> (<code>0x134e18f4</code>), <code>bondsRegistry()</code> (<code>0x92c1ee40</code>), and <code>transferOwnership(address)</code> (<code>0xf2fde38b</code>).</li>
+<li><strong>Function classification by opcode analysis</strong>: 21 of the 26 functions contain no <code>SSTORE</code> and no <code>CALLER</code> opcode near their entry — consistent with pure view/getter functions (e.g., <code>getAgentStatus</code>, <code>owner</code>, <code>identityRegistry</code>, <code>bondsRegistry</code>, and per-agent record field getters). The remaining <strong>5 functions contain both a <code>CALLER</code>/owner-slot comparison at entry and <code>SSTORE</code>s later</strong> — these are gated by the standard <code>onlyOwner</code> bytecode idiom (<code>SLOAD</code> the owner slot, <code>AND</code> with the address mask, <code>CALLER</code>, <code>EQ</code>, <code>ISZERO</code>/<code>JUMPI</code> to a revert path) — confirmed correctly implemented with no bypass found in the traced entry sequences. <code>transferOwnership</code> is one of these five.</li>
+<li><strong><code>checkAndEnforceSafety(address agent)</code></strong> (<code>0x232a30e1</code>) is the <strong>sole permissionless state-mutating function</strong> — no <code>CALLER</code>-based access gate exists at its entry (confirmed by tracing its first ~150 opcodes before any external call). It:<ol>
+<li><code>STATICCALL</code>s the <code>identityRegistry</code> (confirmed live contract at <code>0xa7bd20bf5de63df949ca5be2f20835978ecba81a</code> — the same address used as an external dependency in sibling Vaultfire contracts audited in this batch, e.g. jobs 352/354) with selector <code>0xfb3551ff</code>, and reverts/short-circuits if the agent isn&#39;t recognized as active.</li>
+<li><code>STATICCALL</code>s a second external contract at <code>0x98afd1440b2238d73c1394720277a6d031fcbbd0</code> (confirmed live, 7,302 bytes of code, out of scope for this review) with selector <code>0x4e44d071</code> — the identical selector used in a reputation/health-check pattern observed in a sibling Vaultfire contract in this same audit batch — to read what is very likely a reputation/trust score for the agent.</li>
+<li>Compares that score against <strong>two distinct threshold storage slots</strong> (slot <code>1</code> and slot <code>2</code>), with two distinct embedded revert/event strings found in the bytecode: <code>&quot;Auto-safe-mode: reputation below threshold&quot;</code> (the less severe branch) and <code>&quot;Auto-freeze: reputation below threshold&quot;</code> (the more severe branch) — confirming a genuine two-stage escalation ladder as described in the job.</li>
+<li>Both branches check a single &quot;already flagged&quot; bit (byte at offset <code>+6</code> of the agent&#39;s storage record) before taking action, and both branches write that same bit as part of marking the agent contained, along with a <code>TIMESTAMP</code> and the triggering <code>CALLER</code> address into adjacent storage slots.</li>
+<li>Both <code>STATICCALL</code>s occur strictly before any <code>SSTORE</code> — checks-effects-interactions is correctly followed, and <code>STATICCALL</code> cannot itself perform state-changing reentrancy regardless.</li>
+</ol>
+</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="f-1-both-stage-1-and-stage-2-escalation-branches-gate-on-the-sam">[F-1] Both stage-1 and stage-2 escalation branches gate on the same &quot;already flagged&quot; bit — an agent auto-flagged at Stage 1 may never be auto-escalated to Stage 2</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> (Lead — reduced confidence, bytecode-only)<br><strong>Location</strong>: <code>checkAndEnforceSafety(address)</code>, opcode offsets <code>0x1b81-0x1b8e</code> (stage-2 branch) and <code>0x20cb-0x20da</code> (stage-1 branch)</p>
+<p><strong>Description</strong>: Both the &quot;Auto-safe-mode&quot; (stage 1, lesser severity) and &quot;Auto-freeze&quot; (stage 2, more severe) branches independently check the identical single-bit flag at byte offset <code>+6</code> of the agent&#39;s storage record, and skip taking further action if that bit is already set (<code>ISZERO</code> check before proceeding to the <code>SSTORE</code> sequence). Because both branches read and set the <em>same</em> bit, an agent that was auto-flagged into Stage 1 on an earlier call — leaving that bit set — appears, from the traced opcode pattern, to cause <strong>all future calls to <code>checkAndEnforceSafety</code> for that agent to skip further action entirely</strong>, including the more severe Stage 2 path, even if the agent&#39;s underlying reputation score subsequently drops further and would otherwise cross the Stage 2 threshold. This would mean the &quot;two-stage&quot; escalation ladder can only ever fire its <em>first</em> applicable stage per agent, with no automatic path to the second, more severe stage without an owner-gated manual intervention (one of the five <code>onlyOwner</code> functions, whose exact behavior could not be fully decompiled from bytecode alone).</p>
+<p><strong>Recommendation</strong>: Verify against source (once available) whether the &quot;already flagged&quot; bit is intended to be stage-specific (e.g., separate bits for &quot;stage-1-flagged&quot; and &quot;stage-2-flagged&quot;) rather than a single shared flag. If it is genuinely shared, this is a real state-machine defect that should be fixed by tracking flagged-state per stage, or by re-evaluating both thresholds independently of whether a lower stage was already triggered.</p>
+<hr>
+<h3 id="f-2-checkandenforcesafetys-entire-containment-logic-depends-on-t">[F-2] <code>checkAndEnforceSafety</code>&#39;s entire containment logic depends on two externally-controlled, out-of-scope contracts</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> (informational/trust-boundary — not an exploit finding)<br><strong>Location</strong>: the two <code>STATICCALL</code> sites inside <code>checkAndEnforceSafety</code></p>
+<p><strong>Description</strong>: The pre-flight safety check&#39;s only two data sources are <code>STATICCALL</code>s to <code>identityRegistry</code> (<code>0xa7bd20bf5de63df949ca5be2f20835978ecba81a</code>) and a second contract at <code>0x98afd1440b2238d73c1394720277a6d031fcbbd0</code>, neither of whose source was in scope for this review. If either dependency is compromised, paused, or returns manipulable data, the entire two-stage auto-containment mechanism can be either bypassed (a compromised reputation source could always report &quot;fine,&quot; preventing any agent from ever being auto-flagged) or falsely triggered against an innocent agent. This mirrors a pattern already flagged in sibling Vaultfire contracts audited in this same batch that share the same <code>identityRegistry</code> dependency address.</p>
+<p><strong>Recommendation</strong>: Ensure this client&#39;s broader audit batch explicitly verifies these two dependency addresses&#39; own correctness and access control, since <code>AgentSafetyManager</code>&#39;s core security guarantee is only as strong as they are.</p>
+<hr>
+<h3 id="f-3-checkandenforcesafety-is-fully-permissionless-confirmed-by-d">[F-3] <code>checkAndEnforceSafety</code> is fully permissionless — confirmed by design, not a gap, but worth documenting explicitly</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>checkAndEnforceSafety(address)</code> entry (no <code>CALLER</code> check before the first external call)</p>
+<p><strong>Description</strong>: Unlike the five other state-mutating functions in this contract (all of which are correctly <code>onlyOwner</code>-gated, confirmed via the standard bytecode idiom), <code>checkAndEnforceSafety</code> has no caller restriction at all — any address can invoke it against any agent address. Given the job description frames this function as &quot;a contract-level pre-flight&quot; check, this is very likely intentional (permissionless keeper/anyone-can-trigger pattern, letting any downstream integrator verify or enforce an agent&#39;s safety status before interacting with it). No reentrancy or alternate-call-path bypass was found: the function&#39;s only state changes occur after both external <code>STATICCALL</code>s return, and no other function in the contract can write to the same containment-record storage without passing through the <code>onlyOwner</code> gate.</p>
+<p><strong>Recommendation</strong>: No action required if permissionless invocation is intended (as the naming strongly suggests). If it was not intended to be callable by arbitrary third parties, add an access restriction.</p>
+<hr>
+<h2 id="non-findings-explicitly-checked">Non-Findings / Explicitly Checked</h2>
+<ul>
+<li><strong>Reentrancy in <code>checkAndEnforceSafety</code></strong>: not exploitable. Both <code>STATICCALL</code>s occur strictly before any <code>SSTORE</code> (checks-effects-interactions holds), and <code>STATICCALL</code> cannot itself perform state-changing reentrant calls regardless of the callee&#39;s behavior.</li>
+<li><strong>Access control on the other 5 state-mutating functions</strong>: all confirmed to use the standard <code>onlyOwner</code> bytecode pattern (owner-slot <code>SLOAD</code> + <code>CALLER</code> + <code>EQ</code> + conditional revert) at their entry point, with no bypass found in the traced sequences. This directly addresses the client&#39;s &quot;access control on containment actions&quot; focus area.</li>
+<li><strong>Alternate call paths to mutate containment state</strong>: no function other than <code>checkAndEnforceSafety</code> (permissionless, external-call-gated) and the five <code>onlyOwner</code> functions can write to the containment-record storage layout identified during tracing — no unguarded alternate entry point was found.</li>
+</ul>
+<hr>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F-1</td>
+<td>Medium (Lead)</td>
+<td>Shared &quot;already flagged&quot; bit may block automatic Stage 1 → Stage 2 escalation</td>
+</tr>
+<tr>
+<td>F-2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Containment logic fully dependent on 2 out-of-scope external contracts</td>
+</tr>
+<tr>
+<td>F-3</td>
+<td><span class="pill info">Info</span></td>
+<td><code>checkAndEnforceSafety</code> is permissionless — confirmed as design, not a gap</td>
+</tr>
+</tbody></table></div>
+<p><strong>No Critical or High severity issue was confirmed within the scope this bytecode-level review could trace with confidence.</strong> This should be read as a statement about what was verifiable, not a certification of the contract&#39;s overall security — see the Methodology Note above.</p>
+<hr>
+<h2 id="client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</h2>
+<ol>
+<li><strong>&quot;Bypass of the pre-flight check via reentrancy or alternate call paths&quot;</strong> — No reentrancy bypass found: checks-effects-interactions is correctly followed (both external <code>STATICCALL</code>s precede all <code>SSTORE</code>s). No alternate call path was found that mutates the same containment storage without going through either <code>checkAndEnforceSafety</code> itself or one of the five confirmed <code>onlyOwner</code>-gated functions.</li>
+<li><strong>&quot;Stage-transition state machine correctness&quot;</strong> — A genuine two-stage escalation ladder was confirmed (distinct &quot;Auto-safe-mode&quot;/Stage 1 and &quot;Auto-freeze&quot;/Stage 2 code paths, gated by two separate threshold storage slots). However, F-1 identifies a plausible, concrete concern: both stages appear to share a single &quot;already flagged&quot; guard bit, which — if confirmed against source — would mean an agent flagged at Stage 1 can never be automatically escalated to Stage 2 even if its underlying score deteriorates further.</li>
+<li><strong>&quot;Access control on containment actions&quot;</strong> — Confirmed sound. The five owner-controlled functions (whatever their exact names — likely threshold-setters, manual escalate/release, and violation-recording functions, per the job description&#39;s &quot;two-stage containment&quot; framing) are all correctly gated by the standard <code>onlyOwner</code> pattern; <code>checkAndEnforceSafety</code> is intentionally permissionless, consistent with its role as an anyone-callable pre-flight check.</li>
+</ol>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed via bytecode-level analysis because no verified source was available on Sourcify or Blockscout, and no Etherscan/Basescan API key was available in this environment. This methodology has materially lower confidence than a source-level audit. AI analysis, especially at the bytecode level, can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review with access to verified source, a bug bounty program, and on-chain monitoring are strongly recommended before this contract&#39;s containment decisions are relied upon.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihwie7cxuhzub2n7qrheipqccp7s77imc2edghqqcdutbo4yfwiia.ipfs.community.bgipfs.com/"><code>https://bafkreihwie7cxuhzub2n7qrheipqccp7s77imc2edghqqcdutbo4yfwiia.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/360">#360</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

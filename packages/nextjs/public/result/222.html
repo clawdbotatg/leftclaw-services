@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BirdWatch Smart Contract — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #222">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">BirdWatch Smart Contract</h1>
+    <p class="job-sub">Job #222 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/222"><b>Job page</b> #222</a>
+      <a class="chip" href="https://bafkreihjt5tor7algivotczyi2xupuhbiops3uedemypu6ta2vpksvbrum.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">4</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">5</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#finding-summary">Finding Summary</a></li>
+      <li><a href="#detailed-findings">Detailed Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#cross-methodology-analysis">Cross-Methodology Analysis</a></li>
+      <li><a href="#recommended-fix-priority">Recommended Fix Priority</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>BirdWatch Smart Contract — Security Audit Report</h1>
+<p><strong>Job</strong>: leftclaw.services #222<br><strong>Contract</strong>: BirdWatch.sol<br><strong>Chain</strong>: Base (OP Stack, Canyon upgrade, 2-second blocks)<br><strong>Token</strong>: $MYKCLAWD ERC-20 (<code>0xE3C5FCfBfea42D5CE2492FD82c239B5503f17ba3</code>)<br><strong>Compiler</strong>: Solidity ^0.8.24<br><strong>Audit Date</strong>: 2026-05-23<br><strong>Methodologies</strong>: EthSkills (7 domain skills) + Pashov 8-Agent</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>BirdWatch is a 1:1 over/under betting game on live bird feeder visits. An off-chain AI oracle sets the over/under threshold and submits the bird count; winners receive 2× their bet. The house funds the prize pool by depositing MYKCLAWD tokens directly into the contract.</p>
+<p>The audit identified <strong>2 High</strong>, <strong>4 Medium</strong>, and <strong>5 Low</strong> severity findings, plus 2 informational items. The most critical issues are:</p>
+<ol>
+<li><strong><code>rescueFunds()</code> can drain locked player bets</strong> — the NatSpec guarantee (&quot;does not touch active bets&quot;) is completely unenforced by code. The owner can rug the contract at any time.</li>
+<li><strong>Oracle can manipulate the threshold after all bets are placed</strong> — status remains <code>OPEN</code> between the betting deadline and <code>activateRound()</code>, giving the oracle a window to rewrite the line.</li>
+<li><strong>No on-chain bird count validation</strong> — the oracle submits an unconstrained integer with zero verification. A compromised oracle can submit <code>0</code> to guarantee all OVER bets lose.</li>
+<li><strong>No solvency enforcement</strong> — the contract neither checks house funding before accepting bets nor at resolution, causing first-come-first-served partial payouts when the house is underfunded.</li>
+</ol>
+<hr>
+<h2 id="finding-summary">Finding Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Confidence</th>
+<th>Title</th>
+<th>Confirmed By</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-1</td>
+<td><span class="pill high">High</span></td>
+<td>90</td>
+<td><code>rescueFunds()</code> drains active bet deposits — NatSpec invariant unenforced</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>H-2</td>
+<td><span class="pill high">High</span></td>
+<td>90</td>
+<td>Centralized oracle controls line and outcome; no on-chain validation</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>M-1</td>
+<td><span class="pill medium">Medium</span></td>
+<td>90</td>
+<td><code>setThreshold()</code> callable after betting window closes, threshold mutable post-bets</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>M-2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>85</td>
+<td>No house solvency enforcement — winners locked out on underfunded rounds</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>M-3</td>
+<td><span class="pill medium">Medium</span></td>
+<td>80</td>
+<td><code>maxLiabilityCurrentRound()</code> understates exposure (1× instead of 2×)</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>M-4</td>
+<td><span class="pill medium">Medium</span></td>
+<td>90</td>
+<td>Owner can cancel resolved-side-winning rounds before oracle posts result</td>
+<td>EthSkills</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td>75</td>
+<td><code>setThreshold()</code> accepts <code>thresholdScaled = 0</code>, bricking <code>resolveRound()</code></td>
+<td>Both</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td>75</td>
+<td>Permissionless <code>startRound()</code> allows unserviced orphan rounds</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td>70</td>
+<td>Integer threshold silently assigns exact-hit to UNDER with no documentation</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td><span class="pill low">Low</span></td>
+<td>—</td>
+<td>30-second windows manipulable by Base sequencer; impractical for users</td>
+<td>EthSkills</td>
+</tr>
+<tr>
+<td>L-5</td>
+<td><span class="pill low">Low</span></td>
+<td>—</td>
+<td>No event emitted for losing <code>claim()</code> calls</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td>—</td>
+<td><code>setOracle()</code> takes effect immediately, allows mid-round oracle substitution</td>
+<td>Pashov</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><span class="pill info">Info</span></td>
+<td>—</td>
+<td><code>setMaxPlayersPerRound()</code> applies mid-round, surprising bettors</td>
+<td>EthSkills</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="detailed-findings">Detailed Findings</h2>
+<hr>
+<h3 id="h-1-rescuefunds-drains-locked-player-bet-deposits">[H-1] <code>rescueFunds()</code> drains locked player bet deposits</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> | <strong>Confidence</strong>: 90 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>rescueFunds()</code></p>
+<p><strong>Description</strong>: The NatSpec comment states <code>&quot;Does NOT touch tokens locked as active bets (those are users&#39; funds)&quot;</code>, but the code provides zero enforcement of this invariant. Player bets (deposited via <code>placeBet</code>) and house liquidity share the same undifferentiated <code>address(this)</code> balance. <code>rescueFunds</code> performs an unconstrained <code>safeTransfer</code> of any requested amount with no accounting of outstanding bet liability:</p>
+<pre><code class="language-solidity">function rescueFunds(address to, uint256 amount) external onlyOwner nonReentrant {
+    if (to == address(0)) revert ZeroAddress();
+    mykclawd.safeTransfer(to, amount);    // ← no bet-liability check
+    emit FundsRescued(to, amount);
+}
+</code></pre>
+<p><strong>Exploit path</strong>:</p>
+<ol>
+<li>Owner pre-funds contract with 15 M MYKCLAWD as house liquidity.</li>
+<li>Three players each bet 5 M on OVER. Contract holds 30 M.</li>
+<li>Round enters ACTIVE.</li>
+<li>Owner calls <code>rescueFunds(owner, 30_000_000e18)</code>. All 30 M transferred out.</li>
+<li>Oracle resolves — OVER wins. Three players call <code>claim()</code>.</li>
+<li>Every <code>claim()</code> reverts <code>InsufficientHouseFunds</code>. Players&#39; 15 M in bets is permanently gone.</li>
+</ol>
+<p><strong>Recommendation</strong>: Track bet liability explicitly and enforce it in <code>rescueFunds</code>:</p>
+<pre><code class="language-solidity">uint256 public totalActiveBets;
+
+// In placeBet():
+mykclawd.safeTransferFrom(msg.sender, address(this), amount);
+totalActiveBets += amount;
+
+// In claim() — win and loss branches:
+totalActiveBets -= b.amount;
+
+// In cancelRound() refund loop:
+totalActiveBets -= b.amount;
+
+function rescueFunds(address to, uint256 amount) external onlyOwner nonReentrant {
+    if (to == address(0)) revert ZeroAddress();
+    uint256 rescuable = mykclawd.balanceOf(address(this)) - totalActiveBets;
+    if (amount &gt; rescuable) revert InsufficientHouseFunds();
+    mykclawd.safeTransfer(to, amount);
+    emit FundsRescued(to, amount);
+}
+</code></pre>
+<hr>
+<h3 id="h-2-centralized-oracle-controls-both-betting-line-and-bird-count">[H-2] Centralized oracle controls both betting line and bird count with no on-chain validation</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> | <strong>Confidence</strong>: 90 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>setThreshold()</code>, <code>resolveRound()</code></p>
+<p><strong>Description</strong>: A single EOA oracle has unilateral, uncheckable control over the two parameters that determine every round&#39;s outcome:</p>
+<ol>
+<li><code>thresholdScaled</code> — the betting line, settable (and re-settable) by oracle at any time while OPEN.</li>
+<li><code>birdCount</code> — the resolution value, submitted verbatim with zero on-chain verification:</li>
+</ol>
+<pre><code class="language-solidity">function resolveRound(uint256 roundId, uint256 birdCount) external onlyOracle {
+    ...
+    r.birdCount = birdCount;       // ← accepted as truth, no bounds or sanity check
+    r.status = RoundStatus.RESOLVED;
+    bool overWins = birdCount * 100 &gt; r.thresholdScaled;
+    ...
+}
+</code></pre>
+<p>A compromised or malicious oracle can submit <code>birdCount = 0</code> after all OVER bets are visible on-chain, causing 100% of OVER bettors to lose their principal with no on-chain evidence of manipulation.</p>
+<p><strong>Exploit path</strong>:</p>
+<ol>
+<li>Players bet OVER expecting normal bird activity.</li>
+<li>Betting window closes. Oracle calls <code>resolveRound(id, 0)</code>.</li>
+<li><code>0 * 100 &gt; threshold</code> → false → UNDER wins.</li>
+<li>All OVER bettors lose principal. UNDER bettors (or house) collect 2×.</li>
+</ol>
+<p><strong>Recommendation</strong> (no fully trustless fix possible with current design):</p>
+<ul>
+<li>Prohibit threshold changes once the first bet is placed (see M-1).</li>
+<li>Add a dispute window before claims open.</li>
+<li>Require 2-of-2 multi-sig for <code>resolveRound</code> and <code>setOracle</code>.</li>
+<li>Document clearly that the oracle is a fully trusted operator key.</li>
+</ul>
+<hr>
+<h3 id="m-1-setthreshold-callable-after-betting-window-closes-oracle-can">[M-1] <code>setThreshold()</code> callable after betting window closes — oracle can rewrite committed line</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 90 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>setThreshold()</code></p>
+<p><strong>Description</strong>: <code>setThreshold</code> checks only <code>r.status == RoundStatus.OPEN</code>. A round remains OPEN until <code>activateRound()</code> is called, which requires <code>block.timestamp &gt;= r.bettingEndsAt</code>. Between the betting deadline expiring and <code>activateRound()</code> being called, the oracle can change the threshold — while no new bets are possible, all existing bets are already committed.</p>
+<p>Additionally, <code>setThreshold</code> can be called multiple times during the active betting window, allowing the oracle to observe accumulating bet distribution and adjust the line.</p>
+<pre><code class="language-solidity">function setThreshold(uint256 roundId, uint256 thresholdScaled) external onlyOracle {
+    Round storage r = _rounds[roundId];
+    if (r.status != RoundStatus.OPEN) revert WrongStatus();  // ← OPEN persists past bettingEndsAt
+    r.thresholdScaled = thresholdScaled;
+</code></pre>
+<p><strong>Exploit path</strong>:</p>
+<ol>
+<li>Oracle sets threshold at 300 (3.00 birds). Players bet OVER.</li>
+<li>Betting window closes. No one calls <code>activateRound()</code> immediately.</li>
+<li>Oracle calls <code>setThreshold(id, 5000)</code> (50.00 birds — unachievable).</li>
+<li>Oracle calls <code>resolveRound(id, 10)</code>. UNDER wins. All OVER bettors lose.</li>
+</ol>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">function setThreshold(uint256 roundId, uint256 thresholdScaled) external onlyOracle {
+    Round storage r = _rounds[roundId];
+    if (r.status != RoundStatus.OPEN) revert WrongStatus();
+    if (block.timestamp &gt;= r.bettingEndsAt) revert BettingClosed();   // ← freeze post-deadline
+    if (r.thresholdScaled != 0) revert ThresholdAlreadySet();         // ← immutable once set
+    if (thresholdScaled == 0) revert InvalidThreshold();
+    r.thresholdScaled = thresholdScaled;
+    emit ThresholdSet(roundId, thresholdScaled);
+}
+</code></pre>
+<hr>
+<h3 id="m-2-no-house-solvency-enforcement-underfunding-causes-first-come">[M-2] No house solvency enforcement — underfunding causes first-come-first-served partial payout</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 85 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>placeBet()</code>, <code>claim()</code></p>
+<p><strong>Description</strong>: The contract never checks that the house has sufficient reserves before accepting bets, and only checks per-claim at transfer time:</p>
+<pre><code class="language-solidity">uint256 balance = mykclawd.balanceOf(address(this));
+if (balance &lt; payout) revert InsufficientHouseFunds();
+</code></pre>
+<p>If the house is underfunded, first claimants succeed while later claimants are permanently denied their winnings — even though their bet principal was already forfeited to the contract.</p>
+<p><strong>Exploit path</strong>:</p>
+<ul>
+<li>3 OVER bettors each stake 5 M. OVER wins. House deposited only 5 M.</li>
+<li>Contract holds 20 M. First two winners claim 10 M each (20 M → 0 M).</li>
+<li>Third winner: <code>0 &lt; 10M</code> → <code>InsufficientHouseFunds</code> — permanently blocked unless house adds funds.</li>
+</ul>
+<p><strong>Recommendation</strong>: Validate solvency at <code>resolveRound()</code>, after the winning side is known:</p>
+<pre><code class="language-solidity">function resolveRound(uint256 roundId, uint256 birdCount) external onlyOracle {
+    ...
+    bool overWins = birdCount * 100 &gt; r.thresholdScaled;
+    uint256 maxPayout = 0;
+    for (uint256 i = 0; i &lt; r.betCount; i++) {
+        Bet storage b = r.bets[i];
+        if ((overWins &amp;&amp; b.choice == BetChoice.OVER) || (!overWins &amp;&amp; b.choice == BetChoice.UNDER)) {
+            maxPayout += b.amount * 2;
+        }
+    }
+    if (mykclawd.balanceOf(address(this)) &lt; maxPayout) revert InsufficientHouseFunds();
+    r.birdCount = birdCount;
+    r.status = RoundStatus.RESOLVED;
+    ...
+}
+</code></pre>
+<hr>
+<h3 id="m-3-maxliabilitycurrentround-understates-true-exposure-by-up-to-">[M-3] <code>maxLiabilityCurrentRound()</code> understates true exposure by up to 2×</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 80 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>maxLiabilityCurrentRound()</code></p>
+<p><strong>Description</strong>: The function sums bet principals, not payouts:</p>
+<pre><code class="language-solidity">for (uint256 i = 0; i &lt; r.betCount; i++) {
+    liability += r.bets[i].amount;   // ← 1× per bet; actual payout is 2×
+}
+</code></pre>
+<p>If all players bet the same side and win, each is owed 2× their bet. A house operator using this function for funding decisions will under-fund by exactly the total bet pool. The function also ignores unclaimed payouts from previously resolved rounds.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">/// @notice Maximum payout the contract must be able to fulfill across ALL unresolved rounds.
+/// @dev With lockedBets tracking (recommended), this is simply: return lockedBets;
+function maxPayoutCurrentRound() external view returns (uint256 maxPayout) {
+    if (currentRoundId == 0) return 0;
+    Round storage r = _rounds[currentRoundId];
+    for (uint256 i = 0; i &lt; r.betCount; i++) {
+        maxPayout += r.bets[i].amount * 2;
+    }
+}
+</code></pre>
+<hr>
+<h3 id="m-4-owner-can-observe-off-chain-outcome-and-cancel-a-winning-rou">[M-4] Owner can observe off-chain outcome and cancel a winning round before on-chain resolution</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 90 | <strong>Confirmed by</strong>: EthSkills</p>
+<p><strong>Location</strong>: <code>cancelRound()</code></p>
+<p><strong>Description</strong>: <code>cancelRound()</code> accepts OPEN and ACTIVE rounds with no time constraint. Since the real bird count is known off-chain (to the same operators running the system) before <code>resolveRound()</code> is called, the owner can selectively cancel rounds where OVER would win:</p>
+<pre><code class="language-solidity">function cancelRound(uint256 roundId) external onlyOwner nonReentrant {
+    Round storage r = _rounds[roundId];
+    if (r.status != RoundStatus.OPEN &amp;&amp; r.status != RoundStatus.ACTIVE) revert WrongStatus();
+    r.status = RoundStatus.CANCELLED;
+    ...
+    mykclawd.safeTransfer(b.player, b.amount);   // refund only — no 2× payout
+</code></pre>
+<p>Winners are refunded their principal only, denied their 2× winning payout.</p>
+<p><strong>Recommendation</strong>: Prevent cancellation after the round has ended when bets exist:</p>
+<pre><code class="language-solidity">function cancelRound(uint256 roundId) external onlyOwner nonReentrant {
+    Round storage r = _rounds[roundId];
+    if (r.status != RoundStatus.OPEN &amp;&amp; r.status != RoundStatus.ACTIVE) revert WrongStatus();
+    if (block.timestamp &gt;= r.roundEndsAt &amp;&amp; r.betCount &gt; 0) revert RoundAlreadyEnded();
+    ...
+}
+</code></pre>
+<hr>
+<h3 id="l-1-setthreshold-accepts-zero-bricking-round-resolution">[L-1] <code>setThreshold()</code> accepts zero, bricking round resolution</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 75 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>setThreshold()</code></p>
+<p><strong>Description</strong>: If the oracle calls <code>setThreshold(roundId, 0)</code> after bets are placed, both <code>resolveRound()</code> and future <code>placeBet()</code> calls revert with <code>ThresholdNotSet</code>. The round is permanently stuck until the owner manually calls <code>cancelRound()</code>.</p>
+<p><strong>Recommendation</strong>: <code>if (thresholdScaled == 0) revert InvalidThreshold();</code> at top of <code>setThreshold()</code>. (Superseded entirely by the M-1 fix which makes the threshold immutable once set.)</p>
+<hr>
+<h3 id="l-2-permissionless-startround-enables-orphaned-unserviced-rounds">[L-2] Permissionless <code>startRound()</code> enables orphaned unserviced rounds</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 75 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>startRound()</code></p>
+<p><strong>Description</strong>: Any EOA can call <code>startRound()</code>, creating a round the oracle may not service. If a bettor places a bet into such a round, their funds are locked until the owner calls <code>cancelRound()</code>. While funds are ultimately recoverable, this creates forced dependency on owner responsiveness.</p>
+<p><strong>Recommendation</strong>: Restrict to <code>onlyOwner</code> or <code>onlyOracle</code>.</p>
+<hr>
+<h3 id="l-3-exact-threshold-tie-silently-resolves-as-under-win">[L-3] Exact-threshold tie silently resolves as UNDER win</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 70 | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>resolveRound()</code>, <code>claim()</code></p>
+<p><strong>Description</strong>: <code>bool overWins = birdCount * 100 &gt; r.thresholdScaled</code> is a strict greater-than. If <code>thresholdScaled = 300</code> and <code>birdCount = 3</code>, the result is <code>300 &gt; 300 = false</code> — UNDER wins. This counterintuitive behavior is undocumented in NatSpec. The NatSpec recommends fractional lines but does not enforce them.</p>
+<p><strong>Recommendation</strong>: Enforce fractional thresholds: <code>if (thresholdScaled % 100 == 0) revert ThresholdMustBeFractional();</code></p>
+<hr>
+<h3 id="l-4-30-second-bettingcounting-windows-are-impractically-short-an">[L-4] 30-second betting/counting windows are impractically short and sequencer-manipulable</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confirmed by</strong>: EthSkills</p>
+<p><strong>Location</strong>: <code>BETTING_WINDOW</code>, <code>ROUND_DURATION</code> constants</p>
+<p><strong>Description</strong>: Both windows are 30 seconds on Base (15 L2 blocks). The Base sequencer can skew <code>block.timestamp</code> by ~12 seconds — a 40% distortion of the betting window. Users need time to pre-approve tokens and submit a bet transaction; 30 seconds is insufficient for most users outside of pre-configured bots.</p>
+<p><strong>Recommendation</strong>: Increase both constants: <code>BETTING_WINDOW = 300</code> (5 minutes), <code>ROUND_DURATION = 300</code> (5 minutes).</p>
+<hr>
+<h3 id="l-5-no-event-emitted-for-losing-claim-calls">[L-5] No event emitted for losing <code>claim()</code> calls</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confirmed by</strong>: EthSkills + Pashov</p>
+<p><strong>Location</strong>: <code>claim()</code></p>
+<p><strong>Description</strong>: When a losing player calls <code>claim()</code>, <code>b.claimed</code> is set to <code>true</code> but no event is emitted. Off-chain indexers will never detect this state change, causing losing bets to appear perpetually unclaimed in the event log and UI.</p>
+<p><strong>Recommendation</strong>: <code>emit LossClaimed(roundId, msg.sender);</code> in the non-winning branch.</p>
+<hr>
+<h3 id="i-1-setoracle-takes-effect-immediately-enabling-mid-round-oracle">[I-1] <code>setOracle()</code> takes effect immediately, enabling mid-round oracle substitution</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confirmed by</strong>: Pashov</p>
+<p><strong>Location</strong>: <code>setOracle()</code></p>
+<p><strong>Description</strong>: The owner can replace the oracle address mid-round with no status guard, immediately authorizing a new address to call <code>resolveRound()</code> on the active round. Combined with H-2, this means a single owner action can redirect an in-flight round to any oracle.</p>
+<p><strong>Recommendation</strong>: Add <code>if (round is OPEN or ACTIVE) revert RoundInProgress()</code> to <code>setOracle()</code>.</p>
+<hr>
+<h3 id="i-2-setmaxplayersperround-applies-immediately-to-in-progress-rou">[I-2] <code>setMaxPlayersPerRound()</code> applies immediately to in-progress rounds</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confirmed by</strong>: EthSkills</p>
+<p><strong>Location</strong>: <code>setMaxPlayersPerRound()</code></p>
+<p><strong>Description</strong>: If reduced mid-round below <code>r.betCount</code>, the round effectively becomes permanently full. Users who expected to be able to bet find the round closed.</p>
+<hr>
+<h2 id="cross-methodology-analysis">Cross-Methodology Analysis</h2>
+<p>The following findings were confirmed independently by both EthSkills and Pashov agents, increasing confidence:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>EthSkills</th>
+<th>Pashov</th>
+<th>Combined Assessment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-1 (<code>rescueFunds</code> rug)</td>
+<td>H-1</td>
+<td>Finding 1</td>
+<td><strong>High — confirmed</strong></td>
+</tr>
+<tr>
+<td>H-2 (oracle trust)</td>
+<td>H-2</td>
+<td>Finding 3</td>
+<td><strong>High — confirmed</strong></td>
+</tr>
+<tr>
+<td>M-1 (post-window threshold)</td>
+<td>M-1</td>
+<td>Finding 2</td>
+<td><strong>Medium — confirmed</strong></td>
+</tr>
+<tr>
+<td>M-2 (solvency enforcement)</td>
+<td>M-4</td>
+<td>Finding 5</td>
+<td><strong>Medium — confirmed</strong></td>
+</tr>
+<tr>
+<td>M-3 (maxLiability undercount)</td>
+<td>M-2</td>
+<td>Finding 6</td>
+<td><strong>Medium — confirmed</strong></td>
+</tr>
+<tr>
+<td>L-1 (zero threshold)</td>
+<td>L-1</td>
+<td>Finding 7</td>
+<td><strong>Low — confirmed</strong></td>
+</tr>
+<tr>
+<td>L-2 (permissionless start)</td>
+<td>L-2</td>
+<td>Finding 8</td>
+<td><strong>Low — confirmed</strong></td>
+</tr>
+<tr>
+<td>L-3 (tie → UNDER)</td>
+<td>L-3</td>
+<td>Finding 9</td>
+<td><strong>Low — confirmed</strong></td>
+</tr>
+<tr>
+<td>L-5 (no loser event)</td>
+<td>L-5</td>
+<td>Lead L4</td>
+<td><strong>Low — confirmed</strong></td>
+</tr>
+</tbody></table></div>
+<p>M-4 (selective cancellation) was raised only by EthSkills but passed the full gate evaluation and is included at medium severity.</p>
+<hr>
+<h2 id="recommended-fix-priority">Recommended Fix Priority</h2>
+<ol>
+<li><strong>Immediate (before mainnet)</strong>: H-1 — add <code>totalActiveBets</code> tracking and enforce it in <code>rescueFunds</code>.</li>
+<li><strong>Immediate (before mainnet)</strong>: M-1 — freeze threshold once betting window opens and make it immutable once set.</li>
+<li><strong>Before mainnet</strong>: M-2 — add solvency check at <code>resolveRound()</code>.</li>
+<li><strong>Before mainnet</strong>: M-4 — prevent post-<code>roundEndsAt</code> cancellation when bets exist.</li>
+<li><strong>Before mainnet</strong>: I-1 — guard <code>setOracle()</code> during active rounds.</li>
+<li><strong>Strongly recommended</strong>: Increase <code>BETTING_WINDOW</code> and <code>ROUND_DURATION</code> to ≥ 300 seconds.</li>
+<li><strong>Recommended</strong>: Rename <code>maxLiabilityCurrentRound()</code> or fix its arithmetic.</li>
+<li><strong>Recommended</strong>: Enforce fractional thresholds (<code>thresholdScaled % 100 != 0</code>).</li>
+<li><strong>Recommended</strong>: Add <code>LossClaimed</code> event.</li>
+<li><strong>Operational</strong>: Document the full oracle trust model prominently in the UI.</li>
+</ol>
+<hr>
+<p><em>This audit was conducted by a leftclaw.services automated agent using the EthSkills 7-domain checklist (500+ items) and the Pashov 8-agent security methodology. AI analysis cannot guarantee the complete absence of vulnerabilities. Independent human review, bug bounty, and on-chain monitoring are strongly recommended.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihjt5tor7algivotczyi2xupuhbiops3uedemypu6ta2vpksvbrum.ipfs.community.bgipfs.com/"><code>https://bafkreihjt5tor7algivotczyi2xupuhbiops3uedemypu6ta2vpksvbrum.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/222">#222</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

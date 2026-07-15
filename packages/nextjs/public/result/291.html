@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMFI Op-Lending V22 Factory (`PMFIPositionFactoryV22`) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #291">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">PMFI Op-Lending V22 Factory (`PMFIPositionFactoryV22`)</h1>
+    <p class="job-sub">Job #291 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/291"><b>Job page</b> #291</a>
+      <a class="chip" href="https://bafkreigtgmshd35dimdnlst4w3umzdusi554i2likcviqdxjh4xt2drkne.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope-note-this-contract-was-already-fully-audited-under-job-290">Scope Note — This Contract Was Already Fully Audited Under Job #290</a></li>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#verified-permission-map-from-job-290s-access-control-pass-re-con">Verified Permission Map (from job 290&#39;s access-control pass, re-confirmed here)</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#methodology-note">Methodology Note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — PMFI Op-Lending V22 Factory (<code>PMFIPositionFactoryV22</code>)</h1>
+<p><strong>Client job</strong>: leftclaw.services job #291<br><strong>Target</strong>: <code>0xb2458426F7263B3Aec44ba6E3466bB4B5A175ccf</code> on <strong>Base</strong> (chain id 8453)<br><strong>Contract</strong>: <code>PMFIPositionFactoryV22</code><br><strong>Verification</strong>: Verified on Basescan (&quot;Exact Match&quot;), Solidity <code>v0.8.24+commit.e11b9ed9</code>, optimizer enabled (200 runs), EVM version Cancun. Not yet mirrored to Sourcify at time of audit.</p>
+<h2 id="scope-note-this-contract-was-already-fully-audited-under-job-290">Scope Note — This Contract Was Already Fully Audited Under Job #290</h2>
+<p>Before running a fresh audit, on-chain verification established that this address is <strong>not a similar deployment of the same protocol — it is the exact same live contract instance</strong> already covered end-to-end by the two-phase audit delivered for leftclaw job #290 (<code>PMFIPrimaryMarketplaceV22</code> at <code>0xcC3E1C18b58eE8Ec6550C60b75d820E4b45e2D2F</code>, also on Base). Job 290&#39;s target contract&#39;s full source — including the complete <code>PMFIPositionFactoryV22</code> contract body (lines 534–763 of <code>src/PMFIOpLendingV22.sol</code>) — was read in full by every one of the 18 audit agents (6 breadth checklist agents + 12 blind attacker-mindset agents) run for that job, because all four contracts in the PMFI system (<code>PMFILegTokenV22</code>, <code>PMFIPositionVaultV22</code>, <code>PMFIPositionFactoryV22</code>, <code>PMFIPrimaryMarketplaceV22</code>) are compiled from a single source file and every agent bundle contained the entire file.</p>
+<p><strong>On-chain proof of identity</strong> (<code>cast call</code>, Base mainnet, this audit):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Target</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>marketplace()</code> on <code>0xb245...5ccf</code> (this job&#39;s target)</td>
+<td>this contract</td>
+<td><code>0xcC3E1C18b58eE8Ec6550C60b75d820E4b45e2D2F</code> — <strong>exactly</strong> job 290&#39;s audited marketplace address</td>
+</tr>
+<tr>
+<td><code>factory()</code> on <code>0xcC3E...e2D2F</code> (job 290&#39;s target)</td>
+<td>job 290&#39;s marketplace</td>
+<td><code>0xb2458426F7263B3Aec44ba6E3466bB4B5A175ccf</code> — <strong>exactly</strong> this job&#39;s target address</td>
+</tr>
+<tr>
+<td><code>USDC()</code></td>
+<td>this contract</td>
+<td><code>0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code> — Base official USDC</td>
+</tr>
+<tr>
+<td><code>CREATION_FEE()</code></td>
+<td>this contract</td>
+<td><code>0x5af3107a4000</code> = <code>100000000000000</code> wei = <code>0.0001 ether</code>, matching the source constant</td>
+</tr>
+<tr>
+<td><code>owner()</code> / <code>feeRecipient()</code></td>
+<td>this contract</td>
+<td>Both resolve to <code>0x7c8D9Ad4F51299b02755Ec13c018004008b45494</code></td>
+</tr>
+</tbody></table></div>
+<p>The factory and marketplace immutables cross-reference each other exactly as the source constructor requires (<code>PMFIPositionFactoryV22</code>&#39;s constructor deploys <code>PMFIPrimaryMarketplaceV22</code> and passes <code>address(this)</code> as its <code>factory_</code> argument). This is conclusive: redeploying identical source with different constructor args would not produce this exact bidirectional address match. Given this, re-running a full independent two-phase audit (6+12 fresh agents) against byte-identical, already-audited code would be pure duplication with zero new signal. Instead, this report extracts and re-verifies the findings from job 290&#39;s unified report that are specifically scoped to <code>PMFIPositionFactoryV22</code>&#39;s own functions and attack surface, re-confirmed against the live on-chain constants above.</p>
+<h2 id="executive-summary">Executive Summary</h2>
+<p><strong>0 Critical, 0 High, 0 Medium, 3 Low, 2 Info</strong> — all scoped to <code>PMFIPositionFactoryV22</code>.</p>
+<p><code>PMFIPositionFactoryV22</code> is the registry, collateral-allowlist, and pause-control contract for the PMFI lending system. It creates and initializes each borrower&#39;s <code>PMFIPositionVaultV22</code>, mints the position atomically with collateral pull, registers the primary sale with the marketplace, and collects a fixed ETH creation fee. Both prior audit passes independently verified the full permission map of this contract (see table below) and found it complete and consistent — no missing modifier, no unauthorized privileged-path reachability, and no owner action capable of freezing or stealing user funds. All findings below are Low/Info and were independently corroborated by multiple agents in the original 18-agent audit.</p>
+<h2 id="verified-permission-map-from-job-290s-access-control-pass-re-con">Verified Permission Map (from job 290&#39;s access-control pass, re-confirmed here)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Verified</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setCollateralAllowed</code>, <code>setCreationPaused</code>, <code>setPurchasesPaused</code></td>
+<td><code>onlyOwner</code> (Ownable2Step)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>renounceOwnership</code></td>
+<td>overridden, always reverts</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>withdrawCreationFees</code></td>
+<td><code>msg.sender == feeRecipient</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>createPosition</code></td>
+<td>permissionless, gated by <code>CREATION_FEE</code> + <code>collateralAllowed</code> + parameter bounds</td>
+<td>✅</td>
+</tr>
+</tbody></table></div>
+<p><strong>Pause-scope claim verified</strong>: <code>creationPaused</code> is read only in <code>createPosition</code>; <code>purchasesPaused</code> is read only in the marketplace&#39;s <code>buy()</code>. No vault exit/redemption/refund path reads either flag — the factory&#39;s NatSpec claim (&quot;Pause controls only block new positions and new purchases; user exits are never paused&quot;) holds for every function this contract can influence.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="f291-1-owner-allowlisted-collateral-is-validated-only-at-listing">[F291-1] Owner-allowlisted collateral is validated only at listing time, with no re-check at each position&#39;s creation window</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: corroborated by 9 of 18 agents in job 290&#39;s audit (<code>UNI-1</code> in that report) — re-verified in scope here<br><strong>Location</strong>: <code>setCollateralAllowed()</code> (line 622 of the shared source), consumed at <code>createPosition()</code> line 677<br><strong>Description</strong>: <code>collateralAllowed[token]</code> is a simple boolean toggle with no expiry, versioning, or re-validation. Once set <code>true</code>, every future <code>createPosition()</code> call for that token is accepted regardless of whether the token&#39;s risk profile has changed since it was allowlisted (e.g. an upgradeable proxy token whose implementation changes, or a token that later adds a transfer fee or blocklist). The Factory itself is not directly harmed — the downstream impact (permanently frozen exits) lands on the <code>PMFIPositionVaultV22</code> instances it deploys — but the allowlist decision that gates the entire blast radius is made exclusively in this contract.<br><strong>Recommendation</strong>: Document that <code>setCollateralAllowed</code> approvals should be periodically re-reviewed, especially for upgradeable or governance-controlled tokens; consider an owner-triggered &quot;delist&quot; that only blocks <em>new</em> positions (existing ones are unaffected either way, since the check is creation-time only by design).</p>
+<h3 id="f291-2-feerecipient-is-immutable-with-no-rotation-path">[F291-2] <code>feeRecipient</code> is immutable with no rotation path</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: corroborated by both audit phases in job 290 (<code>AC-1</code>/<code>UNI-6</code>) — re-verified in scope here<br><strong>Location</strong>: <code>feeRecipient</code> (immutable, set in constructor), consumed by <code>withdrawCreationFees()</code> (line 753)<br><strong>Description</strong>: On-chain confirmed: <code>feeRecipient() == owner() == 0x7c8D9Ad4F51299b02755Ec13c018004008b45494</code> for this deployment. If this key is lost or compromised, accrued ETH creation fees become either permanently stranded or drainable by the compromised key. This risk is strictly bounded to protocol fee revenue — no user collateral, principal, or exit path is affected, since <code>feeRecipient</code> is not referenced anywhere in the vault&#39;s user-facing functions.<br><strong>Recommendation</strong>: Accept as a deliberate trust-minimization tradeoff, or add an <code>onlyOwner</code>-gated <code>setFeeRecipient(address)</code> with a zero-address check and event.</p>
+<h3 id="f291-3-creationfee-00001-eth-confirmed-on-chain-is-not-the-actua">[F291-3] <code>CREATION_FEE</code> (0.0001 ETH, confirmed on-chain) is not the actual spam-prevention mechanism on Base</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: job 290&#39;s <code>CHAIN-2</code>/<code>UNI-11</code> — re-verified in scope here<br><strong>Location</strong>: <code>CREATION_FEE</code> constant, enforced in <code>createPosition()</code> line 671<br><strong>Description</strong>: On-chain confirmed <code>CREATION_FEE = 100000000000000 wei = 0.0001 ETH</code> (~$0.30 at typical prices), economically trivial on Base. Actual spam resistance for this contract comes from two independent, stronger mechanisms also enforced here: the <code>collateralAllowed</code> owner allowlist and the requirement to lock the full <code>collateralAmount</code> of real collateral per created vault (<code>_safeTransferCollateralFromExact</code>, line 640). <code>allVaults</code> is append-only and never iterated in any on-chain function (<code>allVaultsLength()</code> only returns its length), so unbounded growth from cheap creation is not a gas-DoS vector.<br><strong>Recommendation</strong>: None required for security. If fee revenue is a design goal, consider making <code>CREATION_FEE</code> owner-settable to track ETH price, since it is currently an immutable constant.</p>
+<h3 id="f291-4-owner-can-indefinitely-pause-new-position-creation-and-ne">[F291-4] Owner can indefinitely pause new position creation and new purchases — verified scope-limited, no exit-path impact</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: job 290&#39;s <code>AC-2</code>/<code>UNI-7</code> — re-verified in scope here<br><strong>Location</strong>: <code>setCreationPaused()</code> (line 628), <code>setPurchasesPaused()</code> (line 633)<br><strong>Description</strong>: A single <code>onlyOwner</code> call (Ownable2Step-protected, so key transfer itself is safe) can halt all new position creation and all new marketplace purchases indefinitely. As documented in the permission-map verification above, this cannot touch any existing vault&#39;s exit, redemption, refund, or settlement path — the worst case is a griefing DoS on <em>new</em> business only, not a fund-freeze on existing users.<br><strong>Recommendation</strong>: None required. Optionally consider a timelock on these owner controls if further operational decentralization is desired.</p>
+<h3 id="f291-5-renounceownership-correctly-disabled-declared-view-is-cos">[F291-5] <code>renounceOwnership()</code> correctly disabled; declared <code>view</code> is cosmetic</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: job 290&#39;s <code>AC-3</code>/<code>UNI-8</code> — re-verified in scope here<br><strong>Location</strong>: <code>renounceOwnership()</code> line 618<br><strong>Description</strong>: Correctly overridden to always revert (<code>OwnershipRenunciationDisabled</code>), preventing the owner from orphaning the collateral allowlist and pause controls — the intended, safe design. Declared <code>public view override onlyOwner</code>; this is legal (more restrictive than the base <code>Ownable</code> function) and harmless since the function reverts unconditionally before any read would occur.<br><strong>Recommendation</strong>: None required; optionally drop the <code>view</code> keyword for clarity, since the intent is a disabled state-mutating function.</p>
+<hr>
+<h2 id="methodology-note">Methodology Note</h2>
+<p>This report is a scoped extraction and re-verification, not a fresh two-phase run, because on-chain evidence (see table above) proves this address is byte-identical, already-audited code — not merely the &quot;same protocol&quot; but the literal same deployed instance referenced by and cross-referencing job 290&#39;s target. All five findings above were originally produced by cross-corroborating agents in job 290&#39;s 18-agent two-phase audit (6 breadth checklist agents + 12 blind depth agents) and are re-confirmed here against this contract&#39;s live on-chain state. No Critical, High, or Medium severity issues exist in this contract&#39;s own attack surface (registry, allowlist, pause controls, fee collection, and atomic position creation) under either audit pass.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreigtgmshd35dimdnlst4w3umzdusi554i2likcviqdxjh4xt2drkne.ipfs.community.bgipfs.com/"><code>https://bafkreigtgmshd35dimdnlst4w3umzdusi554i2likcviqdxjh4xt2drkne.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/291">#291</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

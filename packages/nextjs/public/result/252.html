@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrustSwap StakingPool — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #252">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">TrustSwap StakingPool</h1>
+    <p class="job-sub">Job #252 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/252"><b>Job page</b> #252</a>
+      <a class="chip" href="https://bafkreigwe5zd3np647tduddg3hq7u6lnjsxhkyh2rktjgkochikejxjaxi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card low"><div class="n">6</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#contracts-audited">Contracts Audited</a></li>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#appendix-contract-architecture">Appendix: Contract Architecture</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — TrustSwap StakingPool</h1>
+<p><strong>Auditor:</strong> leftclaw.services automated audit<br><strong>Date:</strong> 2026-06-09<br><strong>Chain:</strong> Base (chain ID 8453)<br><strong>Methodology:</strong> EthSkills (7 domain checklists) + Pashov (12-perspective methodology)</p>
+<h2 id="contracts-audited">Contracts Audited</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Proxy (TransparentUpgradeableProxy)</td>
+<td><code>0x2a70a42BC0524aBCA9Bff59a51E7aAdB575DC89A</code></td>
+</tr>
+<tr>
+<td>Implementation (StakingPool)</td>
+<td><code>0x11073E14f6589BbfA9F4749E6c9174C815B51887</code></td>
+</tr>
+</tbody></table></div>
+<p><strong>Compiler:</strong> solc 0.8.10, optimization enabled (200 runs), EVM target: London<br><strong>Contract:</strong> TrustSwap StakingPool — permissionless ERC20 staking pool factory with time-bounded reward distribution.</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>The StakingPool contract allows any address to create staking pools where users lock ERC20 tokens to earn rewards proportionally over a fixed time period. The audit uncovered <strong>2 High</strong>, <strong>5 Medium</strong>, <strong>6 Low</strong>, and <strong>3 Informational</strong> findings.</p>
+<p>The most critical issues are:</p>
+<ol>
+<li>A contract-owner backdoor (<code>saveMe()</code>) that can drain all user deposits and rewards.</li>
+<li>No functional emergency exit for users before <code>pool.endTime</code>, exposing users to permanent fund lockup if the pool owner&#39;s key is lost.</li>
+<li>A last-minute large-deposit attack that can steal the final reward distribution from honest stakers.</li>
+</ol>
+<p>The contract is upgradeable (TransparentUpgradeableProxy), which mitigates some risks but requires the proxy admin to act responsibly.</p>
+<p><strong>Findings confirmed by both methodologies receive a confidence boost.</strong></p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="c-1-critical-h-1-saveme-enables-contract-owner-to-drain-all-user">[C-1] <del>Critical</del> → <strong>[H-1]</strong> <code>saveMe()</code> enables contract owner to drain all user funds</h3>
+<p><strong>Severity:</strong> High [confirmed by both methodologies — elevated confidence]<br><strong>Category:</strong> Access Control<br><strong>Location:</strong> <code>saveMe()</code> (line ~2609)</p>
+<p><strong>Description:</strong><br><code>saveMe(address tokenAddress, uint256 amount)</code> is an <code>onlyOwner</code> function that transfers any token out of the contract with no guard against active pool balances. Because the contract holds all user staking deposits and all unclaimed reward tokens across every pool, a compromised or malicious contract owner can steal every user&#39;s principal and rewards in a single transaction.</p>
+<pre><code class="language-solidity">function saveMe(address tokenAddress, uint256 amount) external onlyOwner nonReentrant {
+    IERC20Upgradeable token = IERC20Upgradeable(tokenAddress);
+    token.safeTransfer(address(msg.sender), amount);  // ← no guard against pool funds
+}
+</code></pre>
+<p><strong>Exploit Path:</strong></p>
+<ol>
+<li>Pool 0 has 1,000,000 USDC staked by users (<code>pool.totalStaked = 1,000,000e6</code>).</li>
+<li>Owner calls <code>saveMe(USDC, 1,000,000e6)</code>.</li>
+<li>All user deposits transferred to owner.</li>
+<li>Users call <code>withdraw()</code> after pool ends → <code>safeTransfer</code> reverts (insufficient balance).</li>
+</ol>
+<p><strong>Recommendation:</strong><br>Prevent <code>saveMe()</code> from withdrawing tokens belonging to active pools:</p>
+<pre><code class="language-solidity">function saveMe(address tokenAddress, uint256 amount) external onlyOwner nonReentrant {
+    uint256 locked = 0;
+    for (uint256 i = 0; i &lt; poolInfo.length; i++) {
+        PoolInfo storage p = poolInfo[i];
+        if (block.timestamp &lt; p.endTime) {
+            if (address(p.stakingToken) == tokenAddress) locked += p.totalStaked;
+            if (address(p.rewardToken) == tokenAddress) locked += p.totalReward;
+        }
+    }
+    require(
+        IERC20Upgradeable(tokenAddress).balanceOf(address(this)) - amount &gt;= locked,
+        &quot;Cannot withdraw locked pool funds&quot;
+    );
+    IERC20Upgradeable(tokenAddress).safeTransfer(msg.sender, amount);
+}
+</code></pre>
+<p>Alternatively, restrict <code>saveMe()</code> to tokens that are not the staking or reward token of any active pool.</p>
+<hr>
+<h3 id="h-2-no-functional-emergency-exit-users-can-be-locked-for-up-to-5">[H-2] No functional emergency exit — users can be locked for up to 5 years</h3>
+<p><strong>Severity:</strong> High [confirmed by both methodologies — elevated confidence]<br><strong>Category:</strong> DeFi Staking / Access Control<br><strong>Location:</strong> <code>emergencyWithdraw()</code>, <code>withdraw()</code>, <code>claimReward()</code></p>
+<p><strong>Description:</strong><br>All three user exit functions enforce <code>if (block.timestamp &lt; pool.endTime) revert CannotClaimBeforePoolEnds()</code>. The <code>emergencyWithdraw()</code> function is misnamed — it provides no earlier exit than the regular <code>withdraw()</code>. If the pool owner&#39;s key is lost, <code>stopReward()</code> cannot be called to advance <code>endTime</code>, leaving users trapped for the remaining pool duration (up to 5 years per <code>addPool()</code>&#39;s validation).</p>
+<p>The contract has no contract-owner override to force-end a pool.</p>
+<p><strong>Exploit Path (lost-key scenario):</strong></p>
+<ol>
+<li>Pool owner creates a pool with <code>endTime = now + 4 years</code>.</li>
+<li>Pool owner&#39;s key becomes inaccessible.</li>
+<li>Users deposit expecting to be able to exit early in emergencies.</li>
+<li>No one can call <code>stopReward()</code>.</li>
+<li>All user staking tokens are inaccessible for 4 years.</li>
+</ol>
+<p><strong>Note:</strong> The contract is upgradeable (proxy admin could deploy a fix), which partially mitigates this. However, the current implementation provides no in-code protection.</p>
+<p><strong>Recommendation:</strong><br>Option A — Make <code>emergencyWithdraw()</code> available before endTime (forfeiting rewards is an acceptable tradeoff):</p>
+<pre><code class="language-solidity">function emergencyWithdraw(uint256 poolId) external nonReentrant {
+    if (poolId &gt;= poolInfo.length) revert PoolDoesNotExist(poolId);
+    PoolInfo storage pool = poolInfo[poolId];
+    // REMOVED: require(block.timestamp &gt;= pool.endTime)
+    // ... rest unchanged
+}
+</code></pre>
+<p>Option B — Add a contract-owner override:</p>
+<pre><code class="language-solidity">function forceEndPool(uint256 poolId) external onlyOwner {
+    updatePool(poolId);
+    poolInfo[poolId].endTime = block.timestamp;
+    emit PoolStopped(poolId);
+}
+</code></pre>
+<hr>
+<h3 id="m-1-last-minute-large-deposit-dilutes-existing-stakers-final-rew">[M-1] Last-minute large deposit dilutes existing stakers&#39; final reward period</h3>
+<p><strong>Severity:</strong> Medium [unique to Pashov economic-security perspective]<br><strong>Category:</strong> Economic Security<br><strong>Location:</strong> <code>deposit()</code></p>
+<p><strong>Description:</strong><br><code>deposit()</code> has no check that the pool is still active (<code>block.timestamp &lt; pool.endTime</code>). An attacker can deposit a large amount of staking tokens in the final reward window, capture most of the last <code>updatePool()</code> distribution, then immediately withdraw after <code>endTime</code> passes.</p>
+<p><strong>Concrete exploit (1-second final period example):</strong></p>
+<pre><code>Pool: 1,000 reward tokens, 1000-second duration, 1,000 staking units deposited by users.
+T=999: attacker deposits 999,000,000 staking units.
+  → updatePool() distributes T=last_update to T=999 to existing 1,000 units (correct).
+  → pool.totalStaked = 999,001,000.
+T=1000: any updatePool() call distributes final ~1 token to 999,001,000 units.
+  → Attacker captures: 999M / 999.001M × 1 ≈ 0.999 tokens.
+  → Existing stakers capture: 1K / 999.001M × 1 ≈ 0.000001 tokens (vs expected 1 token).
+T=1000: attacker calls withdraw(), recovers 999,000,000 staking units + 0.999 reward tokens.
+</code></pre>
+<p>Profitable when <code>reward_token_value × final_period_proportion &gt; gas_cost</code>. On Base with<br>sub-cent gas costs, this is viable whenever final-period rewards exceed a few cents.</p>
+<p><strong>Recommendation:</strong><br>Add a pool-active check to <code>deposit()</code>:</p>
+<pre><code class="language-solidity">function deposit(uint256 _amount, uint256 poolId) external nonReentrant {
+    ...
+    if (block.timestamp &gt;= pool.endTime) revert PoolEnded();  // ← add this
+    ...
+}
+</code></pre>
+<p>Pool owners should also set <code>poolStakeLimit</code> to cap exposure.</p>
+<hr>
+<h3 id="m-2-reward-tokens-stranded-for-no-staker-periods-cannot-be-recov">[M-2] Reward tokens stranded for no-staker periods cannot be recovered by pool owner</h3>
+<p><strong>Severity:</strong> Medium [confirmed by both methodologies — elevated confidence]<br><strong>Category:</strong> DeFi Staking / Math<br><strong>Location:</strong> <code>stopReward()</code></p>
+<p><strong>Description:</strong><br><code>stopReward()</code> refunds the pool owner using:</p>
+<pre><code class="language-solidity">((oldEnd - max(block.timestamp, start)) * pool.totalReward) / (oldEnd - start)
+</code></pre>
+<p>This formula returns the &quot;future&quot; portion of rewards but does NOT account for past periods<br>where <code>totalStaked == 0</code>. During those periods, <code>updatePool()</code> advances <code>lastRewardTimestamp</code><br>without distributing anything, leaving reward tokens physically in the contract but<br>unattributed. When <code>stopReward()</code> is called, those &quot;unearned past&quot; tokens are not returned<br>to the pool owner — only the contract owner can recover them via <code>saveMe()</code>.</p>
+<p><strong>Numerical proof:</strong></p>
+<pre><code>Pool: start=1000, end=2000, totalReward=1000 tokens.
+T=1000→1500: no stakers (500 tokens unearned, accTokenPerShare=0).
+T=1500: stopReward() called.
+  → Returns: (2000-1500) × 1000 / (2000-1000) = 500 tokens.
+  → Stranded: 500 tokens (the no-staker period) — permanently stuck unless saveMe() used.
+</code></pre>
+<p><strong>Recommendation:</strong><br>Return all non-user-earned tokens:</p>
+<pre><code class="language-solidity">// Calculate user-earned balance (can&#39;t be withdrawn by owner):
+uint256 earnedByUsers = (pool.accTokenPerShare * pool.totalStaked) / pool.precision;
+// Return everything else:
+uint256 toReturn = pool.rewardToken.balanceOf(address(this_pool_portion)) - earnedByUsers;
+pool.rewardToken.safeTransfer(owner, toReturn);
+</code></pre>
+<p>(Requires tracking per-pool balances separately, e.g., via a balance-tracking variable incremented in <code>addPool()</code> and decremented on claims.)</p>
+<hr>
+<h3 id="m-3-initializepoolv2-lacks-access-control-can-be-front-run-to-bl">[M-3] <code>initializePoolV2()</code> lacks access control — can be front-run to block operator initialization</h3>
+<p><strong>Severity:</strong> Medium [confirmed by both methodologies — elevated confidence]<br><strong>Category:</strong> Proxies / Access Control<br><strong>Location:</strong> <code>initializePoolV2()</code></p>
+<p><strong>Description:</strong>  </p>
+<pre><code class="language-solidity">function initializePoolV2() external {
+    if (initializedV2) revert(&quot;Already IntializedV2&quot;);
+    initializedV2 = true;
+    currentVersion = 2;
+    _status = _NOT_ENTERED;
+}
+</code></pre>
+<p>Any attacker can call this once and set <code>initializedV2 = true</code> permanently, preventing the<br>legitimate operator from calling it. If a future upgrade intends to perform custom initialization<br>logic via this function, the front-run permanently blocks that path.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-solidity">function initializePoolV2() external onlyOwner {
+</code></pre>
+<hr>
+<h3 id="m-4-precision-loss-at-minimum-precision-setting-causes-total-rew">[M-4] Precision loss at minimum precision setting causes total reward loss at scale</h3>
+<p><strong>Severity:</strong> Medium [confirmed by both methodologies — elevated confidence]<br><strong>Category:</strong> Precision/Math<br><strong>Location:</strong> <code>updatePool()</code></p>
+<p><strong>Description:</strong><br>The reward accumulation step <code>pool.accTokenPerShare += (rewards * pool.precision) / lpSupply</code><br>rounds to zero when <code>rewards * pool.precision &lt; lpSupply</code>. Because <code>lastRewardTimestamp</code><br>still advances, those rewards are permanently lost — not deferred.</p>
+<p><strong>Numerical proof:</strong></p>
+<pre><code>precision_param = 6 → pool.precision = 1e6 (minimum allowed)
+lpSupply = 1e27 (1 billion 18-decimal staking tokens)
+totalReward = 1000e18, duration = 31,536,000 seconds
+
+Per-2-second-block: rewards = ~6.34e13 wei
+  rewards × precision = 6.34e13 × 1e6 = 6.34e19
+  6.34e19 / 1e27 = 0 ← every update distributes nothing
+
+After 1 year: accTokenPerShare = 0, all 1000 reward tokens stranded.
+</code></pre>
+<p><strong>Recommendation:</strong><br>Increase minimum precision to 18:</p>
+<pre><code class="language-solidity">if (precision &lt; 18 || precision &gt; 36) revert InvalidPrecision();
+</code></pre>
+<p>Document that <code>precision</code> should equal <code>18 + stakingToken.decimals()</code> for 18-decimal reward tokens.</p>
+<hr>
+<h3 id="m-5-rebasing-staking-tokens-cause-withdrawal-shortfall-for-last-">[M-5] Rebasing staking tokens cause withdrawal shortfall for last users</h3>
+<p><strong>Severity:</strong> Medium [confirmed by both methodologies — elevated confidence]<br><strong>Category:</strong> ERC20 / DeFi Staking<br><strong>Location:</strong> <code>withdraw()</code>, <code>emergencyWithdraw()</code></p>
+<p><strong>Description:</strong><br><code>user.amount</code> records the balance delta at deposit time and is never updated. If the<br>staking token rebases downward (slashing event for stETH, negative rebase for AMPL),<br>the contract&#39;s actual token balance falls below <code>sum(user.amount)</code>. The last users to<br>withdraw receive less than their recorded balance, or face reverts entirely.</p>
+<p><strong>Exploit path (rebase-down):</strong></p>
+<pre><code>10 users each deposit 10 stETH → pool.totalStaked = 100 stETH.
+Validator slashing: contract holds 95 stETH.
+First 9 users withdraw 10 stETH each → contract has 95 - 90 = 5 stETH.
+User 10 tries to withdraw 10 stETH → REVERTS (only 5 available).
+User 10 is permanently locked without contract owner intervention.
+</code></pre>
+<p><strong>Recommendation:</strong><br>Explicitly disallow rebasing tokens with a prominent NatSpec warning:</p>
+<pre><code class="language-solidity">/// @dev WARNING: Do not use rebasing tokens (stETH, wstETH, AMPL, aTokens) as stakingToken.
+///      Use non-rebasing wrappers (wstETH) instead. Rebasing-down events will cause
+///      the last stakers to be unable to withdraw.
+</code></pre>
+<hr>
+<h3 id="l-1-implementation-lacks-disableinitializers-constructor">[L-1] Implementation lacks <code>_disableInitializers()</code> constructor</h3>
+<p><strong>Severity:</strong> Low [confirmed by both methodologies]<br><strong>Category:</strong> Proxies<br><strong>Location:</strong> Implementation constructor (missing)</p>
+<p><strong>Description:</strong><br>No constructor calls <code>_disableInitializers()</code> on the implementation contract<br><code>0x11073E14...</code>. Anyone can call <code>initialize()</code> directly on the implementation and<br>claim ownership of that instance. For a Transparent Proxy, the implementation&#39;s storage<br>is separate from the proxy&#39;s, so no direct fund theft on the proxy is possible. However,<br>the attack surface allows social-engineering attacks and confusing dual-owner states.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-solidity">/// @custom:oz-upgrades-unsafe-allow constructor
+constructor() {
+    _disableInitializers();
+}
+</code></pre>
+<hr>
+<h3 id="l-2-single-step-ownership-transfer-risks-permanent-ownership-los">[L-2] Single-step ownership transfer risks permanent ownership loss</h3>
+<p><strong>Severity:</strong> Low [confirmed by both methodologies]<br><strong>Category:</strong> Access Control<br><strong>Location:</strong> <code>transferOwnership()</code> (inherited from OwnableUpgradeable)</p>
+<p><strong>Description:</strong><br>A single typo in the destination address permanently locks out <code>saveMe()</code> and any future<br>owner-gated functions added in upgrades.</p>
+<p><strong>Recommendation:</strong><br>Upgrade to <code>Ownable2StepUpgradeable</code> from OpenZeppelin.</p>
+<hr>
+<h3 id="l-3-emergencywithdraw-forfeits-all-rewards-with-no-timing-advant">[L-3] <code>emergencyWithdraw()</code> forfeits all rewards with no timing advantage over <code>withdraw()</code></h3>
+<p><strong>Severity:</strong> Low [confirmed by both methodologies]<br><strong>Category:</strong> DeFi Staking<br><strong>Location:</strong> <code>emergencyWithdraw()</code></p>
+<p><strong>Description:</strong><br><code>emergencyWithdraw()</code> has the same endTime requirement as <code>withdraw()</code> but silently forfeits<br>all accumulated rewards. Users who call it in a panic lose their full reward entitlement<br>unnecessarily. The function is strictly worse than <code>withdraw()</code> in all scenarios after<br>pool ends.</p>
+<p><strong>Recommendation:</strong><br>Either remove the function (fully superseded by <code>withdraw()</code>) or make it available before<br><code>endTime</code> (the only scenario where forfeiting rewards has a meaningful trade-off).</p>
+<hr>
+<h3 id="l-4-fee-on-transfer-reward-tokens-cause-last-claimant-shortfall">[L-4] Fee-on-transfer reward tokens cause last-claimant shortfall</h3>
+<p><strong>Severity:</strong> Low [confirmed by both methodologies]<br><strong>Category:</strong> ERC20<br><strong>Location:</strong> <code>claimReward()</code>, <code>withdraw()</code></p>
+<p><strong>Description:</strong><br>The contract records <code>totalReward</code> as the net-received amount (via <code>transferFunds</code> balance diff).<br>But when paying out, <code>safeTransfer(user, pendingReward_)</code> deducts the full <code>pendingReward_</code><br>from the contract&#39;s balance while the user receives only <code>pendingReward_ × (1 - fee)</code>. Over<br>many claims, the pool&#39;s token balance depletes faster than accounting tracks, causing the<br>final claimants to face reverts.</p>
+<p><strong>Recommendation:</strong><br>Document that fee-on-transfer tokens are not supported as <code>rewardToken</code>, or implement a<br>balance-waterfall approach that caps payouts at available balance.</p>
+<hr>
+<h3 id="l-5-no-storage-gap-in-stakingpool-itself-upgrade-can-shift-all-p">[L-5] No storage gap in <code>StakingPool</code> itself — upgrade can shift all pool accounting</h3>
+<p><strong>Severity:</strong> Low [unique to Pashov methodology]<br><strong>Category:</strong> Proxies<br><strong>Location:</strong> Contract storage layout</p>
+<p><strong>Description:</strong><br><code>OwnableUpgradeable</code> has <code>__gap[49]</code> and <code>ContextUpgradeable</code> has <code>__gap[50]</code>. However,<br><code>StakingPool</code> itself has no <code>__gap</code>. If a future upgraded parent in the inheritance chain<br>adds a state variable, all of <code>StakingPool</code>&#39;s own variables (<code>poolInfo</code>, <code>userInfo</code>, <code>_status</code>, etc.)<br>shift down by one slot, catastrophically corrupting all pool accounting.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-solidity">// Add at end of StakingPool state variable declarations:
+uint256[50] private __gap;
+</code></pre>
+<hr>
+<h3 id="l-6-deposits-into-ended-pools-waste-gas-and-confuse-users">[L-6] Deposits into ended pools waste gas and confuse users</h3>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> General<br><strong>Location:</strong> <code>deposit()</code></p>
+<p><strong>Description:</strong><br>No check prevents users from depositing into a pool that has already ended. The deposit succeeds<br>(costing gas), the user earns zero rewards (pool ended), and they can immediately withdraw.<br>This also interacts with the M-1 finding.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-solidity">if (block.timestamp &gt;= pool.endTime) revert PoolEnded();
+</code></pre>
+<p>Adding this single check simultaneously fixes M-1 (last-minute deposit attack) and L-6.</p>
+<hr>
+<h3 id="i-1-hardhat-consolelog-library-in-production-bytecode">[I-1] Hardhat <code>console.log</code> library in production bytecode</h3>
+<p><strong>Severity:</strong> Info<br><strong>Category:</strong> General</p>
+<p>The 1530-line Hardhat debugging library is compiled into the deployed bytecode, adding<br>~70KB to the contract size and increasing deployment costs significantly.</p>
+<p><strong>Recommendation:</strong> Remove <code>import &quot;hardhat/console.sol&quot;</code> from the production source and rebuild.</p>
+<hr>
+<h3 id="i-2-hasbeenstaked-mapping-never-written-or-read">[I-2] <code>hasBeenStaked</code> mapping never written or read</h3>
+<p><strong>Severity:</strong> Info<br><strong>Category:</strong> General</p>
+<p>Dead state variable. Remove to save a storage slot and reduce confusion.</p>
+<hr>
+<h3 id="i-3-poolversion-mapping-written-but-never-validated-or-used">[I-3] <code>poolVersion</code> mapping written but never validated or used</h3>
+<p><strong>Severity:</strong> Info<br><strong>Category:</strong> General</p>
+<p>Values are written in <code>addPool()</code> but no function reads them. Dead code.</p>
+<hr>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Confidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-1</td>
+<td><code>saveMe()</code> drains all user deposits and rewards</td>
+<td><strong>High</strong></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>H-2</td>
+<td>No emergency exit — users locked up to 5 years</td>
+<td><strong>High</strong></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>M-1</td>
+<td>Last-minute deposit dilutes final reward period</td>
+<td><strong>Medium</strong></td>
+<td>Pashov only</td>
+</tr>
+<tr>
+<td>M-2</td>
+<td>Stranded rewards for no-staker periods after stopReward</td>
+<td><strong>Medium</strong></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>M-3</td>
+<td>Unprotected <code>initializePoolV2()</code> front-runnability</td>
+<td><strong>Medium</strong></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>M-4</td>
+<td>Precision loss at minimum precision wipes all rewards</td>
+<td><strong>Medium</strong></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>M-5</td>
+<td>Rebasing staking tokens cause withdrawal shortfall</td>
+<td><strong>Medium</strong></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td>No <code>_disableInitializers()</code> on implementation</td>
+<td><span class="pill low">Low</span></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td>Single-step ownership transfer</td>
+<td><span class="pill low">Low</span></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><code>emergencyWithdraw()</code> misleadingly forfeits rewards</td>
+<td><span class="pill low">Low</span></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td>Fee-on-transfer reward token last-claimant shortfall</td>
+<td><span class="pill low">Low</span></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>L-5</td>
+<td>No <code>__gap</code> in StakingPool — upgrade storage collision</td>
+<td><span class="pill low">Low</span></td>
+<td>Pashov only</td>
+</tr>
+<tr>
+<td>L-6</td>
+<td>Deposits into ended pools (gas waste + M-1 vector)</td>
+<td><span class="pill low">Low</span></td>
+<td>EthSkills only</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><code>console.log</code> library in production</td>
+<td><span class="pill info">Info</span></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><code>hasBeenStaked</code> unused</td>
+<td><span class="pill info">Info</span></td>
+<td>Both passes</td>
+</tr>
+<tr>
+<td>I-3</td>
+<td><code>poolVersion</code> written but never read</td>
+<td><span class="pill info">Info</span></td>
+<td>Both passes</td>
+</tr>
+</tbody></table></div>
+<p><strong>Totals:</strong> 2 High · 5 Medium · 6 Low · 3 Info</p>
+<hr>
+<h2 id="appendix-contract-architecture">Appendix: Contract Architecture</h2>
+<pre><code>TransparentUpgradeableProxy (0x2a70a42...)
+  └── implementation: StakingPool (0x11073E14...)
+        ├── OwnableUpgradeable (owner controls saveMe, updateVersion)
+        ├── Initializable (initialize / initializePoolV2)
+        └── Storage:
+              poolInfo[]           — all staking pools
+              userInfo[][]         — per-user staking data
+              _status              — reentrancy guard
+              rewardCredit[][]     — pending reward accumulator
+              poolStakeLimit[]     — optional deposit caps (per pool owner)
+</code></pre>
+<p><strong>Roles:</strong></p>
+<ul>
+<li><strong>Contract Owner</strong> (TrustSwap): <code>saveMe()</code>, <code>updateVersion()</code>, proxy upgrades</li>
+<li><strong>Pool Owner</strong> (any address): <code>addPool()</code>, <code>stopReward()</code>, <code>setPoolStakeLimit()</code>  </li>
+<li><strong>User</strong> (any address): <code>deposit()</code>, <code>withdraw()</code>, <code>claimReward()</code>, <code>emergencyWithdraw()</code></li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreigwe5zd3np647tduddg3hq7u6lnjsxhkyh2rktjgkochikejxjaxi.ipfs.community.bgipfs.com/"><code>https://bafkreigwe5zd3np647tduddg3hq7u6lnjsxhkyh2rktjgkochikejxjaxi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/252">#252</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

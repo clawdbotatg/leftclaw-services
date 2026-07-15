@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire AgentInsurancePool — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #359">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire AgentInsurancePool</h1>
+    <p class="job-sub">Job #359 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/359"><b>Job page</b> #359</a>
+      <a class="chip" href="https://bafkreidtcbhbodecywf3dxzs3lwah55deasyo5u76z46tm4crq54o23ra4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">4</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#methodology-deviation-from-standard-two-phase-process">Methodology (deviation from standard two-phase process)</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#verified-no-vulnerability-found-clients-stated-focus-areas">Verified — no vulnerability found (client&#39;s stated focus areas)</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — Vaultfire AgentInsurancePool</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>AgentInsurancePool</code> at <code>0x4307e2A7073e09A676D4Ac8278eE2eddA702AddC</code> (Base, chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Bytecode-only — no verified source available (see Methodology)</td>
+</tr>
+<tr>
+<td><strong>Client focus areas</strong></td>
+<td>reentrancy in claim path · correct triggering conditions · access control on claim authorization</td>
+</tr>
+<tr>
+<td><strong>Runtime bytecode size</strong></td>
+<td>13,241 hex chars (~6,600 bytes)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="methodology-deviation-from-standard-two-phase-process">Methodology (deviation from standard two-phase process)</h2>
+<p>The contract is <strong>not verified</strong> on any source registry checked: Sourcify (<code>repo.sourcify.dev</code> — &quot;Contract not found&quot; / v2 API returns null match), Blockscout (<code>base.blockscout.com</code> — <code>is_verified: false</code>), and Basescan/Etherscan-v2 (no API key available in this environment; the v1 endpoint is deprecated). A web search for the project name turned up no public GitHub repository. The bytecode is live and substantial (30 public selectors), so per operating procedure this was audited at the <strong>bytecode level</strong> rather than reported as unauditable.</p>
+<p>The standard two-phase pipeline (6 source-checklist agents + 12 source-attack agents) assumes readable Solidity and does not transfer directly to raw bytecode. It was adapted as follows, preserving the breadth → depth → reconcile spirit:</p>
+<ol>
+<li><code>cast disassemble</code> produced a full instruction listing; <code>cast selectors</code> / <code>cast 4byte</code> recovered the public ABI surface (30 selectors, of which 23 matched known human-readable signatures).</li>
+<li>The lead auditor (this report&#39;s author) manually traced the <code>resolveClaim</code> core payout path instruction-by-instruction as a seed/calibration pass (confirms the access-control idiom and checks-effects-interactions pattern used throughout the contract).</li>
+<li>Four independent agents, each blind to the others&#39; output, were dispatched to reverse-engineer the remaining surface: (a) <code>fileClaim</code>, (b) <code>createPolicy</code>/<code>expirePolicy</code>, (c) the admin/access-control surface (<code>owner</code>, <code>arbiter</code>, <code>setArbiter</code>, <code>transferOwnership</code>, the three registry getters, and the 7 selectors with no public 4-byte match), (d) the read-side getters, full storage-slot map, and a general safety sweep (<code>SELFDESTRUCT</code>/<code>DELEGATECALL</code>/proxy patterns/unchecked arithmetic/unbounded loops).</li>
+<li>Findings below are reconciled from all five passes, cross-validated against each other (multiple agents independently re-derived the same storage slots and arrived at consistent conclusions — noted inline), and spot-checked against live chain state via <code>cast call</code> (current <code>owner</code> = <code>0xfA15Ee28939B222B0448261A22156070f0A7813C</code>, current <code>arbiter</code> = <code>0xA054f831B562e729F8D268291EBde1B2EDcFb84F</code>, both confirmed non-zero and distinct).</li>
+</ol>
+<p>Confidence is necessarily lower than a source-code review for exact variable names and a small number of unresolved fields (flagged explicitly below); it is <strong>not</strong> lower for the structural/control-flow facts findings are based on (access-control checks, arithmetic guards, call ordering), which are unambiguous from the opcodes regardless of naming.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p><strong>[Medium] 1. <code>fileClaim</code> has no access control — any address can open a claim against any policy and name itself the payout recipient</strong></p>
+<p><code>fileClaim(uint256,uint256,string)</code> · selector <code>0xa3a5dcf6</code> · JUMPDEST <code>0x0b3b</code></p>
+<p><strong>Description</strong><br>The function body (bytes <code>0x0b3b</code>–<code>0x0d48</code>) reads <code>CALLER</code> exactly once — to write <code>msg.sender</code> into the new claim&#39;s <code>claimant</code> field (<code>claimSlot+1</code>, at offset <code>0x0c17</code>) — and never compares it against the policy&#39;s owner (<code>policySlot+0</code>) or any registry. Contrast with <code>resolveClaim</code>, which explicitly gates on <code>CALLER == arbiter</code> (slot 1) before proceeding. There is no equivalent <code>policy.owner == msg.sender</code> check in <code>fileClaim</code>.</p>
+<p><strong>Exploit scenario</strong>: An attacker reads any active, non-expired policy via <code>policies(policyId)</code> (e.g. discovered from a <code>PolicyCreated</code> event or by scanning IDs), then calls <code>fileClaim(policyId, amount, &quot;evidence&quot;)</code> with <code>amount &lt;= policy.coverageAmount</code>. This creates a <code>Pending</code> claim whose <code>claimant</code> is the attacker, referencing the victim&#39;s policy. The contract itself never checks that the claimant matches the policyholder. If <code>resolveClaim</code> is later called with <code>approved=true</code> for this claim by the arbiter, the payout (a low-level <code>.call</code> to the stored <code>claimant</code> address, confirmed in <code>resolveClaim</code>&#39;s trace) goes to the <strong>attacker</strong>, not the policyholder. The blast radius depends on whether the arbiter&#39;s off-chain review independently cross-checks claimant-vs-policyholder before approving — the contract provides no on-chain backstop for this, which is the actual bug: a <code>require(claims[claimId].claimant == policies[policyId].agent)</code>-style invariant that the naming/design implies should exist is simply absent. Independent of arbiter behavior, this also lets anyone spam <code>Pending</code> claims against any policy (bounded only by attacker gas cost and <code>amount &lt;= coverageAmount</code>), forcing arbiter triage of illegitimate claims.</p>
+<p>Rated <strong>Medium</strong> rather than High/Critical because the ultimate fund-loss step requires the privileged arbiter to approve a claim without checking claimant identity — there is no fully self-contained on-chain path from an unauthenticated caller directly to stolen funds.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function fileClaim(uint256 policyId, uint256 amount, string calldata evidence) external {
+      ...
++     require(policies[policyId].agent == msg.sender, &quot;AgentInsurancePool: not policyholder&quot;);
+      ...
+  }
+</code></pre>
+<hr>
+<p><strong>[Medium] 2. No cap on total issued coverage relative to pool capital — &quot;race to claim&quot; insolvency for later legitimate claimants</strong></p>
+<p><code>createPolicy(uint256,uint256)</code> · selector <code>0xc7e2f28e</code> · JUMPDEST <code>0x0447</code></p>
+<p><strong>Description</strong><br><code>createPolicy</code> validates the identity/reputation gates, the one-active-policy-per-agent rule, duration bounds, and <code>msg.value &gt;= premium</code>, but never compares <code>coverageAmount</code> (or a running total of all outstanding active coverage) against <code>totalPoolBalance</code> (slot 2) or any other capacity metric (full trace of <code>0x0447</code>–<code>0x641</code>). Premium is only 1–5% of <code>coverageAmount</code> annualized, so the pool can sell far more nominal coverage than it holds in ETH.</p>
+<p><strong>Exploit scenario</strong> (harm to legitimate users, not a direct fund-theft bug): pool holds 10 ETH; 20 policies are sold at <code>coverageAmount = 5 ETH</code> each (cheap: ≈0.004 ETH premium at the lowest tier and minimum 30-day duration). If a triggering event causes many policyholders to file valid claims, <code>resolveClaim</code>&#39;s checked-subtraction against <code>totalPoolBalance</code> means only the first ~2 claims can be paid; every later, equally valid claim reverts and its coverage becomes uncollectible even though it was fully paid for. This is a solvency/fairness design gap, not unauthorized extraction — no attacker profits, but paying policyholders are structurally left unpaid.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function createPolicy(uint256 coverageAmount, uint256 duration) external payable {
+      ...
++     require(totalOutstandingCoverage + coverageAmount &lt;= totalPoolBalance + msg.value, &quot;AgentInsurancePool: exceeds pool capacity&quot;);
+      ...
+  }
+</code></pre>
+<hr>
+<p><strong>[Medium] 3. Centralization risk: a single <code>owner</code> key can hijack the <code>arbiter</code> role and drain the pool in one transaction sequence</strong></p>
+<p><code>setArbiter(address)</code> (<code>0x1c9c088a</code> → <code>0x156e</code>) / <code>resolveClaim(uint256,bool)</code> (<code>0x224dcd72</code> → <code>0x121e</code>)</p>
+<p><strong>Description</strong><br><code>owner</code> (slot 0) unilaterally controls <code>arbiter</code> (slot 1) via <code>setArbiter</code>, with no timelock, no multisig enforcement, and no rate-limit. <code>arbiter</code> unilaterally controls claim payout via <code>resolveClaim</code>, gated on the exact same slot 1 (independently re-derived and confirmed by two separate reverse-engineering passes: <code>resolveClaim</code>&#39;s access check at <code>0x123f</code>–<code>0x1250</code> reads and masks slot 1 identically to <code>arbiter()</code>/<code>setArbiter</code>). A compromised or malicious owner key can call <code>setArbiter(attacker)</code> then have the attacker call <code>resolveClaim(claimId, true)</code> on any pending claim (including one it filed itself via Finding 1) to drain <code>totalPoolBalance</code>, with no on-chain cooldown or check preventing this.</p>
+<p>This requires the owner key to already be compromised — it is a governance/trust-assumption finding about key custody, not an unauthenticated-attacker exploit, hence Medium rather than High/Critical.</p>
+<p><strong>Fix</strong>: consider a timelock on <code>setArbiter</code>, or requiring multisig/governance for owner actions; out of scope to diff at the bytecode level.</p>
+<hr>
+<p><strong>[Low] 4. <code>fileClaim</code>&#39;s coverage check uses a stale figure — concurrently pending claims are not mutually bounded at file time</strong></p>
+<p><code>fileClaim(uint256,uint256,string)</code> · <code>0x0b3b</code></p>
+<p><strong>Description</strong><br>The <code>newTotal &lt;= coverageAmount</code> check at file time (<code>0x0bca</code>–<code>0x0be1</code>) only compares against <code>policySlot+6</code> (claimed amount from <em>previously approved</em> claims) — it is never written back inside <code>fileClaim</code>, and multiple simultaneously-pending claims are not tracked against each other. Two or more claims can be filed that individually pass the check but together exceed <code>coverageAmount</code>. Not a fund-safety issue: <code>resolveClaim</code> independently re-derives and re-checks <code>policySlot+6</code> at approval time using the same checked-add helper (<code>0x17cc</code>), so an over-limit approval simply reverts rather than overpaying. Net effect is excess <code>Pending</code>-claim clutter, compounded by Finding 1 since any address can generate it.</p>
+<hr>
+<p><strong>[Low] 5. Premium calculation floors to zero for dust-sized coverage amounts</strong></p>
+<p><code>createPolicy</code> premium helper at <code>0x1965</code></p>
+<p><strong>Description</strong><br><code>premium = coverageAmount * duration * rateBps / (31,536,000 * 10,000)</code> uses integer division. At the cheapest tier (100 bps) and minimum duration (30 days), any <code>coverageAmount</code> below ≈1,217 wei truncates the premium to 0, allowing a free policy — but the coverage amount involved is economically meaningless (sub-microcent at any realistic ETH price), so there is no profit motive. Info-adjacent; kept at Low only because it&#39;s a genuine, if harmless, logic gap.</p>
+<hr>
+<p><strong>[Info] 6. <code>transferOwnership</code> is single-step and emits no event</strong></p>
+<p><code>transferOwnership(address)</code> (<code>0xf2fde38b</code>)</p>
+<p><strong>Description</strong>: Unlike <code>setArbiter</code> (which emits <code>ArbiterUpdated(address,address)</code>, confirmed via exact <code>keccak256</code> topic match), <code>transferOwnership</code>&#39;s write path (<code>0x0197</code>–<code>0x01e7</code>) contains no <code>LOG</code> opcode. Combined with the lack of a two-step (<code>Ownable2Step</code>-style) handover, a mistyped destination address (guarded only by a non-zero check) causes an unrecoverable, silent loss of admin control that off-chain monitoring keyed on ownership-transfer events would miss. Correctly gated on <code>msg.sender == owner</code>, so not exploitable by a third party.</p>
+<hr>
+<p><strong>[Info] 7. Overpayment on <code>createPolicy</code> is not refunded</strong></p>
+<p><strong>Description</strong>: <code>premiumPaid</code> is stored as the <em>full</em> <code>msg.value</code>, and any excess over the computed premium is silently absorbed into <code>totalPoolBalance</code> rather than refunded (confirmed: <code>0x537</code> stores raw <code>CALLVALUE</code>, <code>0x639</code> adds full <code>CALLVALUE</code> to slot 2). Caller-side footgun only — no loss to the protocol or other users.</p>
+<hr>
+<p><strong>[Info] 8. <code>createPolicy</code> has a hard availability dependency on two external registries</strong></p>
+<p><strong>Description</strong>: <code>createPolicy</code> reverts entirely (bubbling the callee&#39;s raw revert data) if either the hardcoded <code>identityRegistry</code> (<code>0xa7bd20bf5de63df949ca5be2f20835978ecba81a</code>) or <code>reputationRegistry</code> (<code>0x98afd1440b2238d73c1394720277a6d031fcbbd0</code>) <code>STATICCALL</code> fails, per the checks at <code>0x4a0</code>–<code>0x4a4</code> and inside helper <code>0x18a3</code>. If either registry is paused, upgraded incompatibly, or bricked, <code>createPolicy</code> becomes permanently uncallable. Both calls are <code>STATICCALL</code>s executed strictly before any state write, so this is an availability/architectural risk, not a reentrancy or fund-safety issue.</p>
+<hr>
+<p><strong>[Info] 9. No cap on <code>evidence</code> string length in <code>fileClaim</code></strong></p>
+<p><strong>Description</strong>: Only a non-empty check is enforced; storage cost for an arbitrarily long string is borne entirely by the caller. Self-inflicted gas cost only, not a griefing vector against third parties.</p>
+<hr>
+<h3 id="findings-list">Findings List</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>fileClaim</code> has no access control — anyone can claim against anyone&#39;s policy</td>
+</tr>
+<tr>
+<td>2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>No solvency cap on issued coverage vs. pool balance (&quot;race to claim&quot;)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Centralization: owner → arbiter → payout, single key, no timelock</td>
+</tr>
+<tr>
+<td>4</td>
+<td><span class="pill low">Low</span></td>
+<td>Stale coverage check at file-time (pending claims not mutually bounded)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><span class="pill low">Low</span></td>
+<td>Premium floors to 0 for dust coverage amounts</td>
+</tr>
+<tr>
+<td>6</td>
+<td><span class="pill info">Info</span></td>
+<td><code>transferOwnership</code> single-step, no event emitted</td>
+</tr>
+<tr>
+<td>7</td>
+<td><span class="pill info">Info</span></td>
+<td>Premium overpayment not refunded</td>
+</tr>
+<tr>
+<td>8</td>
+<td><span class="pill info">Info</span></td>
+<td>Hard availability dependency on two external registries</td>
+</tr>
+<tr>
+<td>9</td>
+<td><span class="pill info">Info</span></td>
+<td>No cap on <code>evidence</code> string length</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="verified-no-vulnerability-found-clients-stated-focus-areas">Verified — no vulnerability found (client&#39;s stated focus areas)</h2>
+<p>Since the client explicitly asked about reentrancy in the claim path, triggering conditions, and access control on claim authorization, the following are recorded as <strong>positive, verified results</strong>, not just omissions:</p>
+<ul>
+<li><strong><code>resolveClaim</code> access control is correct and coherent.</strong> The arbiter-only gate (<code>0x123f</code>–<code>0x1250</code>: <code>SLOAD</code> slot 1, mask to 160 bits, compare against <code>CALLER</code>, revert <code>&quot;AgentInsurancePool: caller is not arbiter&quot;</code> otherwise) reads the exact same slot that <code>setArbiter</code> writes and <code>arbiter()</code> returns — independently re-derived by two separate passes with identical results. No split-brain/stale-role bug.</li>
+<li><strong><code>resolveClaim</code> is reentrancy-safe.</strong> All state effects — claim status flip, <code>totalPoolBalance</code> checked-decrement (<code>0x12d3</code>–<code>0x12eb</code>, guarded by a <code>GT</code>-then-revert to prevent underflow), <code>totalClaimsPaid</code> checked-increment — are committed <strong>before</strong> the low-level <code>.call</code> that transfers ETH (<code>0x130c</code>–<code>0x130d</code>). If the call fails, the function reverts entirely (custom error <code>&quot;AgentInsurancePool: payout failed&quot;</code>, <code>0x136f</code>–<code>0x13bd</code>), atomically undoing the state changes — correct checks-effects-interactions ordering. A <code>status &lt; 4</code> bounds check plus a <code>status == Pending</code> gate (confirmed by a separate agent) blocks double-resolution/double-payout via re-invocation or reentrant re-entry.</li>
+<li><strong><code>createPolicy</code> is reentrancy-safe.</strong> Its two external calls (identity + reputation checks) are <code>STATICCALL</code>s executed strictly before any storage write; <code>STATICCALL</code>&#39;s static context also prevents any nested state-changing reentry even if a registry were malicious.</li>
+<li><strong><code>expirePolicy</code> triggering condition is correct.</strong> Permissionless by design; boundary is <code>block.timestamp &gt;= expiry</code> (inclusive), matching standard &quot;valid through expiry&quot; semantics with no off-by-one; the status flag is a clean binary 0/1 with no double-clear/double-decrement path (a second call on an already-expired policy reverts at the <code>status != 0</code> check).</li>
+<li><strong><code>owner</code>/<code>arbiter</code> setters are properly gated and validated.</strong> Both require <code>msg.sender == owner</code>, both reject the zero address with dedicated custom revert strings, and no front-running/hijack window exists (the <code>require</code> always fails for a non-owner caller regardless of transaction ordering).</li>
+<li><strong>The three registries (<code>identityRegistry</code>, <code>bondsRegistry</code>, <code>reputationRegistry</code>) are immutable, baked into the bytecode as literal constants — no runtime setter exists anywhere in the dispatch table.</strong> Confirmed by grepping all 35 <code>SSTORE</code> sites and finding none near any registry getter body. Closes off an owner-abuse vector (owner cannot redirect eligibility/reputation dependencies post-deploy).</li>
+<li><strong>No dangerous opcodes anywhere in reachable code.</strong> <code>SELFDESTRUCT</code>, <code>DELEGATECALL</code>, <code>CALLCODE</code>, <code>CREATE</code>, <code>CREATE2</code> all absent (one incidental <code>SELFBALANCE</code>-looking byte sequence is inside the trailing IPFS/CBOR metadata blob after the real code ends, not executable).</li>
+<li><strong>Not an upgradeable proxy.</strong> No <code>DELEGATECALL</code>, and none of the 31 <code>PUSH32</code> literals in the bytecode match the EIP-1967/EIP-1822 storage-slot constants.</li>
+<li><strong>All arithmetic is checked (Solidity ≥0.8-style).</strong> Every counter increment, balance decrement, and premium multiplication goes through a shared checked-math helper that reverts via <code>Panic(0x11)</code> on overflow/underflow; no raw unchecked <code>ADD</code>/<code>MUL</code>/<code>SUB</code> was found on any calldata-derived value.</li>
+<li><strong><code>totalPoolBalance</code> is a tracked accounting variable, not a live <code>BALANCE</code>/<code>SELFBALANCE</code> read</strong> — the textbook-correct design (payouts are checked against tracked liabilities, not a value an outsider could inflate by force-feeding ETH to the contract).</li>
+</ul>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Points where the exploit path or exact semantics could not be fully pinned down in this pass — not false positives, flagged for a follow-up review with source access.</em></p>
+<ul>
+<li><strong><code>claims[claimId]</code> struct field at offset +2</strong> — <code>Contract.fileClaim</code> / <code>Contract.claims</code> — confirmed <code>address</code>-typed (same mask-preserving read/write idiom as <code>claimant</code>), written by <code>fileClaim</code> and returned unchanged by the <code>claims()</code> getter, but not used by <code>resolveClaim</code>&#39;s payout logic and not the arbiter/owner slot. Semantic purpose (a &quot;resolvedBy&quot; placeholder? a duplicate reference field?) unresolved.</li>
+<li><strong><code>policies[policyId]</code> struct field at offset +6</strong> — initialized to <code>0</code> by <code>createPolicy</code>, not written by <code>createPolicy</code> or <code>expirePolicy</code>; not confirmed whether <code>resolveClaim</code>/<code>fileClaim</code> write it elsewhere (a full byte-for-byte scan of those two functions for a write to this specific offset was not completed).</li>
+<li><strong>Selector <code>0xdd3a1b3a</code></strong> — a real, reachable, bounds-checked <code>view</code> function operating on the same mapping-8 storage base as <code>getAgentPolicies</code>, with an additional bit-shift not fully resolved to a semantic (possibly a single-element/paginated accessor).</li>
+<li><strong>6 constant-returning <code>pure</code> getters</strong> (<code>100</code>, <code>500</code>, <code>250</code>, <code>70</code>, <code>10000</code>, <code>40</code> at selectors <code>0x1610d4da</code>, <code>0x2941b1a8</code>, <code>0x3d966643</code>, <code>0x8ffe56b4</code>, <code>0xa64833ec</code>, <code>0xb2c22420</code>) — confirmed real and reachable via live <code>cast call</code>, but their Solidity source names could not be recovered (no public 4-byte match).</li>
+<li><strong>Selector <code>0x4e44d071</code></strong> — the reputation-tier lookup called from <code>createPolicy</code>&#39;s premium helper — behavior (returns a small integer selecting the 100/250/500 bps rate) is derived with high confidence from the bytecode, but its human-readable function name is unknown.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI agent operating without access to verified source code — the target contract is unverified on all checked registries (Sourcify, Blockscout, Basescan/Etherscan-v2). All findings are derived from <code>cast disassemble</code> output and manual/agent-assisted EVM bytecode reverse-engineering, cross-checked against live on-chain state where possible. Bytecode-only analysis carries inherently higher uncertainty on exact business-logic naming and intent than a source-code review, though the structural facts underlying each finding (access-control checks, call ordering, arithmetic guards) are derived directly and unambiguously from the opcodes. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A follow-up review with verified source access, plus team security review and on-chain monitoring, is strongly recommended before this contract is trusted with significant capital.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidtcbhbodecywf3dxzs3lwah55deasyo5u76z46tm4crq54o23ra4.ipfs.community.bgipfs.com/"><code>https://bafkreidtcbhbodecywf3dxzs3lwah55deasyo5u76z46tm4crq54o23ra4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/359">#359</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

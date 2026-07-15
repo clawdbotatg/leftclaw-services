@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FundablePoll / FundablePollFactory — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #309">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">FundablePoll / FundablePollFactory</h1>
+    <p class="job-sub">Job #309 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/309"><b>Job page</b> #309</a>
+      <a class="chip" href="https://bafkreifyvmtdee3r5bikva42vq2ifbg6zeq5j2bbyboxwp3r4cho5tkj64.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings-below-confidence-threshold-description-only">Findings below confidence threshold (description only)</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — FundablePoll / FundablePollFactory</h1>
+<p>Two-phase audit: Phase 1 breadth (ethskills, 5 checklist agents) → Phase 2 depth (pashov, 12 blind attack agents) → hybrid reconciliation.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>FundablePollFactory</code> + <code>FundablePoll</code> (one instance deployed per poll), Base mainnet</td>
+</tr>
+<tr>
+<td><strong>Factory</strong></td>
+<td><code>0xbcd77c18d30fed9fde6fcb7015c9d3f8bb3e5212</code></td>
+</tr>
+<tr>
+<td><strong>Poll instances reviewed</strong></td>
+<td><code>0x9440c955396995e302a3D88CfBB99f27b64c6DAa</code>, <code>0x418DFC15E62c7487b78A35B9Dd306c33ECb0451b</code> (both Sourcify exact-match against the fetched source)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>All in-scope (<code>FundablePollFactory.sol</code> 66 LOC, <code>FundablePoll.sol</code> 287 LOC)</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>60</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation summary</strong>: Overlap: 5 findings corroborated by both phases (shared-vault token freeze, rug-config via <code>winningOptionsCount==totalOptions</code>, zero-payout DoS, donation-sweep behavior, predictable-tiebreak) · Phase-1-only: 3 (creator-key-loss, return-data bombing, fee-added-on-top DoS) · Phase-2-only: 2 (multiplication-overflow DoS, cancel-before-deadline forfeiture-escape) · One phase-2 lead (creator sybil-vote manipulation) was <strong>investigated and mathematically refuted</strong> during reconciliation — not included as a finding.</p>
+<p>Completeness: 11 unique (Contract, function, bug-class) items identified across both phases&#39; raw outputs, 11 covered in the findings/leads below.</p>
+<p><strong>No Critical or High findings in either phase.</strong> This is an unusually well-constructed pair of contracts: the core pro-rata payout engine (<code>_calculatePayout</code>, distributing live <code>balanceOf</code> against a <code>_totalOutstandingFunds</code> ledger, with an exact-remainder branch for the final claimant) was independently verified solvent and order-invariant by all 17 agent-runs across both phases — no third-party fund-theft path was found under any claim ordering, fee-on-transfer behavior, rebasing scenario, or donation.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[70] <strong>1. Shared-vault token blacklist/pause freezes ALL claims for every voter, not just the affected party</strong></p>
+<p><code>FundablePoll._calculatePayout</code> → <code>safeBalanceOf</code>/<code>safeTransfer</code> in <code>cancelVote</code>, <code>claimNonWinningFunds</code>, <code>claimWinningOptionsFunds</code> · Confidence: 70 · <strong>[both — phase1: dos-1, erc20-4; phase2: agents 3, 9]</strong></p>
+<p><strong>Description</strong><br>All voters&#39; stakes for a poll live in one contract holding one immutable <code>votingToken</code>. If the token issuer blocklists the poll contract address (USDC/USDT-style) or globally pauses transfers, every payout function reverts for every participant simultaneously. Per-voter blacklisting is NOT a problem — claims are fully independent per address — only a contract-level block/pause is systemic. <code>votingToken</code> is chosen freely by whoever calls the permissionless <code>deployPoll</code>, with only a <code>code.length != 0</code> sanity check.</p>
+<p>Gate check: reachable through common token behavior (blacklisting/pausing is explicitly plausible for contracts holding arbitrary allowlisted tokens); no guard interrupts; material harm to identifiable victims (all voters in the affected poll) → <strong>CONFIRMED</strong>, Medium (not High, since it requires an external token-issuer action, not a code-exploitable path with no preconditions).</p>
+<p><strong>Fix</strong>: Inherent to accepting an arbitrary pooled ERC20. Document the risk prominently in poll creation UX, and/or add a factory-level allowlist restricting <code>votingToken</code> to tokens without a freeze authority over arbitrary holders.</p>
+<hr>
+<p>[65] <strong>2. <code>pollCreator</code>&#39;s winning-fund claim has no fallback if the creator&#39;s key is lost</strong></p>
+<p><code>FundablePoll.claimWinningOptionsFunds</code>, <code>pollCreator</code> immutable · Confidence: 65 · <strong>[phase1 only — access-1; independently re-verified against source]</strong></p>
+<p><strong>Description</strong><br>Winning-option funds have exactly one exit path: <code>claimWinningOptionsFunds()</code>, gated <code>msg.sender == pollCreator</code>, one-shot via <code>winningFundsClaimed</code>. <code>pollCreator</code> is immutable with no transfer mechanism. Winning-option voters cannot reclaim their own stake either — <code>claimNonWinningFunds</code> explicitly reverts <code>VoteIsWinningOption</code> for them. If the creator&#39;s key is lost (or the address can never receive the token, e.g. a permanently blacklisted creator address), the entire winning pool is frozen forever with no recovery path.</p>
+<p>Gate check: no guard interrupts; reachable (key loss is a normal real-world occurrence, not a contrived edge case); material harm — permanent loss of fund access — to an identifiable set of victims (winning-option voters whose stake is now unrecoverable by anyone) → <strong>CONFIRMED</strong>, Medium (owner-only-adjacent fund loss per the severity rubric, since the creator&#39;s own claim is what&#39;s stuck, but winning voters are also permanently denied any recourse).</p>
+<p><strong>Fix</strong>: Add a grace-period fallback — e.g. after a long timeout past <code>endTime</code> with no <code>claimWinningOptionsFunds</code> call, allow winning-option voters to reclaim their stake pro-rata, or allow the creator-recipient address to be updated pre-finalization by a designated backup.</p>
+<hr>
+<p>[55] <strong>3. <code>winningOptionsCount == totalOptions</code> lets a poll be configured so 100% of every voter&#39;s stake goes to the creator regardless of vote choice</strong></p>
+<p><code>FundablePoll</code> constructor (<code>winningOptionsCount_ &gt; totalOptions_</code> is a strict <code>&gt;</code>, not <code>&gt;=</code>) · Confidence: 55 · <strong>[both — phase1: general-1, access-2; phase2: agents 7, 12]</strong></p>
+<p><strong>Description</strong><br>Equality is permitted, so a creator can deploy a poll where every option is marked &quot;winning&quot; at finalization, making <code>claimNonWinningFunds</code> revert for every voter and routing the entire pool to the creator via <code>claimWinningOptionsFunds</code>, irrespective of which option anyone backed. Fully observable pre-vote (immutable public state + the <code>PollDeployed</code> event), so not a hidden rug, but a footgun for inattentive voters — and a concrete configuration a bad-faith creator could exploit for informational asymmetry against unsophisticated users.</p>
+<p>Gate check: no guard interrupts (the constructor&#39;s own boundary allows it); reachable through normal, permissionless factory usage; unprivileged voters bear the harm, but only after voluntarily opting into an observably-configured poll → <strong>CONFIRMED</strong>, Low (transparency mitigates severity).</p>
+<p><strong>Fix</strong>: If &quot;at least one losing option must exist&quot; is intended, tighten the constructor check to <code>require(winningOptionsCount_ &lt; totalOptions_)</code>. Otherwise, surface the ratio prominently in any front-end / voting UI.</p>
+<hr>
+<p>[50] <strong>4. Zero-amount payouts revert on tokens that reject zero-value transfers</strong></p>
+<p><code>FundablePoll._calculatePayout</code> (can return 0) → unguarded <code>safeTransfer</code> in all three payout functions · Confidence: 50 · <strong>[both — phase1: dos-4, erc20-3; phase2: agents 9, 10]</strong></p>
+<p><strong>Description</strong><br><code>_calculatePayout</code> returns 0 when the caller&#39;s liability is 0, <code>_totalOutstandingFunds</code> is 0, or (under downward balance drift) proportional rounding floors to 0. No caller guards against a 0 result before calling <code>safeTransfer</code>, which reverts on tokens like LEND/BNB that reject zero-value transfers — blocking the claim from ever succeeding (though nothing of value is actually at stake in this exact case).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ if (payoutAmount == 0) { emit ...; return; }
+  IERC20Minimal(votingToken).safeTransfer(msg.sender, payoutAmount);
+</code></pre>
+<p>Skip the transfer when <code>payoutAmount == 0</code> after applying state effects, so bookkeeping still clears without attempting a zero-value transfer.</p>
+<hr>
+<h2 id="findings-below-confidence-threshold-description-only">Findings below confidence threshold (description only)</h2>
+<p>[45] <strong>5. <code>_calculatePayout</code> multiplication can overflow and permanently brick withdrawals for extreme-supply tokens</strong></p>
+<p><code>FundablePoll._calculatePayout</code> · Confidence: 45 · <strong>[phase2 only — agents 1, 3, 6, 10]</strong></p>
+<p><code>(liabilityAmount * currentBalance) / totalOutstandingFunds</code> computes the product before dividing. Once <code>_totalOutstandingFunds</code> exceeds ~2^128 (≈3.4e20 raw token units), the intermediate product for any non-last claimant overflows <code>uint256</code> and reverts, permanently — no claimant can ever shrink <code>outstanding</code> to reach the safe branch. Requires an atypical token/<code>tokensPerVote</code> combination, not a realistic mainstream deployment, but is a genuine unguarded code-level gap. Recommend <code>Math.mulDiv</code> (OpenZeppelin) for the full 512-bit intermediate.</p>
+<hr>
+<p>[40] <strong>6. Voters on a winning option can escape forfeiture by cancelling right before <code>endTime</code></strong></p>
+<p><code>FundablePoll.cancelVote</code> · Confidence: 40 · <strong>[phase2 only — agent 4]</strong></p>
+<p><code>cancelVote()</code> is fully unrestricted (full pro-rata refund) until <code>block.timestamp &lt;= endTime</code>. Since backing a &quot;winning&quot; option means losing your stake to the creator while backing a &quot;losing&quot; option gets you refunded, the dominant rational strategy for any attentive voter is to cancel just before the deadline if their option is leading — undermining the product&#39;s funding mechanism (the creator may only ever collect from inattentive voters). This is a game-theory/mechanism-design property with no third-party victim (no one&#39;s funds are stolen; a voter simply reclaims their own stake as the contract explicitly permits), so it is reported as a design observation rather than a security finding, but is worth the client&#39;s attention given it may materially undermine the product&#39;s intended economics.</p>
+<hr>
+<p>[30] <strong>7. Return-data bombing via unbounded low-level call in <code>SafeTokenTransfer</code></strong></p>
+<p><code>SafeTokenTransfer.safeTransfer</code>/<code>safeTransferFrom</code>/<code>safeBalanceOf</code> · Confidence: 30 · <strong>[phase1 only — dos-2]</strong></p>
+<p>The hand-rolled helpers use <code>.call</code>/<code>.staticcall</code> capturing <code>bytes memory data</code> with no <code>returndatasize()</code> cap. A malicious <code>votingToken</code> could return a multi-megabyte blob, forcing quadratic memory-expansion gas and an out-of-gas revert — bricking that poll (only reachable via a creator-selected malicious token, no cross-poll impact). Recommend inline-assembly <code>returndatacopy</code> capped to 32 bytes.</p>
+<hr>
+<p>[25] <strong>8. Fee-added-on-top tokens can revert the final sweep claim</strong></p>
+<p><code>FundablePoll._calculatePayout</code> sweep branch · Confidence: 25 · <strong>[phase1 only — erc20-8]</strong></p>
+<p>For the rare token class that charges its transfer fee ON TOP of the transferred amount, the final claimant&#39;s exact-remainder sweep can require more than the contract&#39;s actual balance, reverting. Niche token class; document as unsupported or add balance headroom.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails investigated with concrete code smells; not scored, or explicitly refuted during reconciliation.</em></p>
+<ul>
+<li><strong>Investigated and REFUTED</strong>: creator sybil-voting to flip which option wins, hoping to seize additional voter funds at &quot;zero risk&quot; (own stake always recoverable via <code>claimNonWinningFunds</code> if the boost fails). Phase-2 agent 5 raised this; agent 11 disproved it by direct trace and it was independently re-derived algebraically during reconciliation: winners are always the top-<code>winningOptionsCount</code> options by total funds, which is already the maximum-value set the creator captures passively. Any sybil boost needed to flip a marginal option into the winning set costs the creator <em>exactly</em> the funding gap it had to cover, netting a pure loss, never a profit. <strong>Not a vulnerability.</strong></li>
+<li><strong>Predictable tiebreak seed</strong> — <code>FundablePoll._finalizeIfNeeded</code> — <code>tieBreakSeed</code> derives only from deploy-time immutables, fully computable before the poll opens. Flagged by <strong>every one of the 17 agent-runs across both phases</strong> that touched finalization logic, and all independently concluded it is not profitably exploitable: ties only matter between options with exactly equal funds, and &quot;winning&quot; a tie is economically bad for that option&#39;s backers (their stake flows to the creator), so there is no incentive to game a knowable outcome. Informational only — the standout example of extremely broad, correctly-calibrated non-findings in this audit.</li>
+<li><strong>Stray/donated token balance is swept by the last or a favorably-timed claimant</strong> — <code>FundablePoll._calculatePayout</code> — tokens sent to the poll outside <code>vote()</code> are redistributed pro-rata to current claimants rather than returned to the donor. No protocol-user&#39;s principal is at risk. [phase2, agents 3, 4, 6, 7, 9]</li>
+<li><strong><code>_optionFunds</code> not decremented in <code>claimNonWinningFunds</code></strong> (unlike <code>cancelVote</code>) — confirmed cosmetic, causes only stale <code>currentVotingResults()</code> view data post-claim, no accounting impact. [phase1 general-3 context; phase2 agents 5, 7, 8, 12]</li>
+<li><strong>Non-standard token return-data (1–31 bytes)</strong> causes a raw <code>abi.decode</code> revert in <code>SafeTokenTransfer</code> instead of a clean handled failure — no mainstream token exhibits this. [phase2, agent 3]</li>
+<li><strong>No factory-level token allowlist</strong> — isolated per-poll risk only; cross-poll drain is not possible (each <code>FundablePoll</code> only ever touches its own immutable <code>votingToken</code> and balance). [phase1 erc20-5; phase2 agent 9]</li>
+<li><strong>Winning-voter mappings never cleared</strong> after the creator&#39;s lump claim — inert leftover state, no read path converts it to value. [phase2, agent 12]</li>
+<li><strong><code>finalizePoll</code> lacks the <code>nonReentrant</code> modifier</strong> applied to every other state-changing function — harmless (no external calls, idempotent via the <code>finalized</code> flag), a consistency note only. [phase2, agent 2]</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by autonomous AI agents (ethskills breadth pass + pashov depth pass, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A team security review and on-chain monitoring are recommended before this factory or its poll instances hold significant value. The two Medium findings (shared-vault token freeze, creator-key-loss fund lock) are the items most worth addressing before wide deployment; everything else is Low/Info-tier hardening.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifyvmtdee3r5bikva42vq2ifbg6zeq5j2bbyboxwp3r4cho5tkj64.ipfs.community.bgipfs.com/"><code>https://bafkreifyvmtdee3r5bikva42vq2ifbg6zeq5j2bbyboxwp3r4cho5tkj64.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/309">#309</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

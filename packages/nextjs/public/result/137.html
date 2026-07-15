@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClawdWorks Smart Contract — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #137">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ClawdWorks Smart Contract</h1>
+    <p class="job-sub">Job #137 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/137"><b>Job page</b> #137</a>
+      <a class="chip" href="https://bafkreick2c6qjydzrfk34emgpcnkxretrdxcrndpxdwr47clcptvszk4hu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#audit-scope-methodology">Audit Scope &amp; Methodology</a></li>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#positive-security-observations">Positive Security Observations</a></li>
+      <li><a href="#summary-table">Summary Table</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>ClawdWorks Smart Contract — Security Audit Report</h1>
+<p><strong>Contract</strong>: <code>0x90c14763fb2a372f186cbb3bfe8a1ed81f90623e</code> on Base (chain 8453)<br><strong>CLAWD token</strong>: <code>0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07</code><br><strong>Treasury</strong>: <code>0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0</code><br><strong>Audit date</strong>: 2026-05-09<br><strong>Audited by</strong>: leftclaw.services automated audit (ethskills + pashov methodologies)<br><strong>Job ID</strong>: 137  </p>
+<hr>
+<h2 id="audit-scope-methodology">Audit Scope &amp; Methodology</h2>
+<p><strong>Scope</strong>: The deployed <code>ClawdWorks.sol</code> marketplace contract and its on-chain state.</p>
+<p><strong>Audit approach</strong>: Two independent passes were conducted and merged:</p>
+<ol>
+<li><strong>Ethskills pass</strong> — 7 domain checklists applied (general, precision-math, ERC20, access-control, DoS, chain-specific, governance).</li>
+<li><strong>Pashov pass</strong> — 8-agent framework (vector scan, math/precision, access control, economic security, execution trace, invariant analysis, periphery, first principles) with 4-gate finding validation.</li>
+</ol>
+<p>Findings confirmed by both methodologies receive a <strong>[BOTH]</strong> tag and elevated confidence.</p>
+<p><strong>Source availability limitation</strong>: The contract is <strong>not verified</strong> on BaseScan or Sourcify. This audit was performed using:</p>
+<ul>
+<li>The detailed build specification from job #133 (ClawdWorks build plan)</li>
+<li>The full ABI extracted from the deployed Scaffold-ETH 2 frontend bundle at the BGIPFS URL</li>
+<li>Live on-chain state queries via <code>cast call</code></li>
+</ul>
+<p>All findings are grounded in verifiable on-chain data and the spec. Function-level line references are unavailable; findings reference function names and spec descriptions instead.</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>ClawdWorks is a CLAWD-native onchain services marketplace implementing escrow, dispute resolution, and an 80/10/10 fee split (seller / burn / treasury). The core token accounting is sound (BPS sum verified: 8000+1000+1000=10000), and the contract implements meaningful safety mechanisms: two-step ownership transfer, a 7-day treasury timelock, and a 14-day buyer auto-refund safety valve.</p>
+<p>The primary security concern is <strong>structural</strong>: the contract&#39;s v1 design places a single entity (the owner) in the roles of seller, arbitrator, and deployer simultaneously. This creates a trust dependency that is intentional but must be understood by buyers. Beyond the design tradeoff, one <strong>High</strong> finding represents a state machine gap — funds in <code>PAID</code> status have no buyer-accessible exit path if the seller is inactive. Three <strong>Medium</strong> findings cover slippage, queue griefing, and the arbitration conflict of interest.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>3</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="h-1-paid-status-funds-permanently-locked-if-seller-never-deliver">[H-1] PAID-Status Funds Permanently Locked if Seller Never Delivers <strong>[BOTH]</strong></h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Category</strong>: State Machine / Access Control<br><strong>Location</strong>: <code>purchase()</code>, <code>disputeJob()</code>, <code>claimDisputeRefund()</code><br><strong>Confidence</strong>: 90 (both passes confirmed; conditioned on owner inactivity)</p>
+<p><strong>Description</strong>: When a buyer calls <code>purchase()</code>, the job enters <code>PAID</code> status. There is no exit from this state without seller action (<code>markDelivered</code>). All other recovery paths are blocked:</p>
+<ul>
+<li><code>disputeJob()</code> — spec: &quot;only DELIVERED status&quot; — reverts on PAID jobs</li>
+<li><code>claimDisputeRefund()</code> — requires <code>disputedAt &gt; 0</code>, which is never set on PAID jobs</li>
+<li><code>claimTimeout()</code> — requires <code>deliveredAt &gt; 0</code>, which is 0 for undelivered jobs</li>
+<li>No <code>buyerCancelJob</code>, <code>emergencyRefund</code>, or equivalent exists in the ABI</li>
+</ul>
+<p>If the owner/seller loses their key, goes inactive, or becomes incapacitated, every buyer with an open PAID-status job loses their funds permanently.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Buyer approves CLAWD and calls <code>purchase(listingId, buyerNote)</code></li>
+<li>Job created: <code>{status: PAID, amountPaid: X, deliveredAt: 0, disputedAt: 0}</code></li>
+<li>Owner&#39;s key is compromised / lost</li>
+<li>All recovery functions check conditions that cannot be satisfied</li>
+<li>Buyer&#39;s X CLAWD is locked forever</li>
+</ol>
+<p><strong>Recommendation</strong>: Add a <code>buyerCancelJob</code> function:</p>
+<pre><code class="language-solidity">function buyerCancelJob(uint256 jobId) external nonReentrant {
+    Job storage job = jobs[jobId];
+    require(job.buyer == msg.sender, &quot;not buyer&quot;);
+    require(job.status == JobStatus.PAID, &quot;not PAID&quot;);
+    require(block.timestamp &gt; job.purchasedAt + DELIVERY_TIMEOUT, &quot;too early&quot;);
+    _refund(jobId);
+    emit JobAutoRefunded(jobId);
+}
+</code></pre>
+<p>This requires recording <code>purchasedAt</code> timestamp in the Job struct.</p>
+<hr>
+<h3 id="m-1-no-slippage-protection-in-purchase-price-can-be-raised-betwe">[M-1] No Slippage Protection in <code>purchase()</code> — Price Can Be Raised Between Approval and Execution <strong>[BOTH]</strong></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Category</strong>: ERC20 / Access Control<br><strong>Location</strong>: <code>purchase()</code>, <code>setPrice()</code></p>
+<p><strong>Description</strong>: The seller (owner) can call <code>setPrice(listingId, newPrice)</code> at any time without timelock or cooldown. <code>purchase()</code> reads <code>listing.priceCLAWD</code> at execution time. A buyer who has granted a large or infinite approval (a common pattern in Scaffold-ETH 2 dApps) can be charged a higher price than the one they saw when deciding to purchase.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Listing L shows <code>priceCLAWD = 100e18</code></li>
+<li>Buyer calls <code>approve(contract, type(uint256).max)</code> (standard Scaffold-ETH pattern)</li>
+<li>Seller front-runs buyer&#39;s pending <code>purchase(L, ...)</code> with <code>setPrice(L, 900e18)</code></li>
+<li>Buyer&#39;s transaction executes: <code>transferFrom(buyer, contract, 900e18)</code> succeeds</li>
+<li>Buyer paid 9× the displayed price with no consent</li>
+</ol>
+<p><strong>Recommendation</strong>: Add a <code>maxPrice</code> parameter to <code>purchase()</code>:</p>
+<pre><code class="language-solidity">function purchase(
+    uint256 listingId,
+    string calldata buyerNoteIpfsHash,
+    uint256 maxPrice          // buyer-supplied ceiling
+) external nonReentrant {
+    require(listings[listingId].priceCLAWD &lt;= maxPrice, &quot;price exceeded&quot;);
+    // ...
+}
+</code></pre>
+<hr>
+<h3 id="m-2-dispute-flooding-can-block-seller-queue-for-up-to-14-days-bo">[M-2] Dispute Flooding Can Block Seller Queue for Up to 14 Days <strong>[BOTH]</strong></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Category</strong>: DoS / Queue Management<br><strong>Location</strong>: <code>disputeJob()</code>, <code>activeJobCount</code>, <code>DEFAULT_MAX_ACTIVE_JOBS</code></p>
+<p><strong>Description</strong>: The queue cap (<code>DEFAULT_MAX_ACTIVE_JOBS = 5</code>, verified on-chain) is enforced via <code>activeJobCount[seller]</code>. Per spec and invariant analysis, <code>activeJobCount</code> does <strong>not</strong> decrement when a job enters <code>DISPUTED</code> status — only on <code>COMPLETED</code> or <code>REFUNDED</code>. An attacker who purchases all 5 queue slots and disputes every delivery traps the queue in <code>DISPUTED</code> state for up to 14 days (the <code>DISPUTE_AUTO_REFUND</code> window). During this period, no new buyers can purchase.</p>
+<p>The attacker recovers their CLAWD via <code>claimDisputeRefund()</code> after 14 days, making this attack nearly costless (only gas on Base ≈ $0.001/tx).</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Attacker holds 5 × listing price CLAWD</li>
+<li>Purchases all 5 slots → <code>activeJobCount[owner] = 5</code></li>
+<li>Seller delivers all 5 jobs (queue now in DELIVERED)</li>
+<li>Attacker calls <code>disputeJob()</code> on all 5 within the 7-day window</li>
+<li>All 5 in DISPUTED state; <code>activeJobCount = 5</code> (no change)</li>
+<li>New buyer calls <code>purchase()</code> → reverts: queue full</li>
+<li>After 14 days: attacker calls <code>claimDisputeRefund()</code> × 5 → recovers CLAWD</li>
+<li>Repeat indefinitely</li>
+</ol>
+<p><strong>Recommendation</strong>: Decrement <code>activeJobCount</code> when a job transitions from <code>DELIVERED</code> to <code>DISPUTED</code>. The queue cap is logically about concurrent deliveries in-flight, not concurrent disputes. Disputed jobs are in a resolution state and don&#39;t reflect active work capacity:</p>
+<pre><code class="language-solidity">// In disputeJob():
+activeJobCount[job.seller]--;  // free slot; dispute is paused work
+// Add separate disputedJobCount[seller] if tracking is needed
+</code></pre>
+<hr>
+<h3 id="m-3-owner-is-simultaneously-seller-and-sole-arbitrator-in-v1-bot">[M-3] Owner is Simultaneously Seller and Sole Arbitrator in v1 <strong>[BOTH]</strong></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Category</strong>: Access Control / Governance / Trust Model<br><strong>Location</strong>: <code>resolveDispute()</code></p>
+<p><strong>Description</strong>: In the current deployment (<code>openMarketplace = false</code>, verified on-chain), the contract owner is the exclusive seller. <code>resolveDispute(jobId, refundBuyer, resolutionIpfsHash)</code> is callable only by <code>onlyOwner</code>. This means the same party who delivered the disputed work also decides whether the buyer receives a refund. A malicious or negligent owner can call <code>resolveDispute(jobId, false, ...)</code> immediately upon a buyer&#39;s dispute, releasing funds to themselves (as seller) before the buyer&#39;s 14-day safety valve activates.</p>
+<p>The <code>resolutionIpfsHash</code> parameter carries no enforcement — the contract accepts any non-empty hash without validating content.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Seller delivers empty/fraudulent deliverable</li>
+<li>Buyer calls <code>disputeJob(jobId, reasonHash)</code> → job enters DISPUTED</li>
+<li>Owner calls <code>resolveDispute(jobId, false, &quot;0x1234&quot;)</code> immediately</li>
+<li><code>_release()</code> pays 80% to owner (seller), 10% burned, 10% to treasury</li>
+<li>Job status = COMPLETED; buyer&#39;s <code>claimDisputeRefund()</code> now reverts (status != DISPUTED)</li>
+</ol>
+<p><strong>Recommendation</strong> (in order of impact):</p>
+<ol>
+<li>Use a Gnosis Safe 2-of-3 multisig as owner, with at least one independent key holder acting as arbitrator</li>
+<li>OR: add a mandatory 48-hour dispute response window during which buyers can post evidence before <code>resolveDispute</code> can be called</li>
+<li>OR: document this trust model prominently on the frontend and via an on-chain <code>disputePolicyIpfsHash</code> state variable</li>
+</ol>
+<hr>
+<h3 id="l-1-rounding-dust-accumulates-in-contract-with-no-recovery-path-">[L-1] Rounding Dust Accumulates in Contract With No Recovery Path <strong>[BOTH]</strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Category</strong>: Precision Math<br><strong>Location</strong>: <code>_release()</code></p>
+<p><strong>Description</strong>: Computing three separate BPS divisions loses up to <code>BPS_DENOMINATOR - 1 = 9999</code> wei per job:</p>
+<pre><code>sellerAmount   = amountPaid * 8000 / 10000  (truncated)
+burnAmount     = amountPaid * 1000 / 10000  (truncated)
+treasuryAmount = amountPaid * 1000 / 10000  (truncated)
+</code></pre>
+<p>No rescue mechanism exists for the accumulating residual. At realistic CLAWD values and transaction volumes, this is negligible per transaction but compounds over thousands of jobs.</p>
+<p><strong>Recommendation</strong>: Derive the last split from the remainder:</p>
+<pre><code class="language-solidity">uint256 sellerAmount   = amountPaid * SELLER_BPS   / BPS_DENOMINATOR;
+uint256 burnAmount     = amountPaid * BURN_BPS     / BPS_DENOMINATOR;
+uint256 treasuryAmount = amountPaid - sellerAmount - burnAmount; // zero dust
+</code></pre>
+<hr>
+<h3 id="l-2-expresssellerinterest-susceptible-to-sybil-spam-on-base-l2">[L-2] <code>expressSellerInterest()</code> Susceptible to Sybil Spam on Base L2</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Category</strong>: DoS / Spam<br><strong>Location</strong>: <code>expressSellerInterest()</code></p>
+<p><strong>Description</strong>: While <code>hasExpressedInterest[address]</code> prevents duplicate submissions from a single address, Sybil attacks using new wallets are trivially cheap on Base (gas ≈ $0.0001/tx). The <code>sellerInterests</code> array can be flooded with tens of thousands of entries, degrading curation workflows and increasing the gas cost of <code>getSellerInterests()</code> callers. The spec acknowledges this: &quot;If spam becomes a problem, can add a small CLAWD fee in v2&quot; — but on a low-gas L2, v1 spam is practical from day one.</p>
+<p><strong>Recommendation</strong>: Add a minimum CLAWD fee (e.g., 1–10 CLAWD transferred to treasury) to <code>expressSellerInterest()</code> before deploying to production with real traffic.</p>
+<hr>
+<h3 id="l-3-contract-source-code-not-verified-on-chain">[L-3] Contract Source Code Not Verified On-Chain</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Category</strong>: Transparency / Audit Trail<br><strong>Location</strong>: BaseScan, Sourcify</p>
+<p><strong>Description</strong>: The contract at <code>0x90c14763fb2a372f186cbb3bfe8a1ed81f90623e</code> is not verified on BaseScan or Sourcify. Users and future auditors cannot independently confirm the relationship between the deployed bytecode and the build specification. This audit was conducted without source-level confirmation, which reduces confidence in the absence of certain vulnerability classes (e.g., specific storage layout bugs, inline assembly issues).</p>
+<p><strong>Recommendation</strong>: Run <code>forge verify-contract --chain-id 8453 0x90c14763fb2a372f186cbb3bfe8a1ed81f90623e ClawdWorks --etherscan-api-key &lt;key&gt;</code> or equivalent Sourcify submission.</p>
+<hr>
+<h3 id="l-4-executetreasurychange-access-control-unverifiable-without-so">[L-4] <code>executeTreasuryChange()</code> Access Control Unverifiable Without Source</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Category</strong>: Governance<br><strong>Location</strong>: <code>executeTreasuryChange()</code></p>
+<p><strong>Description</strong>: The ABI exposes <code>executeTreasuryChange()</code> as <code>nonpayable</code> with no inputs. Without verified source, it is unknown whether this requires <code>onlyOwner</code> or is publicly callable. If public, any address can execute a pending treasury change after the 7-day timelock without owner confirmation. Additionally, no <code>cancelTreasuryChange()</code> is visible in the ABI — if the owner proposes an incorrect treasury address and cannot cancel, the change WILL execute after 7 days unless the owner can overwrite the proposal.</p>
+<p><strong>Recommendation</strong>: Verify source (see L-3). Confirm <code>onlyOwner</code> is on <code>executeTreasuryChange()</code>. Add <code>cancelTreasuryChange()</code> callable by <code>onlyOwner</code>.</p>
+<hr>
+<h3 id="i-1-clawd-token-assumed-non-fee-on-transfer-and-non-rebasing">[I-1] CLAWD Token Assumed Non-Fee-on-Transfer and Non-Rebasing</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Category</strong>: ERC20<br><strong>Location</strong>: <code>purchase()</code>, <code>_release()</code>, <code>_refund()</code></p>
+<p><strong>Description</strong>: CLAWD (<code>0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07</code>, verified: standard 18-decimal ERC20, symbol &quot;CLAWD&quot;, no visible owner or pause functions) does not currently exhibit fee-on-transfer or rebasing behavior. However, the contract&#39;s accounting model would break if these were added: <code>amountPaid</code> is recorded from the listing price, not from a balance-before/after diff. Incompatibility is latent.</p>
+<p><strong>Recommendation</strong>: No immediate action. Document the CLAWD token type assumption in the contract&#39;s NatSpec.</p>
+<hr>
+<h3 id="i-2-non-clawd-tokens-sent-to-contract-are-permanently-locked">[I-2] Non-CLAWD Tokens Sent to Contract Are Permanently Locked</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Category</strong>: General<br><strong>Location</strong>: Contract storage</p>
+<p><strong>Description</strong>: No <code>rescueTokens</code> or equivalent function exists in the ABI. Any ERC20 tokens (other than CLAWD tracked in jobs) accidentally sent to the contract, as well as any rounding dust (see L-1), cannot be recovered by the owner or anyone else.</p>
+<p><strong>Recommendation</strong>: Add <code>rescueTokens(address token, address to, uint256 amount) onlyOwner</code> with a guard preventing rescue of the CLAWD token (which is tracked internally via <code>amountPaid</code> and must not be drained).</p>
+<hr>
+<h3 id="i-3-base-sequencer-downtime-can-expire-dispute-windows">[I-3] Base Sequencer Downtime Can Expire Dispute Windows</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Category</strong>: Chain-Specific (Base / OP Stack)<br><strong>Location</strong>: <code>disputeJob()</code></p>
+<p><strong>Description</strong>: The 7-day dispute window (<code>DELIVERY_TIMEOUT = 604800</code>) is enforced via <code>block.timestamp</code>. If the Base sequencer is offline for a significant period after a seller calls <code>markDelivered()</code>, buyers may be unable to submit <code>disputeJob()</code> transactions until the window has partially or fully elapsed. After sequencer recovery, the window appears to have partially expired from the contract&#39;s perspective.</p>
+<p><strong>Recommendation</strong>: Consider extending the dispute window to 10–14 days. Alternatively, document this operational risk for buyers.</p>
+<hr>
+<h2 id="positive-security-observations">Positive Security Observations</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Assessment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Two-step ownership (<code>Ownable2Step</code>)</td>
+<td>✅ Prevents single-tx ownership transfer to wrong address</td>
+</tr>
+<tr>
+<td>Treasury timelock (7 days)</td>
+<td>✅ Community-visible delay before treasury redirect</td>
+</tr>
+<tr>
+<td>14-day buyer auto-refund (<code>claimDisputeRefund</code>)</td>
+<td>✅ Meaningful protection against inactive arbitrator</td>
+</tr>
+<tr>
+<td>Pause only blocks <code>purchase()</code></td>
+<td>✅ In-flight jobs always completable; no fund trapping</td>
+</tr>
+<tr>
+<td>Seller queue timeout (<code>claimTimeout</code>)</td>
+<td>✅ Seller not held hostage by silent buyers</td>
+</tr>
+<tr>
+<td>BPS integrity check</td>
+<td>✅ 8000+1000+1000=10000 (verified on-chain)</td>
+</tr>
+<tr>
+<td>BURN_ADDRESS = 0x...dEaD</td>
+<td>✅ Immutable well-known burn address</td>
+</tr>
+<tr>
+<td>ReentrancyGuard + CEI (per spec)</td>
+<td>✅ Standard protection on all state-changing token flows</td>
+</tr>
+<tr>
+<td><code>hasExpressedInterest</code> mapping</td>
+<td>✅ Prevents duplicate interest from same address</td>
+</tr>
+<tr>
+<td><code>whitelistedBuyer</code> per listing</td>
+<td>✅ Supports private/invite-only listings</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Passes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-1</td>
+<td><span class="pill high">High</span></td>
+<td>PAID-status funds locked if seller inactive</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>M-1</td>
+<td><span class="pill medium">Medium</span></td>
+<td>No slippage protection in <code>purchase()</code></td>
+<td>Both</td>
+</tr>
+<tr>
+<td>M-2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Dispute flooding blocks queue for 14 days</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>M-3</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Owner is seller and sole arbitrator</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td>Rounding dust locked in contract</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td><code>expressSellerInterest</code> Sybil spam on L2</td>
+<td>Ethskills</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td>Contract source not verified on-chain</td>
+<td>Ethskills</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td><span class="pill low">Low</span></td>
+<td><code>executeTreasuryChange()</code> access control unverified</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td>CLAWD assumed non-fee-on-transfer</td>
+<td>Ethskills</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><span class="pill info">Info</span></td>
+<td>No token rescue mechanism</td>
+<td>Ethskills</td>
+</tr>
+<tr>
+<td>I-3</td>
+<td><span class="pill info">Info</span></td>
+<td>Sequencer downtime can expire dispute window</td>
+<td>Ethskills</td>
+</tr>
+</tbody></table></div>
+<hr>
+<p><em>Report generated by leftclaw.services automated audit agent.</em><br><em>Contract source was not available for verification — findings represent the maximum-confidence analysis achievable from spec, ABI, and on-chain state. Source verification (L-3) is strongly recommended before high-value production use.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreick2c6qjydzrfk34emgpcnkxretrdxcrndpxdwr47clcptvszk4hu.ipfs.community.bgipfs.com/"><code>https://bafkreick2c6qjydzrfk34emgpcnkxretrdxcrndpxdwr47clcptvszk4hu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/137">#137</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

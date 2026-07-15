@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PoidhV3 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #379">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">PoidhV3</h1>
+    <p class="job-sub">Job #379 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/379"><b>Job page</b> #379</a>
+      <a class="chip" href="https://bafkreidvygaqi27d2gnzfmbfbg5xo5enpxlk2y4wu7yghexfn3q2wz4diq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#low-severity">Low Severity</a></li>
+    </ol>
+    <ol start="6">
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — PoidhV3</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>PoidhV3.sol</code> — verified source, <code>exact_match</code> on Sourcify</td>
+</tr>
+<tr>
+<td><strong>Address</strong></td>
+<td><code>0x5555fa783936c260f77385b4e153b9725fef1719</code> (identical bytecode on both chains)</td>
+</tr>
+<tr>
+<td><strong>Chains</strong></td>
+<td>Base (8453) and Arbitrum One (42161) — independent deployments, same address/deployer, no cross-chain link</td>
+</tr>
+<tr>
+<td><strong>Compiler</strong></td>
+<td>solc 0.8.24, optimizer 200 runs, evmVersion <code>cancun</code></td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Default (all in-scope <code>.sol</code>, excluding <code>interfaces/</code>/<code>lib/</code>)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>src/PoidhV3.sol</code> (918 lines)</td>
+</tr>
+<tr>
+<td><strong>Out of scope (context only)</strong></td>
+<td><code>src/interfaces/IPoidhClaimNFT.sol</code> (external NFT interface — implementation not provided) · <code>lib/openzeppelin-contracts/.../ReentrancyGuard.sol</code> (inherited, unmodified)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context map (opus) → ethskills breadth, 7 domain agents (opus) → pashov depth, 12 attacker agents (opus), blind to phase-1 findings → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>50 (findings below this are listed as Leads, not scored findings)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="summary">Summary</h2>
+<p>PoidhV3 (&quot;proof of idea&quot;) is a bounty-escrow protocol: an issuer posts ETH as a <strong>solo bounty</strong> (issuer alone funds and accepts) or an <strong>open bounty</strong> (multiple contributors pool ETH; once any non-issuer joins, claim acceptance must go through a weighted vote instead of unilateral issuer accept). Claims mint an NFT into this contract&#39;s escrow via an external, out-of-scope <code>IPoidhClaimNFT</code> contract; accepting a claim pays the claimant (minus a 2.5% fee to an immutable <code>treasury</code>) and transfers the NFT to the bounty issuer. All ETH exits are pull-based. There is no admin, owner, pause, or upgrade mechanism anywhere in the contract — every configuration value is <code>immutable</code>, <code>constant</code>, or (in one case, <code>votingPeriod</code>) simply has no setter.</p>
+<p>The audit found <strong>one High-severity finding that breaks the contract&#39;s core stated security property</strong>: the open-bounty vote — the mechanism that exists specifically to stop an issuer from unilaterally paying out pooled contributor funds — has no quorum and auto-registers the issuer&#39;s own stake as a YES vote. A bounty issuer can, in the ordinary case of contributor inattention (no exotic precondition required), route the entire pooled bounty to a second address they control. A related Medium finding shows the same voting mechanism can be used to freeze contributor withdrawals indefinitely at negligible cost to the issuer. All other domains (reentrancy, math/precision, access control below the voting layer, DoS, chain-specific L2 behavior, NFT escrow mechanics) were checked in depth and hold up, with a handful of Low/Informational items noted below.</p>
+<p>This report reflects one independent audit run (phase-0 context map → phase-1 breadth → phase-2 depth → reconciliation); findings were <strong>not</strong> copied from any prior review of this or a related deployment.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap</strong> (found independently by both ethskills phase 1 and pashov phase 2): the core no-quorum vote finding (2/7 phase-1 domain agents — <code>general</code> + <code>governance</code> — and 12/12 phase-2 attack agents), the vote re-submission griefing finding (<code>governance</code> domain + 2 phase-2 agents elevating from lead to finding), the NFT-transfer fund-lock finding (<code>erc721</code> domain + phase-2 <code>periphery</code> agent), issuer-inaction liveness (<code>access-control</code> domain + multiple phase-2 leads), unchecked <code>mintToEscrow</code> (<code>erc721</code> domain + phase-2 <code>periphery</code> lead), fee-rounds-to-zero (<code>precision-math</code> domain + 3 phase-2 agents), tx.origin L1-bypass (<code>chain-specific</code> domain + phase-2 <code>trust-gap</code> confirmatory check).</li>
+<li><strong>Phase-1-only</strong>: orphaned/stranded claim NFTs (Informational), no pause/recovery mechanism (Informational), <code>votingPeriod</code> mutable-typed with no setter (Informational), duplicated pass/fail expression at two call sites (Informational).</li>
+<li><strong>Phase-2-only</strong>: broken pagination in the four &quot;paginated&quot; view getters (Low — new, not caught by phase 1&#39;s ethskills domains), the dead/no-op solvency check at L789 (Informational), missing return value on bounty-creation functions (Informational), misleading <code>Withdrawal</code> event on <code>withdrawTo</code> (Informational).</li>
+<li><strong>Re-examined leads</strong>: the &quot;issuer weight exceeds combined contributor weight → unstoppable even against unanimous NO&quot; sub-case (raised by the phase-2 <code>asymmetry</code> agent) — kept and folded into Finding 1 as a documented worse-case variant, since it is a direct algebraic consequence of the same code (<code>yes &gt; (yes+no)/2</code> reduces to <code>yes &gt; no</code>).</li>
+<li><strong>Coverage holes closed this pass</strong>: 0. All 15 external state-changing entrypoints in the phase-0 access-control inventory were examined by at least one phase-1 domain agent and at least one phase-2 attack agent; every phase-0 threat-catalog row is addressed below (either by a finding or an explicit &quot;invariant holds&quot; note).</li>
+<li><strong>Confidence floor</strong>: findings below confidence 50 are listed as Leads. All findings below scored ≥70; every scored finding includes a concrete, traced proof-of-concept with real numbers, verified by 2+ independent agents.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[85] <strong>1. No-quorum weighted vote lets a minority-stake bounty issuer drain pooled contributor funds</strong></p>
+<p><code>PoidhV3.submitClaimForVote</code> / <code>PoidhV3.resolveVote</code> · Confidence: 85</p>
+<p><strong>Description</strong><br>The open-bounty vote — the mechanism that exists specifically to stop an issuer from unilaterally paying out pooled contributor funds (<code>acceptClaim</code>&#39;s direct-accept path is force-disabled once <code>everHadExternalContributor</code> is set, L774) — auto-registers the issuer&#39;s own contribution as a YES vote (L672: <code>Votes({yes: issuerWeight, no: 0, deadline: deadline})</code>) and then resolves on a majority of <strong>cast</strong> weight only (L719: <code>bool passed = v.yes &gt; ((v.no + v.yes) / 2);</code>), with no quorum against total pooled weight. Since only the bounty issuer&#39;s <em>own</em> address is barred from submitting a claim (L591: <code>if (msg.sender == bountyIssuer) revert IssuerCannotClaim();</code> — a second address they control is not barred), an issuer can: fund an open bounty with a small stake, let contributors pool a large amount, submit a claim from a second address, start the vote, and — if no contributor casts an active NO vote within the 2-day <code>votingPeriod</code> — the vote passes on the issuer&#39;s own minority stake alone (<code>no=0</code> makes <code>yes &gt; yes/2</code> true for any nonzero <code>yes</code>), routing the entire pool (minus the 2.5% fee) to the second address.</p>
+<p>Concretely verified: issuer funds with <code>MIN_BOUNTY_AMOUNT</code> (e.g. 0.01 ETH, becomes <code>participantAmounts[bountyId][0]</code>); contributors add 100 ETH (<code>bounty.amount = 100.01 ETH</code>); issuer&#39;s second address <code>S</code> calls <code>createClaim</code> (passes the <code>IssuerCannotClaim</code> check since <code>S != issuer</code>); issuer calls <code>submitClaimForVote</code>, seeding <code>yes = 0.01e18, no = 0</code>; if contributors do not vote within 2 days, <code>resolveVote</code> computes <code>0.01e18 &gt; 0.005e18 → true</code>, and <code>_acceptClaim</code> (L797-L818) credits <code>S</code> with <code>100.01 * 0.975 ≈ 97.51 ETH</code> via <code>pendingWithdrawals[claimIssuer] += payout</code> — withdrawable immediately via <code>withdraw()</code>.</p>
+<p>Twelve independent phase-2 attacker agents (every specialty and gap-hunter lens run) and two independent phase-1 domain checklists (<code>evm-audit-general</code>, <code>evm-audit-governance</code>) converged on this identical mechanism from different angles, with matching traced numbers. One agent additionally showed a strictly worse sub-case: if the issuer&#39;s own weight exceeds the <em>combined</em> weight of all contributors, <code>yes &gt; (yes+no)/2</code> reduces algebraically to <code>yes &gt; no</code>, so the vote passes <strong>even against unanimous contributor NO votes</strong> — contributors cannot block it at all in that configuration, regardless of participation.</p>
+<p>This is rated High rather than Critical because contributors do have a defense (actively casting NO with combined weight ≥ the issuer&#39;s) when the issuer does not hold majority stake — the loss requires the realistic-but-not-universal precondition of contributor inattention or an issuer holding majority weight. Given the severity of impact (complete, irreversible loss of all pooled funds) and the ease of the attack (one extra address, no special capital), this sits at the top of the High band.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ // In submitClaimForVote, accumulate total snapshotted weight for the round:
++ uint256 totalWeight;
+  for (uint256 i = 0; i &lt; p.length; i++) {
+    address a = p[i];
+    uint256 w = amounts[i];
+    if (a != address(0) &amp;&amp; w &gt; 0) {
+      voteWeightSnapshot[bountyId][a] = w;
+      voteWeightSnapshotRound[bountyId][a] = roundId;
++     totalWeight += w;
+    }
+  }
++ // store totalWeight in the round&#39;s Votes struct (or a parallel mapping)
+
+- bool passed = v.yes &gt; ((v.no + v.yes) / 2);
++ bool passed = v.yes &gt; (totalSnapshotWeight[bountyId] / 2);
+</code></pre>
+<p>Require the passing side to exceed half of the <strong>total pooled weight at snapshot time</strong>, not half of only the votes actually cast, in both <code>resolveVote</code> (L719) and <code>resetVotingPeriod</code> (L744). Consider also excluding the issuer&#39;s own weight from the automatic YES seed so passage requires genuine non-issuer approval.</p>
+<hr>
+<p>[75] <strong>2. Costless, unlimited vote re-submission lets an issuer indefinitely freeze contributor withdrawals</strong></p>
+<p><code>PoidhV3.submitClaimForVote</code> / <code>PoidhV3.withdrawFromOpenBounty</code> · Confidence: 75</p>
+<p><strong>Description</strong><br><code>withdrawFromOpenBounty</code> reverts with <code>VotingOngoing</code> for the entire duration a vote is active (via <code>_requireActiveBounty</code>, L252). Only the issuer can start a vote (<code>submitClaimForVote</code>, issuer-only, L643), and there is no cooldown, no cap on rounds, and no restriction against re-submitting a claim that already lost a vote (L648 only checks <code>claim.accepted</code>, which stays <code>false</code> on a failed round). An issuer can therefore: let a round fail (contributors successfully vote NO), then immediately call <code>submitClaimForVote</code> again on the <em>same</em> <code>claimId</code> in the next transaction, re-freezing withdrawals for another full <code>votingPeriod</code> (2 days), repeating indefinitely at a cost of one transaction per round. A contributor&#39;s only escape is winning a sequencer-ordering race in the narrow gap between the failed round&#39;s resolution and the issuer&#39;s next submission — practically unwinnable against an attentive issuer. This both amplifies Finding 1 (contributors must win every round; the issuer needs only one lapse) and stands alone as a pure fund-freeze griefing vector even when the issuer never wins a vote outright.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ mapping(uint256 =&gt; uint256) public lastVoteFailedAt;
+
+  function submitClaimForVote(uint256 bountyId, uint256 claimId) external nonReentrant {
+    _requireActiveBounty(bountyId);
+    _requireOpenBounty(bountyId);
++   require(block.timestamp &gt;= lastVoteFailedAt[bountyId] + VOTE_COOLDOWN, &quot;cooldown&quot;);
+    ...
+</code></pre>
+<p>Enforce a cooldown after a failed round before the same bounty can re-enter voting, and/or forbid resubmitting a <code>claimId</code> that already lost a vote in a prior round.</p>
+<hr>
+<p>[70] <strong>3. <code>_acceptClaim</code>&#39;s trailing NFT transfer has no recovery path if it reverts on an open bounty past a passed vote</strong></p>
+<p><code>PoidhV3._acceptClaim</code> · Confidence: 70</p>
+<p><strong>Description</strong><br>All state finalization in <code>_acceptClaim</code> — bounty/claim closure, pull-payment credits to the claimant and treasury (L801-817) — happens <strong>before</strong> the external NFT transfer, which is the last statement (L822: <code>poidhNft.transferFrom(address(this), bountyIssuer, claimId);</code>). If this call reverts (the out-of-scope NFT contract is paused, blacklists an address, or the escrowed token was moved/burned by a party other than PoidhV3 — plausible if the NFT is not exclusive-minter/operator-locked, an assumption this contract cannot verify on its own), the entire transaction — including the payout credits — rolls back. For a <strong>solo bounty</strong> this is recoverable (<code>cancelSoloBounty</code> still works). For an <strong>open bounty whose vote has already passed</strong>, every recovery path is structurally blocked: <code>resolveVote</code> re-reverts on every retry, <code>resetVotingPeriod</code> refuses to discard a winning tally (<code>VoteWouldPass</code>, L745), and <code>cancelOpenBounty</code>/refund functions require the bounty not be mid-vote. If the NFT transfer can never succeed, the escrowed contributor funds are locked permanently with no operator recovery (no admin exists in this contract at all).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- poidhNft.transferFrom(address(this), bountyIssuer, claimId);
++ try poidhNft.transferFrom(address(this), bountyIssuer, claimId) {} catch {
++   // record claimId as pending NFT delivery; allow a separate retryable claim function
++   // so fund settlement is never coupled to NFT delivery outcome
++ }
+</code></pre>
+<p>Decouple fund settlement from NFT delivery so a delivery failure cannot brick an already-decided, already-paid acceptance.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[85]</td>
+<td>No-quorum weighted vote lets a minority-stake bounty issuer drain pooled contributor funds</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[75]</td>
+<td>Costless, unlimited vote re-submission lets an issuer indefinitely freeze contributor withdrawals</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[70]</td>
+<td><code>_acceptClaim</code>&#39;s trailing NFT transfer has no recovery path if it reverts on an open bounty past a passed vote</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="low-severity">Low Severity</h2>
+<p><strong>4. Broken pagination in the four &quot;paginated&quot; view getters</strong> — <code>PoidhV3.getBounties</code> / <code>getClaimsByBountyId</code> / <code>getBountiesByUser</code> / <code>getClaimsByUser</code></p>
+<p>All four getters loop <code>for (uint256 i = array.length; i &gt; offset &amp;&amp; counter &lt; 10; i--)</code> (e.g. L839) — the walk <strong>always starts at the array&#39;s tail</strong>, regardless of <code>offset</code>; <code>offset</code> only shortens the result from below, it never advances the read window. Verified by trace: with <code>bounties.length == 25</code>, <code>getBounties(0)</code> and <code>getBounties(10)</code> return the <strong>identical</strong> newest-10 set, since both start at index 24 and the <code>counter &lt; 10</code> condition ends the loop first. No <code>offset</code> value below <code>length-10</code> changes the output at all, and entries below the newest 10 are permanently unreachable through these getters (they remain readable via the public <code>bounties(i)</code>/<code>claims(i)</code> array accessors). No fund/security impact — a data-reachability defect affecting any off-chain indexer or frontend that relies on these getters for pagination.</p>
+<p><em>Fix:</em> compute the window start from <code>offset</code> directly (e.g. <code>uint256 start = length &gt; offset ? length - offset : 0</code>, then walk back 10 from <code>start</code>) instead of using <code>offset</code> as a lower bound on a tail-anchored walk.</p>
+<p><strong>5. Open bounty with an external contributor has no permissionless liveness fallback if the issuer goes silent</strong></p>
+<p>Once any non-issuer contributes, only the issuer can start a vote (<code>submitClaimForVote</code>, L643) or cancel the bounty (<code>cancelOpenBounty</code>, L531). If the issuer goes silent after a claim is created, that claim&#39;s escrowed NFT is stranded forever (no reclaim path exists) and the claimant is never paid. Contributors&#39; own principal remains recoverable via <code>withdrawFromOpenBounty</code> while the bounty stays active, so this is a liveness/griefing gap for claimants specifically, not a fund-theft vector for contributors.</p>
+<p><em>Fix:</em> add a permissionless, deadline-gated fallback (e.g., any active participant may <code>submitClaimForVote</code> after a grace period), or explicitly document issuer-controlled finalization as a trust assumption claimants should be aware of.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong><code>mintToEscrow</code> return value is unchecked</strong> — <code>createClaim</code> (L610). If the external NFT contract silently no-ops or mints to the wrong owner, <code>createClaim</code> still records the claim; the mismatch only surfaces later as a hard revert at <code>_acceptClaim</code>&#39;s <code>transferFrom</code> (L822), feeding into Finding 3&#39;s lock scenario.</li>
+<li><strong>Non-accepted claim NFTs are permanently stranded in escrow</strong> — only the single winning claim&#39;s NFT is ever transferred out; every losing/cancelled/abandoned claim&#39;s NFT sits in this contract forever with no burn/reclaim path. UX/lifecycle gap, not a fund-theft vector.</li>
+<li><strong>No emergency pause or recovery mechanism; immutable dependency on the external NFT contract</strong> — a deliberate design tradeoff (no admin = no rug potential), but a broken/hostile <code>poidhNft</code> (immutable, unswappable, L33) can brick accept/claim flows protocol-wide with no operator remedy.</li>
+<li><strong><code>votingPeriod</code> (L27) is a mutable-typed storage variable with no setter</strong> — functionally fixed at 2 days (no writer exists anywhere in the file), but its non-<code>constant</code>/non-<code>immutable</code> type is misleading and not compiler-enforced.</li>
+<li><strong>Duplicated vote pass/fail expression at two call sites</strong> — the identical predicate <code>v.yes &gt; ((v.no + v.yes) / 2)</code> is written independently at <code>resolveVote</code> L719 and <code>resetVotingPeriod</code> L744; currently consistent (verified), but a future edit to one without the other risks desync. Recommend extracting to a shared internal helper — same fix location as Finding 1&#39;s quorum change.</li>
+<li><strong><code>_acceptClaim</code>&#39;s solvency check is provably dead code</strong> — <code>if (bounty.amount &gt; address(this).balance) revert InsufficientBalance();</code> (L789) compares one bounty&#39;s tracked amount against the <em>aggregate</em> contract balance (every bounty&#39;s escrow plus all pending withdrawals combined). Since <code>balance == Σbounty.amount + ΣpendingWithdrawals</code> holds under every traced mutation, <code>bounty.amount</code> is always ≤ balance by construction — the check can never fire under honest accounting and cannot be forced to fire adversarially. Harmless; gives a false impression of a meaningful per-bounty solvency guarantee.</li>
+<li><strong>Fee rounds to zero for sub-40-wei bounties</strong> — <code>fee = bountyAmount * 250 / 10000</code> (L797) truncates to 0 when <code>bountyAmount &lt; 40 wei</code>; only reachable if <code>MIN_BOUNTY_AMOUNT</code>/<code>MIN_CONTRIBUTION</code> (immutable, unconstrained beyond nonzero in the constructor) are deployed below that floor. <code>fee + payout == bountyAmount</code> always exactly, so no dust is lost either way.</li>
+<li><strong><code>tx.origin == msg.sender</code> EOA gate bypassable via L1→L2 forced transactions</strong> — <code>createSoloBounty</code>/<code>createOpenBounty</code> (L358, L371). An L1 contract can satisfy this check via an OP-Stack deposit (Base) or Arbitrum retryable ticket, becoming a bounty issuer despite the intended EOA-only restriction. Harmless: the bypassing contract only risks becoming its own NFT sink at acceptance (no other user or the protocol is affected), and no code path branches on issuer code-length post-creation.</li>
+<li><strong>Missing return value on <code>createSoloBounty</code>/<code>createOpenBounty</code></strong> — the new <code>bountyId</code> must be recovered from the emitted event or <code>bountyCounter - 1</code>; an integration ergonomics gap, no fund impact.</li>
+<li><strong>Misleading <code>Withdrawal</code> event on <code>withdrawTo</code></strong> — <code>withdrawTo</code> emits both <code>Withdrawal(msg.sender, amount)</code> and <code>WithdrawalTo(msg.sender, to, amount)</code>; an indexer consuming only the legacy <code>Withdrawal</code> event will misattribute the ETH recipient as <code>msg.sender</code> when it was actually sent to <code>to</code>.</li>
+<li><strong><code>joinOpenBounty</code> 150-slot occupation</strong> — an attacker can occupy all <code>MAX_PARTICIPANTS = 150</code> slots with <code>MIN_CONTRIBUTION</code>-sized deposits from distinct addresses, blocking new distinct contributors. Bounded, fully self-funded by the attacker, and reversible (their own capital is withdrawable, freeing slots) — not independently actionable.</li>
+<li><strong>Fixed-size-10 getter padding with zero-value structs</strong> — same getters as Finding 4 return exactly 10 elements, padding with zero-valued structs when fewer real entries exist. Verified no genuine collision is possible with a real all-zero record (real bounties always have nonzero <code>issuer</code>/<code>createdAt</code>); a naive consumer that doesn&#39;t filter on this could still misread padding as a real record.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><strong>There is no admin, owner, or role-based access control anywhere in this contract</strong> — no <code>Ownable</code>, <code>AccessControl</code>, <code>Pausable</code>, or upgrade authority. <code>treasury</code> and <code>poidhNft</code> are <code>immutable</code>, set once in the constructor and validated non-zero (with <code>poidhNft</code> additionally checked to have code); neither has a setter. <code>MIN_BOUNTY_AMOUNT</code>/<code>MIN_CONTRIBUTION</code> are likewise <code>immutable</code>. <code>votingPeriod</code> (L27, <code>2 days</code>) is not declared <code>constant</code>/<code>immutable</code> but has zero writers anywhere in the file — effectively fixed post-deploy (see Informational above).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who can call</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>withdraw()</code> / <code>withdrawTo(to)</code></td>
+<td><code>nonReentrant</code>, own balance only</td>
+<td>Anyone with a pending balance</td>
+<td>ETH out</td>
+</tr>
+<tr>
+<td><code>createSoloBounty</code> / <code>createOpenBounty</code></td>
+<td><code>nonReentrant</code>, <code>payable</code>, EOA-only (<code>tx.origin</code>), min-value</td>
+<td>Any EOA</td>
+<td>ETH in</td>
+</tr>
+<tr>
+<td><code>joinOpenBounty</code></td>
+<td><code>nonReentrant</code>, <code>payable</code>, active+open, non-issuer, min-value</td>
+<td>Any non-issuer</td>
+<td>ETH in</td>
+</tr>
+<tr>
+<td><code>withdrawFromOpenBounty</code></td>
+<td><code>nonReentrant</code>, active+open, non-issuer, live slot</td>
+<td>Active non-issuer participant</td>
+<td>credits pending</td>
+</tr>
+<tr>
+<td><code>cancelSoloBounty</code> / <code>cancelOpenBounty</code></td>
+<td><code>nonReentrant</code>, active, <strong>issuer-only</strong></td>
+<td>Bounty issuer</td>
+<td>credits pending (partial for open — issuer&#39;s slot only)</td>
+</tr>
+<tr>
+<td><code>claimRefundFromCancelledOpenBounty</code></td>
+<td><code>nonReentrant</code>, cancelled, live slot</td>
+<td>Any participant of a cancelled bounty</td>
+<td>credits pending</td>
+</tr>
+<tr>
+<td><code>createClaim</code></td>
+<td><code>nonReentrant</code>, active, non-issuer</td>
+<td>Anyone but the bounty issuer</td>
+<td>mints NFT (external call)</td>
+</tr>
+<tr>
+<td><code>submitClaimForVote</code></td>
+<td><code>nonReentrant</code>, active+open, <strong>issuer-only</strong></td>
+<td>Bounty issuer</td>
+<td>none directly</td>
+</tr>
+<tr>
+<td><code>voteClaim</code></td>
+<td><code>nonReentrant</code>, vote active, snapshotted this round</td>
+<td>Any snapshotted participant</td>
+<td>none directly</td>
+</tr>
+<tr>
+<td><code>resolveVote</code> / <code>resetVotingPeriod</code></td>
+<td><code>nonReentrant</code>, deadline passed. <strong>No caller check</strong></td>
+<td><strong>Anyone (permissionless, by design)</strong></td>
+<td><code>resolveVote</code> on pass: full payout + NFT transfer</td>
+</tr>
+<tr>
+<td><code>acceptClaim</code></td>
+<td><code>nonReentrant</code>, active, <strong>issuer-only</strong> (solo, or open never-externally-funded)</td>
+<td>Bounty issuer</td>
+<td>via <code>_acceptClaim</code></td>
+</tr>
+<tr>
+<td><code>receive()</code></td>
+<td>none</td>
+<td>Anyone</td>
+<td>always reverts</td>
+</tr>
+</tbody></table></div>
+<p>Per-bounty <code>issuer</code> (set at creation, not transferable) unlocks <code>cancelSoloBounty</code>/<code>cancelOpenBounty</code>/<code>submitClaimForVote</code>/<code>acceptClaim</code> (solo path) for that bounty only — this is the entire privilege system in the contract, scoped per-bounty rather than protocol-wide.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>What they can reach</th>
+<th>What they could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Bounty issuer (+ colluding second address)</td>
+<td><code>submitClaimForVote</code> → <code>resolveVote</code></td>
+<td>Entire pooled bounty via the no-quorum vote</td>
+<td><strong>Finding 1</strong></td>
+</tr>
+<tr>
+<td>Bounty issuer</td>
+<td>Repeated <code>submitClaimForVote</code></td>
+<td>Indefinite freeze of contributor withdrawals</td>
+<td><strong>Finding 2</strong></td>
+</tr>
+<tr>
+<td>Any party (incl. hostile external NFT contract)</td>
+<td><code>_acceptClaim</code>&#39;s NFT transfer</td>
+<td>Permanent lock of a passed open bounty&#39;s funds if NFT transfer fails</td>
+<td><strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td>Off-chain indexer/frontend</td>
+<td><code>getBounties</code>/etc.</td>
+<td>Correctly reads only the newest 10 records; older history unreachable</td>
+<td><strong>Finding 4 (Low)</strong></td>
+</tr>
+<tr>
+<td>Bounty issuer (by inaction)</td>
+<td>Silence after <code>createClaim</code></td>
+<td>Strands a claimant&#39;s NFT/payment indefinitely</td>
+<td><strong>Finding 5 (Low)</strong></td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>resolveVote</code>/<code>resetVotingPeriod</code> (permissionless)</td>
+<td>Cannot alter vote outcome, only its timing — outcome is a pure function of already-cast, round-locked votes</td>
+<td>Invariant holds — outcome determinism verified</td>
+</tr>
+<tr>
+<td>Any address holding a <code>pendingWithdrawals</code> balance</td>
+<td><code>withdraw</code>/<code>withdrawTo</code></td>
+<td>Can drain only their own credited balance</td>
+<td>Invariant holds — keyed strictly by <code>msg.sender</code>, verified across all credit sites</td>
+</tr>
+<tr>
+<td>External <code>poidhNft</code> contract (malicious/buggy)</td>
+<td><code>createClaim</code>/<code>_acceptClaim</code> calls</td>
+<td>Could revert to grief a single claim/acceptance; reentry blocked by the single global <code>nonReentrant</code> lock</td>
+<td>Invariant holds for reentrancy; fund-lock blast radius is <strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td>Bounty issuer (open, never-externally-funded)</td>
+<td><code>acceptClaim</code> direct path</td>
+<td>Cannot bypass the vote requirement once any outsider has ever joined (<code>everHadExternalContributor</code> is a permanent one-way latch, verified no unsetter exists)</td>
+<td>Invariant holds</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass, or where the trigger depends on out-of-scope (NFT contract) behavior. These are not false positives — they are high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><strong>Unchecked <code>mintToEscrow</code> mint verification</strong> — <code>PoidhV3.createClaim</code> — Code smells: void return, no post-mint ownership check — if the out-of-scope NFT contract silently fails to mint to escrow, the claim is recorded anyway and only surfaces as a hard revert later at acceptance; unverified because it depends on the external NFT&#39;s actual behavior, which is out of scope.</li>
+<li><strong><code>joinOpenBounty</code> 150-slot occupation as a targeted griefing tool against a specific issuer</strong> — <code>PoidhV3.joinOpenBounty</code> — Code smells: hard cap with no anti-sybil cost beyond <code>MIN_CONTRIBUTION</code> per slot — bounded and reversible as analyzed, but whether a real economic incentive exists for an attacker to spend <code>150 × MIN_CONTRIBUTION</code> purely to block one issuer&#39;s growth remains unverified (deployment-parameter dependent).</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-driven three-phase audit pipeline (context mapping, checklist breadth, attacker-mindset depth) with hybrid reconciliation across both hunting phases. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, bug bounty program, and on-chain monitoring are strongly recommended before or alongside mainnet use, particularly given Finding 1&#39;s severity.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidvygaqi27d2gnzfmbfbg5xo5enpxlk2y4wu7yghexfn3q2wz4diq.ipfs.community.bgipfs.com/"><code>https://bafkreidvygaqi27d2gnzfmbfbg5xo5enpxlk2y4wu7yghexfn3q2wz4diq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/379">#379</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

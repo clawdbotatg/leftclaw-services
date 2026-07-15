@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultFire ERC-8004 Validation Registry — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #342">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultFire ERC-8004 Validation Registry</h1>
+    <p class="job-sub">Job #342 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/342"><b>Job page</b> #342</a>
+      <a class="chip" href="https://bafkreif2srw2ioww3lfxfuoxz25wsjzux5r3zsfgavtdg7c2sqts7lfqbq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">6</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — VaultFire ERC-8004 Validation Registry</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>ERC8004ValidationRegistry</code> at <code>0x8D3495772EAcAdB7dC09F1784eF06F2D109fb8a5</code> on Base (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Deployed contract + full dependency chain (Sourcify full-match)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>ERC8004ValidationRegistry.sol</code> · <code>ERC8004IdentityRegistry.sol</code><br><code>BeliefAttestationVerifier.sol</code> · <code>IStarkVerifier.sol</code><br><code>MissionEnforcement.sol</code> · <code>PrivacyGuarantees.sol</code> · <code>ReentrancyGuard.sol</code></td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Two-phase: 5 ethskills breadth checklists + 12 pashov depth attack agents (blind), reconciled</td>
+</tr>
+<tr>
+<td><strong>Client focus areas</strong></td>
+<td>Validator authenticity checks · correct validation-request lifecycle · access control on state-changing entries</td>
+</tr>
+<tr>
+<td><strong>Holds real value</strong></td>
+<td>Yes — requester stakes (≥1 ETH/request), validator stakes, and a communal reward pool, all in native ETH</td>
+</tr>
+</tbody></table></div>
+<p>Source was pulled from Sourcify (<code>full_match</code>), confirmed to match on-chain bytecode. <strong>On-chain verification</strong>: <code>cast call</code> against the deployed contract confirms <code>zkVerifier() == 0x32211773C8266774A704aeD471f8eF073f34bA79</code>, and that address&#39;s <code>getProofSystemId()</code> returns <code>&quot;RISC0-STARK-BeliefAttestation-v1.0&quot;</code> — i.e. the deployed <code>zkVerifier</code> <strong>is</strong> the <code>BeliefAttestationVerifier</code> dev placeholder explicitly marked &quot;DO NOT DEPLOY TO PRODUCTION&quot; in its own source comments (see Finding 6).</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap (found by both phases):</strong> 9 findings</li>
+<li><strong>Phase-1-only:</strong> 6 findings (notably the gas-griefing DoS vector and the JIT reward-sniping timing attack — neither surfaced independently by the 12 blind phase-2 agents, but both confirmed against source on reconciliation)</li>
+<li><strong>Phase-2-only:</strong> 0 findings</li>
+<li><strong>Completeness:</strong> 21 unique (Contract, function, bug-class) tuples identified across both phases&#39; raw output; <strong>21 covered</strong> in the unified findings below.</li>
+<li><strong>Corroboration note:</strong> Finding 1 (locked requester stake) and Finding 3 (locked validator stake on ties) were independently derived by <strong>all 12 of 12</strong> phase-2 agents plus 4 of 5 phase-1 checklists — the highest consensus observed across either audit run. This is not a subtle bug; it is a structural gap in the ETH lifecycle that every analysis angle converged on.</li>
+</ul>
+<p><strong>Answering the client&#39;s three focus questions directly:</strong></p>
+<ol>
+<li><strong>Validator authenticity checks — absent.</strong> The <code>ValidationType</code> enum implies five distinct trust regimes (<code>STAKER_RERUN</code>, <code>ZK_PROOF</code>, <code>TEE_ORACLE</code>, <code>TRUSTED_JUDGE</code>, <code>MULTI_VALIDATOR</code>), but every type is gated by the identical, single check: <code>validatorStakes[msg.sender] &gt;= 1 ETH</code>. A <code>TEE_ORACLE</code> or <code>TRUSTED_JUDGE</code> claim is decided by the same anonymous staker who could validate a <code>STAKER_RERUN</code> claim. See Finding 5.</li>
+<li><strong>Validation-request lifecycle — broken.</strong> Requester stakes are never returned under any outcome (Finding 1). Ties and unreached-quorum requests never resolve and permanently freeze validator stakes (Finding 3). <code>ZK_PROOF</code> requests can never complete at all against the currently-deployed verifier (Finding 6).</li>
+<li><strong>Access control on state-changing entries — largely absent.</strong> No <code>onlyOwner</code>/admin surface exists anywhere in this contract (unlike its sibling <code>MissionEnforcement</code>), despite it custodying real ETH; no pause, no rescue, no upgrade path for the broken verifier (Finding 11). Self-validation is not blocked (Finding 8).</li>
+</ol>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[97] <strong>1. Requester&#39;s validation stake is permanently and unconditionally locked</strong></p>
+<p><code>ERC8004ValidationRegistry.requestValidation</code> · Confidence: 97 · Severity: <strong>Critical</strong> · Origin: <strong>[both]</strong> — independently found by all 12 phase-2 agents and 4 of 5 phase-1 checklists</p>
+<p><strong>Description</strong><br><code>requestValidation()</code> (lines 181-227) requires <code>msg.value &gt;= MIN_VALIDATOR_STAKE</code> (1 ETH) and stores it as <code>stakeAmount</code> in the <code>ValidationRequest</code> struct (line 208). A full-text search of the contract confirms <code>stakeAmount</code> is written exactly once and read only by the <code>ValidationRequested</code> event and the <code>getValidationRequest()</code> view — <strong>no function anywhere ever transfers it out</strong>. It is not refunded on <code>APPROVED</code>, <code>REJECTED</code>, <code>DISPUTED</code>, or a request that never resolves; it is not routed into <code>rewardPool</code>; it is not slashable; and there is no admin sweep (the contract has no owner at all — see Finding 11). Every single call to the contract&#39;s primary entry point permanently destroys at least 1 ETH of the caller&#39;s funds, with zero preconditions and zero attacker required — this happens on ordinary, honest use.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Alice calls <code>requestValidation{value: 1 ether}(agent, &quot;uri&quot;, hash, ValidationType.STAKER_RERUN, 0)</code>. Contract balance +1 ETH.</li>
+<li>A validator approves; the request resolves <code>APPROVED</code>. <code>_distributeRewards()</code> pays the validator from <code>rewardPool</code> and touches only <code>rewardPool</code>/<code>validatorStakes</code> — never <code>stakeAmount</code>.</li>
+<li>Alice has no function to call to recover her 1 ETH. It is gone. The same is true if the outcome is <code>REJECTED</code>, <code>DISPUTED</code>, or the request never resolves at all.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     struct ValidationRequest {
+         ...
+         uint256 approvalsCount;
+         uint256 rejectionsCount;
++        bool stakeClaimed;
+     }
++
++    function claimRequesterStake(uint256 requestId) external nonReentrant {
++        ValidationRequest storage r = validationRequests[requestId];
++        require(msg.sender == r.requester, &quot;Not requester&quot;);
++        require(r.status != ValidationStatus.PENDING, &quot;Not resolved&quot;);
++        require(!r.stakeClaimed, &quot;Already claimed&quot;);
++        r.stakeClaimed = true;
++        uint256 amt = r.stakeAmount;
++        (bool ok, ) = payable(msg.sender).call{value: amt}(&quot;&quot;);
++        require(ok, &quot;Refund failed&quot;);
++    }
+</code></pre>
+<p>Decide the intended economics first (full refund vs. partial forfeiture to the reward pool on <code>REJECTED</code>) and implement whichever policy is intended — but <em>some</em> recovery path must exist.</p>
+<hr>
+<p>[95] <strong>2. <code>_distributeRewards</code> pays a fixed reward to whichever side is the &quot;majority&quot; with no real validation oracle — a single staked address (or a sybil cluster) can risklessly drain the reward pool</strong></p>
+<p><code>ERC8004ValidationRegistry.submitValidation</code> / <code>_distributeRewards</code> · Confidence: 95 · Severity: <strong>High</strong> · Origin: <strong>[both]</strong> — phase-2 agents 2, 3, 7, 11 (independently) + phase-1 general (M-3), access-control (AC-1/AC-2/AC-3), defi-staking (H-3, M-3)</p>
+<p><strong>Description</strong><br>For every non-<code>MULTI_VALIDATOR</code> type, <code>validatorsRequired</code> is forced to <code>1</code> (line 198). With exactly one response, that response is <em>by definition</em> the majority (<code>approvalsCount(1) &gt; rejectionsCount(0)</code> or vice versa) — the sole voter is therefore <strong>always</strong> paid <code>VALIDATION_REWARD</code> (0.1 ETH from <code>rewardPool</code>) and <strong>never</strong> slashed, regardless of whether their vote is honest. Mechanism A (single-validator rubber-stamp): any address stakes 1 ETH once, then approves every pending single-validator request with zero validation work, collecting 0.1 ETH per request risk-free — the 1 ETH stake is fully recoverable afterward via <code>withdrawValidatorStake</code>. Mechanism B (sybil multi-validator drain): for <code>MULTI_VALIDATOR</code>, <code>validatorsRequired</code> has only a floor (<code>&gt;= 3</code>, line 194) and no ceiling; one actor funds N addresses at 1 ETH each, self-requests a validation with <code>validatorsRequired = N</code>, has all N sybils approve, and collects <code>0.1 × N</code> ETH from the communal pool while every sybil&#39;s stake remains fully withdrawable. There is no requirement that validators be independent of each other or of the requester/agent (Finding 8 covers the self-validation sub-case).</p>
+<p><strong>Proof of Concept</strong></p>
+<ul>
+<li>Mechanism A: attacker stakes 1 ETH, approves any pending <code>STAKER_RERUN</code> request → paid 0.1 ETH, withdraws the 1 ETH afterward. Repeat indefinitely across every pending request.</li>
+<li>Mechanism B: attacker stakes 20 sybil addresses (20 ETH, fully recoverable), self-requests with <code>validatorsRequired = 20</code>, all 20 approve → <code>_distributeRewards</code> pays <code>20 × 0.1 = 2 ETH</code> from <code>rewardPool</code> in one transaction. Net per cycle: <code>+2 ETH − 1 ETH</code> (trapped requester stake, Finding 1) <code>= +1 ETH</code>, draining the pool funded by honest <code>fundRewardPool()</code> donors.</li>
+</ul>
+<p><strong>Fix</strong><br>Cap total reward payout per request to the request&#39;s own <code>stakeAmount</code> (removing the incentive to over-recruit sybils against a shared pool), and/or require a real, independently-verifiable signal (challenge window, evidence check) before paying rewards rather than paying on bare vote-majority among self-selected voters.</p>
+<hr>
+<p>[93] <strong>3. Ties (<code>DISPUTED</code>) and never-reaching-quorum requests permanently freeze every participating validator&#39;s entire staked balance</strong></p>
+<p><code>ERC8004ValidationRegistry._checkValidationComplete</code> / <code>withdrawValidatorStake</code> · Confidence: 93 · Severity: <strong>High</strong> · Origin: <strong>[both]</strong> — independently found by all 12 phase-2 agents and 3 of 5 phase-1 checklists</p>
+<p><strong>Description</strong><br><code>validatorActiveValidations[validator]</code> is incremented on every vote (lines 275, 335) and is decremented <strong>only</strong> inside <code>_distributeRewards()</code> (lines 395, 416), which <code>_checkValidationComplete()</code> calls <strong>only</strong> on the <code>APPROVED</code>/<code>REJECTED</code> branches (lines 361, 364). The tie branch (<code>approvalsCount == rejectionsCount</code>, lines 365-369) sets <code>status = DISPUTED</code> and returns <strong>without</strong> calling <code>_distributeRewards()</code> — the counter is never decremented for any of the tied voters. <code>withdrawValidatorStake()</code> requires <code>validatorActiveValidations[msg.sender] == 0</code> (line 462); once stuck above zero, this check can never pass again — no timeout, cancel, or admin override exists anywhere in scope. A tie is trivially reachable because <code>requestValidation()</code> only enforces a floor on <code>validatorsRequired</code> (<code>&gt;= 3</code>, no ceiling and no parity requirement, line 194) — a requester can freely choose an even value like 4. The identical freeze occurs for any <code>MULTI_VALIDATOR</code> request that simply never accumulates enough votes to reach its threshold (the request stays <code>PENDING</code> forever). This can happen with zero malicious intent (an honest 2-2 split), or be deliberately weaponized: an attacker watching a 2-1 tally can cast the tie-breaking vote specifically to brick two honest validators&#39; stakes alongside their own.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Four validators each <code>stakeAsValidator{value: 1 ether}()</code>.</li>
+<li>A requester creates <code>requestValidation(agent, uri, hash, MULTI_VALIDATOR, 4)</code>.</li>
+<li>Two validators vote <code>approved=true</code>, two vote <code>approved=false</code>. On the 4th vote, <code>totalResponses(4) &gt;= validatorsRequired(4)</code> and <code>approvalsCount(2) == rejectionsCount(2)</code> → <code>status = DISPUTED</code>.</li>
+<li>All four validators now have <code>validatorActiveValidations == 1</code> permanently. Every future call to <code>withdrawValidatorStake()</code> reverts <code>&quot;Active validations pending&quot;</code>. Four validators&#39; full stakes (≥4 ETH total) are frozen forever.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">             } else {
+                 request.status = ValidationStatus.DISPUTED;
++                uint256[] memory responses = requestResponses[requestId];
++                for (uint256 i = 0; i &lt; responses.length; i++) {
++                    validatorActiveValidations[validationResponses[responses[i]].validator] -= 1;
++                }
+             }
+</code></pre>
+<p>Additionally add a request-expiry/cancel path (e.g. <code>require(block.timestamp &gt; request.createdAt + TIMEOUT)</code>) that releases active-validation counters for requests that never reach quorum at all, and consider requiring <code>validatorsRequired</code> to be odd for <code>MULTI_VALIDATOR</code> to make ties structurally unreachable.</p>
+<hr>
+<p>[80] <strong>4. Uncapped external call inside the <code>_distributeRewards</code> loop lets a single malicious validator brick finalization for every participant</strong></p>
+<p><code>ERC8004ValidationRegistry._distributeRewards</code> · Confidence: 80 · Severity: <strong>High</strong> · Origin: <strong>[phase1-only]</strong> — dos checklist (D-3), confirmed against source on reconciliation</p>
+<p><strong>Description</strong><br>The reward branch executes <code>payable(validator).call{value: VALIDATION_REWARD}(&quot;&quot;)</code> (line 400) inside a <code>for</code> loop over all of a request&#39;s responses, with no gas stipend cap and no cap on returned data size. Because the call forwards essentially all remaining gas, a validator that is a contract with a gas-burning <code>receive()</code> (or one that returns an oversized blob, forcing costly memory expansion on copy) can consume nearly all gas available at that point in the loop. The transaction that crosses the <code>validatorsRequired</code> threshold — which runs <code>_distributeRewards</code> synchronously — then reverts out-of-gas before completing the remaining iterations. Since the status update never commits, the request stays <code>PENDING</code> forever, and <em>every</em> validator who already voted on it is caught by Finding 3&#39;s permanent-freeze mechanism (the never-reaching-completion path). Retrying does not help — the same malicious validator response is still in the loop and reverts it again.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Attacker deploys a contract, stakes 1 ETH as a validator via it, and gives it a <code>receive()</code> that spins in a tight loop (or returns a large blob).</li>
+<li>The attacker&#39;s contract votes on the winning side of a <code>MULTI_VALIDATOR</code> request.</li>
+<li>When the threshold-crossing vote arrives, <code>_distributeRewards</code>&#39;s loop reaches the attacker&#39;s response and issues the uncapped <code>.call</code>. Gas exhaustion (or memory-expansion cost) causes the enclosing transaction to revert.</li>
+<li>The request can never be finalized by anyone; every validator who voted on it has their stake permanently frozen per Finding 3.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-                    (bool rewardSuccess, ) = payable(validator).call{value: VALIDATION_REWARD}(&quot;&quot;);
++                    (bool rewardSuccess, ) = payable(validator).call{value: VALIDATION_REWARD, gas: 50_000}(&quot;&quot;);
+</code></pre>
+<p>Better: switch to a pull-payment pattern — credit <code>pendingRewards[validator] += VALIDATION_REWARD</code> inside the loop (no external call at all) and let each validator claim independently via a separate <code>claimReward()</code> function.</p>
+<hr>
+<p>[85] <strong>5. No validator-authenticity differentiation across <code>ValidationType</code> — <code>TEE_ORACLE</code>/<code>TRUSTED_JUDGE</code> claims are decided by the same anonymous 1-ETH staker as <code>STAKER_RERUN</code></strong></p>
+<p><code>ERC8004ValidationRegistry.submitValidation</code> / <code>submitValidationZK</code> · Confidence: 85 · Severity: <strong>High</strong> · Origin: <strong>[phase1-only]</strong> — access-control checklist (AC-1), directly answering the client&#39;s stated focus area</p>
+<p><strong>Description</strong><br>The <code>ValidationType</code> enum (<code>STAKER_RERUN</code>, <code>ZK_PROOF</code>, <code>TEE_ORACLE</code>, <code>TRUSTED_JUDGE</code>, <code>MULTI_VALIDATOR</code>) implies five distinct trust models, but <code>submitValidation()</code>/<code>submitValidationZK()</code> apply exactly one eligibility check regardless of type: <code>validatorStakes[msg.sender] &gt;= MIN_VALIDATOR_STAKE</code>. There is no TEE attestation/enclave-key check for <code>TEE_ORACLE</code>, no on-chain judge-role registry for <code>TRUSTED_JUDGE</code>, and (combined with Finding 6) the <code>ZK_PROOF</code> path cannot function at all. The type label carries no enforceable meaning — a &quot;trusted judge&#39;s&quot; verdict is just an arbitrary staked address&#39;s boolean.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Attacker calls <code>stakeAsValidator{value: 1 ether}()</code>.</li>
+<li>A <code>TEE_ORACLE</code> or <code>TRUSTED_JUDGE</code> request exists with <code>validatorsRequired == 1</code> (forced for non-multi types).</li>
+<li>Attacker calls <code>submitValidation(requestId, true, &quot;&quot;, &quot;&quot;)</code> — the only check passed is the generic stake check.</li>
+<li>The claim is recorded <code>APPROVED</code> on-chain as if independently verified by a trusted enclave or human expert; no such verification occurred.</li>
+</ol>
+<p><strong>Fix</strong><br>Introduce a per-type authorization registry, e.g.:</p>
+<pre><code class="language-solidity">mapping(ValidationType =&gt; mapping(address =&gt; bool)) public authorizedValidators;
+
+function submitValidation(...) external payable nonReentrant {
+    ...
+    require(
+        request.validationType == ValidationType.STAKER_RERUN ||
+        authorizedValidators[request.validationType][msg.sender],
+        &quot;Not authorized for this validation type&quot;
+    );
+</code></pre>
+<p>Populate <code>authorizedValidators</code> via an admin/governance process appropriate to each type (TEE attestation verification for <code>TEE_ORACLE</code>, a curated judge allowlist for <code>TRUSTED_JUDGE</code>).</p>
+<hr>
+<p>[95] <strong>6. The deployed <code>zkVerifier</code> is confirmed on-chain to be the &quot;DO NOT DEPLOY TO PRODUCTION&quot; placeholder — every <code>ZK_PROOF</code> request is permanently un-completable</strong></p>
+<p><code>ERC8004ValidationRegistry</code> (immutable <code>zkVerifier</code>) / <code>BeliefAttestationVerifier._verifyStarkProof</code> · Confidence: 95 · Severity: <strong>High</strong> · Origin: <strong>[both]</strong> — phase-1 general (H-3), dos (D-5), access-control (AC-8), defi-staking (L-3); phase-2 agents 4, 6, 7, 8, 9</p>
+<p><strong>Description</strong><br><code>BeliefAttestationVerifier</code> is explicitly banner-commented as a development-mode placeholder (&quot;⚠️ DEVELOPMENT-MODE VERIFIER — DO NOT DEPLOY TO PRODUCTION&quot;), whose <code>_verifyStarkProof()</code> unconditionally <code>revert</code>s (line 169). <strong>This was verified directly against the live chain, not just source</strong>: <code>cast call</code> against the deployed <code>ERC8004ValidationRegistry</code> returns <code>zkVerifier() == 0x32211773C8266774A704aeD471f8eF073f34bA79</code>, and calling <code>getProofSystemId()</code> on that exact address returns <code>&quot;RISC0-STARK-BeliefAttestation-v1.0&quot;</code> — the same string hardcoded in <code>BeliefAttestationVerifier.sol</code>. The deployed <code>zkVerifier</code> <strong>is</strong> the placeholder. Because <code>zkVerifier</code> is <code>immutable</code> (set once in the constructor with no replace function — see Finding 11), this cannot be fixed without redeploying the entire registry. Additionally, <code>submitValidation()</code>&#39;s <code>ZK_PROOF</code> branch passes an empty <code>publicInputs</code> array (line 256) to a verifier that requires exactly 4 inputs (<code>BeliefAttestationVerifier.sol:107</code>), so even a <em>correct</em> verifier would reject that specific call path — only <code>submitValidationZK()</code> (with real inputs) could ever work against a production verifier.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>A requester calls <code>requestValidation{value: 1 ether}(agent, uri, hash, ValidationType.ZK_PROOF, 0)</code>.</li>
+<li>Any validator calling <code>submitValidationZK(...)</code> reverts inside <code>_verifyStarkProof</code> (&quot;ZK verification not implemented...&quot;). Any validator calling <code>submitValidation(...)</code> for this request reverts earlier on the input-count check.</li>
+<li>The request can never receive a single valid response. It stays <code>PENDING</code> forever, and the requester&#39;s stake is permanently lost per Finding 1 — with certainty, not merely as a risk.</li>
+</ol>
+<p><strong>Fix</strong><br>Do not operate with <code>BeliefAttestationVerifier</code> wired as the live <code>zkVerifier</code>. Deploy the intended production verifier (<code>ProductionBeliefAttestationVerifier</code>, referenced in the placeholder&#39;s own comments) and point a <em>new</em> registry at it, since <code>zkVerifier</code> cannot be changed on the existing deployment. Going forward, make the verifier address replaceable through a constrained admin/timelock mechanism rather than <code>immutable</code>, and add the chain-id guard the placeholder&#39;s banner comment claims exists but does not.</p>
+<hr>
+<p>[65] <strong>7. No cooldown between staking, voting, and withdrawing enables risk-free just-in-time reward sniping</strong></p>
+<p><code>ERC8004ValidationRegistry.stakeAsValidator</code> / <code>submitValidation</code> / <code>withdrawValidatorStake</code> · Confidence: 65 · Severity: <strong>High</strong> · Origin: <strong>[phase1-only]</strong> — defi-staking checklist (H-2), confirmed against source on reconciliation</p>
+<p><strong>Description</strong><br>There is no minimum stake age before a validator may vote, and no unbonding delay after voting before a validator may withdraw. Vote tallies (<code>approvalsCount</code>/<code>rejectionsCount</code>) are public on-chain state readable before a request finalizes. A validator can therefore watch a <code>MULTI_VALIDATOR</code> request that is one vote away from a majority, stake the minimum just-in-time, cast the deciding vote on the already-leading side, collect the reward, and withdraw their entire stake in the very next transaction — because their own vote triggers completion, which resets their <code>validatorActiveValidations</code> counter to zero in the same call. This shifts all slashing risk onto early, genuinely-uncertain voters while snipers capture rewards with no meaningful exposure.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>A <code>MULTI_VALIDATOR</code> request needs 3 votes; 2 are in, both <code>approve</code>.</li>
+<li>Attacker calls <code>stakeAsValidator{value: 1 ether}()</code> — instantly eligible, no cooldown.</li>
+<li>Attacker calls <code>submitValidation(requestId, true, ...)</code> — becomes the 3rd approval, request resolves <code>APPROVED</code>, attacker paid 0.1 ETH, <code>validatorActiveValidations</code> reset to 0 in the same transaction.</li>
+<li>Attacker calls <code>withdrawValidatorStake(1 ether)</code> in the very next transaction. Net: 0.1 ETH profit, zero capital lock-up, zero slash exposure.</li>
+</ol>
+<p><strong>Fix</strong><br>Record a <code>stakeTimestamp</code> in <code>stakeAsValidator()</code> and require a minimum age before a stake counts toward <code>submitValidation()</code>&#39;s eligibility check; separately, add an unbonding delay in <code>withdrawValidatorStake()</code> measured from a validator&#39;s most recent vote. Consider commit-reveal voting so the running tally is not visible while a request is still open.</p>
+<hr>
+<p>[70] <strong>8. No check prevents a requester or the agent under review from validating their own claim</strong></p>
+<p><code>ERC8004ValidationRegistry.submitValidation</code> / <code>submitValidationZK</code> · Confidence: 70 · Severity: <strong>Medium</strong> · Origin: <strong>[both]</strong> — phase-1 access-control (AC-2), general (M-3); phase-2 agent 2 (folded into the reward-farming finding)</p>
+<p><strong>Description</strong><br>Neither submit function checks <code>msg.sender</code> against <code>request.agentAddress</code> or <code>request.requester</code>. Since non-<code>MULTI_VALIDATOR</code> requests need only one vote (Finding 2), an agent or requester who stakes 1 ETH can single-handedly approve their own claim.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">         ValidationRequest storage request = validationRequests[requestId];
+         require(request.status == ValidationStatus.PENDING, &quot;Request not pending&quot;);
++        require(msg.sender != request.agentAddress, &quot;Agent cannot self-validate&quot;);
++        require(msg.sender != request.requester, &quot;Requester cannot self-validate&quot;);
+</code></pre>
+<hr>
+<p>[70] <strong>9. <code>submitValidation</code>/<code>submitValidationZK</code> are <code>payable</code>; any attached ETH is silently and permanently lost</strong></p>
+<p><code>ERC8004ValidationRegistry.submitValidation</code> / <code>submitValidationZK</code> · Confidence: 70 · Severity: <strong>Medium</strong> · Origin: <strong>[both]</strong> — corroborated by nearly every phase-2 agent as at least a LEAD, plus phase-1 general (M-1), dos, defi-staking (M-2)</p>
+<p><strong>Description</strong><br>Both vote functions are <code>payable</code> and record <code>validatorStake: msg.value</code> (lines 271, 331) into the <code>ValidationResponse</code> struct, but that value is never credited to the withdrawable <code>validatorStakes[msg.sender]</code> mapping (which is only populated by <code>stakeAsValidator()</code>), never read by the slashing logic, and never refunded. The field name and <code>payable</code> modifier both invite a validator to believe they are bonding additional stake per vote; any ETH sent this way is permanently orphaned.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-    function submitValidation(
+-        uint256 requestId,
+-        bool approved,
+-        string calldata evidenceURI,
+-        bytes calldata zkProof
+-    ) external payable nonReentrant {
++    function submitValidation(
++        uint256 requestId,
++        bool approved,
++        string calldata evidenceURI,
++        bytes calldata zkProof
++    ) external nonReentrant {
+</code></pre>
+<p>Remove <code>payable</code> from both functions (and the now-pointless <code>validatorStake</code> field), or explicitly do <code>validatorStakes[msg.sender] += msg.value;</code> if per-vote bonding is intended.</p>
+<hr>
+<p>[65] <strong>10. Slashed validator stake is destroyed from accounting but the underlying ETH is never redistributed — orphaned contract balance</strong></p>
+<p><code>ERC8004ValidationRegistry._distributeRewards</code> (slash branch) · Confidence: 65 · Severity: <strong>Medium</strong> · Origin: <strong>[both]</strong> — nearly every phase-2 agent as a LEAD, plus phase-1 precision-math (PM-2), general (M-2), defi-staking (M-1)</p>
+<p><strong>Description</strong><br>When a minority voter is slashed, <code>validatorStakes[validator] -= slashAmount</code> (line 415) reduces the bookkeeping balance, but the slashed ETH is never credited to <code>rewardPool</code>, the requester, or the majority voters — it simply remains in the contract&#39;s balance with no accounting reference. Over time, <code>address(this).balance</code> diverges upward from <code>sum(validatorStakes) + rewardPool</code>, while legitimately-owed rewards can be silently skipped once <code>rewardPool</code> runs dry (line 407) even as slashed ETH sits frozen and unusable in the same contract.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">                 uint256 slashAmount = validatorStakes[validator] &gt;= VALIDATION_REWARD
+                     ? VALIDATION_REWARD
+                     : validatorStakes[validator];
+                 validatorStakes[validator] -= slashAmount;
++                rewardPool += slashAmount;
+</code></pre>
+<hr>
+<p>[70] <strong>11. Contract custodies real ETH (stakes + reward pool) with zero administrative surface — no pause, no rescue, no way to replace the broken verifier</strong></p>
+<p><code>ERC8004ValidationRegistry</code> (contract-wide) · Confidence: 70 · Severity: <strong>Medium</strong> · Origin: <strong>[phase1-only]</strong> — access-control checklist (AC-4)</p>
+<p><strong>Description</strong><br>Unlike its sibling <code>MissionEnforcement</code> (which implements two-step <code>Ownable</code>-style governance), <code>ERC8004ValidationRegistry</code> inherits only <code>PrivacyGuarantees</code> and <code>ReentrancyGuard</code> — no owner, no role system, no <code>pause()</code>, no timelock, no emergency fund-recovery. Combined with the immutable, permanently-broken <code>zkVerifier</code> (Finding 6) and the multiple permanent fund-lock states above (Findings 1, 3), there is no way for anyone — including a well-intentioned operator — to intervene, pause the bleeding, or rescue stranded ETH once any of these conditions occur.</p>
+<p><strong>Fix</strong><br>Add a minimal governance surface appropriate to the trust model: two-step ownership (or a timelocked multisig), a <code>Pausable</code> guard on the ETH-moving entry points, and an admin-gated recovery path for provably-stranded balances (e.g. slashed ETH, per Finding 10). If the intent is a fully trustless registry, then the lock-forever states themselves (Findings 1, 3, 6) must be eliminated instead, since there will be no one able to fix them post-deployment.</p>
+<hr>
+<p>[50] <strong>12. <code>MULTI_VALIDATOR</code> consensus has no Sybil resistance beyond a flat, refundable per-address stake</strong></p>
+<p><code>ERC8004ValidationRegistry.submitValidation</code> (MULTI_VALIDATOR path) · Confidence: 50 · Severity: <strong>Medium</strong> · Origin: <strong>[both]</strong> — phase-1 access-control (AC-3), defi-staking (M-3); phase-2 agent 2 (LEAD)</p>
+<p><strong>Description</strong><br><code>hasVoted[requestId][msg.sender]</code> prevents one <em>address</em> from voting twice, but nothing prevents one entity from funding N addresses at 1 ETH each to satisfy <code>validatorsRequired &gt;= 3</code> entirely by itself, defeating the &quot;multi-validator consensus for high-value claims&quot; the contract&#39;s header advertises. This is the same underlying gap exploited by Finding 2&#39;s Mechanism B.</p>
+<p><strong>Fix</strong><br>Combine with Finding 5: require validators for <code>MULTI_VALIDATOR</code> requests to be drawn from a pre-authorized/bonded pool rather than accepting the first N self-selected stakers, or add a real proof-of-uniqueness requirement.</p>
+<hr>
+<p>[45] <strong>13. Deactivated agents can never reactivate — contradicts documented behavior (shared <code>ERC8004IdentityRegistry</code> bug)</strong></p>
+<p><code>ERC8004IdentityRegistry.deactivateAgent</code> / <code>registerAgent</code> / <code>updateAgentURI</code> · Confidence: 45 · Severity: <strong>Low</strong> · Origin: <strong>[both]</strong> — phase-1 general/access-control/defi-staking; phase-2 agents 2, 5, 6, 7, 8, 9</p>
+<p><strong>Description</strong><br>Identical to a finding raised in a separate job against this same shared <code>ERC8004IdentityRegistry.sol</code> contract: <code>deactivateAgent()</code>&#39;s NatSpec claims &quot;Agent can reactivate by registering again,&quot; but the permanent <code>isRegistered</code> guard in <code>registerAgent()</code> (an earlier MEDIUM fix) blocks re-registration, and <code>updateAgentURI()</code> requires <code>active == true</code>. No reactivate function exists. A deactivated agent is permanently unable to request or receive validations, since <code>requestValidation()</code> gates on <code>identityRegistry.isAgentActive(agentAddress)</code>.</p>
+<p><strong>Fix</strong><br>Add <code>reactivateAgent()</code> guarded by <code>require(agents[msg.sender].isRegistered)</code>, setting <code>active = true</code>; correct the stale NatSpec.</p>
+<hr>
+<p>[40] <strong>14. <code>rewardPool</code> has no withdrawal path — unused funds are stuck forever if the protocol winds down</strong></p>
+<p><code>ERC8004ValidationRegistry.fundRewardPool</code> · Confidence: 40 · Severity: <strong>Low</strong> · Origin: <strong>[phase1-only]</strong> — general checklist (L-2)</p>
+<p><strong>Description</strong><br>Anyone can call <code>fundRewardPool()</code> to top up <code>rewardPool</code>, but the only way that ETH ever leaves is via <code>VALIDATION_REWARD</code> payouts inside <code>_distributeRewards</code>. If the protocol is deprecated, or the pool is over-funded relative to remaining activity, there is no owner-only or funder-tracked withdrawal path (compounding Finding 11&#39;s lack of admin surface).</p>
+<p><strong>Fix</strong><br>Add an access-controlled <code>withdrawRewardPool(uint256 amount)</code>, gated appropriately given Finding 11&#39;s broader governance gap.</p>
+<hr>
+<p>[35] <strong>15. Slashing a validator below <code>MIN_VALIDATOR_STAKE</code> leaves a stranded balance that cannot be topped up incrementally</strong></p>
+<p><code>ERC8004ValidationRegistry.stakeAsValidator</code> / <code>submitValidation</code> · Confidence: 35 · Severity: <strong>Low</strong> · Origin: <strong>[phase1-only]</strong> — defi-staking checklist (L-2)</p>
+<p><strong>Description</strong><br>A validator slashed from exactly 1 ETH down to 0.9 ETH falls below <code>MIN_VALIDATOR_STAKE</code> and is rejected by <code>submitValidation()</code>&#39;s eligibility check. <code>stakeAsValidator()</code> also requires <code>msg.value &gt;= MIN_VALIDATOR_STAKE</code> <em>per call</em>, so the validator cannot top up the missing 0.1 ETH — they must deposit a full additional 1 ETH (ending at 1.9 ETH total) to regain eligibility. No funds are lost (the 0.9 ETH remains withdrawable), but the mechanism is a confusing, capital-inefficient footgun.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-        require(msg.value &gt;= MIN_VALIDATOR_STAKE, &quot;Insufficient stake&quot;);
+-        validatorStakes[msg.sender] += msg.value;
++        validatorStakes[msg.sender] += msg.value;
++        require(validatorStakes[msg.sender] &gt;= MIN_VALIDATOR_STAKE, &quot;Insufficient stake&quot;);
+</code></pre>
+<hr>
+<p>[30] <strong>16. Reward distribution favors early-listed voters when the pool is underfunded — order-dependent, front-runnable</strong></p>
+<p><code>ERC8004ValidationRegistry._distributeRewards</code> · Confidence: 30 · Severity: <strong>Low</strong> · Origin: <strong>[phase2-only]</strong> — agent 1 (LEAD)</p>
+<p><strong>Description</strong><br>When <code>rewardPool &lt; (winners × VALIDATION_REWARD)</code>, the loop (lines 399-408) pays winners in <code>requestResponses</code> submission order and silently skips later winners once the pool drops below 0.1 ETH mid-loop. A validator can effectively guarantee earlier payout priority by ensuring their response is submitted (and thus indexed) earlier.</p>
+<p><strong>Fix</strong><br>Either ensure <code>rewardPool</code> sufficiency is checked before allowing a request to finalize, or switch to the pull-payment pattern recommended in Finding 4, which naturally removes the ordering dependency (each validator claims independently against whatever balance remains).</p>
+<hr>
+<p>[20] <strong>17. Silent <code>uint256</code>→<code>uint160</code> downcast in <code>BeliefAttestationVerifier.verifyProof</code></strong></p>
+<p><code>BeliefAttestationVerifier.verifyProof</code> · Confidence: 20 · Severity: <strong>Info</strong> · Origin: <strong>[phase1-only]</strong> — general checklist (L-3)</p>
+<p><strong>Description</strong><br><code>address proverAddress = address(uint160(publicInputs[1]))</code> (line 111) truncates any bits above 160 without reverting. Not currently exploitable since the function always reverts before this matters (Finding 6), but would become relevant the moment a production verifier is deployed with the same pattern.</p>
+<p><strong>Fix</strong><br>Use <code>SafeCast.toUint160(publicInputs[1])</code> or explicitly validate the input range before casting.</p>
+<hr>
+<p>[15] <strong>18. Unchecked <code>offset + limit</code> overflow in pagination getters</strong></p>
+<p><code>ERC8004ValidationRegistry.getValidationResponsesPaginated</code> / <code>getAgentValidationRequestsPaginated</code> · Confidence: 15 · Severity: <strong>Info</strong> · Origin: <strong>[phase2-only]</strong> — agent 1 (LEAD)</p>
+<p><strong>Description</strong><br><code>uint256 end = offset + limit;</code> (lines 556, 595) can theoretically overflow; the subsequent <code>if (end &gt; len) end = len;</code> clamp would then be skipped, and <code>new uint256[](end - offset)</code> would underflow-revert under Solidity 0.8&#39;s checked arithmetic. View-only, and only harms the caller who passes the pathological arguments against their own query — no protocol-level impact.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-        uint256 end = offset + limit;
+-        if (end &gt; len) end = len;
++        uint256 end = offset + limit &gt; len ? len : offset + limit;
+</code></pre>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[97]</td>
+<td><span class="pill critical">Critical</span></td>
+<td>Requester&#39;s validation stake permanently locked on every request</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[95]</td>
+<td><span class="pill high">High</span></td>
+<td>Reward pool risklessly drainable (single-voter rubber-stamp / sybil multi-validator)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[93]</td>
+<td><span class="pill high">High</span></td>
+<td>Ties and unreached quorum permanently freeze validator stakes</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[80]</td>
+<td><span class="pill high">High</span></td>
+<td>Uncapped external call in reward loop enables gas-griefing DoS</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[85]</td>
+<td><span class="pill high">High</span></td>
+<td>No validator-authenticity differentiation across ValidationType</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[95]</td>
+<td><span class="pill high">High</span></td>
+<td>Deployed zkVerifier confirmed on-chain to be the always-reverting placeholder</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[65]</td>
+<td><span class="pill high">High</span></td>
+<td>No cooldown enables risk-free JIT reward sniping</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[70]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Self-validation not prevented</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[70]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>payable submit functions silently trap attached ETH</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[65]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Slashed stake orphaned, never redistributed</td>
+</tr>
+<tr>
+<td>11</td>
+<td>[70]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>No admin/pause/rescue surface on ETH-custodying contract</td>
+</tr>
+<tr>
+<td>12</td>
+<td>[50]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>MULTI_VALIDATOR consensus Sybil-defeatable</td>
+</tr>
+<tr>
+<td>13</td>
+<td>[45]</td>
+<td><span class="pill low">Low</span></td>
+<td>Deactivated agents can never reactivate</td>
+</tr>
+<tr>
+<td>14</td>
+<td>[40]</td>
+<td><span class="pill low">Low</span></td>
+<td>rewardPool has no withdrawal path</td>
+</tr>
+<tr>
+<td>15</td>
+<td>[35]</td>
+<td><span class="pill low">Low</span></td>
+<td>Slash-below-minimum stranding, no incremental top-up</td>
+</tr>
+<tr>
+<td>16</td>
+<td>[30]</td>
+<td><span class="pill low">Low</span></td>
+<td>Reward distribution order-dependent when pool underfunded</td>
+</tr>
+<tr>
+<td>17</td>
+<td>[20]</td>
+<td><span class="pill info">Info</span></td>
+<td>Silent uint160 downcast in verifier</td>
+</tr>
+<tr>
+<td>18</td>
+<td>[15]</td>
+<td><span class="pill info">Info</span></td>
+<td>Unchecked overflow in pagination bounds</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>All leads surfaced by either phase were re-examined against source (and, for Finding 6, against live on-chain state via <code>cast call</code>) during reconciliation and promoted to a numbered finding above. No leads remain unresolved.</em></p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated two-phase audit (5 breadth checklist agents + 12 depth attack agents, reconciled) plus direct on-chain verification of the wired ZK verifier. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Given that this contract currently holds and continues to accept real ETH under a locked-fund defect with <strong>no precondition and no admin recovery path</strong> (Finding 1), we recommend the client <strong>pause new deposits into this contract immediately</strong> pending a fix, independent of any further review process.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreif2srw2ioww3lfxfuoxz25wsjzux5r3zsfgavtdg7c2sqts7lfqbq.ipfs.community.bgipfs.com/"><code>https://bafkreif2srw2ioww3lfxfuoxz25wsjzux5r3zsfgavtdg7c2sqts7lfqbq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/342">#342</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

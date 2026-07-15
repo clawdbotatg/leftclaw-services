@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Durin Protocol (NameStone) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #316">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Durin Protocol (NameStone)</h1>
+    <p class="job-sub">Job #316 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/316"><b>Job page</b> #316</a>
+      <a class="chip" href="https://bafkreigrjrnuyil4ulb6lzgb4vuqyqvhtwfgfqli2gbyvf5ebq7elk2ene.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">6</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">8</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">7</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  
+
+  <main class="report">
+<h1>Security Review — Durin Protocol (NameStone)</h1>
+<p><strong>Repo</strong>: <a href="https://github.com/namestonehq/durin">https://github.com/namestonehq/durin</a><br><strong>Scope</strong>: <code>src/L1Resolver.sol</code>, <code>src/L2Registry.sol</code>, <code>src/L2RegistryFactory.sol</code>, <code>src/L2Resolver.sol</code>, <code>src/examples/L2Registrar.sol</code>, <code>src/lib/ENSDNSUtils.sol</code>, <code>src/lib/SignatureVerifier.sol</code> (1,046 LOC, 7 files)<br><strong>Methodology</strong>: Two-phase audit — Phase 1, 8 checklist-breadth agents (general, precision-math, access-control, signatures, proxies, assembly, erc721, dos); Phase 2, 12 attacker-mindset depth agents (9 specialty + 3 gap-hunter), run <strong>blind</strong> to Phase 1. Both phases reconciled and cross-verified against source below.</p>
+<p><strong>Reconciliation summary</strong>: 12 findings corroborated by both phases · 9 findings unique to Phase 1 (breadth checklist) · 1 finding unique to Phase 2 (attacker-mindset depth — the highest-severity finding in this report) · every Phase-1/Phase-2-unique lead was re-examined against source in this synthesis; none were rejected, one (cross-chain replay) had its severity tempered given a speculative precondition.</p>
+<p><strong>Severity counts</strong>: 1 High · 6 Medium · 8 Low · 7 Info</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="h-1-cross-function-signature-domain-collision-lets-an-attacker-h">[H-1] Cross-function signature domain collision lets an attacker hijack a name&#39;s contenthash (or other records) under a signature the owner believed authorized something else</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[phase2: agents 1, 2, 6 — independently discovered by 3 of 12 blind depth agents]</code><br><strong>Location</strong>: <code>L2Resolver.sol:76-88</code> (<code>setAddrWithSignature</code>), <code>:98-112</code> (<code>setTextWithSignature</code>), <code>:121-135</code> (<code>setContenthashWithSignature</code>), <code>:145-163</code> (<code>setABIWithSignature</code>)</p>
+<p><strong>Description</strong>: All four signature-authorized setters build their signed digest the same way:</p>
+<pre><code class="language-solidity">// setTextWithSignature, L2Resolver.sol:98-100
+bytes32 sigHash = keccak256(
+    abi.encodePacked(address(this), node, key, value, expiration)
+).toEthSignedMessageHash();
+
+// setContenthashWithSignature, L2Resolver.sol:121-123
+bytes32 sigHash = keccak256(
+    abi.encodePacked(address(this), node, hash, expiration)
+).toEthSignedMessageHash();
+</code></pre>
+<p><code>abi.encodePacked</code> concatenates dynamic <code>bytes</code>/<code>string</code> arguments with <strong>no length prefix or delimiter</strong>, and neither digest includes a function selector or type tag. Since <code>key||value</code> (two adjacent dynamic strings) packs to <em>exactly the same bytes</em> as a single <code>hash</code> argument of that same length, <strong>the digest for a <code>setText</code> call is bit-for-bit identical to the digest for a <code>setContenthash</code> call whenever <code>hash == key||value</code></strong>. A signature the owner produced (or was tricked into producing) for what looked like a text-record update is therefore also a valid signature for <code>setContenthashWithSignature</code> — silently repointing the name&#39;s contenthash (the IPFS/Swarm hash most wallets and browsers use to resolve a decentralized website for the name) to attacker-chosen bytes.</p>
+<p>A second, narrower instance of the same root cause exists intra-function: <code>setTextWithSignature</code>&#39;s <code>key</code> and <code>value</code> are two adjacent dynamic fields with no separator, so <code>(key=&quot;a&quot;, value=&quot;bc&quot;)</code> and <code>(key=&quot;ab&quot;, value=&quot;c&quot;)</code> produce the identical digest — an attacker who observes one signed authorization can resubmit it with the key/value boundary moved, writing a record the signer never approved.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>A dApp/relayer (attacker-controlled or compromised) asks the name owner to sign a &quot;set text record&quot; meta-transaction: <code>key = &quot;note&quot;</code>, <code>value = &lt;32 bytes the attacker has chosen so that key||value equals a target IPFS-style content hash&gt;</code>, some <code>expiration</code>.</li>
+<li>Owner signs. The relayer never actually submits <code>setTextWithSignature</code>.</li>
+<li>Attacker instead calls <code>setContenthashWithSignature(node, hash = bytes(&quot;note&quot;) ++ value, expiration, signer, signature)</code>.</li>
+<li><code>sigHash = keccak256(abi.encodePacked(address(this), node, hash, expiration))</code> is byte-identical to the <code>setText</code> digest the owner actually signed, so <code>universalSignatureValidator.isValidSig(signer, sigHash, signature)</code> returns true, and <code>isAuthorisedForAddress(signer, node)</code> passes (the signer is still the legitimate owner).</li>
+<li><code>versionable_hashes[recordVersions[node]][node] = hash</code> is written — the name&#39;s contenthash now points to attacker-controlled content, without the owner ever knowingly authorizing a contenthash change.</li>
+</ol>
+<p><strong>Recommendation</strong>: Include a unique, function-specific domain tag in every signed digest, and switch from <code>abi.encodePacked</code> to <code>abi.encode</code> (or hash each dynamic field individually) so no two signed messages — across functions or within one — can ever produce the same digest:</p>
+<pre><code class="language-diff">- bytes32 sigHash = keccak256(
+-     abi.encodePacked(address(this), node, key, value, expiration)
+- ).toEthSignedMessageHash();
++ bytes32 sigHash = keccak256(
++     abi.encode(bytes4(keccak256(&quot;setText&quot;)), address(this), node, key, value, expiration)
++ ).toEthSignedMessageHash();
+</code></pre>
+<p>Apply the equivalent change (distinct tag, <code>abi.encode</code>) to all four functions.</p>
+<hr>
+<h3 id="m-1-settextwithsignatures-two-adjacent-dynamic-fields-collide-un">[M-1] <code>setTextWithSignature</code>&#39;s two adjacent dynamic fields collide under <code>abi.encodePacked</code></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both — phase1: General-2, Signatures-2; phase2: 10 of 12 agents independently flagged this]</code><br><strong>Location</strong>: <code>L2Resolver.sol:98-100</code></p>
+<p><strong>Description</strong>: See H-1 above for the mechanism — this is the intra-function instance (key/value boundary shifting within <code>setText</code> alone, not requiring a second function). It is called out separately because it is exploitable even in isolation (an attacker does not need to target a different function; they only need to resubmit <code>setTextWithSignature</code> itself with a different split of the same signed bytes), and because it was the single most-corroborated finding across all 20 audit agents in this engagement.</p>
+<p><strong>Proof of Concept</strong>: Owner signs <code>setText(node, key=&quot;url&quot;, value=&quot;https://real.io&quot;, expiration)</code>. Packed digest input contains the byte run <code>urlhttps://real.io</code>. Attacker calls <code>setTextWithSignature(node, key=&quot;urlhttps://real.i&quot;, value=&quot;o&quot;, expiration, signer, signature)</code> — identical packed bytes, identical digest, signature still validates. The record actually written is <code>[&quot;urlhttps://real.i&quot;] = &quot;o&quot;</code>; the owner&#39;s intended <code>[&quot;url&quot;] = &quot;https://real.io&quot;</code> is never set.</p>
+<p><strong>Recommendation</strong>: Same fix as H-1 (Option A: <code>abi.encode</code>; Option B: hash <code>key</code>/<code>value</code> individually with a function tag).</p>
+<hr>
+<h3 id="m-2-resolver-authorization-conflates-erc721-transfer-approval-wi">[M-2] Resolver authorization conflates ERC721 transfer-approval with record-write authority, and doesn&#39;t honor operator (<code>setApprovalForAll</code>) approvals</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both — phase1: ERC721-4 (partial: missing isApprovedForAll only); phase2: agent 11 independently identified the getApproved-conflation as the more serious half of this issue]</code><br><strong>Location</strong>: <code>L2Resolver.sol:172-190</code> (<code>isAuthorisedForAddress</code>)</p>
+<pre><code class="language-solidity">function isAuthorisedForAddress(address addr, bytes32 node) internal view returns (bool) {
+    L2Registry registry = _registry();
+    if (registry.registrars(addr)) {
+        return true;
+    }
+    uint256 tokenId = uint256(node);
+    address owner = registry.ownerOf(tokenId);
+    if ((owner != addr) &amp;&amp; (registry.getApproved(tokenId) != addr)) {
+        revert Unauthorized(node);
+    }
+    return true;
+}
+</code></pre>
+<p><strong>Description</strong>: This function gates every resolver write (<code>setAddr</code>, <code>setText</code>, <code>setContenthash</code>, <code>setABI</code>, and all four <code>*WithSignature</code> variants). It treats <code>getApproved(tokenId) == addr</code> — the ERC721 single-token <em>transfer</em> approval, typically granted to list an NFT on a marketplace — as sufficient authority to rewrite that name&#39;s resolver records. This is a broader grant than the owner likely intends: approving a marketplace to sell a name also hands that marketplace (or anyone controlling it) the ability to repoint the name&#39;s <code>addr</code> record before the sale settles. Canonical ENS <code>PublicResolver.isAuthorised</code> instead checks <code>isApprovedForAll</code>/<code>isApprovedFor</code> — never the single-token <code>getApproved</code> — for exactly this reason. Symmetrically, this function does <em>not</em> check <code>isApprovedForAll</code>, so a legitimately-delegated operator (standard ERC721 marketplace/delegation pattern) cannot manage records at all — a functionality gap in the opposite direction.</p>
+<p><strong>Proof of Concept</strong>: Alice owns <code>alice.example.eth</code> and calls <code>approve(marketplace, uint256(node))</code> to list it for sale. Before any sale executes, <code>marketplace</code> (or an attacker who compromises it) calls <code>setAddr(node, 60, attackerAddress)</code>. <code>isAuthorisedForAddress(marketplace, node)</code> returns <code>true</code> because <code>getApproved(tokenId) == marketplace</code>, so Alice&#39;s ETH address record is redirected to the attacker despite Alice retaining ownership and never authorizing a record change.</p>
+<p><strong>Recommendation</strong>: Replace the <code>getApproved</code> check with <code>isApprovedForAll(owner, addr)</code>:</p>
+<pre><code class="language-diff">- if ((owner != addr) &amp;&amp; (registry.getApproved(tokenId) != addr)) {
++ if ((owner != addr) &amp;&amp; !registry.isApprovedForAll(owner, addr)) {
+      revert Unauthorized(node);
+  }
+</code></pre>
+<hr>
+<h3 id="m-3-registrars-have-unconditional-write-authority-over-every-nod">[M-3] Registrars have unconditional write authority over every node, not just names they create</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both — phase1: AccessControl-1, ERC721-1; phase2: agents 2, 4, 9 independently corroborated]</code><br><strong>Location</strong>: <code>L2Registry.sol:78-83</code> (<code>onlyOwnerOrRegistrar</code>), <code>L2Resolver.sol:172-181</code> (<code>isAuthorisedForAddress</code>)</p>
+<pre><code class="language-solidity">modifier onlyOwnerOrRegistrar(bytes32 node) {
+    if (owner(node) != msg.sender &amp;&amp; !registrars[msg.sender]) {
+        revert Unauthorized(node);
+    }
+    _;
+}
+</code></pre>
+<pre><code class="language-solidity">if (registry.registrars(addr)) {
+    return true;
+}
+</code></pre>
+<p><strong>Description</strong>: Both gates check <code>registrars[msg.sender]</code> <strong>without regard to <code>node</code></strong> — an approved registrar is authorized for <em>every</em> node in the registry, not just nodes under its own remit. Consequently any approved registrar can (a) call <code>createSubnode</code> under a node it does not own — including subnames already owned by end users — and (b) overwrite <code>addr</code>/<code>text</code>/<code>contenthash</code>/<code>abi</code> records for any existing node, not only ones it registered. A registrar intended only to sell 3LDs under <code>baseNode</code> therefore has, by construction, full write access to every user&#39;s name in the registry.</p>
+<p><strong>Proof of Concept</strong>: Admin adds registrar <code>R</code> (e.g. a marketplace/controller contract) via <code>addRegistrar(R)</code>. Alice registers and owns <code>alice.example.eth</code>. <code>R</code> calls <code>setAddr(namehash(&quot;alice.example.eth&quot;), 60, attackerAddr)</code> — passes because <code>registrars[R] == true</code> short-circuits before any ownership check, repointing Alice&#39;s address record despite her being the sole NFT owner. <code>R</code> can equally call <code>createSubnode(aliceNode, &quot;pay&quot;, attacker, [])</code> to mint arbitrary subnames under Alice&#39;s name.</p>
+<p><strong>Recommendation</strong>: Scope the registrar bypass to creation of direct children of <code>baseNode</code> (or the registrar&#39;s own designated subtree), and remove it from record-mutation authority over already-owned nodes:</p>
+<pre><code class="language-solidity">modifier onlyOwnerOrRegistrar(bytes32 node) {
+    if (owner(node) != msg.sender &amp;&amp; !(registrars[msg.sender] &amp;&amp; node == baseNode)) {
+        revert Unauthorized(node);
+    }
+    _;
+}
+</code></pre>
+<p>If the broad trust model is intentional (registrars are meant to be fully trusted infrastructure), document this prominently for integrators and name holders.</p>
+<hr>
+<h3 id="m-4-signature-based-setters-have-no-nonce-a-captured-signature-i">[M-4] Signature-based setters have no nonce — a captured signature is replayable throughout its (signer-chosen) expiration window</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both — phase1: General-3, Signatures-1; phase2: 10 of 12 agents independently flagged this]</code><br><strong>Location</strong>: <code>L2Resolver.sol:68-166</code> (all four <code>*WithSignature</code> functions)</p>
+<p><strong>Description</strong>: None of the four signed digests include a nonce, and no storage marks a signature as consumed. The only replay guard is <code>unexpiredSignature(expiration)</code>, checking <code>block.timestamp &lt;= expiration</code> — and <code>expiration</code> is entirely chosen by whoever constructs the signing request, with no protocol-enforced maximum. A signature can therefore be resubmitted by anyone, any number of times, for as long as it remains unexpired.</p>
+<p><strong>Proof of Concept</strong>: Owner signs <code>setAddr(node, 60, X)</code> with <code>expiration = now + 365 days</code>; it is relayed and <code>addr(node, 60)</code> becomes <code>X</code>. Five days later the owner updates the address to <code>Y</code> via a fresh call. Any observer who retains the original (still-unexpired) signature can resubmit it, forcing <code>addr(node, 60)</code> back to <code>X</code> — repeatable at will until the year-long expiration elapses, with the owner having no way to invalidate the outstanding signature early.</p>
+<p><strong>Recommendation</strong>: Add a per-node (or per-signer) nonce, included in the signed digest and incremented/consumed on use:</p>
+<pre><code class="language-diff">+ mapping(bytes32 =&gt; uint256) public sigNonce;
+  ...
+  bytes32 sigHash = keccak256(
+-     abi.encodePacked(address(this), node, coinType, a, expiration)
++     abi.encodePacked(address(this), node, coinType, a, expiration, sigNonce[node]++)
+  ).toEthSignedMessageHash();
+</code></pre>
+<hr>
+<h3 id="m-5-setaddrwithsignature-re-invokes-the-authorised-gated-public-">[M-5] <code>setAddrWithSignature</code> re-invokes the <code>authorised</code>-gated public <code>setAddr</code>, breaking the gasless-relay pattern the other three setters implement</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both — phase1: General-1; phase2: agents 8, 12 (finding), agent 2 (lead)]</code><br><strong>Location</strong>: <code>L2Resolver.sol:68-89</code></p>
+<p><strong>Description</strong>: <code>setTextWithSignature</code>, <code>setContenthashWithSignature</code>, and <code>setABIWithSignature</code> all write their target storage mapping directly, with a code comment explaining why: <em>&quot;Manually update storage since <code>setText()</code> on the inherited contract cannot be called internally&quot;</em> — because the inherited public setter carries the <code>authorised(node)</code> modifier, which checks <code>msg.sender</code> (the transaction submitter), not the signer. <code>setAddrWithSignature</code> was not converted to this pattern — it ends by calling <code>setAddr(node, coinType, a)</code> (<code>L2Resolver.sol:87</code>), and <code>AddrResolver.setAddr</code> is <code>public virtual authorised(node)</code>. That modifier re-evaluates <code>isAuthorisedForAddress(msg.sender, node)</code> against the relayer, not the already-verified signer.</p>
+<p><strong>Proof of Concept</strong>: Owner <code>O</code> signs a valid <code>setAddr</code> payload and hands it to relayer <code>R</code>, who is not a registrar, owner, or approved address for <code>node</code> (the entire point of the meta-tx pattern is that <code>R</code> needs no such standing). <code>R</code> calls <code>setAddrWithSignature(...)</code>. Both signer-side checks pass (<code>isAuthorisedForAddress(O, node)</code> and <code>isValidSig</code>), but execution then reaches <code>setAddr(node, coinType, a)</code> → <code>authorised(node)</code> → <code>isAuthorisedForAddress(R, node)</code> → reverts, because <code>R</code> has no standing. The identical relay pattern succeeds for <code>setTextWithSignature</code>. There is no test in the repository covering <code>setAddrWithSignature</code>, so this regression has no CI signal.</p>
+<p><strong>Recommendation</strong>: Mirror the other three setters — write storage directly instead of calling the guarded inherited function:</p>
+<pre><code class="language-diff">- setAddr(node, coinType, a);
++ versionable_addresses[recordVersions[node]][node][coinType] = a;
++ emit AddressChanged(node, coinType, a);
++ if (coinType == 60) emit AddrChanged(node, address(bytes20(a)));
+</code></pre>
+<hr>
+<h3 id="m-6-l1resolver-owner-can-instantly-rotate-the-trusted-ccip-read-">[M-6] <code>L1Resolver</code> owner can instantly rotate the trusted CCIP-Read signer, with no timelock, controlling all resolution results</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1 only: AccessControl-2 — re-examined against source in synthesis, confirmed]</code><br><strong>Location</strong>: <code>L1Resolver.sol:43</code> (<code>Ownable</code>), <code>:215-218</code> (<code>setSigner</code>), <code>:182-196</code> (<code>resolveWithProof</code>)</p>
+<p><strong>Description</strong>: <code>resolveWithProof</code> accepts any CCIP-Read gateway response signed by the single address stored in <code>signer</code>. <code>setSigner</code> is a plain <code>onlyOwner</code> function with no timelock, no multi-signer requirement, and no delay between calling it and the new signer taking effect. <code>L1Resolver</code> is a single-address <code>Ownable</code> (see M-7), so control of resolution for every name pointed at this resolver reduces to control of one EOA/contract&#39;s owner key.</p>
+<p><strong>Proof of Concept</strong>: Owner (or an attacker who compromises the owner key) calls <code>setSigner(attackerSigner)</code>. Any subsequent <code>resolve()</code> call is now served by a gateway the attacker controls, which can return arbitrary results (e.g. a different <code>addr()</code>) signed by <code>attackerSigner</code>; <code>resolveWithProof</code> accepts it immediately since it only checks <code>_signer == signer</code>.</p>
+<p><strong>Recommendation</strong>: This trust assumption is partly inherent to CCIP-Read (the gateway itself is already trusted infrastructure), but the <em>governance</em> of who the trusted signer is should not be a single instant admin call. Require a multisig/timelocked owner, and/or add a delay between <code>setSigner</code> being called and the new signer becoming active, with an event emitted in advance.</p>
+<hr>
+<h3 id="l-1-missing-blockchainid-in-signature-digests-permits-cross-chai">[L-1] Missing <code>block.chainid</code> in signature digests permits cross-chain replay under a specific deployment coincidence</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <em>(re-examined: phase-1 rated this Medium via the <code>Signatures</code> checklist; phase-2&#39;s independent, blind read treated it only as an unscored Lead because the precondition is speculative rather than guaranteed — synthesis adopts the more conservative Low)</em><br><strong>Origin</strong>: <code>[both — phase1: General-4, Signatures-3; phase2: agents 2, 7, 8, 11 (all as Leads)]</code><br><strong>Location</strong>: <code>L2Resolver.sol:68-166</code> (all four <code>*WithSignature</code> digests), <code>L2RegistryFactory.sol:51-72</code></p>
+<p><strong>Description</strong>: Every signed digest binds <code>address(this)</code> and <code>node</code> but never <code>block.chainid</code>. <code>L2RegistryFactory.deployRegistry</code> deploys registries via <code>Clones.clone</code> (plain <code>CREATE</code>, address = <code>f(factory address, factory nonce)</code>). If the same factory is deployed at the same address on two L2s and reaches the same nonce in the same order on both (realistic only with deliberate deterministic-deployment tooling), the resulting registry clone shares an address across chains, and a signature valid on chain A becomes valid, unmodified, on chain B for the identically-addressed clone.</p>
+<p><strong>Recommendation</strong>: Include <code>block.chainid</code> in every signed digest — trivial to add alongside the H-1/M-4 fixes since they already touch the same lines:</p>
+<pre><code class="language-solidity">keccak256(abi.encode(block.chainid, address(this), node, ...))
+</code></pre>
+<hr>
+<h3 id="l-2-registry-admin-authority-is-bound-to-a-transferable-erc721-t">[L-2] Registry admin authority is bound to a transferable ERC721 token with no two-step safeguard</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: AccessControl-4 — re-examined against source, confirmed]</code><br><strong>Location</strong>: <code>L2Registry.sol:190-198</code> (<code>owner()</code>), <code>:341-346</code>-equivalent (<code>onlyOwner</code>)</p>
+<p><strong>Description</strong>: <code>owner()</code> returns <code>_ownerOf(baseNode)</code> — the current ERC721 owner of the registry&#39;s base-name token. <code>onlyOwner</code> (gating <code>addRegistrar</code>/<code>removeRegistrar</code>/<code>setBaseURI</code>) is therefore just &quot;whoever currently holds this NFT.&quot; A single <code>transferFrom</code>/<code>safeTransferFrom</code> (or an operator approved via <code>setApprovalForAll</code>) instantly and irreversibly transfers full admin rights, including the ability to add a malicious registrar (see M-3), with no two-step confirmation and no protection against a mistaken transfer.</p>
+<p><strong>Recommendation</strong>: Document prominently that transferring or approving the <code>baseNode</code> token transfers/grants admin rights. Consider decoupling admin authority from the tradeable token, or requiring an explicit two-step acknowledgment on <code>baseNode</code> transfers.</p>
+<hr>
+<h3 id="l-3-l1resolver-uses-single-step-ownable-and-does-not-disable-ren">[L-3] <code>L1Resolver</code> uses single-step <code>Ownable</code> and does not disable <code>renounceOwnership</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: AccessControl-3 — re-examined against source, confirmed]</code><br><strong>Location</strong>: <code>L1Resolver.sol:43,104</code></p>
+<p><strong>Description</strong>: <code>L1Resolver</code> inherits OpenZeppelin <code>Ownable</code>, not <code>Ownable2Step</code>. A typo&#39;d <code>transferOwnership</code> call permanently locks out the owner; an inadvertent or malicious <code>renounceOwnership()</code> call permanently disables <code>setURL</code>/<code>setSigner</code>, removing any path to respond to a signer-key compromise.</p>
+<p><strong>Recommendation</strong>: Use <code>Ownable2Step</code> and override <code>renounceOwnership()</code> to revert.</p>
+<hr>
+<h3 id="l-4-createsubnode-mints-triggering-an-onerc721received-callback-">[L-4] <code>createSubnode</code> mints (triggering an <code>onERC721Received</code> callback) before finalizing <code>names[]</code>/<code>totalSupply</code> — a check-effects-interactions violation confined to self-inflicted corruption</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both — phase1: General-5, Proxies-1, ERC721-2; phase2: agents 5, 7, 8, 9, 12 — 5 of 12 blind agents converged on this, but every one independently concluded the reentrant path only lets the newly-minted owner corrupt their own subtree]</code><br><strong>Location</strong>: <code>L2Registry.sol:138-160</code>, specifically <code>:152</code> (<code>_safeMint</code>) preceding <code>:155-157</code> (<code>names[subnode] =</code>, <code>totalSupply++</code>)</p>
+<p><strong>Description</strong>: <code>_safeMint(_owner, uint256(subnode))</code> fires <code>onERC721Received</code> on <code>_owner</code> (if a contract) before <code>names[subnode]</code> is written and before <code>totalSupply</code> is incremented. A malicious <code>_owner</code> contract can reenter <code>createSubnode(subnode, childLabel, ...)</code> during that callback — <code>onlyOwnerOrRegistrar(subnode)</code> passes because <code>_owner</code> already holds <code>subnode</code> at that point — while <code>names[subnode]</code> is still empty. <code>_addLabel(childLabel, names[subnode])</code> then builds a truncated/malformed DNS-encoded name for the grandchild (no parent chain, no terminator), which later reverts <code>InvalidName()</code> in <code>tokenURI</code>/<code>decodeName</code>. Every phase-2 agent that traced this path concluded the corruption is confined to the attacker&#39;s own subtree — a self-inflicted griefing outcome, not a third-party exploit — which is why this is rated Low rather than higher despite five independent agents flagging it.</p>
+<p><strong>Recommendation</strong>: Reorder to checks-effects-interactions: write <code>names[subnode]</code> and increment <code>totalSupply</code> before <code>_safeMint</code>.</p>
+<pre><code class="language-diff">+ names[subnode] = dnsEncodedName;
++ totalSupply++;
+  _safeMint(_owner, uint256(subnode));
+  _multicall(subnode, data);
+- names[subnode] = dnsEncodedName;
+- totalSupply++;
+</code></pre>
+<hr>
+<h3 id="l-5-tokenuris-on-chain-json-fallback-embeds-the-decoded-name-wit">[L-5] <code>tokenURI</code>&#39;s on-chain JSON fallback embeds the decoded name without escaping</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: ERC721-3 — re-examined against source, confirmed]</code><br><strong>Location</strong>: <code>L2Registry.sol:269-289</code></p>
+<pre><code class="language-solidity">string memory json = string.concat(
+    &#39;{&quot;name&quot;: &quot;&#39;,
+    ENSDNSUtils.dnsDecode(names[bytes32(tokenId)]),
+    &#39;&quot;}&#39;
+);
+</code></pre>
+<p><strong>Description</strong>: Labels are validated only for byte length (<code>_addLabel</code>, 1–255 bytes); no character-set restriction exists. A label containing <code>&quot;</code> breaks the generated JSON or injects additional attacker-controlled keys (e.g. a spoofed <code>image</code> field) into metadata that marketplaces and wallets parse and display.</p>
+<p><strong>Recommendation</strong>: JSON-escape the decoded name before embedding it, or restrict registrable label characters.</p>
+<hr>
+<h3 id="l-6-unbounded-quadratic-string-processing-of-an-attacker-control">[L-6] Unbounded, quadratic string processing of an attacker-controlled name in <code>L1Resolver.resolve()</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: DoS-1 — re-examined against source, confirmed; phase2 agents did not probe gas/DoS surfaces]</code><br><strong>Location</strong>: <code>L1Resolver.sol:146-179</code></p>
+<p><strong>Description</strong>: <code>resolve()</code> fully decodes and splits an attacker-controlled, arbitrary-depth DNS-encoded <code>name</code> using the <code>arachnid/strings</code> library&#39;s per-label <code>split</code>/<code>toString</code> loop, with no cap on label count or total length. Cost scales roughly quadratically with name length. The function is a stateless <code>view</code> (it always ends in a revert carrying the CCIP-Read redirect), so impact is confined to the caller&#39;s own <code>eth_call</code> — a sufficiently deep name could exceed a node&#39;s gas cap and simply fail to resolve, rather than affecting other users or on-chain state.</p>
+<p><strong>Recommendation</strong>: Parse only the last two labels directly from the DNS-encoded bytes instead of decoding and splitting the full name, and/or reject names above a sane maximum length/depth early.</p>
+<hr>
+<h3 id="l-7-hardcoded-erc-6492-universalsignaturevalidator-dependency-pe">[L-7] Hardcoded ERC-6492 <code>UniversalSignatureValidator</code> dependency — permanent DoS of all signature setters if absent on a target chain</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: Signatures-4, DoS-3 — re-examined against source, confirmed; phase2 agents took the validator&#39;s presence as given]</code><br><strong>Location</strong>: <code>L2Resolver.sol:41-44</code></p>
+<pre><code class="language-solidity">IUniversalSignatureValidator private immutable universalSignatureValidator =
+    IUniversalSignatureValidator(0x164af34fAF9879394370C7f09064127C043A35E9);
+</code></pre>
+<p><strong>Description</strong>: All four <code>*WithSignature</code> functions route through this fixed address with no fallback and no way to reconfigure it post-deployment. Since <code>L2Registry</code> is designed to be cloned across arbitrary L2s via the factory, deploying to a chain where this predeploy is absent permanently disables the entire signature-based record-setting surface (direct <code>setAddr</code>/<code>setText</code>/etc. via owner/approved/registrar still works).</p>
+<p><strong>Recommendation</strong>: Make the validator address a constructor/initializer parameter, and consider verifying <code>extcodesize &gt; 0</code> at initialization time with a clear revert if absent.</p>
+<hr>
+<h3 id="l-8-ensdnsutilsdnsdecode-writes-past-its-allocated-buffer-withou">[L-8] <code>ENSDNSUtils.dnsDecode</code> writes past its allocated buffer without a memory-safe annotation or advancing the free-memory pointer</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both — phase1: Assembly-1; phase2: agent 9 (lead, unverified), agent 7 (explicitly concluded not exploitable)]</code><br><strong>Location</strong>: <code>src/lib/ENSDNSUtils.sol:14-63</code></p>
+<p><strong>Description</strong>: The word-at-a-time memcpy can write up to ~30 bytes past both the <code>ens</code> allocation and the free-memory pointer, which is never advanced — the author&#39;s own comment acknowledges this (&quot;we clobber 31-=bytes beyond the end … it&#39;s ok since we don&#39;t call anything&quot;). This is safe under every current caller (no allocation or external call is interleaved between the clobbering writes and the function&#39;s return in <code>tokenURI</code>, <code>decodeName</code>, or <code>L1Resolver.resolve</code>), but the assembly blocks are not annotated <code>memory-safe</code> and nothing enforces the invariant the safety argument depends on.</p>
+<p><strong>Recommendation</strong>: Advance the free-memory pointer to cover the clobbered region after the final length fix, or over-allocate before writing and fix the true length last.</p>
+<hr>
+<h3 id="i-1-l2registraravailable-and-register-disagree-on-minimum-label-">[I-1] <code>L2Registrar.available()</code> and <code>register()</code> disagree on minimum label length</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> (example contract, explicitly &quot;meant to be modified&quot;)<br><strong>Origin</strong>: <code>[both — phase1: General-7; phase2: 6 of 12 agents independently flagged this]</code><br><strong>Location</strong>: <code>src/examples/L2Registrar.sol:44-64</code> (<code>register</code>), <code>:70-82</code> (<code>available</code>)</p>
+<p><strong>Description</strong>: <code>available()</code> reports labels shorter than 3 characters as unavailable; <code>register()</code> enforces no minimum length at all (<code>L2Registry._addLabel</code> only rejects length 0 or &gt;255), so 1–2 character labels a front-end would report as unregisterable can still be registered directly.</p>
+<p><strong>Recommendation</strong>: Mirror <code>available()</code>&#39;s policy inside <code>register()</code> if this example is used as a starting point for production registrars.</p>
+<hr>
+<h3 id="i-2-labels-containing-produce-a-display-name-whose-decoded-strin">[I-2] Labels containing <code>.</code> produce a display name whose decoded string doesn&#39;t match its ENS namehash</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both — phase1: ERC721-6; phase2: agents 5, 7]</code><br><strong>Location</strong>: <code>L2Registry.sol:251-262</code> (<code>_addLabel</code>)</p>
+<p><strong>Description</strong>: A label such as <code>&quot;a.b&quot;</code> is stored and hashed as one atomic label (<code>keccak256(&quot;a.b&quot;)</code>), but its DNS-decoded display form (<code>a.b.parent.eth</code>) implies a different, hierarchical namehash than the one the token actually corresponds to — enabling confusable/look-alike names.</p>
+<p><strong>Recommendation</strong>: Reject labels containing <code>0x2e</code> (<code>.</code>).</p>
+<hr>
+<h3 id="i-3-non-registrar-parent-owners-cannot-atomically-gift-a-subname">[I-3] Non-registrar parent owners cannot atomically gift a subname with initial resolver records to a third party</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> (fails closed — reverts rather than misbehaving)<br><strong>Origin</strong>: <code>[both — phase1: General-6, AccessControl-6, ERC721-5; phase2: agents 7, 8, 12]</code><br><strong>Location</strong>: <code>L2Registry.sol:138-160</code> (<code>createSubnode</code> → <code>_multicall</code>)</p>
+<p><strong>Description</strong>: <code>_multicall(subnode, data)</code> preserves <code>msg.sender</code> via delegatecall; when a non-registrar parent-node owner mints a subnode to a <em>different</em> <code>_owner</code> and supplies non-empty <code>data</code>, the resolver setter&#39;s authorization check fails (the caller is neither the new owner, approved, nor a registrar), reverting the entire <code>createSubnode</code> call.</p>
+<p><strong>Recommendation</strong>: Either authorize the caller who satisfies <code>onlyOwnerOrRegistrar(node)</code> for the freshly-created child within the same call, or document that non-registrar callers must pass empty <code>data</code>.</p>
+<hr>
+<h3 id="i-4-permissionless-registry-deployment-enables-name-squatting-wi">[I-4] Permissionless registry deployment enables name squatting with no on-chain consequence</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: AccessControl-5]</code><br><strong>Location</strong>: <code>L2RegistryFactory.sol:51-72</code></p>
+<p><strong>Description</strong>: Anyone can deploy a registry claiming any parent name (e.g. <code>&quot;vitalik.eth&quot;</code>) and become its admin. This confers no real authority — an L1 name&#39;s actual owner must separately and explicitly link a registry via the properly-gated <code>L1Resolver.setL2Registry</code> — but could cause off-chain confusion if a squatted registry&#39;s <code>name()</code>/metadata is trusted without verifying the on-chain L1 link.</p>
+<p><strong>Recommendation</strong>: Document that a deployed registry has no authority until linked by the true L1 name owner.</p>
+<hr>
+<h3 id="i-5-setabiwithsignature-contenttype-0-underflows-to-a-panic-inst">[I-5] <code>setABIWithSignature</code>: <code>contentType == 0</code> underflows to a <code>Panic</code> instead of a clean revert</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both — phase1: PrecisionMath-1; phase2: agent 1]</code><br><strong>Location</strong>: <code>L2Resolver.sol:157</code> (equivalent — power-of-two check)</p>
+<p><strong>Description</strong>: <code>require(((contentType - 1) &amp; contentType) == 0)</code> underflows under checked arithmetic when <code>contentType == 0</code>, producing an opaque <code>Panic(0x11)</code> rather than the intended validation failure. Reached only after signature verification succeeds, so there is no security impact — purely cosmetic, and matches upstream ENS <code>ABIResolver</code> behavior.</p>
+<p><strong>Recommendation</strong>: <code>require(contentType != 0 &amp;&amp; (contentType &amp; (contentType - 1)) == 0);</code></p>
+<hr>
+<h3 id="i-6-unnecessary-inline-assembly-for-chainid-in-the-example-l2reg">[I-6] Unnecessary inline assembly for <code>chainid()</code> in the example <code>L2Registrar</code> constructor</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: Assembly-2]</code><br><strong>Location</strong>: <code>src/examples/L2Registrar.sol:28-32</code></p>
+<p><strong>Description</strong>: <code>assembly { sstore(chainId.slot, chainid()) }</code> is unneeded — <code>block.chainid</code> has been a native Solidity builtin since 0.8.0 — and the accompanying comment claiming assembly is required is incorrect. <code>chainId</code> is also stored as mutable storage where an <code>immutable</code> would suffice.</p>
+<p><strong>Recommendation</strong>: <code>chainId = block.chainid;</code> using an <code>immutable</code> variable; remove the dead <code>&gt;&gt; 0</code> in the <code>coinType</code> computation on the following line.</p>
+<hr>
+<h3 id="i-7-safemint-requires-erc721-receiver-support-from-contract-owne">[I-7] <code>_safeMint</code> requires ERC721-receiver support from contract owners; <code>totalSupply</code> is a monotonic mint counter only</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: ERC721-7]</code><br><strong>Location</strong>: <code>L2Registry.sol:105-125</code> (<code>initialize</code>), <code>:138-160</code> (<code>createSubnode</code>)</p>
+<p><strong>Description</strong>: Two integrator-facing behavioral notes: a contract <code>_owner</code>/<code>admin</code> without an <code>onERC721Received</code> implementation cannot be assigned a name (registration reverts); and <code>totalSupply</code> only ever increments (no burn path is exposed) with non-sequential, namehash-derived token IDs, so it should not be treated as a live enumeration count.</p>
+<p><strong>Recommendation</strong>: Document both behaviors for integrators.</p>
+<hr>
+<h2 id="methodology-notes">Methodology notes</h2>
+<ul>
+<li>This audit ran as two independent passes reconciled after the fact: an 8-checklist breadth pass (ethskills methodology) and a 12-agent blind attacker-mindset depth pass (pashov methodology), each covering the full in-scope source independently before being cross-checked against each other and against the source code directly in this synthesis.</li>
+<li>Every finding above quotes or cites the specific source lines it is based on; every finding unique to one phase was re-read against source during reconciliation before being included.</li>
+<li>No Critical-severity finding survived verification: the most severe confirmed issue (H-1) requires the attacker to control what a name owner is asked to sign (a phishing/blind-signing precondition), which is a real and common attack surface for meta-transaction schemes but is not a fully preconditionless direct-loss bug.</li>
+<li><code>src/examples/L2Registrar.sol</code> is explicitly documented in-repo as example code &quot;meant to be modified&quot; — its findings (I-1) are lower priority if it is not used as-is in production.</li>
+</ul>
+<blockquote>
+<p>⚠️ This review was performed by AI audit agents. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review and, given the signature-scheme findings above, a dedicated review of the meta-transaction/signing UX are strongly recommended before mainnet/production use.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreigrjrnuyil4ulb6lzgb4vuqyqvhtwfgfqli2gbyvf5ebq7elk2ene.ipfs.community.bgipfs.com/"><code>https://bafkreigrjrnuyil4ulb6lzgb4vuqyqvhtwfgfqli2gbyvf5ebq7elk2ene.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/316">#316</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

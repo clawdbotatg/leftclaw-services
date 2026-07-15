@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>referralTree (MagRelo/referralTree) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #388">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">referralTree (MagRelo/referralTree)</h1>
+    <p class="job-sub">Job #388 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/388"><b>Job page</b> #388</a>
+      <a class="chip" href="https://bafkreiht462u57pucb7h6n7ntznycby7cauzaupbvuswvl7hytd5ov3dc4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">3</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">4</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">9</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">6</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — referralTree (MagRelo/referralTree)</h1>
+<p><strong>Audit target</strong>: <code>MagRelo/referralTree</code>, commit <code>f4f6ddfdd82cea5a097cbfd08b1d8a57acd1d6a1</code><br><strong>Scope</strong>: <code>src/core/ReferralGraph.sol</code>, <code>src/core/RewardCalculator.sol</code>, <code>src/core/RewardDistributor.sol</code>, <code>src/utils/SignatureLib.sol</code> (492 LOC). <code>src/interfaces/*.sol</code> read for type/context only.<br><strong>Methodology</strong>: Three-phase audit — Phase 0 context (protocol map + access-control inventory + threat catalog, 3 agents, opus) → Phase 1 breadth (6 ethskills domain checklists: general, precision-math, signatures, access-control, dos, erc20; sonnet) → Phase 2 depth (12 pashov attack-specialty agents, blind to Phase 1, sonnet) → Phase 3 hybrid reconciliation with a Phase-0-driven coverage gate.<br><strong>Client brief</strong>: &quot;analyze both for technical implementation correctness/safety and also for design implementation - can it be hacked/griefed/circumvented/abused?&quot;<br><strong>Prior audits</strong>: Not consulted. This report is generated fresh from this job&#39;s own Phase 0/1/2 runs only, per engagement policy.</p>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><code>Overlap: 9 · Phase-1-only: 13 · Phase-2-only: 3 · Re-examined leads kept: 2, demoted: 0 · Coverage holes closed: 0</code></p>
+<p>Two findings stand out for cross-agent consensus: the <strong>cross-deployment signature replay</strong> (found independently by 6 of the 18 total hunting agents run across both phases) and the <strong>referral-chain TOCTOU / registration-oracle front-run</strong> (found independently by 6 of 18, via five completely different attack lenses — execution-trace, first-principles, numerical-gap, trust-gap, flow-gap, plus phase-1&#39;s access-control checklist). Independent, blind convergence of this degree is a strong signal these are real, not analyst artifacts.</p>
+<p><strong>Confidence floor</strong>: All findings below carry confidence ≥ 70/100 (details per finding); none fell below the 50-confidence Leads threshold, so there is no separate Leads section.</p>
+<p><strong>Coverage gate</strong> (Phase-0 driven): <code>Entrypoints: 7 in inventory, 7 addressed. Threat-catalog rows: 10, 10 answered. Holes closed this pass: 0.</code> All seven state-changing entrypoints (<code>ReferralGraph.register</code>, <code>batchRegister</code>, <code>authorizeOracle</code>, <code>unauthorizeOracle</code>; <code>RewardDistributor.authorizeOracle</code>, <code>unauthorizeOracle</code>, <code>distributeChainRewards</code>) map to at least one finding or an explicit &quot;examined, no issue&quot; note below. All ten Phase-0 threat-catalog rows are answered — notably, threat-catalog row 6 (&quot;registration oracle can pre-register attacker-controlled ancestors to capture future distributions&quot;) <em>predicted</em> what Phase 1/2 later confirmed in detail as Finding 1.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="h-1-signed-reward-payload-does-not-commit-to-the-resolved-referr">[H-1] Signed reward payload does not commit to the resolved referral chain — a registration oracle (or the target user) can redirect a majority of an already-signed distribution</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> | <strong>Confidence</strong>: 85 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-access-control (AC-1); phase2: 5 independent pashov agents (execution-trace, first-principles, numerical-gap, trust-gap, flow-gap)<br><strong>Location</strong>: <code>RewardDistributor.distributeChainRewards()</code>, <code>src/core/RewardDistributor.sol:109-145</code>; <code>_getReferralChain()</code>, <code>src/core/RewardDistributor.sol:154-177</code>; <code>ReferralGraph._register()</code>, <code>src/core/ReferralGraph.sol:114-130</code>.</p>
+<p><strong>Description</strong>: The distribution oracle&#39;s signature covers only <code>(reward.user, reward.totalAmount, reward.rewardToken, reward.groupId, reward.eventId)</code>:</p>
+<pre><code class="language-solidity">bytes32 rewardHash = keccak256(
+    abi.encodePacked(reward.user, reward.totalAmount, reward.rewardToken, reward.groupId, reward.eventId)
+);
+</code></pre>
+<p>(<code>RewardDistributor.sol:112-120</code>) — it never commits to the referral chain or the recipient/amount split. The actual payout chain is resolved <strong>live</strong>, at execution time, by walking <code>ReferralGraph</code> state:</p>
+<pre><code class="language-solidity">function _getReferralChain(address user, bytes32 groupId) internal view returns (address[] memory) {
+    address[] memory chain = new address[](11);
+    uint256 length = 0;
+    address current = user;
+    chain[length++] = current;
+    while (length &lt; 11) {
+        current = referralGraph.getReferrer(current, groupId);
+        if (current == address(0) || current == REFERRAL_ROOT) break;
+        chain[length++] = current;
+    }
+    ...
+}
+</code></pre>
+<p>(<code>RewardDistributor.sol:154-177</code>). Registration authorization (<code>ReferralGraph._authorizedOracles</code>) is a <strong>separate, independently-managed trust set</strong> from distribution authorization (<code>RewardDistributor._authorizedOracles</code>) — per the access-control inventory, the registration-oracle role is documented as moving no value. If the distribution oracle signs a reward for a <code>reward.user</code> who is <strong>unregistered</strong> at signing time (a legal, ordinary state — chain resolves to <code>[user]</code>, 100% to <code>user</code>), a registration oracle can insert one or more ancestors above <code>reward.user</code> via <code>ReferralGraph.register()</code> between signing and execution:</p>
+<pre><code class="language-solidity">function _register(address user, address referrer, bytes32 groupId) internal {
+    ...
+    if (_referrers[groupId][user] != address(0)) revert UserAlreadyRegistered();
+    if (referrer != REFERRAL_ROOT &amp;&amp; !_isInReferralTree(referrer, groupId)) revert ReferrerNotInTree();
+    _referrers[groupId][user] = referrer;
+    _children[groupId][referrer].push(user);
+    ...
+}
+</code></pre>
+<p>(<code>ReferralGraph.sol:114-130</code>) — this succeeds because the only guard against re-registration is <code>_referrers[groupId][user] != address(0)</code>, which is still false for an unregistered <code>reward.user</code>. <code>distributeChainRewards</code> is permissionless (anyone can relay a valid signature, <code>RewardDistributor.sol:109</code>), so the registration and the distribution race independently in the mempool with no atomicity between them. Because <code>_distributedRewards[rewardHash]</code> is set permanently once the distribution executes (<code>RewardDistributor.sol:129</code>), the redirected outcome cannot be corrected.</p>
+<p><strong>Proof of Concept</strong> (concrete numbers): <code>totalAmount = 1000</code>. Distribution oracle signs <code>ChainRewardData{user: R1, totalAmount: 1000, rewardToken: T, groupId: G, eventId: E}</code> while <code>R1</code> is unregistered in group <code>G</code>, intending <code>R1</code> to receive 100% (chain would resolve to length 1, <code>RewardCalculator</code>&#39;s <code>cumSums[1] = 10000</code> gives <code>weights[0]/cumSums[1] = 1.0</code>). Before the signed transaction lands, an address holding <code>ReferralGraph</code>-oracle authorization for <code>G</code> (a role with no value-moving capability per its own access-control entry) pre-builds a 9-hop sybil chain <code>A1 ← A2 ← ... ← A9 ← REFERRAL_ROOT</code> via ordinary <code>register()</code> calls, then calls <code>register(R1, A1, G)</code> — legal since <code>A1</code> is tree-connected and <code>R1</code> is still unregistered. When the signed distribution is finally relayed, <code>_getReferralChain(R1, G)</code> now returns <code>[R1, A1, ..., A9]</code> (10 entries, <code>RewardCalculator</code>&#39;s hard cap). <code>cumSums[10] = 24845</code>, so <code>R1</code> receives <code>1000 * 10000 / 24845 ≈ 403</code> instead of the full <code>1000</code>, and <code>A1..A9</code> collectively capture <code>≈ 597</code> — <strong>up to ~59.7%</strong> (<code>1 − weights[0]/cumSums[10]</code>) of a reward the distribution oracle authorized entirely for <code>R1</code>, using only registration-oracle privilege. A simpler one-hop variant (insert a single referrer) was independently traced by a second agent redirecting 37.5% of a reward in the same way, and a third variant showed the target user themselves front-running their own registration to capture an ancestor&#39;s share.</p>
+<p><strong>Recommendation</strong>: Bind the signature to the resolved recipient set — e.g. sign <code>keccak256(user, totalAmount, rewardToken, groupId, eventId, keccak256(abi.encode(chain)))</code> where <code>chain</code> is enumerated off-chain at signing time, and have <code>distributeChainRewards</code> verify the live-computed chain matches what was signed (revert on mismatch). A cheaper partial mitigation: require <code>referralGraph.isRegistered(reward.user, groupId)</code> at signing time and re-verify at execution that the chain length/composition is unchanged from what the oracle observed.</p>
+<hr>
+<h3 id="h-2-cross-deployment-cross-chain-signature-replay-rewardhash-has">[H-2] Cross-deployment / cross-chain signature replay — <code>rewardHash</code> has no domain separator</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-signatures (SIG-1); phase2: 5 independent pashov agents (math-precision, access-control, economic-security, execution-trace, periphery)<br><strong>Location</strong>: <code>distributeChainRewards()</code> hash construction, <code>src/core/RewardDistributor.sol:112-120</code>; <code>SignatureLib.toEthSignedMessageHash()</code>, <code>src/utils/SignatureLib.sol:13-15</code>.</p>
+<p><strong>Description</strong>: Neither <code>block.chainid</code> nor <code>address(this)</code> (the verifying <code>RewardDistributor</code> instance) is bound into the signed digest. <code>SignatureLib.toEthSignedMessageHash</code> wraps <code>rewardHash</code> in only the generic EIP-191 prefix:</p>
+<pre><code class="language-solidity">function toEthSignedMessageHash(bytes32 hash) internal pure returns (bytes32) {
+    return keccak256(abi.encodePacked(&quot;\x19Ethereum Signed Message:\n32&quot;, hash));
+}
+</code></pre>
+<p>(<code>SignatureLib.sol:13-15</code>), and <code>SignatureLib.recover</code> adds no contract/chain-scoping either (<code>SignatureLib.sol:21-42</code>). <code>_distributedRewards[rewardHash]</code> (<code>RewardDistributor.sol:37</code>) is per-contract storage — the &quot;distributed at most once&quot; guarantee holds only <em>within a single deployment</em>, not across instances. This is realistic in operation: teams commonly reuse the same oracle signing key across a redeployment (bug-fix migration) or across a multi-chain rollout deployed via a deterministic (CREATE2) factory, which places <code>RewardDistributor</code> at the same address on every chain.</p>
+<p><strong>Proof of Concept</strong>: Deploy <code>RewardDistributor</code> twice — e.g. via CREATE2 on chain A and chain B, or as a redeploy on the same chain — authorizing the same oracle EOA <code>K</code> for <code>groupId = G</code> on both, and fund both with the same <code>rewardToken</code> (true for canonically-deployed tokens at the same address). Oracle <code>K</code> signs one <code>ChainRewardData{user, totalAmount: 1000e18, rewardToken, groupId: G, eventId: E}</code> for a real event that occurred on chain A. This is submitted (and publicly visible as calldata) on chain A, paying out 1000e18. Anyone copies the identical <code>(reward, signature)</code> calldata and submits it to chain B&#39;s <code>RewardDistributor</code>: <code>_distributedRewards[rewardHash]</code> is <code>false</code> there (independent storage), <code>SignatureLib.recover</code> returns the same signer (digest has no chain-dependent input), <code>K</code> is authorized for <code>G</code> on chain B too — the full <code>1000e18</code> is paid out a second time from chain B&#39;s independent token balance, for an event that never occurred there.</p>
+<p><strong>Recommendation</strong>: Include <code>block.chainid</code> and <code>address(this)</code> in the hashed payload (<code>keccak256(abi.encode(block.chainid, address(this), reward.user, reward.totalAmount, reward.rewardToken, reward.groupId, reward.eventId))</code>), or migrate to full EIP-712 typed-data signing with a standard domain separator — this also resolves the raw-EIP-191-vs-EIP-712 informational gap noted below (I-6).</p>
+<hr>
+<h3 id="h-3-atomic-all-or-nothing-payout-loop-one-blocklistedreverting-r">[H-3] Atomic all-or-nothing payout loop — one blocklisted/reverting recipient anywhere in a chain permanently blocks payment to every other recipient</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> | <strong>Confidence</strong>: 85 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-dos (DOS-1), evm-audit-erc20 (ERC20-2); phase2: 3 independent pashov agents (economic-security, invariant, first-principles)<br><strong>Location</strong>: payout loop, <code>src/core/RewardDistributor.sol:138-142</code>; combined with the immutable-referrer invariant in <code>ReferralGraph._register()</code>, <code>src/core/ReferralGraph.sol:118,126</code>.</p>
+<p><strong>Description</strong>: The payout loop performs synchronous transfers to every recipient in a single atomic transaction, with no isolation:</p>
+<pre><code class="language-solidity">for (uint256 i = 0; i &lt; recipients.length; i++) {
+    if (amounts[i] &gt; 0) {
+        SafeTransferLib.safeTransfer(ERC20(reward.rewardToken), recipients[i], amounts[i]);
+    }
+}
+</code></pre>
+<p>(<code>RewardDistributor.sol:138-142</code>). If <code>reward.rewardToken</code> is a legitimate deny-list-capable token (USDC/USDT-style) and <strong>any one</strong> address in the resolved chain is on that token&#39;s blocklist — for reasons entirely outside this protocol&#39;s control — that single <code>safeTransfer</code> reverts, reverting the <em>entire</em> <code>distributeChainRewards</code> call, including the <code>_distributedRewards</code> write (<code>RewardDistributor.sol:129</code>). Because <code>ReferralGraph._register</code> makes a referrer permanent once set (<code>ReferralGraph.sol:118</code> reverts on re-registration; no update path exists anywhere in scope), the chain composition for a given <code>reward.user</code> can never change. Every future retry — for this <code>user</code>, or for any descendant sharing the blocked ancestor within the top-10 window — reconstructs the identical chain and reverts identically. This is a <strong>permanent</strong> denial of payment to the target user and every other un-blocked ancestor, triggered by one unrelated address&#39;s real-world blocklisting, with no on-chain recovery path (see M-1, no rescue function exists).</p>
+<p><strong>Proof of Concept</strong>: A user registers under a 5-level referral chain (ordinary, oracle-driven registration). Independently, an ancestor 3 hops up is later added to USDC&#39;s blocklist (e.g. an OFAC listing) — an event wholly unrelated to this protocol. The distribution oracle signs a legitimate reward for the target user&#39;s chain. The payout loop reaches the blocklisted ancestor&#39;s <code>safeTransfer</code>, which reverts; the whole transaction reverts, so the target user and every other non-blocklisted ancestor also receive nothing. Every future distribution attempt for this user (any <code>eventId</code>, any amount) hits the identical revert, permanently, for as long as the blocklisted address remains in the chain — which, given immutable referrer links, is forever.</p>
+<p><strong>Recommendation</strong>: Wrap each <code>safeTransfer</code> in a try/catch (via a raw <code>.call()</code> with a success check, since <code>safeTransfer</code> itself is a low-level helper) and credit failed transfers to a per-recipient pull-payment mapping instead of reverting the whole batch — or move to a full pull-payment/claim model where <code>distributeChainRewards</code> only computes and credits balances.</p>
+<hr>
+<h3 id="m-1-no-token-rescuerecovery-function-anywhere-in-scope">[M-1] No token rescue/recovery function anywhere in scope</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 95 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-general (GEN-2); corroborated structurally by the phase-0 external-surface map&#39;s funding assumption<br><strong>Location</strong>: <code>RewardDistributor.sol</code> — entire external surface (<code>getReferralGraph</code>, <code>isRewardDistributed</code>, <code>authorizeOracle</code>, <code>unauthorizeOracle</code>, <code>isAuthorizedOracle</code>, <code>getAuthorizedOracles</code>, <code>distributeChainRewards</code>); no <code>deposit</code>/<code>withdraw</code>/<code>rescue</code>/<code>sweep</code> function exists.</p>
+<p><strong>Description</strong>: <code>RewardDistributor</code> must be funded entirely out-of-band (a direct ERC20 <code>transfer</code> into the contract address — there is no <code>deposit()</code>). There is no mechanism, not even owner-gated, to recover over-funded, orphaned (retired-group), or stuck balances (e.g. the H-3 or L-2 failure modes, or excess dust from a completed distribution round). Any such balance is permanently locked with no code path to move it out.</p>
+<p><strong>Recommendation</strong>: Add an <code>onlyOwner</code>-gated <code>rescueTokens(address token, address to, uint256 amount)</code> function, or explicitly document this as an accepted risk if intentional.</p>
+<hr>
+<h3 id="m-2-no-per-group-balance-segregation-an-oracle-authorized-for-on">[M-2] No per-group balance segregation — an oracle authorized for one group can spend funds earmarked for any other group sharing the same token</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 75 | <strong>Origin</strong>: <code>[phase2 only]</code> — pashov trust-gap agent; re-examined and confirmed by the orchestrator (grep of <code>RewardDistributor.sol</code> for any balance-tracking beyond the replay flag — none found)<br><strong>Location</strong>: <code>distributeChainRewards()</code>, <code>src/core/RewardDistributor.sol:109-145</code>; contract-wide.</p>
+<p><strong>Description</strong>: Oracle <em>authorization</em> is scoped per <code>groupId</code> via <code>authorizeOracle(oracle, groupId)</code> — separate grants imply, to an operator, per-group trust isolation. But the token balance an authorized oracle can actually spend against is the contract&#39;s raw, unscoped <code>balanceOf(address(this))</code>; there is no <code>mapping(groupId =&gt; balance)</code> or equivalent anywhere in the contract. Funding is out-of-band and untagged by group (per M-1). An oracle authorized only for a lower-value group B can sign <code>distributeChainRewards({..., groupId: B, totalAmount: &lt;up to the full contract balance&gt;})</code> and drain tokens that were transferred in expecting to fund group A&#39;s participants — nothing on-chain distinguishes &quot;group A&#39;s money&quot; from &quot;group B&#39;s money,&quot; despite the separate authorization mechanics suggesting otherwise.</p>
+<p><strong>Proof of Concept</strong>: Group A&#39;s operator funds <code>RewardDistributor</code> with 100,000 USDC intending it for group A&#39;s referral payouts. Group B&#39;s independently-keyed, separately-authorized oracle (lower trust, perhaps a newer or lower-scrutiny integration) signs <code>ChainRewardData{user: &lt;address B-oracle controls&gt;, totalAmount: 100000e6, rewardToken: USDC, groupId: B, eventId: E}</code>. <code>distributeChainRewards</code> performs no check that <code>totalAmount</code> is bounded by anything earmarked for group B specifically — it succeeds and drains the entire balance, leaving group A&#39;s participants with nothing.</p>
+<p><strong>Recommendation</strong>: Add a <code>fundGroup(groupId, token, amount)</code> deposit entrypoint that credits a <code>groupBalance[groupId][token]</code> ledger, debited by <code>distributeChainRewards</code>, so a group&#39;s oracle can only ever spend what was explicitly earmarked for that group.</p>
+<hr>
+<h3 id="m-3-unvalidated-rewarduser-address0-or-referralroot-burns-the-di">[M-3] Unvalidated <code>reward.user == address(0)</code> (or <code>== REFERRAL_ROOT</code>) burns the distribution</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 80 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-general (GEN-1, rated High there); phase2: leads from 4 agents plus a traced ROOT-specific variant from the boundary agent<br><strong>Location</strong>: <code>distributeChainRewards()</code> L110 (only <code>totalAmount == 0</code> is checked), <code>_getReferralChain()</code> L158-159 (<code>chain[0] = user</code> appended unconditionally, before any sentinel check).</p>
+<p><strong>Description</strong>: <code>distributeChainRewards</code> never validates <code>reward.user</code>. <code>_getReferralChain</code> appends <code>reward.user</code> as <code>chain[0]</code> unconditionally:</p>
+<pre><code class="language-solidity">address current = user;
+chain[length++] = current;
+</code></pre>
+<p>(<code>RewardDistributor.sol:158-159</code>) — note this line runs <em>before</em> the loop&#39;s <code>current == REFERRAL_ROOT</code> check, so that check only guards addresses fetched via <code>getReferrer</code> inside the loop, not the initial <code>user</code> value itself. If <code>reward.user == address(0)</code>, the chain resolves to <code>[address(0)]</code> and 100% of <code>totalAmount</code> is sent via <code>SafeTransferLib.safeTransfer</code> to the zero address; Solmate-style/minimal ERC20s do not special-case <code>address(0)</code>, so the tokens are irrecoverably burned (compounded by M-1 — no rescue path). If <code>reward.user == REFERRAL_ROOT</code> (<code>0x...01</code>), the same happens to that sentinel address; if a registration oracle has separately (and invalidly, per L-3) given <code>REFERRAL_ROOT</code> a fake referrer via <code>register(REFERRAL_ROOT, A, groupId)</code>, a further share leaks to that fabricated referrer <code>A</code> as well. Both variants require an oracle-side data error (e.g. an off-chain &quot;unknown referrer&quot; default resolving to <code>0x0</code>) rather than a purely external attacker — this is why the finding is rated Medium (owner/trusted-party-adjacent fund loss) rather than High, per the audit&#39;s severity convention that trust-dependent loss paths are downgraded unless a non-privileged actor can trigger them alone; it remains a real, concrete, irreversible-fund-loss footgun worth a one-line fix.</p>
+<p><strong>Recommendation</strong>: <code>require(reward.user != address(0) &amp;&amp; reward.user != REFERRAL_ROOT);</code> before hash computation in <code>distributeChainRewards</code>.</p>
+<hr>
+<h3 id="m-4-fee-on-transfer-deflationary-reward-tokens-cause-silent-reci">[M-4] Fee-on-transfer / deflationary reward tokens cause silent recipient underpayment</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> | <strong>Confidence</strong>: 75 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-erc20 (ERC20-1); phase2: pashov invariant agent (lead)<br><strong>Location</strong>: payout loop, <code>src/core/RewardDistributor.sol:138-142</code> — no balance-delta check.</p>
+<p><strong>Description</strong>: <code>amounts[i]</code> is a nominal value computed by <code>RewardCalculator</code> from <code>reward.totalAmount</code>; it is never reconciled against <code>balanceOf(recipient)</code> before/after the transfer. If <code>reward.rewardToken</code> is a legitimate fee-on-transfer or deflationary token, every recipient receives strictly less than <code>amounts[i]</code>, with no revert, no on-chain detection, and no correction possible (the <code>rewardHash</code> is already permanently marked distributed per L-3/M-3&#39;s discussion of that flag&#39;s permanence). The emitted <code>ChainRewardsDistributed</code> event still reports the full nominal <code>amounts</code>, so off-chain reconciliation built on that event will overstate actual payouts.</p>
+<p><strong>Recommendation</strong>: Measure <code>balanceOf(recipient)</code> before/after each transfer and either revert on shortfall or emit the actually-delivered amount; alternatively, restrict <code>rewardToken</code> to a vetted, owner-maintained allowlist of standard-compliant tokens.</p>
+<hr>
+<h3 id="l-1-no-timelock-on-authorizeoracle-unauthorizeoracle-in-either-c">[L-1] No timelock on <code>authorizeOracle</code> / <code>unauthorizeOracle</code> in either contract</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-access-control (AC-2)<br><strong>Location</strong>: <code>ReferralGraph.authorizeOracle()</code>/<code>unauthorizeOracle()</code>, <code>src/core/ReferralGraph.sol:159-186</code>; <code>RewardDistributor.authorizeOracle()</code>/<code>unauthorizeOracle()</code>, <code>src/core/RewardDistributor.sol:71-96</code>.</p>
+<p><strong>Description</strong>: Both contracts grant/revoke oracle authorization instantly via a single <code>onlyOwner</code> transaction, with no delay or multi-sig enforcement in-scope. For <code>RewardDistributor</code> specifically, <code>authorizeOracle</code> grants unlimited signing power over the group&#39;s token balance (compounded by M-2&#39;s lack of group segregation) with no warning window for integrators to react to a grant, and no faster-than-owner-reaction path to contain a compromised oracle key.</p>
+<p><strong>Recommendation</strong>: Consider a timelock (or multisig + delay) on oracle grants, particularly for <code>RewardDistributor</code>.</p>
+<hr>
+<h3 id="l-2-single-step-ownership-transfer-solmate-owned-no-two-step-con">[L-2] Single-step ownership transfer (Solmate <code>Owned</code>), no two-step confirmation</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 85 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-access-control (AC-3); confirmed via the compiled <code>out/Owned.sol/Owned.json</code> ABI (only <code>transferOwnership</code>/<code>owner</code>/<code>OwnershipTransferred</code> — no <code>pendingOwner</code>/<code>acceptOwnership</code>)<br><strong>Location</strong>: <code>ReferralGraph</code> (<code>src/core/ReferralGraph.sol:11</code>, inherits <code>Owned</code>), <code>RewardDistributor</code> (<code>src/core/RewardDistributor.sol:18</code>, inherits <code>Owned</code>).</p>
+<p><strong>Description</strong>: Both contracts use Solmate <code>Owned</code>&#39;s single-step <code>transferOwnership</code>. A mistyped address or an accidental transfer to <code>address(0)</code> permanently and irrecoverably locks all owner-gated functions (<code>authorizeOracle</code>/<code>unauthorizeOracle</code> in both contracts) — with no rescue path, meaning a compromised or stale oracle could never be revoked and no new oracle could ever be added again for that contract.</p>
+<p><strong>Recommendation</strong>: Adopt a two-step ownership pattern (<code>Ownable2Step</code>-style <code>pendingOwner</code> + <code>acceptOwnership</code>).</p>
+<hr>
+<h3 id="l-3-referralgraphregister-never-excludes-user-referralroot-as-a-">[L-3] <code>ReferralGraph._register</code> never excludes <code>user == REFERRAL_ROOT</code> as a registrable sentinel</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 80 | <strong>Origin</strong>: <code>[phase2 only]</code> — leads from 5 of 12 pashov agents (math-precision, invariant, first-principles, boundary, flow-gap)<br><strong>Location</strong>: <code>_register()</code>, <code>src/core/ReferralGraph.sol:114-130</code>.</p>
+<p><strong>Description</strong>: <code>_register</code> checks <code>user == address(0)</code> (<code>ReferralGraph.sol:115</code>) but has no analogous check for <code>user == REFERRAL_ROOT</code>, even though <code>REFERRAL_ROOT</code> <em>is</em> explicitly special-cased for the <code>referrer</code> parameter two lines later (<code>ReferralGraph.sol:122</code>). Four of five agents that raised this traced the consequence and found it inert for the common read path — <code>REFERRAL_ROOT</code> appearing mid-chain via <code>getReferrer</code> is caught by the existing break-before-append check in both <code>_getReferralChain</code> and <code>getAncestors</code> — so this is not independently exploitable on its own. It becomes relevant only combined with M-3&#39;s <code>reward.user == REFERRAL_ROOT</code> variant.</p>
+<p><strong>Recommendation</strong>: <code>if (user == REFERRAL_ROOT) revert InvalidUserAddress();</code> in <code>_register</code>, mirroring the existing zero-address check.</p>
+<hr>
+<h3 id="l-4-referral-chain-collects-up-to-11-addresses-but-only-ever-pay">[L-4] Referral chain collects up to 11 addresses but only ever pays 10 — deepest ancestor silently dropped</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 95 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-general (GEN-4), evm-audit-precision-math (MATH-1), evm-audit-dos (DOS-5); phase2: economic-security, asymmetry (2 findings + 1 corroborating lead)<br><strong>Location</strong>: <code>_getReferralChain()</code>, <code>src/core/RewardDistributor.sol:152-177</code> (collects up to 11: <code>user</code> + 10 ancestors); <code>_calculateChainRewards()</code>, <code>src/core/RewardDistributor.sol:192-207</code>, and <code>RewardCalculator.calculateRewards()</code>, <code>src/core/RewardCalculator.sol:22-24</code> (hard cap at 10).</p>
+<p><strong>Description</strong>: <code>_getReferralChain</code>&#39;s own docstring states it returns &quot;up to 11 addresses,&quot; and the collection loop does reach 11 for a fully-populated chain. <code>_calculateChainRewards</code> then clamps <code>numRecipients</code> to 10 before calling <code>RewardCalculator</code>, and only the first 10 chain entries are ever copied into <code>recipients</code>/<code>amounts</code>. When a chain reaches full depth, the 11th (most senior, legitimately-registered) ancestor is read, allocated a memory slot, and then silently dropped — receiving 0, absent from the <code>ChainRewardsDistributed</code> event, with no revert or signal. <code>totalAmount</code> still sums exactly across the paid 10 (the weight table&#39;s prefix sums were hand-verified against every <code>cumSums[1..10]</code> entry by multiple independent agents, confirming no fund-accounting bug — this is a fairness/correctness gap, not a fund-loss one).</p>
+<p><strong>Recommendation</strong>: Cap chain collection at 10 to match payout capacity, or extend <code>RewardCalculator</code> to 11 slots; fix the misleading docstring either way.</p>
+<hr>
+<h3 id="l-5-codeless-non-existent-rewardtoken-silently-succeeds-permanen">[L-5] Codeless / non-existent <code>rewardToken</code> silently &quot;succeeds,&quot; permanently burning the distribution slot</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 80 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-general (GEN-3); phase2: pashov boundary agent<br><strong>Location</strong>: <code>distributeChainRewards()</code> L129 (state write), L140 (<code>safeTransfer</code>).</p>
+<p><strong>Description</strong>: A low-level call to an address with no deployed code returns <code>(true, &quot;&quot;)</code>; Solmate&#39;s <code>SafeTransferLib</code> treats empty returndata as success with no <code>extcodesize</code> check. If <code>reward.rewardToken</code> is codeless (typo, wrong-chain address, not-yet-deployed contract), the entire flow &quot;succeeds&quot; with zero tokens actually moved. <code>_distributedRewards[rewardHash]</code> is already permanently set (<code>RewardDistributor.sol:129</code>, written before the transfer loop) — that exact reward tuple can never be retried, and (per M-1) there is no rescue path to recover or reissue it.</p>
+<p><strong>Recommendation</strong>: <code>require(reward.rewardToken.code.length &gt; 0);</code> before the transfer loop, or restrict <code>rewardToken</code> to an owner-maintained allowlist.</p>
+<hr>
+<h3 id="l-6-rewarddistributor-constructor-grants-the-initial-oracle-with">[L-6] <code>RewardDistributor</code> constructor grants the initial oracle without emitting <code>OracleAuthorized</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 95 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-access-control (AC-5); phase2: leads from 3 independent agents (math-precision, execution-trace, asymmetry)<br><strong>Location</strong>: constructor, <code>src/core/RewardDistributor.sol:46-58</code> (specifically the <code>initialOracle</code> branch, L54-57), contrasted with <code>ReferralGraph</code>&#39;s equivalent constructor branch (which does emit) and <code>RewardDistributor.authorizeOracle</code> itself (which also emits on every subsequent grant).</p>
+<p><strong>Description</strong>: Off-chain monitoring/indexing keyed on <code>OracleAuthorized</code> events will silently miss the deploy-time grant of the single most consequential role in the protocol (signing power over the contract&#39;s entire per-group token balance).</p>
+<p><strong>Recommendation</strong>: Emit <code>OracleAuthorized(initialGroupId, initialOracle)</code> in the constructor branch, matching <code>ReferralGraph</code>&#39;s behavior.</p>
+<hr>
+<h3 id="l-7-no-expirationdeadline-on-distribution-signatures">[L-7] No expiration/deadline on distribution signatures</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-signatures (SIG-2)<br><strong>Location</strong>: <code>ChainRewardData</code> struct (<code>src/interfaces/IRewardDistributor.sol:12-18</code>); <code>distributeChainRewards()</code>.</p>
+<p><strong>Description</strong>: No <code>deadline</code>/<code>expiry</code> field exists. A signature is valid indefinitely until its exact <code>(user, totalAmount, rewardToken, groupId, eventId)</code> tuple is consumed; there is no way to cancel a specific outstanding signature short of fully de-authorizing the signing oracle (which also invalidates all of that oracle&#39;s other legitimate outstanding signatures).</p>
+<p><strong>Recommendation</strong>: Add a <code>deadline</code> field, included in the hash, checked at call time.</p>
+<hr>
+<h3 id="l-8-batchregister-has-no-cap-on-userslength">[L-8] <code>batchRegister</code> has no cap on <code>users.length</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-dos (DOS-2)<br><strong>Location</strong>: <code>ReferralGraph.batchRegister()</code>, <code>src/core/ReferralGraph.sol:149-156</code>.</p>
+<p><strong>Description</strong>: An unbounded loop over caller-supplied <code>users[]</code> could exceed the block gas limit for a very large array. Not third-party exploitable — <code>batchRegister</code> is <code>onlyAuthorizedOracle</code>-gated, and the registration oracle is already a fully trusted role — but a self-inflicted operational/availability issue for the trusted operator with no explicit bound.</p>
+<p><strong>Recommendation</strong>: Add an explicit <code>require(users.length &lt;= MAX_BATCH_SIZE)</code>.</p>
+<hr>
+<h3 id="l-9-pausable-reward-tokens-cause-temporary-self-resolving-dos">[L-9] Pausable reward tokens cause temporary (self-resolving) DoS</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-erc20 (ERC20-4)<br><strong>Location</strong>: payout loop, <code>src/core/RewardDistributor.sol:138-142</code>.</p>
+<p><strong>Description</strong>: Distinct from H-3 — if <code>reward.rewardToken</code> is legitimately paused (USDC/USDT-style <code>pause()</code>), the whole call reverts, but the <code>_distributedRewards</code> write reverts along with it, so the identical signed payload succeeds normally once the token is unpaused. Operational note, not a bug.</p>
+<p><strong>Recommendation</strong>: None required; document that relaying should be retried after a token-level pause lifts.</p>
+<hr>
+<h3 id="i-1-ireferralgraph-natspec-for-register-describes-root-registrat">[I-1] <code>IReferralGraph</code> NatSpec for <code>register()</code> describes root registration incorrectly</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confidence</strong>: 85 | <strong>Origin</strong>: <code>[phase2 only]</code> — pashov periphery agent; verified directly by the orchestrator against source<br><strong>Location</strong>: <code>src/interfaces/IReferralGraph.sol:66</code> (<code>@param referrer ... or address(0) for root registration</code>) vs. actual implementation, <code>src/core/ReferralGraph.sol:116</code> (<code>if (referrer == address(0)) revert InvalidReferrerAddress();</code>) and <code>:122</code> (root registration actually requires <code>referrer == REFERRAL_ROOT</code>, the <code>0x...01</code> sentinel, never <code>address(0)</code>).</p>
+<p><strong>Description</strong>: An integrator trusting the interface doc over the implementation would construct a root-registration call with <code>referrer = address(0)</code> and get an unconditional revert. Verified: <code>ReferralGraph.sol:116</code> reverts <code>InvalidReferrerAddress</code> for <code>referrer == address(0)</code> unconditionally, before the root-sentinel branch is ever reached.</p>
+<p><strong>Recommendation</strong>: Correct the NatSpec to state <code>REFERRAL_ROOT</code> (not <code>address(0)</code>) as the root-registration sentinel.</p>
+<hr>
+<h3 id="i-2-two-independent-oracle-authorization-systems-provide-no-on-c">[I-2] Two independent oracle-authorization systems provide no on-chain guarantee of separation</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-access-control (AC-6)<br><strong>Location</strong>: <code>ReferralGraph._authorizedOracles</code> (<code>src/core/ReferralGraph.sol:22</code>) vs. <code>RewardDistributor._authorizedOracles</code> (<code>src/core/RewardDistributor.sol:31</code>).</p>
+<p><strong>Description</strong>: Nothing on-chain prevents authorizing the same address as both registration and distribution oracle for the same group, which would collapse the intended blast-radius separation between the two roles to a single key&#39;s custody discipline. Operational/documentation note.</p>
+<p><strong>Recommendation</strong>: Document the requirement for distinct signing keys/custody between the two roles; optionally add an on-chain guard rejecting cross-authorization of the same address in both roles for the same group.</p>
+<hr>
+<h3 id="i-3-unauthorizeoracles-linear-scan-over-the-oracle-list-is-owner">[I-3] <code>unauthorizeOracle</code>&#39;s linear scan over the oracle list is owner-controlled growth only, not externally exploitable</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-dos (DOS-3)<br><strong>Location</strong>: <code>ReferralGraph.unauthorizeOracle()</code>, <code>src/core/ReferralGraph.sol:169-184</code>; <code>RewardDistributor.unauthorizeOracle()</code>, <code>src/core/RewardDistributor.sol:81-96</code>.</p>
+<p><strong>Description</strong>: List growth requires <code>onlyOwner</code> plus an idempotency guard preventing duplicate entries — no adversarial path exists to inflate this array. No action required at any realistic owner-driven scale.</p>
+<hr>
+<h3 id="i-4-unbounded-children-array-growth-view-only-exposure-no-on-cha">[I-4] Unbounded <code>_children</code> array growth — view-only exposure, no on-chain gas-DoS path</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confidence</strong>: 85 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-dos (DOS-4)<br><strong>Location</strong>: <code>ReferralGraph._register()</code> (push), <code>src/core/ReferralGraph.sol:127</code>; <code>getChildren()</code>, <code>src/core/ReferralGraph.sol:66-68</code>.</p>
+<p><strong>Description</strong>: <code>_children</code> can grow without bound, but the only state-changing read of it (<code>_isInReferralTree</code>) checks <code>.length &gt; 0</code>, an O(1) operation regardless of size. The only full enumeration is the <code>view</code> function <code>getChildren</code> — an off-chain indexer/RPC concern at most, not an on-chain gas-DoS vector.</p>
+<hr>
+<h3 id="i-5-small-totalamount-degenerates-to-pay-recipient-0-only-no-ove">[I-5] Small <code>totalAmount</code> degenerates to &quot;pay recipient 0 only&quot;; no overflow guard on the weight multiplication</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confidence</strong>: 95 | <strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-precision-math (MATH-2, MATH-3); hand-verified independently by 4+ phase-2 agents<br><strong>Location</strong>: <code>RewardCalculator.calculateRewards()</code>, <code>src/core/RewardCalculator.sol:35-45</code> (remainder-to-index-0 rounding); <code>:36</code> (<code>totalReward * weights[i]</code>, unguarded against the ~1.16e73 overflow threshold, unreachable given realistic token supplies).</p>
+<p><strong>Description</strong>: For <code>totalReward</code> below roughly <code>totalSum/weights[0] ≈ 2.48</code> per chain slot (n=10), most downstream ancestors receive 0 and index 0 absorbs the full remainder by design — a fairness/documentation note, not a bug (the exact-sum invariant was hand-verified for <code>totalReward = 1, 5, 9</code> and holds by construction for all inputs). The overflow guard gap is unreachable in practice.</p>
+<hr>
+<h3 id="i-6-no-low-s-malleability-guard-raw-eip-191-instead-of-eip-712">[I-6] No low-s malleability guard / raw EIP-191 instead of EIP-712</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> | <strong>Confidence</strong>: 90 | <strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-signatures (SIG-3, SIG-4); phase2: pashov boundary agent (lead)<br><strong>Location</strong>: <code>SignatureLib.recover()</code>, <code>src/utils/SignatureLib.sol:21-42</code>.</p>
+<p><strong>Description</strong>: <code>recover</code> accepts any <code>s</code> value with no low-s canonicalization check. Confirmed non-exploitable under the current design by multiple independent agents: replay dedup keys on <code>rewardHash</code> (content), not signature bytes, so a malleable counterpart simply recovers the same signer/same hash and hits the same already-set replay flag. Raw EIP-191 (vs. EIP-712) is the same root cause behind H-2&#39;s missing domain separator; fixing H-2 via EIP-712 migration resolves both.</p>
+<p><strong>Recommendation</strong>: Add a low-s check as defense-in-depth (matches OpenZeppelin <code>ECDSA</code> convention); migrate to EIP-712 as part of the H-2 fix.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>State written</th>
+<th>Value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ReferralGraph.register</code> (L141)</td>
+<td><code>onlyAuthorizedOracle(groupId)</code></td>
+<td>Group-authorized registration oracle</td>
+<td><code>_referrers</code>, <code>_children</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ReferralGraph.batchRegister</code> (L149)</td>
+<td><code>onlyAuthorizedOracle(groupId)</code></td>
+<td>Group-authorized registration oracle</td>
+<td>same, looped</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ReferralGraph.authorizeOracle</code> (L159)</td>
+<td><code>onlyOwner</code></td>
+<td>Owner</td>
+<td><code>_authorizedOracles</code>, <code>_authorizedOraclesList</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ReferralGraph.unauthorizeOracle</code> (L169)</td>
+<td><code>onlyOwner</code></td>
+<td>Owner</td>
+<td>same, swap-pop</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>RewardDistributor.authorizeOracle</code> (L71)</td>
+<td><code>onlyOwner</code></td>
+<td>Owner</td>
+<td><code>_authorizedOracles</code>, <code>_authorizedOraclesList</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>RewardDistributor.unauthorizeOracle</code> (L81)</td>
+<td><code>onlyOwner</code></td>
+<td>Owner</td>
+<td>same, swap-pop</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>RewardDistributor.distributeChainRewards</code> (L109)</td>
+<td><code>nonReentrant</code> only — no caller-identity check; authorization is on the recovered signature signer</td>
+<td><strong>Anyone</strong>, with a valid signature</td>
+<td><code>_distributedRewards</code></td>
+<td><strong>Yes</strong> — ERC20 transfer to ≤10 recipients</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles</strong>: <code>Owned</code> (Solmate, single-step per L-2), one owner per contract. <strong>Two independent oracle sets</strong> per <code>groupId</code>: <code>ReferralGraph._authorizedOracles</code> (gates registration, via <code>msg.sender</code>) and <code>RewardDistributor._authorizedOracles</code> (gates distribution, via recovered signer) — see I-2.</p>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary relayer</td>
+<td><code>distributeChainRewards</code></td>
+<td>Nothing beyond what the signature authorizes</td>
+<td>Invariant holds — recipients derive from signed payload + graph state, not caller</td>
+</tr>
+<tr>
+<td>Registration oracle</td>
+<td><code>register</code>/<code>batchRegister</code>, timed against a pending signed distribution</td>
+<td>Redirect majority share of a signed reward</td>
+<td><strong>Addressed by H-1</strong></td>
+</tr>
+<tr>
+<td>Distribution oracle</td>
+<td><code>distributeChainRewards</code></td>
+<td>Direct 100% of a reward to a chosen unregistered address</td>
+<td><strong>Addressed by M-3</strong></td>
+</tr>
+<tr>
+<td>Distribution oracle (any group)</td>
+<td><code>distributeChainRewards</code></td>
+<td>Drain the full contract balance regardless of which group funded it</td>
+<td><strong>Addressed by M-2</strong></td>
+</tr>
+<tr>
+<td>Owner (either contract)</td>
+<td><code>authorizeOracle</code></td>
+<td>Single-step grant of drain-capable power</td>
+<td><strong>Addressed by L-1, L-2</strong></td>
+</tr>
+<tr>
+<td>Any address (blocklisted token holder in a chain)</td>
+<td>passive — token issuer action</td>
+<td>Permanently DoS a chain&#39;s rewards</td>
+<td><strong>Addressed by H-3</strong></td>
+</tr>
+<tr>
+<td>Distribution oracle / process error</td>
+<td><code>distributeChainRewards</code> with codeless <code>rewardToken</code></td>
+<td>Silently burn a distribution slot</td>
+<td><strong>Addressed by L-5</strong></td>
+</tr>
+<tr>
+<td>Any address</td>
+<td>malleable signature resubmission</td>
+<td>Nothing — invariant holds</td>
+<td><strong>Addressed by I-6</strong> — confirmed non-exploitable</td>
+</tr>
+<tr>
+<td>Any funder</td>
+<td>out-of-band token transfer</td>
+<td>N/A, informational</td>
+<td><strong>Addressed by M-1</strong></td>
+</tr>
+<tr>
+<td>Anyone</td>
+<td>read-only tree visibility</td>
+<td>Full topology visibility, no confidentiality claimed</td>
+<td>Informational only, no finding</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<ul>
+<li>Phase 0 (opus): protocol map, access-control inventory (7/7 entrypoints), external-surface map, 10-row threat catalog — no findings, pure structural context injected into both hunting phases.</li>
+<li>Phase 1 (sonnet): 6 ethskills domain checklists run in parallel, each given the Phase-0 map as context.</li>
+<li>Phase 2 (sonnet): 12 pashov attack-specialty agents (9 single-lens + 3 gap-hunter), run blind to Phase 1&#39;s findings, each given the Phase-0 map as context.</li>
+<li>Phase 3: this document. Cross-phase dedup by <code>(Contract, function, bug-class)</code>, fix preservation, hybrid re-examination of phase-unique findings (M-2, L-3, I-1 were each independently re-verified against source by the orchestrator), and the coverage gate above.</li>
+<li>Confirmed non-findings, ruled out by multiple independent agents: referral-graph cycles (proven impossible by induction — a referrer must already be tree-connected before it can be named, and assignments are permanent); <code>RewardCalculator</code> weight/cumSum table arithmetic (hand-verified correct for all <code>numRecipients</code> 1–10, no underflow possible); reentrancy (<code>nonReentrant</code> correctly wraps the entire <code>distributeChainRewards</code> body including the transfer loop, no gap found by any of the 18 hunting agents).</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiht462u57pucb7h6n7ntznycby7cauzaupbvuswvl7hytd5ov3dc4.ipfs.community.bgipfs.com/"><code>https://bafkreiht462u57pucb7h6n7ntznycby7cauzaupbvuswvl7hytd5ov3dc4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/388">#388</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

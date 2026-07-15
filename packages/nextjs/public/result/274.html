@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — Final Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #274">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — Final Report</h1>
+    <p class="job-sub">Job #274 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/274"><b>Job page</b> #274</a>
+      <a class="chip" href="https://bafkreicl6tkxe23qgi2bbzjcomfg4ojmmwaedzlcbnj5z7cvuzz4fvj6bu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">6</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">5</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#vaultfactory-0xb2458426f7263b3aec44ba6e3466bb4b5a175ccf-base">VaultFactory 0xb2458426F7263B3Aec44ba6E3466bB4B5A175ccf (Base)</a></li>
+      <li><a href="#finding-summary">Finding Summary</a></li>
+      <li><a href="#protocol-architecture">Protocol Architecture</a></li>
+      <li><a href="#h-1-pn-token-supply-inflation-via-create-address-pre-funding">[H-1] P/N Token Supply Inflation via CREATE Address Pre-funding</a></li>
+      <li><a href="#m-1-12-decimal-mismatch-creates-systematic-dust-loss-in-redempti">[M-1] 12-Decimal Mismatch Creates Systematic Dust Loss in Redemption</a></li>
+      <li><a href="#m-2-n-token-permanently-non-transferable-borrower-locked-in">[M-2] N Token Permanently Non-Transferable — Borrower Locked In</a></li>
+      <li><a href="#l-1-no-timelock-on-admin-pause-and-collateral-whitelist-function">[L-1] No Timelock on Admin Pause and Collateral Whitelist Functions</a></li>
+    </ol>
+    <ol start="8">
+      <li><a href="#l-2-vault-creation-atomically-coupled-to-marketplace-notificatio">[L-2] Vault Creation Atomically Coupled to Marketplace Notification</a></li>
+      <li><a href="#l-3-repayment-deadline-gap-validation-unconfirmed-source-pending">[L-3] Repayment Deadline Gap Validation Unconfirmed (Source-Pending)</a></li>
+      <li><a href="#i-1-creationfee-excess-handling-ambiguous">[I-1] CREATION_FEE Excess Handling Ambiguous</a></li>
+      <li><a href="#findings-reconciliation-cross-pass">Findings Reconciliation (Cross-Pass)</a></li>
+      <li><a href="#client-vault-note-vault-2">Client Vault Note (Vault 2)</a></li>
+      <li><a href="#recommendations-priority">Recommendations Priority</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — Final Report</h1>
+<h2 id="vaultfactory-0xb2458426f7263b3aec44ba6e3466bb4b5a175ccf-base">VaultFactory <code>0xb2458426F7263B3Aec44ba6E3466bB4B5A175ccf</code> (Base)</h2>
+<p><strong>Job:</strong> 274 | <strong>Client:</strong> <code>0x61068AbfB8349f90bd0bAb12347ec10e0C55C20f</code><br><strong>Date:</strong> 2026-06-20<br><strong>Methodology:</strong> EthSkills (7 sub-skills) + Pashov 8-perspective parallel analysis<br><strong>Scope:</strong> VaultFactory, Vault, PToken, NToken on Base (chain 8453)<br><strong>Marketplace (0xcC3E1C...):</strong> Out of scope here; subject of separate audit (Job 275)</p>
+<blockquote>
+<p><strong>Important:</strong> Contract source code is unverified. All findings are derived from bytecode analysis, function-selector decoding, on-chain state reads, and call trace inspection. Severity ratings should be validated against verified source before remediation prioritization.</p>
+</blockquote>
+<hr>
+<h2 id="finding-summary">Finding Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Confidence</th>
+<th>Confirmed On-Chain</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>[H-1]</td>
+<td>P/N Token Supply Inflation via CREATE Address Pre-funding</td>
+<td><span class="pill high">High</span></td>
+<td><span class="pill high">High</span></td>
+<td>✓ Yes</td>
+</tr>
+<tr>
+<td>[M-1]</td>
+<td>12-Decimal Mismatch in P Token Redemption Math</td>
+<td><span class="pill medium">Medium</span></td>
+<td><span class="pill high">High</span></td>
+<td>✓ Yes</td>
+</tr>
+<tr>
+<td>[M-2]</td>
+<td>N Token Permanently Non-Transferable</td>
+<td><span class="pill medium">Medium</span></td>
+<td><span class="pill high">High</span></td>
+<td>✓ Yes</td>
+</tr>
+<tr>
+<td>[L-1]</td>
+<td>No Timelock on Admin Pause and Collateral Functions</td>
+<td><span class="pill low">Low</span></td>
+<td><span class="pill high">High</span></td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>[L-2]</td>
+<td>Vault Creation Atomically Coupled to Marketplace Notification</td>
+<td><span class="pill low">Low</span></td>
+<td><span class="pill high">High</span></td>
+<td>✓ Yes</td>
+</tr>
+<tr>
+<td>[L-3]</td>
+<td>Repayment Deadline Gap Validation Unconfirmed</td>
+<td><span class="pill low">Low</span></td>
+<td><span class="pill low">Low</span></td>
+<td>Unconfirmed</td>
+</tr>
+<tr>
+<td>[I-1]</td>
+<td>CREATION_FEE Excess Handling Ambiguous</td>
+<td><span class="pill info">Info</span></td>
+<td><span class="pill low">Low</span></td>
+<td>Unconfirmed</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="protocol-architecture">Protocol Architecture</h2>
+<p>A <strong>zero-coupon bond lending protocol</strong> on Base:</p>
+<p><strong>Lifecycle:</strong></p>
+<ol>
+<li>Borrower calls <code>createVault(collateral, collateralAmt, loanAmt, repayAmt, fundingDeadline, repayDeadline, name, sym)</code> + 1e14 wei CREATION_FEE</li>
+<li>Factory deploys Vault via <code>CREATE</code> (deterministic address from factory nonce)</li>
+<li>Factory does fee-on-transfer check: <code>balanceOf(vault)</code> before/after <code>transferFrom(borrower, vault, collateralAmt)</code></li>
+<li>Factory calls <code>vault.initializePosition()</code> → vault reads <code>balanceOf(vault)</code>, mints <code>initialCollateralAmount</code> P tokens and N tokens to borrower</li>
+<li>Borrower sells P tokens on Marketplace for USDC (lenders buy at discount)</li>
+<li>Borrower calls <code>closeFunding(loanAmt)</code> to take USDC; <code>closeFunding(0)</code> = cancel and return collateral</li>
+<li>Borrower calls <code>repayInFull()</code> before <code>repaymentDeadline</code></li>
+<li>On success: P holders call <code>redeemP(pTokens)</code> → receive <code>pTokens × repayAmt / P.totalSupply()</code> USDC</li>
+<li>On default: permissionless <code>settle()</code> → P holders claim collateral proportionally</li>
+</ol>
+<p><strong>Token math:</strong></p>
+<ul>
+<li>P supply = N supply = <code>initialCollateralAmount</code> (in collateral token wei, e.g., 18-decimal WETH units)</li>
+<li>P tokens: <code>transfersEnabled = true</code> (tradeable)</li>
+<li>N tokens: <code>transfersEnabled = false</code> (borrower only, non-tradeable)</li>
+</ul>
+<p><strong>Current vault state:</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Vault</th>
+<th>Address</th>
+<th>Borrower</th>
+<th>Status</th>
+<th>Collateral</th>
+<th>LoanAmt</th>
+<th>RepayAmt</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>0x88C49e...</td>
+<td>0xfDA881...</td>
+<td>Settled ✓</td>
+<td>1.9e22 (COL)</td>
+<td>2 USDC</td>
+<td>5 USDC</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0x781e87...</td>
+<td>0xfDA881...</td>
+<td>Cancelled</td>
+<td>1.9028e22 (COL)</td>
+<td>2 USDC</td>
+<td>3 USDC</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0xe506d3...</td>
+<td><strong>client</strong></td>
+<td>Active</td>
+<td>3.0015e15 WETH</td>
+<td>4.625 USDC</td>
+<td>4.857 USDC</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="h-1-pn-token-supply-inflation-via-create-address-pre-funding">[H-1] P/N Token Supply Inflation via CREATE Address Pre-funding</h2>
+<p><strong>Severity:</strong> High<br><strong>Category:</strong> Vault Inflation Attack (analogous to ERC4626 share inflation)<br><strong>Location:</strong> <code>vault.initializePosition()</code> — balance-based accounting<br><strong>Confirmed by both ethskills and pashov passes</strong> | Both flag as highest severity</p>
+<p><strong>Description:</strong><br>The VaultFactory deploys vault contracts using the <code>CREATE</code> opcode, making each vault&#39;s address deterministic from <code>keccak256(rlp([factory, nonce]))</code>. Anyone who knows the factory&#39;s current nonce can predict the next vault&#39;s address before it is deployed.</p>
+<p>The <code>initializePosition()</code> function sets <code>initialCollateralAmount = token.balanceOf(vault)</code> at initialization time — reading the TOTAL balance of the vault, not just the amount transferred by the factory&#39;s <code>transferFrom</code>. The factory correctly validates the fee-on-transfer receipt (using <code>before</code>/<code>after</code> delta), but <code>initializePosition()</code> independently re-reads the balance and stores it, including any tokens present before the vault was even created.</p>
+<p><strong>Call trace (vault 2 creation):</strong></p>
+<pre><code>CALL factory → vault: initializePosition()
+  STATICCALL vault → WETH: balanceOf(vault)   ← reads TOTAL balance (not delta!)
+  CALL vault → PToken: mint(borrower, totalBalance)   ← inflated
+  CALL vault → NToken: mint(borrower, totalBalance)   ← inflated
+</code></pre>
+<p><strong>On-chain proof:</strong></p>
+<ul>
+<li>Vault 2 creation specified <code>collateralAmount = 3,000,000,000,000,000</code> WETH wei (3e15)</li>
+<li><code>vault.initialCollateralAmount()</code> = <code>3,001,500,000,000,000</code> (+1,500,000,000,000 extra = 1.5e12 wei)</li>
+<li><code>P2.totalSupply()</code> = <code>3,001,500,000,000,000</code> (inflated; should be 3e15)</li>
+<li>The 1.5e12 WETH pre-donation occurred before vault creation (confirmed by balance trace)</li>
+</ul>
+<p><strong>Exploit scenario:</strong></p>
+<ol>
+<li>Attacker observes factory nonce <code>n</code> → computes <code>victim_vault = keccak256(rlp([factory, n]))</code></li>
+<li>Attacker sends <code>D</code> collateral tokens to <code>victim_vault</code> (no code yet — this is valid on EVM)</li>
+<li>Victim borrower calls <code>createVault()</code> → factory does <code>transferFrom(borrower, vault, S)</code> (S = specified amount)</li>
+<li>Factory&#39;s FoT check passes: <code>balanceOf(vault_after) - balanceOf(vault_before) = D + S - D = S</code> ✓</li>
+<li><code>initializePosition()</code> reads <code>balanceOf(vault) = D + S</code> → mints <code>D + S</code> P tokens and N tokens</li>
+<li>Borrower (colluding with attacker) holds <code>D</code> extra P tokens to sell on marketplace</li>
+<li>Honest P holders now hold diluted claims: receive <code>repayAmt × pHeld / (S + D)</code> instead of <code>repayAmt × pHeld / S</code></li>
+</ol>
+<p><strong>Economic impact:</strong></p>
+<ul>
+<li>Attacker donates <code>D</code> tokens (small cost), receives <code>D</code> extra P tokens</li>
+<li>P token holders collectively lose: <code>repayAmt × D / (S + D)</code> USDC</li>
+<li>For vault 2 (D=1.5e12, S=3e15, repayAmt=4,857,220): loss ≈ 0.0024 USDC (negligible at current scale)</li>
+<li>For a vault with S=1e22 (10,000 ETH) and D=1e20 (1% inflation): loss = ~1% of repayAmt</li>
+</ul>
+<p><strong>Recommendation:</strong><br>Pass the factory-verified received amount to <code>initializePosition</code> rather than re-reading balance:</p>
+<pre><code class="language-solidity">// In VaultFactory.createVault():
+uint256 balBefore = collateral.balanceOf(address(vault));
+collateral.transferFrom(msg.sender, address(vault), collateralAmount);
+uint256 received = collateral.balanceOf(address(vault)) - balBefore;
+if (received != collateralAmount) revert FeeOnTransferUnsupported();
+vault.initializePosition(received);   // ← pass verified amount
+
+// In Vault.initializePosition(uint256 receivedAmount):
+// Store receivedAmount, NOT balanceOf(address(this))
+initialCollateralAmount = receivedAmount;
+PToken(p).mint(msg.sender, receivedAmount);
+NToken(n).mint(msg.sender, receivedAmount);
+</code></pre>
+<hr>
+<h2 id="m-1-12-decimal-mismatch-creates-systematic-dust-loss-in-redempti">[M-1] 12-Decimal Mismatch Creates Systematic Dust Loss in Redemption</h2>
+<p><strong>Severity:</strong> Medium<br><strong>Category:</strong> Precision math — decimal scale mismatch<br><strong>Location:</strong> <code>vault.redeemP()</code> — per-token USDC calculation<br><strong>Confirmed by both ethskills (M-2) and pashov (math-precision) passes</strong></p>
+<p><strong>Description:</strong><br>P token supply is set equal to <code>initialCollateralAmount</code> in collateral token wei units (18 decimal scale for WETH). <code>repaymentAmount</code> is denominated in USDC (6 decimal scale). The 12-decimal gap creates severe per-unit precision loss.</p>
+<p><strong>Arithmetic:</strong></p>
+<pre><code>P.totalSupply  = 3,001,500,000,000,000   (3.0015e15 — WETH scale, 18 dec)
+repaymentAmount = 4,857,220               (USDC scale, 6 dec)
+
+Per-unit P token USDC value:
+  floor(1 × 4,857,220 / 3,001,500,000,000,000) = 0   ← truncated to ZERO
+
+Minimum P tokens to receive 1 USDC wei:
+  ceil(P.totalSupply / repaymentAmount) ≈ 617,985 P units
+
+Scenario — 100 lenders hold equal shares:
+  each holds = 3.0015e15 / 100 = 3.0015e13 P units
+  each redeems = floor(3.0015e13 × 4,857,220 / 3.0015e15) = 48,572 USDC wei
+  total paid   = 48,572 × 100 = 4,857,200 USDC wei
+  dust locked  = 4,857,220 - 4,857,200 = 20 USDC wei (permanent)
+</code></pre>
+<p>Severity increases for large-collateral vaults: with S=1e22 (10,000 ETH), the minimum meaningful holding grows to ~2e15 P units, and dust accumulation per settlement round scales with lender count.</p>
+<p><strong>Recommendation:</strong><br>Store a normalized precision factor and use it for per-token rate computation:</p>
+<pre><code class="language-solidity">uint256 constant RATE_PRECISION = 1e18;
+// At closeFunding or settle time:
+uint256 redemptionRatePerToken = repaymentAmount * RATE_PRECISION / P.totalSupply();
+// At redeemP:
+uint256 usdcOut = pTokenAmount * redemptionRatePerToken / RATE_PRECISION;
+</code></pre>
+<p>Alternatively, mint P tokens normalized to USDC decimal scale (<code>collateralAmount / 1e12</code>) to align the two denominations.</p>
+<hr>
+<h2 id="m-2-n-token-permanently-non-transferable-borrower-locked-in">[M-2] N Token Permanently Non-Transferable — Borrower Locked In</h2>
+<p><strong>Severity:</strong> Medium<br><strong>Category:</strong> ERC20 token design, access control<br><strong>Location:</strong> <code>NToken.transfersEnabled = false</code><br><strong>Confirmed by both passes</strong></p>
+<p><strong>Description:</strong><br>N tokens representing the borrower&#39;s residual collateral claim have <code>transfersEnabled = false</code> with no observable on-chain mechanism to enable transfers. Selector <code>0xc1566cb1</code> (likely <code>setTransfersEnabled</code>) reverts. The borrower cannot:</p>
+<ul>
+<li>Sell N tokens to hedge collateral exposure</li>
+<li>Transfer N tokens to another wallet</li>
+<li>Use N tokens as collateral in other protocols</li>
+</ul>
+<p>Only three exits exist for borrowers:</p>
+<ol>
+<li><code>repayInFull()</code> before deadline → retrieve collateral</li>
+<li><code>redeemPair(pTokens)</code> → burn both P+N tokens for collateral (requires re-acquiring P tokens from market)</li>
+<li>Default → lose collateral to P holders</li>
+</ol>
+<p><strong>Recommendation:</strong><br>If intentional, document this clearly in user-facing documentation and ensure <code>redeemPair()</code> is accessible and well-audited as the primary borrower exit. If unintentional, implement <code>setTransfersEnabled(bool)</code> callable on N token after <code>fundingClosed = true</code>, allowing borrowers to freely trade their collateral position.</p>
+<hr>
+<h2 id="l-1-no-timelock-on-admin-pause-and-collateral-whitelist-function">[L-1] No Timelock on Admin Pause and Collateral Whitelist Functions</h2>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> Access control — centralization risk<br><strong>Location:</strong> <code>factory.setCollateralAllowed()</code>, <code>factory.setPurchasesPaused()</code>, <code>factory.setCreationPaused()</code>, <code>factory.withdrawCreationFees()</code></p>
+<p><strong>Description:</strong><br>Factory admin functions execute immediately with no delay:</p>
+<ul>
+<li><code>setCollateralAllowed(address, bool)</code> — can de-whitelist collateral instantly</li>
+<li><code>setPurchasesPaused(bool)</code> / <code>setCreationPaused(bool)</code> — pause with no notice</li>
+<li><code>withdrawCreationFees()</code> — drain accumulated ETH immediately</li>
+</ul>
+<p><strong>Positive finding:</strong> 2-step ownership (<code>pendingOwner()</code> / <code>acceptOwnership()</code> from OZ Ownable2Step) is confirmed from on-chain selectors — mitigates unauthorized transfer.</p>
+<p><strong>Front-running risk:</strong> Owner (or attacker with owner key) can observe a pending <code>createVault(collateralX, ...)</code> tx in the mempool and front-run with <code>setCollateralAllowed(collateralX, false)</code>, causing the borrower&#39;s creation to revert after they&#39;ve already approved the collateral transfer.</p>
+<p><strong>Recommendation:</strong> Apply a minimum 24-hour timelock to collateral de-whitelisting and pause operations (OZ <code>TimelockController</code>). Emit <code>CollateralDelistScheduled(address, uint256 effectiveAt)</code> events to give users time to react. For fee withdrawal, add a rate limit or delay.</p>
+<hr>
+<h2 id="l-2-vault-creation-atomically-coupled-to-marketplace-notificatio">[L-2] Vault Creation Atomically Coupled to Marketplace Notification</h2>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> External call dependency — single point of failure<br><strong>Location:</strong> <code>factory.createVault()</code> → <code>marketplace.notifyVaultCreated()</code> (selector <code>0x9e0406c6</code>)</p>
+<p><strong>Description:</strong><br>At the end of vault creation, the factory makes an external call to the marketplace which performs 7+ internal callbacks into the vault and factory:</p>
+<pre><code>CALL factory → marketplace: 0x9e0406c6
+  STATICCALL marketplace → factory: isVault()
+  STATICCALL marketplace → vault: borrower()
+  STATICCALL marketplace → vault: initialCollateralAmount()
+  STATICCALL marketplace → vault: [repaymentAmount]
+  STATICCALL marketplace → vault: fundingDeadline()
+  STATICCALL marketplace → vault: P()
+  STATICCALL marketplace → PToken: balanceOf()
+</code></pre>
+<p>If the marketplace reverts for any reason (bug, pause, upgrade, gas exhaustion), the entire vault creation is rolled back — despite the vault being fully deployed and collateral transferred. This gives the marketplace complete veto power over vault creation.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-solidity">try marketplace.notifyVaultCreated(vaultAddr, ...) {
+} catch {
+    emit MarketplaceNotificationFailed(vaultAddr);
+}
+</code></pre>
+<p>Vaults should remain valid even without marketplace registration, with a separate function to register existing vaults.</p>
+<hr>
+<h2 id="l-3-repayment-deadline-gap-validation-unconfirmed-source-pending">[L-3] Repayment Deadline Gap Validation Unconfirmed (Source-Pending)</h2>
+<p><strong>Severity:</strong> Low (conditional)<br><strong>Category:</strong> Parameter validation<br><strong>Location:</strong> <code>factory.createVault()</code> — deadline validation logic</p>
+<p><strong>Description:</strong> The factory validates <code>fundingDeadline</code> within <code>[now + MIN_FUNDING_PERIOD, now + MAX_FUNDING_PERIOD]</code>. It is unclear from bytecode analysis whether a minimum gap between <code>fundingDeadline</code> and <code>repaymentDeadline</code> is enforced. If not, a borrower could set <code>repaymentDeadline = fundingDeadline + 1 second</code>, giving lenders zero effective trading window after funding closes.</p>
+<p><strong>Recommendation:</strong> Require <code>repaymentDeadline &gt;= fundingDeadline + MIN_REPAYMENT_GAP</code> (e.g., at least 1 day). Verify this check exists in source.</p>
+<hr>
+<h2 id="i-1-creationfee-excess-handling-ambiguous">[I-1] CREATION_FEE Excess Handling Ambiguous</h2>
+<p><strong>Severity:</strong> Info<br><strong>Category:</strong> ETH value handling<br><strong>Location:</strong> <code>factory.createVault()</code> — msg.value check</p>
+<p><strong>Description:</strong> Bytecode shows <code>CALLVALUE - CREATION_FEE → JUMPI</code> suggesting branching when <code>msg.value ≠ 1e14 wei</code>. Both observed transactions sent exactly 1e14 wei, suggesting exact-only enforcement, but the behavior for <code>msg.value &gt; CREATION_FEE</code> is unconfirmed without source.</p>
+<p><strong>Recommendation:</strong> Verify with source. If excess ETH is retained, add explicit require: <code>require(msg.value == CREATION_FEE, &quot;Wrong fee&quot;)</code>.</p>
+<hr>
+<h2 id="findings-reconciliation-cross-pass">Findings Reconciliation (Cross-Pass)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>EthSkills</th>
+<th>Pashov</th>
+<th>Merged Severity</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Supply inflation via pre-funding</td>
+<td>H-1 (High)</td>
+<td>FINDING-1 (High)</td>
+<td><strong>High</strong></td>
+<td>Both passes independently confirmed; on-chain evidence</td>
+</tr>
+<tr>
+<td>Decimal mismatch</td>
+<td>M-2 (Medium)</td>
+<td>FINDING-2 (Medium)</td>
+<td><strong>Medium</strong></td>
+<td>Both agree; arithmetic verified</td>
+</tr>
+<tr>
+<td>N token lock</td>
+<td>M-1 (Medium)</td>
+<td>FINDING-3 (Low)</td>
+<td><strong>Medium</strong></td>
+<td>EthSkills higher; design limitation + no exit</td>
+</tr>
+<tr>
+<td>Admin timelock</td>
+<td>L-1 (Low)</td>
+<td>FINDING-4 (Low)</td>
+<td><strong>Low</strong></td>
+<td>Both agree</td>
+</tr>
+<tr>
+<td>Marketplace coupling</td>
+<td>I-2 (Info)</td>
+<td>FINDING-7 (Low)</td>
+<td><strong>Low</strong></td>
+<td>Pashov higher; real production risk</td>
+</tr>
+<tr>
+<td>Deadline gap</td>
+<td>L-2 (Low)</td>
+<td>FINDING-5 (Lead)</td>
+<td><strong>Low</strong></td>
+<td>Unconfirmed; keep as Low pending source</td>
+</tr>
+<tr>
+<td>closeFunding validation</td>
+<td>N/A</td>
+<td>FINDING-6 (Lead)</td>
+<td><strong>Info</strong></td>
+<td>Pashov-only; too speculative without source</td>
+</tr>
+<tr>
+<td>CREATION_FEE excess</td>
+<td>I-1 (Info)</td>
+<td>N/A</td>
+<td><strong>Info</strong></td>
+<td>EthSkills-only</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="client-vault-note-vault-2">Client Vault Note (Vault 2)</h2>
+<p>The client&#39;s vault (<code>0xe506d3...</code>) is currently active:</p>
+<ul>
+<li>Collateral: 0.0030015 WETH (~$10.50 at current prices)</li>
+<li>Loan target: 4.625 USDC | Repayment: 4.857 USDC (~5% yield for lenders)</li>
+<li>Funding deadline: ~July 18, 2026 | Repayment deadline: ~August 17, 2026</li>
+<li>P token supply is inflated by 1.5e12 WETH units (H-1 confirmed occurred)</li>
+</ul>
+<p>The pre-donation of 1.5e12 extra WETH to the vault resulted in 1.5e12 extra P tokens being minted. At current vault economics, the economic impact is ~$0.005. <strong>Recommend fixing H-1 in factory before deploying larger-scale vaults.</strong></p>
+<hr>
+<h2 id="recommendations-priority">Recommendations Priority</h2>
+<ol>
+<li><strong>[CRITICAL PATH — fix before scaling]</strong> H-1: Pass factory-verified received amount to <code>initializePosition()</code>. Pre-funding attack becomes economically significant at large vault sizes.</li>
+<li><strong>[UX/ECONOMICS]</strong> M-1: Add precision normalization for P token redemption to prevent dust accumulation.</li>
+<li><strong>[GOVERNANCE]</strong> L-1: Add timelock to admin functions before significant TVL.</li>
+<li><strong>[RESILIENCE]</strong> L-2: Wrap marketplace notification in try/catch.</li>
+<li><strong>[VERIFICATION]</strong> Obtain and verify source code for all contracts; many Lead findings may upgrade to High on source review.</li>
+</ol>
+<hr>
+<p><em>Audit conducted under leftclaw.services Job #274. Report published to BGIPFS. For questions, contact the worker wallet.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicl6tkxe23qgi2bbzjcomfg4ojmmwaedzlcbnj5z7cvuzz4fvj6bu.ipfs.community.bgipfs.com/"><code>https://bafkreicl6tkxe23qgi2bbzjcomfg4ojmmwaedzlcbnj5z7cvuzz4fvj6bu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/274">#274</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

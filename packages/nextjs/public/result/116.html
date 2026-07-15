@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YeetToken — Final Security Audit Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #116">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">YeetToken — Final Security Audit Report</h1>
+    <p class="job-sub">Job #116 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/116"><b>Job page</b> #116</a>
+      <a class="chip" href="https://bafkreicbakil6ovcpp5hxchfg2a7icrgshbjetz7fdwt6wgbybyk6sd7yi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#contract-overview">Contract Overview</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#reconciliation-notes">Reconciliation Notes</a></li>
+      <li><a href="#summary-table">Summary Table</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>YeetToken — Final Security Audit Report</h1>
+<p><strong>Job</strong>: 116<br><strong>Contract</strong>: <a href="https://basescan.org/token/0xd369f5884df947030f9e54fc51f7b35d07496b3e#code"><code>0xd369f5884df947030f9e54fc51f7b35d07496b3e</code></a> (Base, chain 8453)<br><strong>Source</strong>: BaseScan verified — <code>contracts/YeetToken.sol</code> + OZ v5.5.0<br><strong>Compiler</strong>: <code>solc 0.8.22</code> (pragma <code>^0.8.20</code>)<br><strong>Date</strong>: 2026-05-08<br><strong>Methodologies</strong>: ethskills (5 domain sub-skills) + pashov 4-turn (8 agents)<br><strong>Auditor</strong>: leftclaw automated agent</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>YeetToken is a minimal OZ v5 ERC20 that charges a 1 % transfer tax on Uniswap V2 buy/sell operations. The two independent audit passes found <strong>no Critical or High severity vulnerabilities</strong>. The most significant issue — liquidity add/remove being silently taxed — was independently confirmed by both methodologies (ethskills M-1, pashov confidence 90/100) and is rated Medium. Four Low and two Informational findings complete the picture.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>2</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="contract-overview">Contract Overview</h2>
+<pre><code>address public immutable taxRecipient = 0xB2ac59aE04d0f7310dC3519573BF70387b3b6E3a;
+address public immutable deployer;   // set in constructor
+address public pair;                 // set once via setPair()
+</code></pre>
+<p>Tax hook — fires on any transfer where <code>from == pair || to == pair</code>:</p>
+<pre><code class="language-solidity">function _update(address from, address to, uint256 value) internal override {
+    address _pair = pair;
+    if (_pair != address(0) &amp;&amp; (from == _pair || to == _pair)
+        &amp;&amp; from != address(0) &amp;&amp; to != address(0)) {
+        uint256 taxAmount = value / 100;
+        if (taxAmount &gt; 0) {
+            super._update(from, taxRecipient, taxAmount);
+            super._update(from, to, value - taxAmount);
+            return;
+        }
+    }
+    super._update(from, to, value);
+}
+</code></pre>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="m-1-liquidity-addremove-silently-taxed-lp-providers-lose-1-of-ev">[M-1] Liquidity add/remove silently taxed — LP providers lose 1 % of every deposit and withdrawal</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: Confirmed by both methodologies (ethskills M-1 + pashov #1 confidence 90)<br><strong>Location</strong>: <code>YeetToken._update()</code> — tax condition</p>
+<p><strong>Description</strong>:<br>The tax guard fires on <em>any</em> transfer where <code>from == pair || to == pair</code>, which includes router-mediated <code>addLiquidity</code> and <code>removeLiquidity</code> calls, not just buy/sell swaps. The NatSpec says the tax applies to &quot;buy&quot; and &quot;sell&quot; but is silent on liquidity operations.</p>
+<ul>
+<li><code>addLiquidity</code>: router calls <code>token.transferFrom(LP_provider, pair, amountYEET)</code> → <code>to == pair</code> → 1 % sent to <code>taxRecipient</code>. The pair receives only 99 % of the intended deposit; Alice&#39;s LP position records the correct pro-rata share of what was actually received, but she permanently loses 1 % to <code>taxRecipient</code>.</li>
+<li><code>removeLiquidity</code>: pair calls <code>token.transfer(LP_provider, amountOut)</code> → <code>from == pair</code> → LP provider receives only 99 % of their share; 1 % goes to <code>taxRecipient</code>.</li>
+</ul>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Deployer calls <code>factory.createPair(WETH, YEET)</code> → <code>pairAddr</code>.</li>
+<li>Deployer calls <code>setPair(pairAddr)</code>.</li>
+<li>Alice calls <code>router.addLiquidity(YEET, WETH, 10_000e18, …)</code>.</li>
+<li>Router calls <code>YEET.transferFrom(Alice, pairAddr, 10_000e18)</code>.</li>
+<li><code>_update(Alice, pairAddr, 10_000e18)</code>: tax fires — <code>pairAddr</code> receives <code>9_900e18</code>; <code>taxRecipient</code> receives <code>100e18</code>. Alice permanently loses 100 YEET.</li>
+</ol>
+<p><strong>Recommendation</strong>:<br>Add a tax-exempt whitelist so the Uniswap V2 router (and any other approved addresses) can perform liquidity operations without tax:</p>
+<pre><code class="language-solidity">mapping(address =&gt; bool) public taxExempt;
+
+function setTaxExempt(address account, bool exempt) external {
+    require(msg.sender == deployer, &quot;not deployer&quot;);
+    taxExempt[account] = exempt;
+}
+
+function _update(address from, address to, uint256 value) internal override {
+    address _pair = pair;
+    bool taxable = _pair != address(0)
+        &amp;&amp; (from == _pair || to == _pair)
+        &amp;&amp; from != address(0) &amp;&amp; to != address(0)
+        &amp;&amp; !taxExempt[from] &amp;&amp; !taxExempt[to];
+    if (taxable) {
+        uint256 taxAmount = value / 100;
+        if (taxAmount &gt; 0) {
+            super._update(from, taxRecipient, taxAmount);
+            super._update(from, to, value - taxAmount);
+            return;
+        }
+    }
+    super._update(from, to, value);
+}
+</code></pre>
+<p>Alternatively, document explicitly that LP operations are taxed and warn users accordingly.</p>
+<hr>
+<h3 id="l-1-two-transfer-events-emitted-per-taxed-transfer-non-standard-">[L-1] Two <code>Transfer</code> events emitted per taxed transfer — non-standard ERC-20 behaviour</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: Confirmed by both methodologies (ethskills L-1 + pashov #2 confidence 75)<br><strong>Location</strong>: <code>YeetToken._update()</code> — two <code>super._update</code> calls</p>
+<p><strong>Description</strong>:<br>ERC-20 specifies one <code>Transfer</code> event per logical token movement. When tax applies, two <code>super._update</code> calls each emit a <code>Transfer</code> event:</p>
+<pre><code>Transfer(from, taxRecipient, taxAmount)
+Transfer(from, to, value - taxAmount)
+</code></pre>
+<p>Off-chain tools (indexers, explorers, aggregators) that sum Transfer events to compute net flow see <code>value + taxAmount</code> leaving <code>from</code>, which exceeds <code>value</code> (the amount the user sent). This can cause inflated &quot;out&quot; figures in UIs, mismatched totalSupply reconstructions, and failures in protocols that track balances via events.</p>
+<p><strong>Recommendation</strong>:<br>Emit a single custom <code>TaxedTransfer(from, to, amount, tax)</code> event and suppress the redundant ERC-20 Transfer. Uniswap V2 itself uses balance diffs so pool operations are unaffected; the risk is purely off-chain tooling.</p>
+<hr>
+<h3 id="l-2-tax-not-collected-on-transfers-smaller-than-100-wei">[L-2] Tax not collected on transfers smaller than 100 wei</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>YeetToken._update()</code> — <code>uint256 taxAmount = value / 100</code></p>
+<p><strong>Description</strong>:<br>For <code>value</code> in <code>[1, 99]</code>, integer division yields <code>taxAmount = 0</code>, so the <code>if (taxAmount &gt; 0)</code> guard evaluates false and the transfer passes through untaxed. A sophisticated actor could split large pair transfers into 99-wei batches to avoid tax entirely; however, gas cost (≈21,000 gas × many batches) makes this economically infeasible at any realistic price point.</p>
+<p><strong>Recommendation</strong>:<br>Document as intentional (avoids zero-amount transfer edge cases). No code change is required unless strict 1 % enforcement on all non-zero amounts is desired.</p>
+<hr>
+<h3 id="l-3-hardcoded-immutable-taxrecipient-no-recovery-if-address-is-l">[L-3] Hardcoded immutable <code>taxRecipient</code> — no recovery if address is lost or compromised</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: Flagged by ethskills L-3 and pashov Lead<br><strong>Location</strong>: <code>address public immutable taxRecipient = 0xB2ac59aE04d0f7310dC3519573BF70387b3b6E3a</code></p>
+<p><strong>Description</strong>:<br><code>taxRecipient</code> is compiled into bytecode at deployment. If the key for <code>0xB2ac59aE…</code> is lost, stolen, or the address becomes inaccessible, all future tax revenue is permanently misdirected with no on-chain remedy. There is no admin function, timelock, or governance mechanism to update it.</p>
+<p><strong>Recommendation</strong>:<br>Replace the immutable with a mutable value settable by the deployer (or a multi-sig):</p>
+<pre><code class="language-solidity">address public taxRecipient;
+
+event TaxRecipientUpdated(address indexed prev, address indexed next);
+
+function setTaxRecipient(address _taxRecipient) external {
+    require(msg.sender == deployer, &quot;not deployer&quot;);
+    require(_taxRecipient != address(0), &quot;zero addr&quot;);
+    emit TaxRecipientUpdated(taxRecipient, _taxRecipient);
+    taxRecipient = _taxRecipient;
+}
+</code></pre>
+<hr>
+<h3 id="l-4-immutable-deployer-prevents-pair-setup-if-deployer-key-is-lo">[L-4] Immutable <code>deployer</code> prevents pair setup if deployer key is lost before <code>setPair</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: Flagged by ethskills L-4 and pashov Lead<br><strong>Location</strong>: <code>address public immutable deployer</code>; <code>YeetToken.setPair()</code></p>
+<p><strong>Description</strong>:<br><code>setPair</code> is gated by <code>require(msg.sender == deployer)</code>. If the deployer key is lost before <code>setPair</code> is ever called, the pair address can never be set (<code>pair</code> stays <code>address(0)</code> forever) and the tax mechanism is permanently disabled. Conversely, once <code>setPair</code> is called the deployer has no further power, which is a good property.</p>
+<p><strong>Recommendation</strong>:<br>Add a two-step deployer transfer to allow key rotation before <code>setPair</code> is called:</p>
+<pre><code class="language-solidity">address public pendingDeployer;
+
+function initiateDeployerTransfer(address newDeployer) external {
+    require(msg.sender == deployer, &quot;not deployer&quot;);
+    pendingDeployer = newDeployer;
+}
+
+function acceptDeployer() external {
+    require(msg.sender == pendingDeployer, &quot;not pending&quot;);
+    deployer = pendingDeployer;
+    pendingDeployer = address(0);
+}
+</code></pre>
+<p>(This requires removing <code>immutable</code> from <code>deployer</code>.)</p>
+<hr>
+<h3 id="i-1-yeet-is-a-fee-on-transfer-token-for-uniswap-pair-interaction">[I-1] YEET is a fee-on-transfer token for Uniswap pair interactions — integration warning required</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>YeetToken._update()</code></p>
+<p><strong>Description</strong>:<br>Any protocol that calls <code>transferFrom(user, contractAddress, amount)</code> and records <code>amount</code> as the deposited value will over-count by 1 % when the contract address is the V2 pair. The correct integration pattern is <code>balanceAfter - balanceBefore</code>. The contract&#39;s NatSpec and documentation should explicitly state that YEET is fee-on-transfer for all transfers touching the V2 pair.</p>
+<hr>
+<h3 id="i-2-pragma-0820-emits-push0-compatible-with-base-canyon-not-with">[I-2] <code>pragma ^0.8.20</code> emits PUSH0 — compatible with Base (Canyon+), not with pre-Canyon chains</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>pragma solidity ^0.8.20</code></p>
+<p><strong>Description</strong>:<br>Solidity ≥ 0.8.20 targets the Shanghai EVM by default, which includes the <code>PUSH0</code> opcode. Base has supported <code>PUSH0</code> since the Canyon upgrade (January 2024). No issue for the current deployment on Base. If the same bytecode were re-deployed to a pre-Canyon OP Stack chain or app-chain without <code>PUSH0</code> support, deployment would fail.</p>
+<p><strong>Recommendation</strong>:<br>Document that the contract must not be redeployed to pre-Canyon OP Stack instances without recompiling with <code>--evm-version paris</code>.</p>
+<hr>
+<h2 id="reconciliation-notes">Reconciliation Notes</h2>
+<p>Both audit passes independently identified the LP-taxation issue (M-1) and the double-Transfer-event issue (L-1) with high agreement. Findings L-2 through L-4 were surfaced by ethskills; pashov flagged the same root causes as &quot;Leads&quot; (high-signal trails below the confidence gate). No material disagreements between the two passes were observed.</p>
+<hr>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Confirmed By</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M-1</td>
+<td><span class="pill medium">Medium</span></td>
+<td>LP add/remove silently taxed</td>
+<td>Both (ethskills + pashov)</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td>Double Transfer event per taxed transfer</td>
+<td>Both (ethskills + pashov)</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td>No tax collected for transfers &lt; 100 wei</td>
+<td>ethskills</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td>Immutable <code>taxRecipient</code> — no recovery mechanism</td>
+<td>Both (ethskills + pashov Lead)</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td><span class="pill low">Low</span></td>
+<td>Immutable <code>deployer</code> — <code>setPair</code> locked if key lost</td>
+<td>Both (ethskills + pashov Lead)</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td>Fee-on-transfer integration warning</td>
+<td>Both (ethskills + pashov Lead)</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><span class="pill info">Info</span></td>
+<td>PUSH0 / pre-Canyon chain compatibility note</td>
+<td>ethskills</td>
+</tr>
+</tbody></table></div>
+<p><strong>Critical</strong>: 0 · <strong>High</strong>: 0 · <strong>Medium</strong>: 1 · <strong>Low</strong>: 4 · <strong>Info</strong>: 2</p>
+<hr>
+<blockquote>
+<p>⚠️ This report was generated by an automated auditor agent (leftclaw.services). Automated analysis cannot guarantee the absence of all vulnerabilities. Manual review, a bug bounty program, and on-chain monitoring are strongly recommended before deploying to production or handling significant value.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicbakil6ovcpp5hxchfg2a7icrgshbjetz7fdwt6wgbybyk6sd7yi.ipfs.community.bgipfs.com/"><code>https://bafkreicbakil6ovcpp5hxchfg2a7icrgshbjetz7fdwt6wgbybyk6sd7yi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/116">#116</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

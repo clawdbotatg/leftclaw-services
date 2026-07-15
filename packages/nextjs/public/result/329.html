@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RiderBattleEscrowV2.sol — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #329">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">RiderBattleEscrowV2.sol</h1>
+    <p class="job-sub">Job #329 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/329"><b>Job page</b> #329</a>
+      <a class="chip" href="https://bafkreig7dvctirt673fchleqz2kksunixmssiw2ipqrsb5nu3ycjj7svme.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">4</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">8</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#informational">Informational</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#severity-totals">Severity Totals</a></li>
+      <li><a href="#methodology-note">Methodology Note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — RiderBattleEscrowV2.sol</h1>
+<p><strong>Client engagement</strong>: leftclaw.services job #329<br><strong>Target</strong>: <code>RiderBattleEscrowV2.sol</code> — Bankr CryptoRider non-custodial 1v1 wager escrow, deployed at <code>0x55c2847003A9e254b8312bf3C75520e06528aBa6</code> on Base mainnet (verified via Sourcify)<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (5 ethskills domain checklists, model=sonnet) → Phase 2 depth (12 pashov attacker-mindset agents, blind to phase 1, model=sonnet) → hybrid reconciliation<br><strong>Scope</strong>: single file, ~217 in-scope LOC (small scope)</p>
+<p>The contract&#39;s own header comment states: <em>&quot;NOT AUDITED. Get a security review before holding meaningful funds.&quot;</em> This report identifies a <strong>Critical</strong> vulnerability that confirms that warning was warranted — the contract&#39;s current deposit-crediting mechanism allows outright theft of user funds with no special privileges required.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Completeness</strong>: 20 unique findings across both phases, all 20 covered below.</p>
+<p><strong>Overlap</strong>: 4 findings independently corroborated by both phases · Phase-1-only: 13 · Phase-2-only: 3 · Re-examined phase-unique leads kept: 16, demoted: 0.</p>
+<p>The headline Critical finding (C-1) was independently identified by <strong>all 5 of 5 phase-1 checklist agents that touched deposit accounting and all 12 of 12 phase-2 attacker agents</strong> — the most unanimous convergence possible for this audit&#39;s methodology. Every single analytical lens applied to this contract (breadth checklist and adversarial reasoning alike) arrived at the same conclusion independently: the contract&#39;s deposit-crediting design is fundamentally broken.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="c-1-deposits-are-credited-from-an-unauthenticated-shared-per-tok">[C-1] Deposits are credited from an unauthenticated, shared per-token pool — any address can front-run and steal another user&#39;s in-flight deposit</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: general, access-control, erc20 (3 checklists independently flagged this) · phase2: <strong>unanimous — all 12 of 12 attacker agents</strong> flagged this as the primary finding, several with a dual-sided pot-drain escalation<br><strong>Location</strong>: <code>_received()</code> L95-97, <code>createMatch()</code> L103-112, <code>joinMatch()</code> L115-126</p>
+<p><strong>Description</strong>: <code>accounted[token]</code> is a single global counter per token, and <code>_received(token) = balanceOf(this) - accounted[token]</code> is a shared, fungible &quot;unaccounted&quot; pool with no notion of which address transferred which tokens. <code>createMatch()</code> and <code>joinMatch()</code> never verify that <code>msg.sender</code> is the address that performed the preceding ERC20 <code>transfer()</code> — they only check that <em>some</em> unaccounted balance of the right token/amount exists anywhere in the contract, then credit whichever address calls first. The contract&#39;s own header comments explicitly confirm non-atomic 2-step deposits (a separate <code>transfer()</code> transaction followed by a separate <code>createMatch</code>/<code>joinMatch</code> transaction) are a normal, expected flow for wallets that don&#39;t support EIP-5792 atomic batching — meaning the vulnerable window is a designed part of ordinary contract usage, not a contrived edge case. Both <code>accounted(token)</code> and <code>balanceOf</code> are public/derivable, so an attacker needs no mempool access — polling on-chain state after each block is sufficient to find and claim any pending deposit.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Alice, using a non-batching wallet (any standard MetaMask/hardware wallet EOA), sends <code>token.transfer(escrow, 1000e6)</code> (step 1 of the documented 2-step flow), intending to follow with <code>createMatch(1, token, 1000e6)</code>.</li>
+<li>Before Alice&#39;s second transaction lands, an attacker (with zero prior token balance) submits <code>createMatch(999, token, 1000e6)</code>. <code>_received(token) &gt;= 1000e6</code> passes using Alice&#39;s already-transferred tokens; <code>accounted[token] += 1000e6</code>; the attacker is recorded as <code>creator</code> of match 999, funded entirely by Alice&#39;s money.</li>
+<li>Alice&#39;s own <code>createMatch(1, token, 1000e6)</code> now reverts (<code>&quot;deposit first&quot;</code>) — her funds are already consumed with no recovery path; she is neither <code>creator</code> nor <code>opponent</code> of any match.</li>
+<li>The attacker waits out <code>acceptWindow</code> (24h default, owner-configurable down to a 1-hour minimum) and calls <code>cancelUnaccepted(999)</code>, which pays the full <code>m.wager</code> to <code>m.creator</code> — the attacker receives Alice&#39;s 1000 tokens for the cost of two gas-only transactions.</li>
+<li><strong>Escalation (identified independently by multiple phase-2 agents)</strong>: the identical mechanism applies to <code>joinMatch()</code> on any <code>Open</code> match. An attacker can front-run <em>both</em> the creator&#39;s deposit (via <code>createMatch</code>) and the intended opponent&#39;s deposit (via <code>joinMatch</code>) for the same match, becoming both parties. The attacker then either recovers both sides via the permissionless <code>refundStalled()</code> (no settler cooperation needed, only a 12-hour <code>settleWindow</code> wait) or gambles on <code>settle()</code> — draining the entire pot regardless of who the settler declares the winner, since the attacker controls both addresses.</li>
+<li><strong>Pool-drain variant (no specific victim needed)</strong>: an attacker can simply poll <code>balanceOf(escrow) - accounted[token]</code> at any time and claim any positive delta — this reflects the sum of every abandoned/in-flight 2-step deposit across all users of the platform, plus any dust, letting an attacker repeatedly call <code>createMatch</code> with fresh IDs to drain the entire unaccounted pool, not just a single victim&#39;s deposit.</li>
+</ol>
+<p><strong>Recommendation</strong>: Bind credited deposits to their depositor instead of relying on a shared pool diffed against <code>accounted</code>. Preferred approach — a <code>deposit()</code> step that snapshots the caller&#39;s own contribution atomically:</p>
+<pre><code class="language-solidity">mapping(address =&gt; mapping(address =&gt; uint256)) public pendingDeposit;
+
+function deposit(address token) external nonReentrant {
+    uint256 amt = _received(token);
+    require(amt &gt; 0, &quot;nothing received&quot;);
+    pendingDeposit[msg.sender][token] += amt;
+    accounted[token] += amt;
+}
+</code></pre>
+<p>and have <code>createMatch</code>/<code>joinMatch</code> debit <code>pendingDeposit[msg.sender][token]</code> instead of consuming the global <code>_received()</code> directly. This still supports EIP-5792 atomic batching (<code>[transfer(escrow, wager), deposit(token), createMatch(...)]</code> in one bundle) while eliminating the unattributed window entirely. Alternative: revert to a <code>safeTransferFrom</code>-based pull inside <code>createMatch</code>/<code>joinMatch</code> (with a same-batch <code>approve</code>), which closes the gap just as effectively and requires less new state.</p>
+<hr>
+<h3 id="h-1-sweepunaccounted-lets-the-owner-seize-deposits-that-are-legi">[H-1] <code>sweepUnaccounted()</code> lets the owner seize deposits that are legitimately mid-flight, not just abandoned ones</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: access-control, general (2 checklists) · phase2: 3 agents (access-control, economic-security, boundary) as a lead, same root cause as C-1<br><strong>Location</strong>: <code>sweepUnaccounted()</code> L211-216</p>
+<p><strong>Description</strong>: <code>sweepUnaccounted</code> transfers <code>balanceOf(token) - accounted[token]</code> to any owner-chosen address, with no minimum age or grace period. Because the contract&#39;s normal flow requires a window where deposited-but-not-yet-registered funds sit as &quot;unaccounted&quot; (the same root design flaw as C-1), an owner — or a natural, non-malicious &quot;recover dust&quot; automation job — can sweep a user&#39;s in-flight deposit seconds after they send it, before their follow-up <code>createMatch</code>/<code>joinMatch</code> call lands, with no adversarial intent required.</p>
+<p><strong>Proof of Concept</strong>: Alice transfers 100e6 tokens (step 1 of a 2-step deposit). Before her <code>createMatch</code> transaction is mined, the owner (or an automated sweep job) calls <code>sweepUnaccounted(token, treasury)</code>. Alice&#39;s subsequent <code>createMatch</code> call reverts with <code>&quot;deposit first&quot;</code>, and she has no recovery path.</p>
+<p><strong>Recommendation</strong>: Require unaccounted balances to age past a grace period before they&#39;re sweepable, or — better — adopt the C-1 fix, which eliminates unattributed floating balances (and this function&#39;s ambiguity) entirely.</p>
+<hr>
+<h3 id="h-2-owner-can-install-a-self-controlled-settler-and-participate-">[H-2] Owner can install a self-controlled <code>settler</code> and participate in matches, enabling guaranteed-win self-dealing</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — access-control checklist. Re-examined: confirmed — <code>setSettler()</code> has no restriction preventing <code>settler == creator</code>/<code>opponent</code>, and no restriction bars the owner from calling <code>createMatch</code>/<code>joinMatch</code> themselves.<br><strong>Location</strong>: <code>setSettler()</code> L195-198, <code>settle()</code> L130-148</p>
+<p><strong>Description</strong>: <code>settler</code> is a single plain address changeable instantly by the owner, with no timelock and no check preventing it from equaling a match <code>creator</code>/<code>opponent</code>. The owner can set <code>settler</code> to a key they control, participate in matches themselves, and sign <code>settle()</code> messages naming themselves as <code>winner</code> every time, since <code>winner</code> is only constrained to be <code>m.creator</code> or <code>m.opponent</code> — both of which the owner can freely become.</p>
+<p><strong>Proof of Concept</strong>: Owner calls <code>setSettler(ownerControlledKey)</code>. Owner (from a different EOA) creates a match and deposits. A victim joins and deposits, unaware <code>settler</code> is owner-controlled. Owner signs <code>settle(id, ownerAddr, sig)</code> with the settler key it controls, taking the full pot minus fee.</p>
+<p><strong>Recommendation</strong>: Add a timelock/delay on <code>setSettler</code> changes; restrict <code>settler</code> from ever equaling an outstanding match&#39;s <code>creator</code>/<code>opponent</code>; and/or require <code>settler</code> to be a separate governance-controlled multisig distinct from <code>owner</code>.</p>
+<hr>
+<h3 id="h-3-rebasing-fee-on-transfer-tokens-desync-accountedtoken-from-r">[H-3] Rebasing / fee-on-transfer tokens desync <code>accounted[token]</code> from real balance, permanently bricking the token and stranding funded matches</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: erc20, general (2 checklists) · phase2: 6 of 12 agents flagged this as a lead<br><strong>Location</strong>: <code>_received()</code> L95-97, <code>settle()</code> L145-146, <code>cancelUnaccepted()</code> L158, <code>refundStalled()</code> L169-170, <code>sweepUnaccounted()</code> L213</p>
+<p><strong>Description</strong>: <code>accounted[token]</code> is a nominal ledger never re-synced with <code>balanceOf</code>. If an allowlisted token can reduce the contract&#39;s balance without a corresponding <code>transfer</code> call (negative rebase, elastic-supply, reflection/burn-on-holding), or takes a fee from the sender on top of the specified transfer amount, <code>balanceOf(this)</code> can drop below <code>accounted[token]</code>. <code>_received()</code> performs unchecked <code>uint256</code> subtraction, causing a permanent underflow revert that bricks <code>createMatch</code>/<code>joinMatch</code>/<code>sweepUnaccounted</code> for that token. Worse, <code>settle()</code>/<code>refundStalled()</code>/<code>cancelUnaccepted()</code> don&#39;t call <code>_received()</code> but still <code>safeTransfer</code> the originally recorded amounts — if real balance has shrunk below what&#39;s owed, the outgoing transfer itself reverts with no partial-payout or pull-based fallback, permanently stranding funded matches. The owner allowlists tokens directly (<code>setTokenAllowed</code>) and is not assumed to be a security expert, making misconfiguration realistic.</p>
+<p><strong>Proof of Concept</strong>: Owner allowlists a token that rebases negatively for all holders. After a negative rebase, <code>balanceOf(escrow) &lt; accounted[token]</code>. The next <code>createMatch</code>/<code>joinMatch</code>/<code>sweepUnaccounted</code> call for that token reverts with underflow. Any <code>Funded</code> match whose <code>wager*2</code> now exceeds the real balance can never be settled or refunded — funds frozen indefinitely.</p>
+<p><strong>Recommendation</strong>: Document/enforce that only standard, non-rebasing, non-fee-on-transfer tokens should be allowlisted. Defensively, guard <code>_received()</code> with saturating subtraction, measure actual balance deltas around outgoing transfers rather than trusting nominal amounts, and add a pull-based/partial-recovery path so a shortfall in one token doesn&#39;t permanently strand unrelated funds.</p>
+<hr>
+<h3 id="h-4-blocklistdeny-list-tokens-a-single-blacklisted-recipient-per">[H-4] Blocklist/deny-list tokens: a single blacklisted recipient permanently freezes escrowed funds with no fallback</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — erc20 checklist. Re-examined: confirmed at L145-147 (<code>settle</code>) and L169-170 (<code>refundStalled</code>) — both perform unconditional pushes with no try/catch.<br><strong>Location</strong>: <code>settle()</code> L145-147, <code>refundStalled()</code> L169-170</p>
+<p><strong>Description</strong>: <code>settle()</code> unconditionally <code>safeTransfer</code>s to <code>treasury</code> and <code>winner</code>; <code>refundStalled()</code> unconditionally <code>safeTransfer</code>s to both <code>m.creator</code> and <code>m.opponent</code>. For deny-list tokens (USDC, USDT-class — plausible for a platform owner to allowlist), if any one recipient is blacklisted, the entire call reverts with no pull-based fallback. A blacklisted <code>treasury</code> bricks <code>settle()</code> for every match in that token; a blacklisted participant bricks both <code>settle()</code> and <code>refundStalled()</code> for that specific match, permanently trapping both parties&#39; stakes.</p>
+<p><strong>Proof of Concept</strong>: Owner allowlists USDC. Match funded by Alice and Bob. Bob&#39;s address is later added to USDC&#39;s blacklist (unrelated regulatory action). <code>settle()</code> reverts whenever the payout touches Bob&#39;s address; <code>refundStalled()</code> also reverts since it must pay both parties. Alice&#39;s stake is now permanently trapped alongside Bob&#39;s.</p>
+<p><strong>Recommendation</strong>: Move to a pull/claim pattern — credit a <code>claimable[user][token]</code> mapping inside <code>settle</code>/<code>refundStalled</code>/<code>cancelUnaccepted</code>, with a separate <code>withdraw()</code> function, so one blocked address never blocks another user&#39;s payout.</p>
+<hr>
+<h3 id="m-1-fee-rate-is-not-locked-at-deposit-time-owner-can-retroactive">[M-1] Fee rate is not locked at deposit time — owner can retroactively raise it up to the 10% cap on an already-funded match</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: access-control · phase2: dedicated Finding 2 (confidence 85) with concrete PoC numbers<br><strong>Location</strong>: <code>settle()</code> L142 (<code>feeBps(m.token)</code> read live), <code>setDefaultFee()</code>/<code>setTokenFee()</code> L176-189</p>
+<p><strong>Description</strong>: The fee percentage used in <code>settle()</code> is read live from current storage rather than snapshotted into the <code>Match</code> struct at creation/funding time. The owner can call <code>setTokenFee</code>/<code>setDefaultFee</code> at any time (bounded only by the 10% cap, no timelock). A player who joined expecting a low or zero fee can have up to 10% silently applied by settlement time, diverting extra value to <code>treasury</code>.</p>
+<p><strong>Proof of Concept</strong>: Match funded at 0% fee. Owner front-runs the pending <code>settle()</code> call with <code>setTokenFee(token, 1000)</code> (10% cap). <code>settle()</code> now computes fee at 10% instead of 0% — the winner receives 10% less than expected when they deposited, with the difference diverted to <code>treasury</code>.</p>
+<p><strong>Recommendation</strong>: Snapshot <code>feeBps(token)</code> into the <code>Match</code> struct at <code>joinMatch</code> time (when the match becomes <code>Funded</code>) and use that stored value in <code>settle()</code>.</p>
+<hr>
+<h3 id="m-2-setwindows-has-no-upper-bound-and-applies-retroactively-to-a">[M-2] <code>setWindows()</code> has no upper bound and applies retroactively to already-open/funded matches</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase2 only]</code> — 3 of 12 agents (numerical-gap-hunter, trust-gap-hunter, flow-gap-hunter). Re-examined: confirmed — <code>setWindows()</code> (L203-207) enforces only a 1-hour floor with no ceiling, and <code>cancelUnaccepted</code>/<code>refundStalled</code> read the live global <code>acceptWindow</code>/<code>settleWindow</code> against a per-match timestamp rather than a value snapshotted at match creation/funding.<br><strong>Location</strong>: <code>setWindows()</code> L203-207, <code>cancelUnaccepted()</code> L154, <code>refundStalled()</code> L165</p>
+<p><strong>Description</strong>: Because window values aren&#39;t snapshotted per match, an owner can instantly lengthen either window (no maximum enforced) after a match is already <code>Open</code>/<code>Funded</code>, retroactively freezing that match&#39;s timeout-based exit path indefinitely — funds already escrowed lose their &quot;eventual refund&quot; guarantee with no grandfathering. Conversely, shortening a window mid-flight lets a losing participant race <code>refundStalled()</code> ahead of a legitimate <code>settle()</code> to escape a loss and reclaim their wager instead of forfeiting it to the winner.</p>
+<p><strong>Recommendation</strong>: Snapshot the applicable window into the <code>Match</code> struct at creation/funding time, and/or enforce a sane upper bound in <code>setWindows()</code>.</p>
+<hr>
+<h3 id="l-1-settlement-fee-rounds-down-silently-reducing-to-zero-for-sma">[L-1] Settlement fee rounds down, silently reducing to zero for small pots</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — precision-math checklist<br><strong>Location</strong>: <code>settle()</code> L141-147</p>
+<p><strong>Description</strong>: <code>fee = (pot * feeBps(m.token)) / 10_000</code> truncates toward zero, with the remainder always flowing to the winner. For sufficiently small <code>pot</code>/<code>feeBps</code> combinations, <code>fee</code> computes to exactly 0 regardless of configured rate — dust-level but systematic, and can be forced to zero deliberately by choosing a small wager.</p>
+<p><strong>Recommendation</strong>: If the fee should never be fully avoidable, round up (<code>Math.mulDiv(..., Rounding.Ceil)</code>); otherwise document the dust-to-zero behavior as intended.</p>
+<hr>
+<h3 id="l-2-settlement-signatures-never-expire-and-cannot-be-individuall">[L-2] Settlement signatures never expire and cannot be individually revoked</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — signatures checklist<br><strong>Location</strong>: <code>settle()</code> L130-148</p>
+<p><strong>Description</strong>: The signed digest has no deadline/nonce beyond <code>matchId</code>. Once <code>settler</code> signs an outcome for a <code>Funded</code> match, that signature remains valid and submittable by anyone indefinitely until the match leaves <code>Funded</code> status. There is no way to void a single erroneous/outdated signature short of rotating the entire <code>settler</code> key.</p>
+<p><strong>Recommendation</strong>: Add a <code>deadline</code> parameter to the signed digest, and/or an explicit mechanism to invalidate a specific signature without a full key rotation.</p>
+<hr>
+<h3 id="l-3-signed-digest-omits-wagertoken-latent-risk-if-match-immutabi">[L-3] Signed digest omits <code>wager</code>/<code>token</code> — latent risk if match-immutability assumptions ever change</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — signatures checklist<br><strong>Location</strong>: <code>settle()</code> L135-138 vs. <code>createMatch()</code> L103-112</p>
+<p><strong>Description</strong>: The digest binds only <code>(chainid, address(this), matchId, winner)</code>, not <code>m.wager</code>/<code>m.token</code>. Not currently exploitable, since those fields are set once and never mutated, and <code>matchId</code> cannot be reused. However, any future code change permitting match re-parameterization would silently reintroduce a classic &quot;unsigned parameter used in payout&quot; vulnerability.</p>
+<p><strong>Recommendation</strong>: Include <code>wager</code>/<code>token</code> (or a hash of the full <code>Match</code> struct) in the signed digest for defense-in-depth.</p>
+<hr>
+<h3 id="l-4-setsettler-swap-can-invalidate-an-in-flight-favorable-signat">[L-4] <code>setSettler()</code> swap can invalidate an in-flight favorable signature, denying a specific winner&#39;s payout</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase2 only]</code> — trust-gap-hunter agent. Re-examined: confirmed — <code>settle()</code> (L138) checks the signature against the <em>current</em> <code>settler</code> storage value with no grace window for a signature already issued by a previous settler.<br><strong>Location</strong>: <code>setSettler()</code> L195-198, <code>settle()</code> L130-148</p>
+<p><strong>Description</strong>: An owner can front-run a pending, already-issued favorable settler signature with <code>setSettler(newAddr)</code>, permanently invalidating that signature. This forces the match toward <code>refundStalled()</code> once <code>settleWindow</code> elapses, which returns each side only their own wager — denying the rightful winner their winnings without directly stealing principal. Distinct from H-2 (self-dealing for profit); this is a targeted denial-of-winnings griefing vector.</p>
+<p><strong>Recommendation</strong>: Snapshot the applicable <code>settler</code> address into the <code>Match</code> struct at <code>joinMatch</code> time and validate against that stored value in <code>settle()</code>, rather than the live <code>settler</code> storage slot.</p>
+<hr>
+<h3 id="l-5-single-step-ownable-ownership-transfer">[L-5] Single-step <code>Ownable</code> ownership transfer</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — access-control checklist<br><strong>Location</strong>: contract declaration L37, inherited <code>transferOwnership</code></p>
+<p><strong>Description</strong>: Vanilla OZ <code>Ownable</code>, not <code>Ownable2Step</code>. A mistyped or unreachable address passed to <code>transferOwnership</code> permanently locks out all <code>onlyOwner</code> functions, including <code>sweepUnaccounted</code> (future abandoned deposits become permanently unrecoverable) and <code>setSettler</code> (a compromised settler could never be rotated again). Core user flows are unaffected.</p>
+<p><strong>Recommendation</strong>: Use <code>Ownable2Step</code>.</p>
+<hr>
+<h3 id="l-6-renounceownership-left-enabled-with-no-override">[L-6] <code>renounceOwnership()</code> left enabled with no override</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — access-control checklist<br><strong>Location</strong>: inherited <code>Ownable.renounceOwnership()</code></p>
+<p><strong>Description</strong>: If ever called (accidentally or via a compromised key), <code>owner</code> becomes <code>address(0)</code> permanently, disabling <code>setSettler</code>, <code>setTokenAllowed</code>, and <code>sweepUnaccounted</code> forever. Existing matches can still resolve via <code>settle</code>/<code>cancelUnaccepted</code>/<code>refundStalled</code>.</p>
+<p><strong>Recommendation</strong>: Override <code>renounceOwnership()</code> to revert.</p>
+<hr>
+<h3 id="l-7-multiple-address-proxy-aliased-tokens-can-double-credit-the-">[L-7] Multiple-address (proxy-aliased) tokens can double-credit the same underlying balance</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — erc20 checklist<br><strong>Location</strong>: <code>allowedToken</code> mapping L45, <code>accounted</code> mapping L53</p>
+<p><strong>Description</strong>: <code>allowedToken</code>/<code>accounted</code> are keyed purely by contract address. If a token exists at multiple addresses aliasing the same underlying balance (proxy/impl migration pattern) and the owner allowlists both, <code>_received()</code> for each alias reads from the same real <code>balanceOf</code>, letting a single real deposit be credited to two different matches.</p>
+<p><strong>Recommendation</strong>: Document that only the single canonical address of a token should be allowlisted.</p>
+<hr>
+<h3 id="l-8-matchid-griefing-via-unowned-namespace">[L-8] <code>matchId</code> griefing via unowned namespace</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase2 only]</code> — asymmetry agent. Re-examined: confirmed — <code>createMatch()</code> (L106) only checks <code>matches[matchId].status == Status.None</code>, with no per-creator namespacing.<br><strong>Location</strong>: <code>createMatch()</code> L103-112</p>
+<p><strong>Description</strong>: <code>matchId</code> is caller-chosen with no contract-enforced namespacing. An attacker holding even 1 wei of unaccounted balance of some allowed token can front-run a victim&#39;s intended <code>createMatch(id, ...)</code> call with their own <code>createMatch(id, someToken, 1)</code> to occupy that id, causing the victim&#39;s real call to revert (<code>&quot;exists&quot;</code>). Low-cost inconvenience only — the victim&#39;s funds remain safely unaccounted and reusable under a different id, so impact is limited to griefing/wasted gas rather than fund loss.</p>
+<p><strong>Recommendation</strong>: Consider namespacing <code>matchId</code> by creator (e.g. a mapping keyed by <code>(creator, nonce)</code>) to remove the shared global id-space as a griefing surface.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong>Plain <code>eth_sign</code>-style digest instead of EIP-712 typed data</strong> <code>[phase1 only]</code> — replay-safety is unaffected (chainid + contract address are manually included), but a blind-signing risk if <code>settler</code> is ever a human-in-the-loop signer rather than an automated backend.</li>
+<li><strong><code>settle()</code> is callable by any address</strong>, not just match participants <code>[phase1 only]</code> — intentional per design; payout always goes to the pre-validated <code>winner</code> regardless of caller, so not exploitable for fund diversion; only a benign front-running/gas-griefing race between whoever submits first.</li>
+<li><strong>No emergency pause mechanism</strong> <code>[phase1 only]</code> — assessed as low practical impact: <code>settle()</code> already restricts payout to match participants, and <code>setTokenAllowed(false)</code> already stops new matches for an affected token during an incident; a pause on settle/refund would be counterproductive (traps escrowed funds).</li>
+<li><strong>Emitted settlement amounts may not reflect actual fee-on-transfer receipts</strong> <code>[phase1 only]</code> — <code>MatchSettled</code> logs nominal transfer amounts; off-chain indexers may show inflated payout figures for fee-on-transfer tokens.</li>
+<li><strong>Verified non-issue</strong>: <code>setTokenAllowed(token, false)</code> on a token with active/funded matches does not break refunds or settlement <code>[phase1 only]</code> — only <code>createMatch()</code> checks <code>allowedToken</code>; <code>joinMatch</code>, <code>settle</code>, <code>cancelUnaccepted</code>, <code>refundStalled</code> do not, so de-allowlisting only blocks <em>new</em> matches.</li>
+</ul>
+<hr>
+<h2 id="severity-totals">Severity Totals</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>8</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>5 (incl. 1 explicitly-cleared item)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="methodology-note">Methodology Note</h2>
+<p>This report reconciles two independently-run analysis passes against the same source: a 5-agent breadth pass walking domain-specific checklists (general, precision-math, erc20, access-control, signatures), and a 12-agent depth pass using adversarial/attacker-mindset reasoning, run blind to the first pass&#39;s output. The Critical finding (C-1) achieved the strongest possible corroboration this methodology can produce — independently rediscovered by every agent across both phases that examined the deposit-crediting logic, from checklist-driven review, Socratic questioning, inversion-based attacker reasoning, invariant analysis, and boundary/asymmetry lenses alike. This is not analytical noise; it is a structural defect in the contract&#39;s core accounting model, directly enabled by a usage pattern (non-atomic 2-step deposits) the contract&#39;s own comments acknowledge as expected and supported.</p>
+<p><strong>Given the Critical severity and live deployment on Base mainnet, we recommend the contract owner pause new deposits (via <code>setTokenAllowed(token, false)</code> for all currently-allowed tokens) immediately upon receipt of this report, until the C-1 fix is deployed.</strong> The contract&#39;s own header comment (&quot;NOT AUDITED. Get a security review before holding meaningful funds.&quot;) suggests the deployer was already aware this contract had not received a security review prior to this audit.</p>
+<blockquote>
+<p>⚠️ This review was performed by AI agents. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review and/or bug bounty program is strongly recommended before this contract holds further user funds.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreig7dvctirt673fchleqz2kksunixmssiw2ipqrsb5nu3ycjj7svme.ipfs.community.bgipfs.com/"><code>https://bafkreig7dvctirt673fchleqz2kksunixmssiw2ipqrsb5nu3ycjj7svme.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/329">#329</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

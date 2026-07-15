@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireDisputeResolution — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #358">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireDisputeResolution</h1>
+    <p class="job-sub">Job #358 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/358"><b>Job page</b> #358</a>
+      <a class="chip" href="https://bafkreibcsbg7u2qktawajsbmn2kww6wnrpiq4ubo33rakz4xciqw3rkpuu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">3</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#non-findings-checked-no-issue">Non-Findings (checked, no issue)</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#summary-table">Summary Table</a></li>
+      <li><a href="#client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — VaultfireDisputeResolution</h1>
+<p><strong>Contract</strong>: <code>VaultfireDisputeResolution</code><br><strong>Address</strong>: <code>0x3a681b6eF98c6d35643Ca631eE50EF35edd6BcBD</code> (Base, chain 8453)<br><strong>Source</strong>: verified on Sourcify (full match), single file, Solidity 0.8.25, <code>viaIR</code>, optimizer 200 runs<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (5 ethskills domain agents: general, precision-math, access-control, DoS, governance) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation<br><strong>Scope</strong>: <code>VaultfireDisputeResolution.sol</code> (484 lines) in full</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Overlap: 4 findings corroborated by both phases · Phase-1-only: 3 · Phase-2-only: 0 · Re-examined leads kept: 4, demoted: 0</strong></p>
+<p>This engagement produced the strongest possible corroboration signal available from this methodology on its two headline findings: <strong>all 17 agents across both phases</strong> (5 ethskills breadth agents + 12 pashov attacker agents, the latter run fully blind to the former) independently identified both (a) the unanimous-vote liveness lock and (b) the atomic push-payment settlement flaw. Several phase-2 agents sharpened the second finding further, showing it is not merely a hostile-arbitrator scenario but is directly and unilaterally triggerable by the claimant themselves (who names the unvalidated <code>respondent</code> address). Phase 1 additionally surfaced a third High-severity, concrete finding — owner-controlled panel packing to guarantee arbitration outcomes — that phase 2&#39;s agents did not independently reach in the same form, but which is corroborated by 2 independent phase-1 domain agents with full exploit traces.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="f-1-no-timeout-or-quorum-a-single-non-voting-arbitrator-permanen">[F-1] No timeout or quorum — a single non-voting arbitrator permanently freezes the entire disputed stake</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (General-1, DoS-1, Governance-3) · Phase 2 (all 12 agents, unanimous)<br><strong>Location</strong>: <code>castVote()</code> (lines 311-367), <code>assignPanel()</code> (lines 261-304), <code>cancelDispute()</code> (lines 414-433)</p>
+<p><strong>Description</strong>: <code>_resolveDispute</code> only triggers when <code>totalVotes == panel.length</code> — literal unanimous participation — even though the contract&#39;s own odd-panel-size rule guarantees a majority becomes mathematically unbeatable before every member votes (e.g., 2-of-3 already settles the outcome). There is no timeout, no owner override, no <code>forceResolve</code>, and no <code>reassignPanel</code> anywhere in the contract. <code>cancelDispute</code> explicitly requires <code>status == Filed</code>, which is permanently unreachable once a panel is assigned. If even one of the 3-7 assigned arbitrators never votes — offline, bribed to abstain, or simply disinterested — the dispute is stuck forever, at zero cost to the withholding arbitrator (they only forfeit an unguaranteed fee) and total, permanent loss of access to the claimant&#39;s stake.</p>
+<p><strong>Proof of Concept</strong>: Claimant files a dispute with 1 ETH stake. Owner assigns a 3-person panel. Two arbitrators vote (already a mathematically decisive 2-0 split). The third is bribed by the losing side to simply never vote — free for the briber, since inaction requires no on-chain transaction and is undetectable in advance. <code>totalVotes</code> remains stuck at 2 forever; <code>_resolveDispute</code> never executes; the 1 ETH is unrecoverable by any party for the life of the contract.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">  uint256 totalVotes = d.votesForClaimant + d.votesForRespondent;
+- if (totalVotes == panel.length) {
++ if (d.votesForClaimant &gt; panel.length / 2 || d.votesForRespondent &gt; panel.length / 2) {
+      _resolveDispute(disputeId);
+  }
+</code></pre>
+<p>Additionally add a voting deadline with a force-resolve/refund fallback for the case where no majority is ever reached.</p>
+<hr>
+<h3 id="f-2-atomic-multi-party-payout-with-no-pull-pattern-a-single-non-">[F-2] Atomic multi-party payout with no pull-pattern — a single non-payable winner or arbitrator permanently bricks dispute resolution</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (General-2, DoS-2) · Phase 2 (all 12 agents, unanimous, with several sharpening the attack to a fully claimant-controlled variant)<br><strong>Location</strong>: <code>_resolveDispute()</code> (lines 373-408), invoked synchronously from <code>castVote()</code> (line 365)</p>
+<p><strong>Description</strong>: <code>_resolveDispute</code> pays the winner and every arbitrator via separate <code>.call{value}</code> transfers in one atomic transaction, each gated by <code>require(ok)</code>. If any single one of these <code>panel.length + 1</code> recipients cannot accept a plain ETH transfer, the entire transaction reverts — including the triggering arbitrator&#39;s own vote, which is silently rolled back rather than persisted. This failure is deterministic and permanently repeatable on every subsequent retry. Critically, <strong><code>respondent</code> in <code>fileDispute</code> is never validated to be a registered agent or capable of receiving ETH at all</strong> — only the claimant is checked. This means the claimant themselves can unilaterally name a non-payable contract as the respondent when filing, guaranteeing that if the panel ever rules in the respondent&#39;s favor, resolution is permanently bricked — no hostile arbitrator or owner cooperation is required.</p>
+<p><strong>Proof of Concept</strong>: A claimant calls <code>fileDispute(evilContract, &quot;reason&quot;, hash)</code> where <code>evilContract</code> has no payable <code>receive()</code>/<code>fallback()</code>. The owner assigns a panel; two of three arbitrators vote <code>ForRespondent</code> in good faith (already a locked-in majority). The third arbitrator&#39;s vote completes turnout, triggering <code>_resolveDispute</code>, which attempts <code>evilContract.call{value: payout}(&quot;&quot;)</code> — this reverts, <code>require(ok)</code> fails, and the entire transaction (including the deciding vote) is undone. Because the majority is already fixed at 2-of-3, every future retry reproduces the identical revert. The stake and all arbitrators&#39; fees are locked in the contract forever.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">+ mapping(address =&gt; uint256) public pendingWithdrawals;
+  function _resolveDispute(uint256 disputeId) internal {
+      ...
+-     (bool ok, ) = winner.call{value: payout}(&quot;&quot;);
+-     require(ok, &quot;...winner payout failed&quot;);
++     pendingWithdrawals[winner] += payout;
+      for (uint256 i = 0; i &lt; panel.length; i++) {
+          arbitrators[panel[i]].totalFeesEarned += feePerArbitrator;
+-         (bool ok2, ) = panel[i].call{value: feePerArbitrator}(&quot;&quot;);
+-         require(ok2, &quot;...arbitrator fee failed&quot;);
++         pendingWithdrawals[panel[i]] += feePerArbitrator;
+      }
+      ...
+  }
++ function withdraw() external nonReentrant {
++     uint256 amount = pendingWithdrawals[msg.sender];
++     pendingWithdrawals[msg.sender] = 0;
++     (bool ok, ) = msg.sender.call{value: amount}(&quot;&quot;);
++     require(ok, &quot;withdraw failed&quot;);
++ }
+</code></pre>
+<hr>
+<h3 id="f-3-owner-can-pack-the-arbitration-panel-with-itself-or-colludin">[F-3] Owner can pack the arbitration panel with itself or colluding addresses to guarantee any outcome and collect the arbitrator fee</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[phase1 only]</code> (AccessControl-1, Governance-1 — 2x corroboration within phase 1) — re-examined against source and confirmed<br><strong>Location</strong>: <code>assignPanel()</code> (lines 261-304)</p>
+<p><strong>Description</strong>: <code>assignPanel</code> excludes only the two disputing parties — there is no exclusion of <code>owner</code> itself, no anti-collusion or Sybil-resistance check, and no stake-weighting or reputation enforcement despite the docstring&#39;s claim that arbitrators are &quot;selected based on Street Cred score.&quot; Since panel size is always odd (3-7) and outcome is simple majority, an owner who controls (or colludes with) just 2 of 3 registered-agent addresses on a panel it assigns fully determines the outcome — and collects roughly two-thirds of the 5% arbitrator fee in the process.</p>
+<p><strong>Proof of Concept</strong>: Owner controls registered agent addresses A and B. Owner assigns panel <code>[A, B, C]</code> where C is an honest, irrelevant third vote. A and B both vote for whichever side the owner favors; <code>_resolveDispute</code> pays that side 95% of the stake and splits the 5% fee among A, B, C — meaning the owner pockets roughly two-thirds of the fee on every dispute it chooses to rig, with the actual merits or evidence hash never factoring into the outcome.</p>
+<p><strong>Recommendation</strong>: Exclude <code>owner</code> from eligible panel members at minimum (<code>require(panel[i] != owner)</code>). More robustly, replace unilateral owner-selection with verifiable-random selection (e.g., VRF) from the registered-agent pool, and/or require arbitrator staking with slashing for provable collusion.</p>
+<hr>
+<h3 id="f-4-no-commit-reveal-voting-the-deciding-swing-arbitrator-is-pub">[F-4] No commit-reveal voting — the deciding &quot;swing&quot; arbitrator is publicly identifiable in advance, enabling targeted bribery</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1 only]</code> (Governance-2)<br><strong>Location</strong>: <code>castVote()</code> (lines 311-367), <code>getVote()</code> (line 451), <code>VoteCast</code> event (line 156)</p>
+<p><strong>Description</strong>: Votes are written to storage and emitted immediately, with no commit/hide phase. Because resolution auto-triggers the instant turnout completes, whichever arbitrator votes last on a panel that has split its earlier votes is publicly identifiable in advance as the guaranteed decision-maker. This turns &quot;bribe a majority of the panel in advance&quot; into the much cheaper &quot;wait for the tally to split, then bribe or coerce just the one remaining voter with certainty of effect.&quot;</p>
+<p><strong>Recommendation</strong>: Use a commit-reveal scheme (arbitrators submit <code>keccak256(vote, salt)</code> during a fixed window, then reveal after the window closes), or at minimum decouple &quot;last vote received&quot; from &quot;instant resolution&quot; by resolving only after a fixed deadline.</p>
+<hr>
+<h3 id="f-5-castvote-never-re-verifies-an-arbitrators-registered-agent-s">[F-5] <code>castVote</code> never re-verifies an arbitrator&#39;s registered-agent status at vote/payout time</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (AccessControl-2) · Phase 2 (access-control, execution-trace, asymmetry agents, as corroborating leads)<br><strong>Location</strong>: <code>castVote()</code> (lines 311-367), <code>_resolveDispute()</code> (lines 399-403)</p>
+<p><strong>Description</strong>: Agent eligibility is checked only once, at <code>assignPanel</code> time. <code>castVote</code> never re-checks it. If an arbitrator is deactivated after panel assignment — e.g., precisely because F-3&#39;s collusion is discovered mid-dispute and the registry operator revokes the offending agent&#39;s status as a remedial action — that agent can still cast a binding vote and still collects the arbitrator fee at resolution.</p>
+<p><strong>Recommendation</strong>: Re-check <code>identityRegistry.isAgentActive(msg.sender)</code> inside <code>castVote</code> before accepting the vote, and/or withhold fee payment at resolution time for members whose status is no longer active.</p>
+<hr>
+<h3 id="f-6-immutable-owner-is-a-single-point-of-failure-for-panel-assig">[F-6] Immutable owner is a single point of failure for panel assignment (partially, not fully, mitigated by claimant self-cancel)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> (AccessControl-3)<br><strong>Location</strong>: <code>owner</code> (line 99), constructor (line 183), <code>assignPanel()</code> (line 264)</p>
+<p><strong>Description</strong>: <code>owner</code> is immutable with no rotation mechanism. If the owner key is lost, <code>assignPanel</code> becomes permanently uncallable, and any dispute still in <code>Filed</code> status can never get a panel assigned. This is partially mitigated because <code>cancelDispute</code> is <em>not</em> owner-gated — the claimant can unilaterally reclaim their stake at any time while status remains <code>Filed</code>. However, the respondent has no equivalent self-service escape, and disputes already past <code>Filed</code> are unaffected by owner-key loss (they depend only on the panel already assigned).</p>
+<p><strong>Recommendation</strong>: Introduce a two-step ownership transfer or governance/multisig-controlled owner, and/or a timeout-based fallback allowing permissionless panel assignment or cancellation if the owner doesn&#39;t act within a defined window.</p>
+<hr>
+<h3 id="f-7-fee-splitting-division-leaves-rounding-dust-permanently-stuc">[F-7] Fee-splitting division leaves rounding dust permanently stuck in the contract</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (Precision-1, General-3) · Phase 2 (math-precision, numerical-gap agents, as corroborating leads)<br><strong>Location</strong>: <code>_resolveDispute()</code>, line 391</p>
+<p><strong>Description</strong>: <code>totalFee / panel.length</code> is integer division; since panel size is always odd (3, 5, or 7), the result generally doesn&#39;t divide evenly. The remainder (up to <code>panel.length - 1</code> wei) is never paid to anyone and the contract has no sweep/rescue function — it accumulates permanently in the contract&#39;s balance.</p>
+<p><strong>Proof of Concept</strong>: <code>stakeAmount = 1 ether</code>, <code>panel.length = 3</code>: <code>totalFee = 0.05 ether</code>, <code>feePerArbitrator = 16666666666666666</code> wei (floor), <code>3 × feePerArbitrator = 49999999999999998</code>, leaving 2 wei stuck forever.</p>
+<p><strong>Recommendation</strong>: Have the winner absorb the rounding remainder, or add an owner-only sweep function restricted to provably-unaccounted balance.</p>
+<hr>
+<h2 id="non-findings-checked-no-issue">Non-Findings (checked, no issue)</h2>
+<ul>
+<li><strong>Ties are structurally impossible</strong>: verified by direct code trace in both phases — odd panel size plus mandatory non-abstain voting means <code>votesForClaimant == votesForRespondent</code> can never occur when resolution triggers.</li>
+<li><strong>No overflow/underflow risk</strong>: the fee calculation and payout subtraction cannot realistically overflow or underflow given ETH supply bounds and the fixed 5% fee rate.</li>
+<li><strong><code>assignPanel</code>&#39;s access control</strong>: correctly restricted to <code>onlyOwner</code> with no bypass found; non-panel-member voting and double-voting are both correctly blocked in <code>castVote</code>.</li>
+<li><strong>Bounded loops</strong>: <code>assignPanel</code>&#39;s duplicate check and <code>castVote</code>&#39;s panel-membership scan are both hard-capped at <code>MAX_PANEL_SIZE = 7</code> — trivial gas cost, not exploitable as DoS.</li>
+</ul>
+<hr>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F-1</td>
+<td><span class="pill high">High</span></td>
+<td>Unanimous-vote requirement — single non-voter freezes the stake</td>
+<td>both (17/17 agents)</td>
+</tr>
+<tr>
+<td>F-2</td>
+<td><span class="pill high">High</span></td>
+<td>Atomic push-payment resolution — single non-payable recipient bricks settlement</td>
+<td>both (17/17 agents)</td>
+</tr>
+<tr>
+<td>F-3</td>
+<td><span class="pill high">High</span></td>
+<td>Owner can pack the arbitration panel to guarantee outcomes</td>
+<td>phase1 only</td>
+</tr>
+<tr>
+<td>F-4</td>
+<td><span class="pill medium">Medium</span></td>
+<td>No commit-reveal — swing voter identifiable and bribable</td>
+<td>phase1 only</td>
+</tr>
+<tr>
+<td>F-5</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Stale eligibility check at vote/payout time</td>
+<td>both</td>
+</tr>
+<tr>
+<td>F-6</td>
+<td><span class="pill low">Low</span></td>
+<td>Immutable owner SPOF for panel assignment (partially mitigated)</td>
+<td>phase1 only</td>
+</tr>
+<tr>
+<td>F-7</td>
+<td><span class="pill low">Low</span></td>
+<td>Fee-rounding dust permanently stuck, no sweep</td>
+<td>both</td>
+</tr>
+</tbody></table></div>
+<p><strong>Total: 3 High, 2 Medium, 2 Low.</strong></p>
+<hr>
+<h2 id="client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</h2>
+<p>The job description asked specifically about three areas. Direct answers, cross-referenced to the findings above:</p>
+<ol>
+<li><strong>&quot;Dispute-state machine correctness&quot;</strong> — This is precisely F-1: the state machine&#39;s only exit from <code>PanelSet</code>/<code>Voting</code> requires literal 100% turnout rather than a decisive majority, and has no timeout or fallback, making permanent deadlock a single non-voting arbitrator away at all times.</li>
+<li><strong>&quot;Evidence-hash tamper resistance&quot;</strong> — Confirmed sound. <code>evidenceHash</code> is set once at <code>fileDispute</code> and never rewritten anywhere in the contract; there is no code path to alter it post-submission. No finding in this area.</li>
+<li><strong>&quot;Access control on resolver assignment&quot;</strong> — The <code>onlyOwner</code> gate on <code>assignPanel</code> itself has no bypass (F-3&#39;s root cause is a <em>missing exclusion</em>, not a broken gate: nothing stops the owner from including itself or colluding addresses as panel members, letting the assigner also become the resolver in practice).</li>
+</ol>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-driven two-phase audit (ethskills breadth + pashov depth, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, bug bounty program, and on-chain monitoring are strongly recommended before this contract is relied upon to hold disputed economic stake.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibcsbg7u2qktawajsbmn2kww6wnrpiq4ubo33rakz4xciqw3rkpuu.ipfs.community.bgipfs.com/"><code>https://bafkreibcsbg7u2qktawajsbmn2kww6wnrpiq4ubo33rakz4xciqw3rkpuu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/358">#358</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

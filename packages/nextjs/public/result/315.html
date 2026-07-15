@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HoprStake — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #315">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">HoprStake</h1>
+    <p class="job-sub">Job #315 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/315"><b>Job page</b> #315</a>
+      <a class="chip" href="https://bafkreifdttrykhvyt4sqkzby43ow2ue3n5rqcwbjr32kxo4mwt2gxro774.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#client-question">Client question</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#scope">Scope</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#scope-note">Scope note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — HoprStake</h1>
+<p><strong>Chain</strong>: Gnosis Chain (100) · <strong>Address</strong>: <code>0x912f4d6607160256787a2ad40da098ac2afe57ac</code> · <strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (6 checklist agents: general, precision-math, ERC20, staking, ERC721, access-control) → Phase 2 depth (12 independent attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation with live on-chain verification.</p>
+<h2 id="client-question">Client question</h2>
+<blockquote>
+<p>&quot;Find a way for someone to withdraw the HOPR token (an ERC677 token at <code>0xd057604a...</code>, i.e. LOCK_TOKEN/xHOPR) which are held by this contract.&quot;</p>
+</blockquote>
+<p><strong>Direct answer</strong>: No path was found for an unprivileged actor to <em>redirect</em> LOCK_TOKEN to their own address — <code>unlock()</code>&#39;s transfer always pays the <code>account</code> parameter (never <code>msg.sender</code>), the ERC677 deposit hook&#39;s sender cannot be spoofed, and the owner-only reclaim functions cannot be invoked by an outside party. The actual, verified, high-impact bug runs in the opposite direction: <strong>Finding 1</strong> shows that any unprivileged third party can permanently <strong>freeze</strong> a staker&#39;s LOCK_TOKEN inside the contract — and on-chain verification (below) indicates this is not theoretical: a large share of the contract&#39;s holdings appear to already be stuck today.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p>Overlap: 1 finding confirmed independently by both phases (12/12 Phase 2 agents + 5/6 Phase 1 agents) · Phase-1-only: 7 (2 promoted to scored Medium findings after re-examination, 5 kept as low-severity/informational) · Phase-2-only: 1 lead (externally-mutable boost oracle, out of scope) · Re-examined leads kept: 8, demoted: 2 (gas-DoS NFT loop, <code>onERC721Received</code> operator gap — both now historical-only since the redemption window has irreversibly closed).</p>
+<p>Completeness: 12 unique (Contract, function, bug-class) groups identified across both phases&#39; raw output, 12 covered in this unified report (as either a scored finding or a listed lead).</p>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Single contract, full source</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>HoprStake.sol</code> (custom logic: lines 1001-1327 of the flattened source; lines 1-1000 are inlined, trusted OpenZeppelin dependencies)</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>75</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[100] <strong>1. Permissionless <code>claimRewards()</code> permanently bricks <code>unlock()</code>, freezing staked LOCK_TOKEN and escrowed Boost NFTs forever</strong></p>
+<p><code>HoprStake.unlock</code> (via <code>_claim</code>/<code>_sync</code>) · Confidence: 100 · <strong>[both phases — 12/12 Phase 2 agents, 5/6 Phase 1 agents]</strong></p>
+<p><strong>Description</strong><br><code>unlock()</code> (line 1219-1235) unconditionally calls <code>_claim(account)</code> (line 1227) before returning the staker&#39;s principal and any escrowed Boost NFTs:</p>
+<pre><code class="language-solidity">function unlock(address account) external {
+    require(block.timestamp &gt; PROGRAM_END, &quot;HoprStake: Program is ongoing, cannot unlock stake.&quot;);
+    uint256 actualStake = accounts[account].actualLockedTokenAmount;
+    uint256 virtualStake = accounts[account].virtualLockedTokenAmount;
+    _sync(account);
+    accounts[account].actualLockedTokenAmount = 0;
+    accounts[account].virtualLockedTokenAmount = 0;
+    totalLocked -= actualStake;
+    _claim(account);                                        // &lt;-- unconditional, can revert
+    IERC20(LOCK_TOKEN).safeTransfer(account, actualStake);   // &lt;-- never reached if _claim reverts
+    for (uint256 index = 0; index &lt; redeemedNftIndex[account]; index++) {
+        nftContract.transferFrom(address(this), account, redeemedNft[account][index]);
+    }
+    emit Released(account, actualStake, virtualStake);
+}
+</code></pre>
+<p><code>_claim()</code> (line 1315-1326) hard-reverts whenever there is nothing new to pay out:</p>
+<pre><code class="language-solidity">uint256 amount = account.cumulatedRewards - account.claimedRewards;
+require(amount &gt; 0, &quot;HoprStake: Nothing to claim&quot;);
+</code></pre>
+<p><code>PROGRAM_END</code> (<code>1642424400</code>, Jan 17 2022) is a fixed timestamp already permanently in the past. <code>_getCumulatedRewardsIncrement()</code> (line 1273-1298) short-circuits to <code>0</code> forever once <code>account.lastSyncTimestamp &gt;= PROGRAM_END</code> (line 1275). So the <em>first</em> <code>_sync</code> performed for any account at/after <code>PROGRAM_END</code> permanently freezes its <code>cumulatedRewards</code>; every later <code>_claim</code> call for that account computes <code>amount == 0</code>.</p>
+<p><code>claimRewards(address account)</code> (line 1210) is <code>public</code> with <strong>no access control on <code>account</code></strong> — any third party can call <code>claimRewards(victim)</code> for any staker, at any time. This is not theft on its own (the reward is paid to <code>victim</code>), but it pins <code>claimedRewards == cumulatedRewards</code>. From that moment, every future <code>unlock(victim)</code> call — by anyone, forever — reverts inside <code>_claim</code> with <code>&quot;Nothing to claim&quot;</code>, unwinding the <em>entire</em> transaction, including the state zeroing, the LOCK_TOKEN transfer, and the Boost-NFT return loop. There is no other function that returns a staker&#39;s principal or NFTs, and the owner&#39;s <code>reclaimErc20Tokens(LOCK_TOKEN)</code> cannot rescue it either, since <code>totalLocked</code> still (correctly, since the revert undoes the decrement) accounts for the frozen stake.</p>
+<p>This requires no capital and no privilege, and is equally reachable through entirely ordinary usage — any staker who calls &quot;Claim Rewards&quot; before &quot;Unlock/Withdraw&quot; (a common two-button staking UI pattern) self-triggers the identical permanent freeze. Because <code>PROGRAM_END</code> passed over four years ago, this has had ample time to manifest against real, live-staked value.</p>
+<p>A second, independent trigger reaches the exact same failure mode: <code>_claim</code>&#39;s other guard, <code>require(availableReward &gt;= amount, &quot;HoprStake: Insufficient reward pool.&quot;)</code>, fires identically if the reward pool is ever insufficient to cover an account&#39;s owed amount at the moment <code>unlock()</code> runs — this blocks <strong>every</strong> remaining staker contract-wide, not just accounts that already claimed.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Alice stakes <code>X</code> LOCK_TOKEN before <code>PROGRAM_END</code> (<code>accounts[alice].actualLockedTokenAmount = X</code>), possibly with redeemed Boost NFTs.</li>
+<li>Any time after <code>PROGRAM_END</code> (i.e., any time in the last 4+ years, including today), anyone calls <code>claimRewards(alice)</code>. <code>_sync</code> finalizes <code>cumulatedRewards</code>; <code>_claim</code> pays Alice her earned wxHOPR and sets <code>claimedRewards = cumulatedRewards</code>.</li>
+<li>Alice (or anyone) calls <code>unlock(alice)</code>. <code>_sync</code> now computes increment <code>0</code> (already clamped past <code>PROGRAM_END</code>). <code>_claim(alice)</code> computes <code>amount = 0</code> and reverts <code>&quot;HoprStake: Nothing to claim&quot;</code>.</li>
+<li>The entire <code>unlock(alice)</code> transaction reverts. Every future call behaves identically — <code>alice</code>&#39;s <code>X</code> LOCK_TOKEN and any escrowed Boost NFTs are permanently unrecoverable.</li>
+</ol>
+<p><strong>On-chain verification (performed live against the deployed contract, Gnosis Chain block 47088635, 2026-07-08):</strong></p>
+<pre><code>totalLocked()                          = 4,337,527.43 xHOPR
+LOCK_TOKEN.balanceOf(HoprStake)         = 4,109,123.36 xHOPR
+availableReward()                       = 0.4899 wxHOPR
+REWARD_TOKEN.balanceOf(HoprStake)       = 0.4899 wxHOPR   (exactly equals availableReward)
+</code></pre>
+<p>The reward pool (<code>availableReward</code>) is almost completely depleted (0.49 wxHOPR left) while <code>totalLocked</code> still records over 4.3 million xHOPR of principal not yet returned to stakers. This pattern — nearly all rewards already paid out, but the overwhelming majority of principal still locked, more than four years after the program ended — is consistent with a large number of stakers having already called <code>claimRewards()</code> (or having had it called for them) and subsequently being unable to complete <code>unlock()</code>. It also means the &quot;insufficient <code>availableReward</code>&quot; trigger described above is now live: with only 0.49 wxHOPR remaining in the pool, essentially any staker with a nonzero pending reward who has <em>not</em> yet triggered the first failure mode will likely fail <code>unlock()</code> via the second one instead. <strong>This finding appears to already be actively impacting real funds, not merely a theoretical risk.</strong></p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function _claim(address _account) private {
+     Account memory account = accounts[_account];
+     uint256 amount = account.cumulatedRewards - account.claimedRewards;
+-    require(amount &gt; 0, &quot;HoprStake: Nothing to claim&quot;);
++    if (amount == 0) {
++        return;
++    }
+     accounts[_account].claimedRewards = accounts[_account].cumulatedRewards;
+     require(availableReward &gt;= amount, &quot;HoprStake: Insufficient reward pool.&quot;);
+     availableReward -= amount;
+     IERC20(REWARD_TOKEN).safeTransfer(_account, amount);
+     emit Claimed(_account, amount);
+ }
+</code></pre>
+<p>Keep a <code>require(amount &gt; 0)</code> in the standalone <code>claimRewards()</code> entry point only, if a revert-on-nothing-to-claim UX is desired there — never let <code>unlock()</code>&#39;s principal-withdrawal path depend on there being a nonzero (and fully-covered) reward claim. Given real user funds appear to already be affected on the live deployment, the client should treat this as urgent: a migration/rescue mechanism may be needed to recover principal for accounts already stuck, since this logic bug cannot be patched in an already-deployed, non-upgradeable contract.</p>
+<hr>
+<p>[70] <strong>2. <code>reclaimErc20Tokens</code> can drain the entire wxHOPR reward pool owed to stakers</strong></p>
+<p><code>HoprStake.reclaimErc20Tokens</code> · Confidence: 70 · <strong>[Phase 1: general, defi-staking, access-control — 3/6 agents; Phase 2: 10/12 agents raised this, demoted to lead under the strict unprivileged-trigger gate since it requires owner action with no unprivileged amplifier]</strong></p>
+<p><strong>Description</strong><br>The <code>LOCK_TOKEN</code> branch correctly excludes committed principal before sweeping:</p>
+<pre><code class="language-solidity">if (tokenAddress == LOCK_TOKEN) {
+    difference = IERC20(LOCK_TOKEN).balanceOf(address(this)) - totalLocked;
+} else {
+    difference = IERC20(tokenAddress).balanceOf(address(this));
+}
+IERC20(tokenAddress).safeTransfer(owner(), difference);
+</code></pre>
+<p>For every other token — including <code>REWARD_TOKEN</code> (wxHOPR) — the entire balance is swept, with no subtraction of <code>availableReward</code>, the counter tracking rewards already earmarked for stakers. This is an owner-gated action (not triggerable by an unprivileged third party), which is why Phase 2&#39;s strict attacker-mindset gates demoted it to a lead — but it is a genuine, verifiable code-level asymmetry with the analogous <code>LOCK_TOKEN</code> protection in the very same function, and a mismanaging or compromised owner could break reward payouts for every remaining staker. Currently the live reward pool is only 0.49 wxHOPR (see Finding 1&#39;s on-chain check), so the present blast radius is small, but the code gap would matter again if the pool is ever refueled.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> if (tokenAddress == LOCK_TOKEN) {
+     difference = IERC20(LOCK_TOKEN).balanceOf(address(this)) - totalLocked;
++} else if (tokenAddress == REWARD_TOKEN) {
++    difference = IERC20(REWARD_TOKEN).balanceOf(address(this)) - availableReward;
+ } else {
+     difference = IERC20(tokenAddress).balanceOf(address(this));
+ }
+</code></pre>
+<hr>
+<p>[70] <strong>3. <code>reclaimErc721Tokens</code> has no protection against seizing a staker&#39;s already-redeemed Boost NFT</strong></p>
+<p><code>HoprStake.reclaimErc721Tokens</code> · Confidence: 70 · <strong>[Phase 1: defi-staking, erc721, access-control — 3/6 agents; Phase 2: 8/12 agents raised this, demoted to lead under the same admin-action gate as Finding 2]</strong></p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">function reclaimErc721Tokens(address tokenAddress, uint256 tokenId) external onlyOwner nonReentrant {
+    IHoprBoost(tokenAddress).transferFrom(address(this), owner(), tokenId);
+}
+</code></pre>
+<p>No exclusion exists for <code>tokenAddress == address(nftContract)</code> or for tokenIds recorded in any <code>redeemedNft[account][...]</code>. The owner can seize a Boost NFT a staker legitimately redeemed and is still owed back at <code>unlock()</code>. This compounds directly with Finding 1: if a staker&#39;s NFT is seized this way, their <code>unlock()</code> NFT-return loop reverts on the missing token even if Finding 1 is fixed, permanently blocking recovery of their principal and every other NFT in the same call. Owner-gated (no unprivileged amplifier), so demoted to lead under Phase 2&#39;s strict gates, but a real and easily-fixed asymmetry with the analogous <code>LOCK_TOKEN</code> protection.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function reclaimErc721Tokens(address tokenAddress, uint256 tokenId) external onlyOwner nonReentrant {
++    require(tokenAddress != address(nftContract), &quot;HoprStake: Cannot reclaim escrowed Boost NFTs&quot;);
+     IHoprBoost(tokenAddress).transferFrom(address(this), owner(), tokenId);
+ }
+</code></pre>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[100]</td>
+<td>Permissionless <code>claimRewards()</code> permanently bricks <code>unlock()</code>, freezing staked LOCK_TOKEN and escrowed Boost NFTs forever</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[70]</td>
+<td><code>reclaimErc20Tokens</code> can drain the entire wxHOPR reward pool owed to stakers</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[70]</td>
+<td><code>reclaimErc721Tokens</code> has no protection against seizing a staker&#39;s already-redeemed Boost NFT</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>High-signal trails for manual review — origin-tagged, not independently scored.</em></p>
+<ul>
+<li><strong><code>onTokenTransfer</code> trusts the ERC677 callback&#39;s <code>_value</code> instead of a measured balance delta</strong> — <code>HoprStake.onTokenTransfer</code> — <code>[both phases]</code> — Code smells: <code>accounts[_from].actualLockedTokenAmount += _value; totalLocked += _value;</code> assumes LOCK_TOKEN never applies a transfer fee or rebases. Not exploitable against the current, presumed-standard xHOPR token; would only matter if LOCK_TOKEN&#39;s transfer semantics changed.</li>
+<li><strong>No <code>nonReentrant</code> guard on <code>unlock()</code>/<code>claimRewards()</code>/<code>tokensReceived()</code></strong> — <code>[both phases]</code> — REWARD_TOKEN (wxHOPR) is ERC777-compatible via ERC1820 registration, so <code>_claim</code>&#39;s <code>safeTransfer</code> could trigger a recipient hook. Every agent that traced a concrete reentry path found checks-effects-interactions (state zeroed/updated before the external call) blocks a double-spend. Defense-in-depth only.</li>
+<li><strong>Unbounded Boost-NFT bookkeeping loops</strong> (<code>redeemedFactorIndex</code> in <code>_getCumulatedRewardsIncrement</code>; <code>redeemedNftIndex</code> in <code>unlock</code>&#39;s NFT-return loop) — <code>[both phases]</code> — No cap on either index; a large count could gas-DoS an account&#39;s own future <code>sync</code>/<code>unlock</code> calls. <strong>Demoted from an initial High rating on re-examination</strong>: new Boost-NFT redemption requires <code>block.timestamp &lt;= PROGRAM_END</code>, which has permanently passed, so this can now only matter for an account that already accumulated an unusually large redeemed-NFT count before Jan 2022 — not confirmed on any specific account within this audit&#39;s on-chain verification scope (would require a full historical event-log scan). Client should check <code>redeemedNftIndex(account)</code> for any large historical staker before assuming this is moot.</li>
+<li><strong><code>reclaimErc20Tokens(LOCK_TOKEN)</code> currently reverts due to a live balance/accounting deficit</strong> — <code>HoprStake.reclaimErc20Tokens</code> — <strong>[discovered via direct on-chain verification during reconciliation, not by either blind phase]</strong> — On-chain, <code>totalLocked</code> (4,337,527.43 xHOPR) exceeds the contract&#39;s actual LOCK_TOKEN balance (4,109,123.36 xHOPR) by ~228,404 xHOPR (~5.3%). <code>difference = balanceOf(this) - totalLocked</code> therefore underflows and reverts under Solidity 0.8 checked arithmetic — the owner cannot currently call this function for LOCK_TOKEN at all. Under this contract&#39;s own internal logic, <code>balance</code> and <code>totalLocked</code> should move in exact lockstep (every deposit and every successful <code>unlock()</code> adjusts both by the same amount), so a deficit implies an external event reduced the contract&#39;s LOCK_TOKEN balance outside of this contract&#39;s own code paths (e.g., a token-level migration or burn on xHOPR itself) — recommend the client confirm with the HOPR team. Practical implication: even after Finding 1 is fixed, the contract is presently under-collateralized, so the last stakers to attempt <code>unlock()</code> would still fail on an insufficient-balance revert.</li>
+<li><strong><code>onERC721Received</code> ignores the ERC721 <code>operator</code> parameter</strong> — <code>HoprStake.onERC721Received</code> — <code>[Phase 1 only, erc721]</code> — Any address holding transfer approval over another user&#39;s Boost NFT could force it into the staking program without the owner&#39;s direct action. <strong>Historical-only</strong>: the redemption window (<code>block.timestamp &lt;= PROGRAM_END</code>) has permanently closed, so this can no longer be triggered against any account going forward.</li>
+<li><strong>Boost factor read live from <code>nftContract.boostOf</code>, not snapshotted at redemption</strong> — <code>HoprStake._getCumulatedRewardsIncrement</code> — <code>[Phase 2 only, trust-gap]</code> — If the out-of-scope <code>IHoprBoost</code> contract&#39;s <code>boostOf</code> is admin-mutable, a HoprBoost-side admin could retroactively alter reward rates for already-redeemed tokens. <code>IHoprBoost</code>&#39;s implementation is out of scope for this engagement and was not reviewed.</li>
+<li><strong>Single-step <code>Ownable</code> with no timelock on admin functions</strong> — <code>[Phase 1 only, access-control]</code> — A mistaken <code>transferOwnership()</code>/<code>renounceOwnership()</code> permanently disables <code>lock()</code> and both <code>reclaim*</code> functions. Does not affect core user-facing <code>unlock</code>/<code>sync</code>/<code>claimRewards</code> paths.</li>
+<li><strong>Stale <code>redeemedNftIndex</code>/<code>redeemedFactorIndex</code> never reset after <code>unlock()</code></strong> — <code>[Phase 1 only]</code> — Not currently exploitable (blocked by Finding 1&#39;s <code>_claim</code> revert and the closed redemption window), but would need addressing alongside a Finding 1 fix to avoid a fresh double-return bug.</li>
+<li><strong>Reward accrual floors to zero for dust-level stakes or sub-second sync intervals</strong> — <code>[Phase 1 only, precision-math]</code> — One-directional value loss (never gain) from integer division by <code>FACTOR_DENOMINATOR</code>; not exploitable for fund extraction.</li>
+</ul>
+<hr>
+<h2 id="scope-note">Scope note</h2>
+<p>This engagement&#39;s target overlaps with the HOPR incentive-program staking contract family, which may have been reviewed in prior audits by other parties; no prior audit reports were consulted, reused, or relied upon in producing this report — every finding above was independently derived from this engagement&#39;s own two-phase source review and live on-chain verification.</p>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifdttrykhvyt4sqkzby43ow2ue3n5rqcwbjr32kxo4mwt2gxro774.ipfs.community.bgipfs.com/"><code>https://bafkreifdttrykhvyt4sqkzby43ow2ue3n5rqcwbjr32kxo4mwt2gxro774.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/315">#315</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

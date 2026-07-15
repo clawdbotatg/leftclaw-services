@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultFire ERC-8004 Reputation Registry — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #341">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultFire ERC-8004 Reputation Registry</h1>
+    <p class="job-sub">Job #341 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/341"><b>Job page</b> #341</a>
+      <a class="chip" href="https://bafkreibsbykhqczf4tftksidmhk67dghjoaapbklwh6jf36a4lsjw6a3uy.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">9</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">4</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — VaultFire ERC-8004 Reputation Registry</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>ERC8004ReputationRegistry</code> at <code>0x98afd1440B2238D73c1394720277a6d031fCbbD0</code> on Base (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Deployed contract + its full dependency chain (Sourcify full-match)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>ERC8004ReputationRegistry.sol</code> · <code>ERC8004IdentityRegistry.sol</code><br><code>MissionEnforcement.sol</code> · <code>PrivacyGuarantees.sol</code></td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Two-phase: 6 ethskills breadth checklists + 12 pashov depth attack agents (blind), reconciled</td>
+</tr>
+<tr>
+<td><strong>Client focus areas</strong></td>
+<td>Self-review prevention · signature validation on feedback submission · feedbackURI/feedbackHash storage correctness</td>
+</tr>
+</tbody></table></div>
+<p>Source was pulled from Sourcify (<code>full_match</code>), so it is confirmed to match the on-chain bytecode at the given address.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap (found by both phases):</strong> 11 findings</li>
+<li><strong>Phase-1-only (ethskills breadth):</strong> 6 findings</li>
+<li><strong>Phase-2-only (pashov depth):</strong> 0 findings (every phase-2 finding was independently caught by at least one phase-1 checklist)</li>
+<li><strong>Re-examined leads kept:</strong> 8 (promoted from LEAD to FINDING — deterministic exploit chain fully present in source, corroborated by ≥2 independent agents)</li>
+<li><strong>Re-examined leads demoted/dropped:</strong> 0 — all leads that named a concrete code location were confirmed against source during reconciliation</li>
+<li><strong>Completeness:</strong> 19 unique (Contract, function, bug-class) tuples identified across both phases&#39; raw output; <strong>19 covered</strong> in the unified findings below.</li>
+</ul>
+<p><strong>Answering the client&#39;s three focus questions directly:</strong></p>
+<ol>
+<li><strong>Self-review prevention — FAILS.</strong> No check exists anywhere that <code>msg.sender != agentAddress</code>. See [1].</li>
+<li><strong>Signature validation on feedback submission — DOES NOT EXIST.</strong> There is no <code>giveFeedback</code> function; the closest analogues (<code>submitFeedback</code>/<code>submitFeedbackHashed</code>) authenticate the reviewer with nothing but plain <code>msg.sender</code>. No <code>ecrecover</code>, <code>ECDSA</code>, or <code>EIP-712</code> code exists anywhere in the four in-scope files. See [1].</li>
+<li><strong>feedbackURI / feedbackHash storage — CORRECT.</strong> Field assignments in both submission paths are accurate with no swap/truncation (confirmed by direct source read). See [5]&#39;s note.</li>
+</ol>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[97] <strong>1. No self-review, no signature/stake, no Sybil resistance on feedback submission — reputation is freely forgeable in both directions</strong></p>
+<p><code>ERC8004ReputationRegistry.submitFeedback</code> / <code>submitFeedbackHashed</code> · Confidence: 97 · Severity: <strong>High</strong> · Origin: <strong>[both]</strong> — flagged independently by all 12 phase-2 agents and 3 phase-1 checklists (signatures, access-control, general)</p>
+<p><strong>Description</strong><br>Lines 153-199 and 226-273 gate feedback submission on nothing but <code>identityRegistry.isAgentActive(agentAddress)</code>, <code>rating &lt;= 10000</code>, and a non-empty category. There is no check that <code>msg.sender != agentAddress</code> (self-review), no signature or EIP-712 authentication of the reviewer (despite the contract&#39;s own docstring at line 27 claiming feedback &quot;Prevents fake reviews through economic stakes&quot;), no stake, no per-reviewer rate limit or dedup, and the caller-supplied <code>bondId</code> (lines 161/234) is stored and emitted but never validated against the <code>AIPartnershipBonds</code> contract or checked to involve either party. Any address — including the agent itself — can call these functions an unlimited number of times for the cost of gas alone.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Attacker registers agent <code>A</code> via <code>ERC8004IdentityRegistry.registerAgent(...)</code> → <code>isAgentActive(A) == true</code>.</li>
+<li><code>A</code> calls <code>submitFeedback(A, 10000, &quot;partnership_quality&quot;, &quot;&quot;, false, 0)</code> repeatedly. Nothing rejects <code>reviewer == agentAddress</code>. Each call feeds <code>_updateReputation(A, 10000, false)</code>, driving <code>A</code>&#39;s <code>averageRating</code> toward 10000 with zero real partnerships.</li>
+<li>Symmetrically, an attacker griefs a rival <code>R</code> by calling <code>submitFeedback(R, 0, &quot;x&quot;, &quot;&quot;, false, 0)</code> repeatedly — no cost beyond gas, no limit, no proof of ever interacting with <code>R</code>.</li>
+<li>A fabricated <code>bondId</code> (e.g. a real bond ID the caller was never party to) can be attached to lend false partnership credibility to an otherwise-unverified review.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function submitFeedback(
+         address agentAddress,
+         uint256 rating,
+         string calldata category,
+         string calldata feedbackURI,
+         bool verified,
+         uint256 bondId
+     ) external {
+         require(identityRegistry.isAgentActive(agentAddress), &quot;Agent not registered&quot;);
++        require(msg.sender != agentAddress, &quot;Cannot review self&quot;);
+         require(rating &lt;= 10000, &quot;Rating must be 0-10000&quot;);
+         require(bytes(category).length &gt; 0, &quot;Category required&quot;);
+</code></pre>
+<p>(apply the identical <code>require(msg.sender != agentAddress, ...)</code> to <code>submitFeedbackHashed</code>)</p>
+<p>This is the minimum viable fix. For the full trust model the contract&#39;s own docs promise, additionally bind submission to a validated <code>bondId</code> (verify against <code>AIPartnershipBonds</code> that the bond exists, is settled, and that <code>msg.sender</code> is a counterparty) and/or require an EIP-712-signed attestation from the counterparty with a nonce, rather than trusting bare <code>msg.sender</code>.</p>
+<hr>
+<p>[95] <strong>2. EMA weighting in <code>_updateReputation</code> lets ~20–60 free transactions wipe or fabricate an agent&#39;s entire reputation history</strong></p>
+<p><code>ERC8004ReputationRegistry._updateReputation</code> · Confidence: 95 · Severity: <strong>High</strong> · Origin: <strong>[both]</strong> — phase-1 precision-math (P-2) + 7 of 12 phase-2 agents independently derived the same exploit math</p>
+<p><strong>Description</strong><br>Once <code>totalFeedbacks &gt;= 1000</code> (<code>MAX_FEEDBACKS_FOR_TRUE_AVG</code>), line 304 switches from a true running average to a fixed-alpha EMA: <code>averageRating = (averageRating * 9 + newRating) / 10</code>. Every subsequent feedback — regardless of how much honest history precedes it — moves the score by a flat 10% of the gap to the new rating. Combined with finding [1]&#39;s total lack of Sybil resistance, this converts a large amount of genuine history into something a handful of free transactions can override.</p>
+<p><strong>Proof of Concept</strong><br>Agent has <code>averageRating = 9000</code> from 1000+ genuine reviews (past the EMA threshold). Attacker submits <code>rating = 0</code> repeatedly:</p>
+<ul>
+<li>After 1 call: <code>8100</code></li>
+<li>After 10 calls: <code>≈3138</code></li>
+<li>After 22 calls: <code>≈882</code> (a ~90% wipe)</li>
+<li>After 40 calls: <code>≈148</code></li>
+</ul>
+<p>Symmetrically, ~20 calls of <code>rating = 10000</code> restore or fabricate a near-perfect score for any active agent, regardless of true history. Contrast the pre-1000 true-average branch, where the same 22 zero-ratings against an agent with 1000 honest reviews move the score only ~2%. The EMA branch is ~100x more exploitable than the branch it replaced.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-    function _updateReputation(
+-        address agentAddress,
+-        uint256 newRating,
+-        bool verified
+-    ) internal {
+-        AgentReputation storage rep = reputations[agentAddress];
+-
+-        if (rep.totalFeedbacks &lt; MAX_FEEDBACKS_FOR_TRUE_AVG) {
+-            uint256 totalRating = rep.averageRating * rep.totalFeedbacks;
+-            totalRating += newRating;
+-            rep.totalFeedbacks += 1;
+-            rep.averageRating = totalRating / rep.totalFeedbacks;
+-        } else {
+-            rep.averageRating = (rep.averageRating * 9 + newRating) / 10;
+-            rep.totalFeedbacks += 1;
+-        }
++    // Store the exact cumulative sum instead of switching to a fixed-alpha EMA.
++    // ratingSum cannot overflow uint256 for any realistic feedback count
++    // (10000 * 2^60 feedbacks would still fit comfortably).
++    function _updateReputation(
++        address agentAddress,
++        uint256 newRating,
++        bool verified
++    ) internal {
++        AgentReputation storage rep = reputations[agentAddress];
++        rep.ratingSum += newRating;
++        rep.totalFeedbacks += 1;
++        rep.averageRating = rep.ratingSum / rep.totalFeedbacks;
+</code></pre>
+<p>(add <code>uint256 ratingSum;</code> to the <code>AgentReputation</code> struct.) This also resolves finding [7]&#39;s truncation drift, since the average is derived from an exact sum rather than reconstructed from a previously-rounded value.</p>
+<hr>
+<p>[90] <strong>3. Deactivated agents are permanently bricked — contradicts documented reactivation behavior</strong></p>
+<p><code>ERC8004IdentityRegistry.deactivateAgent</code> / <code>registerAgent</code> / <code>updateAgentURI</code> · Confidence: 90 · Severity: <strong>Medium</strong> · Origin: <strong>[both]</strong> — flagged by phase-1 access-control/general and 10 of 12 phase-2 agents (as LEAD, promoted — deterministic exploit chain fully present in source)</p>
+<p><strong>Description</strong><br><code>deactivateAgent()</code> (lines 125-131) sets <code>active = false</code> but leaves the permanent <code>isRegistered</code> flag set. Its own NatSpec (line 123) claims &quot;Agent can reactivate by registering again&quot; — but <code>registerAgent()</code> (line 84, the MEDIUM-severity anti-duplicate-registration fix) now reverts whenever <code>isRegistered == true</code>, and <code>updateAgentURI()</code> (line 113) requires <code>active == true</code>. No <code>reactivateAgent()</code> function exists anywhere. Once an agent deactivates itself, it can never re-register, never update its URI, and — because <code>ERC8004ReputationRegistry.submitFeedback</code>/<code>submitFeedbackHashed</code> gate on <code>isAgentActive</code>, — can never receive feedback again.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Agent registers: <code>isRegistered = true</code>, <code>active = true</code>.</li>
+<li>Agent calls <code>deactivateAgent()</code>: <code>active = false</code>, <code>isRegistered</code> unchanged.</li>
+<li>Agent calls <code>registerAgent(...)</code> → reverts <code>&quot;Agent already registered&quot;</code>.</li>
+<li>Agent calls <code>updateAgentURI(...)</code> → reverts <code>&quot;Agent not registered&quot;</code>.</li>
+<li>Identity is permanently stranded; no code path restores <code>active</code>.</li>
+</ol>
+<p>This is currently self-triggered only (no third party can deactivate another agent), so it is scoped as Medium rather than High.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    function reactivateAgent() external {
++        require(agents[msg.sender].isRegistered, &quot;Not registered&quot;);
++        require(!agents[msg.sender].active, &quot;Already active&quot;);
++        agents[msg.sender].active = true;
++        emit AgentRegistered(
++            msg.sender,
++            agents[msg.sender].agentURI,
++            agents[msg.sender].agentType,
++            agents[msg.sender].capabilitiesHash,
++            block.timestamp
++        );
++    }
+</code></pre>
+<p>Also correct the stale NatSpec on <code>deactivateAgent()</code>.</p>
+<hr>
+<p>[85] <strong>4. <code>ERC8004ReputationRegistry.owner</code> has no transfer mechanism — permanent single point of failure</strong></p>
+<p><code>ERC8004ReputationRegistry</code> — <code>owner</code> / constructor / <code>verifyFeedback</code> · Confidence: 85 · Severity: <strong>Medium</strong> · Origin: <strong>[both]</strong> — phase-1 access-control (AC-3) + governance (M-1); phase-2 agent 2</p>
+<p><strong>Description</strong><br><code>ERC8004ReputationRegistry</code> declares its own <code>owner</code> (line 33), set once in the constructor (line 137). Unlike <code>MissionEnforcement</code> in the same codebase, there is <strong>no <code>transferOwnership</code>, <code>acceptOwnership</code>, or <code>renounceOwnership</code></strong> — no code path anywhere writes <code>owner</code> after deployment. <code>owner</code> is the sole gate on <code>verifyFeedback()</code>. If the deployer key is lost, verification is permanently unusable; if it is compromised, the attacker controls it forever with no recovery.</p>
+<p><strong>Proof of Concept</strong><br>Grep the file for any assignment to <code>owner</code> after line 137 — none exists. This is a design gap, not an active exploit: the failure mode triggers on key loss/compromise.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    address public pendingOwner;
++    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
++
++    function transferOwnership(address newOwner) external onlyOwner {
++        require(newOwner != address(0) &amp;&amp; newOwner != owner, &quot;Invalid new owner&quot;);
++        pendingOwner = newOwner;
++        emit OwnershipTransferStarted(owner, newOwner);
++    }
++
++    function acceptOwnership() external {
++        require(msg.sender == pendingOwner, &quot;Only pending owner&quot;);
++        owner = pendingOwner;
++        pendingOwner = address(0);
++    }
+</code></pre>
+<hr>
+<p>[85] <strong>5. Hashed feedback can never be verified — <code>verifyFeedback</code> only reaches the legacy string-feedback mapping</strong></p>
+<p><code>ERC8004ReputationRegistry.verifyFeedback</code> / <code>getVerifiedFeedbackPercentage</code> · Confidence: 85 · Severity: <strong>Low</strong> · Origin: <strong>[both]</strong> — flagged as LEAD by 9 of 12 phase-2 agents plus phase-1 access-control/economic checklists; promoted (deterministic, ≥2 agents)</p>
+<p><strong>Description</strong><br><code>verifyFeedback()</code> (lines 210-222) bounds-checks against <code>nextFeedbackId</code> and mutates only the legacy <code>feedbacks</code> mapping. There is no equivalent for <code>feedbacksHashed</code> / <code>nextFeedbackIdHashed</code>. Since the contract&#39;s own docs (line 46) recommend <code>submitFeedbackHashed()</code> as the privacy-preferred path, any agent reviewed exclusively through that path can never have any of its feedback marked verified — yet <code>totalFeedbacks</code> (the denominator in <code>getVerifiedFeedbackPercentage</code>, line 405) is incremented by both paths. The verified-percentage metric is therefore structurally biased against the recommended, privacy-preserving submission path.</p>
+<p><em>Client focus-area note:</em> storage of <code>feedbackURI</code>/<code>feedbackHash</code> itself was checked directly against source (lines 173-182, 246-255) and is correct — no field swap or truncation. This finding is about the verification <em>path</em>, not the storage assignment.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    function verifyFeedbackHashed(address agentAddress, uint256 feedbackId) external onlyOwner {
++        require(feedbackId &gt; 0 &amp;&amp; feedbackId &lt; nextFeedbackIdHashed, &quot;Invalid feedback ID&quot;);
++        FeedbackHashed storage fb = feedbacksHashed[feedbackId];
++        require(fb.agentAddress == agentAddress, &quot;Feedback does not belong to agent&quot;);
++        require(!fb.verified, &quot;Already verified&quot;);
++        fb.verified = true;
++        reputations[agentAddress].verifiedFeedbacks += 1;
++        emit FeedbackVerified(agentAddress, feedbackId);
++    }
+</code></pre>
+<hr>
+<p>[80] <strong>6. <code>bondId</code> is accepted and stored but never validated against any bond registry</strong></p>
+<p><code>ERC8004ReputationRegistry.submitFeedback</code> / <code>submitFeedbackHashed</code> — <code>bondId</code> parameter · Confidence: 80 · Severity: <strong>Low</strong> · Origin: <strong>[both]</strong> — phase-1 signatures (S-2); phase-2 agents 3, 9, 11</p>
+<p><strong>Description</strong><br><code>bondId</code> (lines 159/181/232/254) is documented as linking feedback to &quot;a verified VaultFire partnership&quot; and to <code>AIPartnershipBonds</code> (lines 23-24), but it is stored verbatim with no existence check, no ownership check, and no cross-contract call to confirm the bond exists or that <code>msg.sender</code>/<code>agentAddress</code> are its participants. A caller can attach an arbitrary or unrelated real <code>bondId</code> to fabricate partnership-backed provenance for off-chain consumers.</p>
+<p><strong>Fix</strong><br>Validate <code>bondId</code> against the <code>AIPartnershipBonds</code> contract before accepting it (bond exists, is settled, and <code>msg.sender</code>/<code>agentAddress</code> are its counterparties), or reject any nonzero <code>bondId</code> that fails validation.</p>
+<hr>
+<p>[75] <strong>7. Running-average reconstruction from an already-rounded value causes monotonic, adversarially-steerable downward drift</strong></p>
+<p><code>ERC8004ReputationRegistry._updateReputation</code> (pre-1000-feedback branch) · Confidence: 75 · Severity: <strong>Low</strong> · Origin: <strong>[both]</strong> — phase-1 precision-math (P-1); phase-2 agents 1, 7, and 10 (agent 10 supplied the strongest concrete proof)</p>
+<p><strong>Description</strong><br>Lines 296-299 reconstruct <code>totalRating = rep.averageRating * rep.totalFeedbacks</code> from the <em>already floor-divided</em> <code>averageRating</code>, rather than storing an exact running sum. Because the stored average is <code>floor(sum/n)</code>, <code>averageRating * totalFeedbacks &lt;= true sum</code>, and the discarded remainder compounds on every subsequent call. The drift is monotonically non-decreasing (<code>e_n = e_{n-1} + (T_n mod n) &gt;= e_{n-1}</code>), not bounded rounding dust — and an adversarial reviewer can choose ratings to maximize <code>(T_n mod n)</code> each step, deliberately deflating a competitor&#39;s stored average while each individual submitted rating looks unremarkable.</p>
+<p><strong>Proof of Concept</strong><br>Ratings submitted in order <code>[1, 2, 3, 4, 5]</code>: stored <code>averageRating</code> reads <code>1, 1, 1, 1, 1</code> at every step, while the true mean is <code>1, 1.5, 2.0, 2.5, 3.0</code> — a drift of <code>2.0</code> after only 5 feedbacks that keeps growing with count.</p>
+<p><strong>Fix</strong><br>Same fix as [2]: store an exact <code>ratingSum</code> and derive <code>averageRating = ratingSum / totalFeedbacks</code>, flooring exactly once rather than reconstructing and re-flooring on every call. The overflow this branch was originally written to avoid was never real — <code>10000 * (realistic feedback count) &lt;&lt; 2^256</code>.</p>
+<hr>
+<p>[70] <strong>8. Unbounded feedback/discovery arrays returned wholesale by view getters — permanently uncallable once inflated</strong></p>
+<p><code>ERC8004ReputationRegistry.getAgentFeedbacks</code> / <code>getReviewerFeedbacks</code>; <code>ERC8004IdentityRegistry.discoverAgentsByCapability</code> · Confidence: 70 · Severity: <strong>Low</strong> · Origin: <strong>[phase1-only]</strong> — evm-audit-dos checklist (DOS-1/DOS-2), cross-checked against source directly by the orchestrator</p>
+<p><strong>Description</strong><br><code>agentFeedbacks[agent]</code> / <code>agentFeedbacksHashed[agent]</code> grow by one element on every free, unauthenticated <code>submitFeedback</code>/<code>submitFeedbackHashed</code> call (finding [1] makes this cheap and unlimited). <code>getAgentFeedbacks()</code> (lines 352-358) and <code>getReviewerFeedbacks()</code> (413-419) return the full array by copy; once large enough this exceeds <code>eth_call</code> gas limits and permanently breaks any on-chain contract that consumes it, with no prune path. <code>discoverAgentsByCapability()</code> (<code>ERC8004IdentityRegistry.sol:165-171</code>) has the analogous issue via Sybil-registered addresses sharing one <code>capabilitiesHash</code>. No state-changing function iterates these arrays, so this is not a classic block-gas-limit DoS — the impact is confined to view-getter/on-chain-consumer availability, but it is irreversible.</p>
+<p><strong>Fix</strong><br>Add paginated variants, e.g.:</p>
+<pre><code class="language-solidity">function getAgentFeedbacks(address agent, uint256 offset, uint256 limit)
+    external view returns (uint256[] memory page)
+{
+    uint256[] storage all = agentFeedbacks[agent];
+    uint256 end = offset + limit;
+    if (end &gt; all.length) end = all.length;
+    page = new uint256[](end - offset);
+    for (uint256 i = offset; i &lt; end; i++) page[i - offset] = all[i];
+}
+</code></pre>
+<hr>
+<p>[65] <strong>9. <code>MissionEnforcement</code> owner can unilaterally flip &quot;immutable&quot; mission-compliance state with no timelock</strong></p>
+<p><code>MissionEnforcement.adjudicateMissionViolation</code> / <code>certifyModuleMissionCompliant</code> · Confidence: 65 · Severity: <strong>Low</strong> · Origin: <strong>[both]</strong> — phase-1 access-control (AC-4) + governance (M-2); phase-2 agent 5 (as &quot;unenforced-invariant&quot;, same underlying gap)</p>
+<p><strong>Description</strong><br>The contract&#39;s NatSpec repeatedly claims principles are &quot;IMMUTABLE — cannot be changed by governance or upgrades&quot; (lines 12-24, 46, 299). In reality, a single <code>onlyOwner</code> key freely flips <code>missionCompliance[module][principle]</code> in either direction via <code>certifyModuleMissionCompliant</code>/<code>adjudicateMissionViolation</code> (lines 226-259), with no timelock, multisig, or community ratification. Impact is currently latent because no in-scope function actually consumes <code>enforceMission</code>/<code>missionCompliance</code> (see [15]), but any future VaultFire module gated by it inherits full single-key control, directly contradicting the marketed &quot;cryptographic enforcement.&quot;</p>
+<p><strong>Fix</strong><br>Either place these functions behind a timelock/multisig, or drop the &quot;immutable&quot;/&quot;cannot be changed by governance&quot; language to accurately describe the real (owner-mutable) trust model.</p>
+<hr>
+<p>[70] <strong>10. Privacy guarantees (consent, right-to-be-forgotten) are defined but never enforced on any write path</strong></p>
+<p><code>PrivacyGuarantees.requiresConsent</code> / <code>checkDeletionRequest</code>; consumers <code>ERC8004ReputationRegistry</code>, <code>ERC8004IdentityRegistry</code> · Confidence: 70 · Severity: <strong>Low</strong> · Origin: <strong>[both]</strong> — phase-1 general (G-7); phase-2 agents 2, 4, 6, 7, 8, 12 (6 of 12, unusually high consensus for a LEAD)</p>
+<p><strong>Description</strong><br><code>PrivacyGuarantees</code> defines <code>requiresConsent</code> and <code>checkDeletionRequest</code> modifiers plus a <code>requestDataDeletion()</code> &quot;right to be forgotten&quot; mechanism (lines 44-52, 86-93), but grep across all four files confirms neither modifier is ever applied to any state-changing function. A user who calls <code>requestDataDeletion()</code> can still have new <code>Feedback</code> records written that reference their address via <code>submitFeedback</code>/<code>submitFeedbackHashed</code>. The advertised privacy floor is inert.</p>
+<p><strong>Fix</strong><br>Apply <code>checkDeletionRequest(agentAddress)</code> (and/or the reviewer) to <code>submitFeedback</code>/<code>submitFeedbackHashed</code>, or explicitly document that enforcement is off-chain-only and the on-chain modifiers are advisory scaffolding.</p>
+<hr>
+<p>[55] <strong>11. <code>reportMissionViolation</code> is an unauthenticated, unbounded spam/griefing vector against arbitrary modules</strong></p>
+<p><code>MissionEnforcement.reportMissionViolation</code> · Confidence: 55 · Severity: <strong>Low</strong> · Origin: <strong>[both]</strong> — phase-1 governance (L-1) + dos (DOS-3); phase-2 agent 9</p>
+<p><strong>Description</strong><br><code>reportMissionViolation()</code> (lines 203-220) is <code>external</code> with no access control, stake, or rate limit. Anyone can push arbitrary <code>MissionReport</code> structs (up to 1000-byte <code>evidence</code>) against any module, including honest ones, to smear it in off-chain dashboards. Because reports are explicitly non-binding (only <code>adjudicateMissionViolation</code> changes real state) and the array is never iterated on-chain, this is not a gas-limit DoS — just storage bloat and reputational noise.</p>
+<p><strong>Fix</strong><br>Require a small refundable/slashable bond per report, restrict reporting to registered agents, and/or dedupe <code>(reporter, module, principle)</code>.</p>
+<hr>
+<p>[50] <strong>12. Two-step ownership transfer has no cancellation path and no acceptance deadline</strong></p>
+<p><code>MissionEnforcement.transferOwnership</code> / <code>acceptOwnership</code> · Confidence: 50 · Severity: <strong>Low</strong> · Origin: <strong>[phase1-only]</strong> — governance checklist (L-2)</p>
+<p><strong>Description</strong><br>Once <code>transferOwnership(newOwner)</code> sets <code>pendingOwner</code> (line 271), the current owner has no way to cancel it — <code>transferOwnership</code> requires <code>newOwner != owner</code> (line 270), so the owner cannot re-target the slot to themselves, and there is no dedicated cancel function. <code>acceptOwnership()</code> (lines 278-284) has no deadline, so a stale pending transfer can be accepted arbitrarily far in the future.</p>
+<p><strong>Fix</strong><br>Add <code>cancelOwnershipTransfer()</code> (owner-only, sets <code>pendingOwner = address(0)</code>), and optionally a <code>pendingOwnerExpiry</code> enforced in <code>acceptOwnership</code>.</p>
+<hr>
+<p>[50] <strong>13. <code>missionViolations</code> is a single scalar per module — stale/overwritten violation state</strong></p>
+<p><code>MissionEnforcement.missionViolations</code>, <code>adjudicateMissionViolation</code>, <code>certifyModuleMissionCompliant</code> · Confidence: 50 · Severity: <strong>Low</strong> · Origin: <strong>[phase1-only]</strong> — governance checklist (L-3)</p>
+<p><strong>Description</strong><br><code>missionViolations</code> is <code>mapping(address =&gt; CorePrinciple)</code> — one value per module. <code>adjudicateMissionViolation</code> (line 235) overwrites it, so a module violating two principles only ever reflects the most recent. <code>certifyModuleMissionCompliant</code> never clears it, so a re-certified module can read as compliant via <code>missionCompliance</code> while <code>missionViolations</code> still reports a stale violation.</p>
+<p><strong>Fix</strong><br>Track violations as <code>mapping(address =&gt; mapping(CorePrinciple =&gt; bool))</code> (or timestamped), and clear the relevant entry inside <code>certifyModuleMissionCompliant</code>.</p>
+<hr>
+<p>[40] <strong>14. <code>MissionEnforcement</code>&#39;s enforcement primitives are unused — &quot;cryptographic enforcement&quot; claims are aspirational</strong></p>
+<p><code>MissionEnforcement.enforceMission</code>, <code>verifyAIProfitCap</code>, <code>verifyHumanFinalSay</code>, <code>verifyNoKYC</code> · Confidence: 40 · Severity: <strong>Info</strong> · Origin: <strong>[both]</strong> — phase-1 general (G-8) + governance (I-1); phase-2 agents 5, 6</p>
+<p><strong>Description</strong><br><code>enforceMission</code> is never applied to any in-scope function; the three <code>verify*</code> helpers are <code>pure</code> and have no callers; <code>MissionBypassAttemptBlocked</code> is declared but never emitted. No fund/security impact today, but integrators relying on the &quot;cannot be changed / enforced at contract level&quot; claims should know the enforcement machinery is currently disconnected.</p>
+<p><strong>Fix</strong><br>Wire the modifier/helpers into the operations they&#39;re meant to guard, or downgrade the NatSpec claims to &quot;advisory registry.&quot;</p>
+<hr>
+<p>[30] <strong>15. <code>verifyAIProfitCap</code> rounds the AI cap to zero for small totals (safe direction, not exploitable)</strong></p>
+<p><code>MissionEnforcement.verifyAIProfitCap</code> · Confidence: 30 · Severity: <strong>Info</strong> · Origin: <strong>[phase1-only]</strong> — precision-math checklist (P-3, P-4)</p>
+<p><strong>Description</strong><br><code>maxAIShare = (totalAmount * capPercentage) / 100</code> (line 155) correctly multiplies before dividing and rounds down, which is the protocol-safe direction for a cap check. For very small <code>totalAmount</code> (e.g. <code>totalAmount=3, capPercentage=30</code> → <code>maxAIShare=0</code>), the AI&#39;s allowed share collapses to exactly zero — over-restrictive, never over-permissive. The unguarded multiplication could theoretically overflow only for <code>totalAmount &gt; ~1.15e75</code>, unreachable with any realistic value, and reverts safely under 0.8.x checked arithmetic rather than wrapping.</p>
+<p><strong>Fix</strong><br>None required for safety; document the small-amount edge case if exact proportional behavior matters.</p>
+<hr>
+<p>[40] <strong>16. <code>capabilitiesHash</code> can never be updated after registration</strong></p>
+<p><code>ERC8004IdentityRegistry.updateAgentURI</code> · Confidence: 40 · Severity: <strong>Info</strong> · Origin: <strong>[phase1-only]</strong> — general checklist (G-9)</p>
+<p><strong>Description</strong><br><code>updateAgentURI()</code> (lines 112-119) updates only <code>agentURI</code>. There is no function to change <code>capabilitiesHash</code> or re-index the agent in <code>agentsByCapability</code>. Combined with the permanent <code>isRegistered</code> re-registration block (finding [3]&#39;s root cause), an agent&#39;s discovery capabilities are frozen for life at first registration.</p>
+<p><strong>Fix</strong><br>Add <code>updateCapabilities(bytes32 newHash)</code> that removes the agent from its old capability bucket and pushes to the new one.</p>
+<hr>
+<p>[20] <strong>17. Floating pragma <code>^0.8.25</code> across all four files</strong></p>
+<p>All in-scope files, line 2 · Confidence: 20 · Severity: <strong>Info</strong> · Origin: <strong>[phase1-only]</strong> — general checklist (G-11)</p>
+<p><strong>Description</strong><br>Allows compilation with any 0.8.x ≥ 0.8.25, so deployed bytecode could differ from what was audited if recompiled with a different point release. No overflow/downcast/unchecked-block issues exist in this code otherwise (all uint256, no <code>unchecked</code> blocks, no narrowing casts). PUSH0 (emitted ≥0.8.20) is supported on Base, so this is not itself a compatibility problem.</p>
+<p><strong>Fix</strong><br>Pin an exact version: <code>pragma solidity 0.8.25;</code>.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[97]</td>
+<td><span class="pill high">High</span></td>
+<td>No self-review/signature/stake protection on feedback submission</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[95]</td>
+<td><span class="pill high">High</span></td>
+<td>EMA weighting lets ~20–60 free txs wipe/fabricate reputation</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[90]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Deactivated agents permanently bricked, contradicts docs</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[85]</td>
+<td><span class="pill medium">Medium</span></td>
+<td>ReputationRegistry owner has no transfer mechanism</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[85]</td>
+<td><span class="pill low">Low</span></td>
+<td>Hashed feedback can never be verified</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[80]</td>
+<td><span class="pill low">Low</span></td>
+<td><code>bondId</code> accepted but never validated</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[75]</td>
+<td><span class="pill low">Low</span></td>
+<td>Running-average truncation causes adversarial drift</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[70]</td>
+<td><span class="pill low">Low</span></td>
+<td>Unbounded arrays brick view getters/on-chain consumers</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[65]</td>
+<td><span class="pill low">Low</span></td>
+<td>MissionEnforcement owner unilaterally toggles compliance, no timelock</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[70]</td>
+<td><span class="pill low">Low</span></td>
+<td>Privacy consent/deletion guarantees never enforced</td>
+</tr>
+<tr>
+<td>11</td>
+<td>[55]</td>
+<td><span class="pill low">Low</span></td>
+<td><code>reportMissionViolation</code> unauthenticated spam vector</td>
+</tr>
+<tr>
+<td>12</td>
+<td>[50]</td>
+<td><span class="pill low">Low</span></td>
+<td>Two-step ownership transfer has no cancel/expiry</td>
+</tr>
+<tr>
+<td>13</td>
+<td>[50]</td>
+<td><span class="pill low">Low</span></td>
+<td><code>missionViolations</code> stale single-scalar state</td>
+</tr>
+<tr>
+<td>14</td>
+<td>[40]</td>
+<td><span class="pill info">Info</span></td>
+<td>MissionEnforcement&#39;s enforcement primitives are dead code</td>
+</tr>
+<tr>
+<td>15</td>
+<td>[30]</td>
+<td><span class="pill info">Info</span></td>
+<td><code>verifyAIProfitCap</code> rounds to zero for small totals (safe)</td>
+</tr>
+<tr>
+<td>16</td>
+<td>[40]</td>
+<td><span class="pill info">Info</span></td>
+<td><code>capabilitiesHash</code> frozen after registration</td>
+</tr>
+<tr>
+<td>17</td>
+<td>[20]</td>
+<td><span class="pill info">Info</span></td>
+<td>Floating pragma <code>^0.8.25</code></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>All leads surfaced by either phase were re-examined against source during reconciliation and either promoted to a numbered finding above or dropped as non-issues. No leads remain unresolved.</em></p>
+<ul>
+<li>Absence of any signature scheme (<code>ecrecover</code>/<code>ECDSA</code>/<code>EIP-712</code>) anywhere in the four in-scope files was confirmed by full-text grep — folded into finding [1] as the direct answer to the client&#39;s signature-validation question.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated two-phase audit (6 breadth checklist agents + 12 depth attack agents, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A team security review, bug bounty program, and on-chain monitoring are strongly recommended before this contract is relied upon for reputation-gated decisions elsewhere in the VaultFire protocol (e.g. bonds, insurance, staking).</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibsbykhqczf4tftksidmhk67dghjoaapbklwh6jf36a4lsjw6a3uy.ipfs.community.bgipfs.com/"><code>https://bafkreibsbykhqczf4tftksidmhk67dghjoaapbklwh6jf36a4lsjw6a3uy.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/341">#341</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlameBase — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #317">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">FlameBase</h1>
+    <p class="job-sub">Job #317 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/317"><b>Job page</b> #317</a>
+      <a class="chip" href="https://bafkreif7ocdsjdnucs36rzpkoc4q4znem2ghigj36sgjwd7iaqkhziyaty.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#what-this-contract-does">What this contract does</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#notes-on-what-was-reviewed-and-cleared-no-finding">Notes on what was reviewed and cleared (no finding)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — FlameBase</h1>
+<p><strong>Target:</strong> <code>0x7Bac408402421005917D63a1a269C902b4c9485c</code><br><strong>Chain:</strong> Base (chain id 8453) — verified source pulled from BaseScan.<br><strong>Scope:</strong> Single contract, <code>FlameBase.sol</code>, 133 lines, no external imports/inheritance.<br><strong>Methodology:</strong> Two-phase audit — Phase 1 checklist breadth (4 domain checklists: general, precision-math, access-control, dos) run in parallel, followed by Phase 2 attacker-mindset depth (12 independent agents: 9 specialty + 3 gap-hunter), run <strong>blind</strong> to Phase 1&#39;s findings. A final reconciliation pass cross-checked both phases against each other and against the source.</p>
+<h2 id="what-this-contract-does">What this contract does</h2>
+<p>FlameBase is a small on-chain social app. Users register a free profile, then pay small fixed ETH fees to post, like, comment, or upload an avatar — every one of those fees is forwarded in full, in the same transaction, to a single immutable <code>owner</code> address. A separate <code>tip(postId)</code> function lets anyone send an arbitrary ETH amount to a post, split 90% to the post&#39;s author and 10% to <code>owner</code>. The contract never holds a balance between transactions (every payable function pushes its ETH out immediately), and checks-effects-interactions ordering (state written before external calls) is followed consistently everywhere — both audit phases independently confirmed this closes off classic reentrancy fund-drain. The issues that do exist center on two things: (1) <code>owner</code> can never be changed once deployed, and (2) <code>tip()</code>&#39;s payout to an attacker-controllable <code>author</code> address, combined with the missing self-tip check, lets the platform&#39;s core reputation signal be fabricated.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p><strong>Overlap:</strong> 5 findings independently discovered by both phases · <strong>Phase-1-only:</strong> 4 (Low/Info) · <strong>Phase-2-only:</strong> 1 standout new finding (<code>tip()</code> self-tip/reentrancy) plus 3 new minor leads.</p>
+<p><strong>Completeness:</strong> 13 unique (contract, function, bug-class) tuples identified across both phases&#39; raw agent output, 13 covered in this unified report.</p>
+<p>One severity call required explicit reconciliation judgment: phase 1&#39;s dedicated DoS/general checklist agents independently rated the &quot;owner can never be changed&quot; issue <strong>High</strong> (the blast radius is every user, permanently), while phase 2&#39;s stricter attacker-mindset gates classified the same issue as a LEAD only, reasoning that the triggering precondition (owner becomes unable to receive ETH) is admin-caused and therefore &quot;self-harm.&quot; On reconciliation, this report sides with phase 1: the precondition may originate from an admin/deployment choice, but the resulting harm — every paid feature permanently and unrecoverably broken for every user, forever — falls on third parties, not the admin alone, and is a materially different situation from an admin knowingly griefing themselves.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-tip-has-no-self-tip-guard-and-no-reentrancy-guard-an-author-ca">[1] <code>tip()</code> has no self-tip guard and no reentrancy guard — an author can fabricate their own &quot;tips received&quot; reputation stat at ~1/10th real cost</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [phase2 only]</strong> — independently discovered as a full FINDING by <strong>5 of 12</strong> attacker-mindset agents (execution-trace, invariant, periphery, first-principles, flow-gap-hunter), all converging on matching mathematical proof. Not caught by phase 1&#39;s checklist pass.</p>
+<p><strong>Location:</strong> <code>tip()</code> L95-107.</p>
+<pre><code class="language-solidity">function tip(uint256 _postId) external payable {
+    require(msg.value &gt; 0, &quot;Send some ETH&quot;);
+    require(_postId &lt; postCount, &quot;Post not found&quot;);
+    address author = posts[_postId].author;
+    posts[_postId].tips += msg.value;
+    profiles[author].tips += msg.value;
+    uint256 ownerCut = msg.value / 10;
+    uint256 authorAmount = msg.value - ownerCut;
+    (bool s1, ) = owner.call{value: ownerCut}(&quot;&quot;);
+    (bool s2, ) = author.call{value: authorAmount}(&quot;&quot;);
+    require(s1 &amp;&amp; s2, &quot;Transfer failed&quot;);
+    emit TipSent(_postId, msg.sender, author, msg.value);
+}
+</code></pre>
+<p><strong>Description:</strong> <code>tip()</code> never checks <code>msg.sender != author</code>, and pays out the author&#39;s 90% cut via an unguarded low-level <code>.call</code> — with no <code>nonReentrant</code> modifier anywhere in the contract. <code>posts[_postId].author</code> is fully attacker-controllable: any address (including a contract) can call <code>createProfile()</code> + <code>createPost()</code> and become the author of a post. This means an attacker can tip their own post and get 90% of their payment sent straight back to themselves, while <code>posts[_postId].tips</code>/<code>profiles[author].tips</code> — the platform&#39;s on-chain &quot;reputation&quot;/&quot;support received&quot; counters — are incremented by the <em>full</em> amount each time.</p>
+<p>Repeating this (sequentially, across separate transactions, or atomically within a single transaction via a <code>receive()</code> hook that immediately re-calls <code>tip()</code> with the just-returned funds) produces a geometric series: with a 90% return rate, <code>Σ 0.9ⁿ = 1/(1-0.9) = 10</code>. The recorded &quot;tips received&quot; total converges to <strong>~10x</strong> the attacker&#39;s real net spend (the owner&#39;s cumulative 10% cut also converges to exactly the attacker&#39;s real spend — no ETH is created or stolen from a third party; only the <em>counter</em> is inflated).</p>
+<p><strong>Proof of Concept:</strong></p>
+<ol>
+<li>Attacker deploys contract <code>Recycler</code>, calls <code>createProfile()</code> then <code>createPost()</code> — <code>Recycler</code> is now <code>posts[P].author</code>.</li>
+<li>Attacker calls <code>tip(P){value: 1 ether}</code> (<code>msg.sender</code> can be the attacker&#39;s own EOA or <code>Recycler</code> itself). Trace: <code>posts[P].tips += 1e18</code> → <code>owner.call{0.1e18}</code> succeeds → <code>Recycler.call{0.9e18}</code> triggers <code>Recycler.receive()</code>.</li>
+<li><code>Recycler.receive()</code> immediately calls <code>tip(P){value: 0.9 ether}</code> again (reentrant, before the outer call returns). This recurses: 0.9, 0.81, 0.729 ether, etc., each level re-incrementing <code>posts[P].tips</code>/<code>profiles[Recycler].tips</code> on the recycled value before forwarding 90% onward again.</li>
+<li>Within normal single-transaction gas/call-stack limits, this reaches ~15-20 levels of recursion, driving <code>posts[P].tips</code> to approach 10 ether recorded from a single 1 ether real deposit — while <code>Recycler</code>&#39;s net real cost approaches exactly 1 ether (all of it eventually collected by <code>owner</code> across the recursion).</li>
+<li>The same effect is achievable more slowly across separate transactions without any reentrancy at all — simply calling <code>tip()</code> on your own post repeatedly, recycling the returned 90% each time — since <code>msg.sender == author</code> is never checked.</li>
+</ol>
+<p>No third-party ETH is stolen (rated Medium rather than High/Critical for this reason), but the platform&#39;s core &quot;tips received&quot;/reputation signal — the number any user, leaderboard, or future integration would reasonably treat as evidence of genuine third-party support — becomes fully fabricable by a single address at ~10% of its face-value cost.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-diff"> address author = posts[_postId].author;
++require(msg.sender != author, &quot;Cannot tip own post&quot;);
+ posts[_postId].tips += msg.value;
+</code></pre>
+<p>This single check closes both the atomic-reentrancy variant (in the reentrant call, <code>msg.sender</code> is still the author&#39;s own address) and the simple sequential self-tip variant. A <code>nonReentrant</code> guard is still recommended as defense-in-depth. Note a weaker residual variant remains possible — two attacker-controlled addresses alternately tipping each other&#39;s posts across separate transactions — but this is an inherent Sybil-resistance limitation of any on-chain reputation counter without stronger identity binding, not a specific coding defect closable by one function-level check.</p>
+<hr>
+<h3 id="2-owner-can-never-be-changed-if-it-becomes-unable-to-receive-eth">[2] <code>owner</code> can never be changed — if it becomes unable to receive ETH, every monetized function is permanently bricked for all users</h3>
+<p><strong>Severity: High</strong><br><strong>Origin: [both]</strong> — phase1: general + dos checklist agents, independently, both rating High; phase2: raised as a lead by 4 of 12 agents (invariant, first-principles, asymmetry, boundary), but capped at LEAD severity under the stricter pashov &quot;admin self-harm&quot; exclusion. See reconciliation note above for why this report follows phase 1&#39;s severity.</p>
+<p><strong>Location:</strong> <code>owner</code> state var L5, constructor L55-57 (no <code>transferOwnership</code>/<code>setOwner</code> anywhere); forwarding sites: <code>createPost()</code> L70-71, <code>like()</code> L81-82, <code>comment()</code> L90-91, <code>uploadAvatar()</code> L113-114, <code>tip()</code> L103-105.</p>
+<p><strong>Description:</strong> <code>owner</code> is set exactly once in the constructor and can never be changed afterward — there is no ownership-transfer function of any kind in the contract. Every fee-collecting function unconditionally forwards ETH to <code>owner</code> via a raw <code>.call{value:...}(&quot;&quot;)</code> immediately followed by <code>require(sent, &quot;Transfer failed&quot;)</code>. If <code>owner</code> is ever an address that cannot accept a plain-ETH call — a contract with no <code>receive()</code>/payable <code>fallback()</code>, a contract whose fallback reverts or runs out of gas, or a deployment where the constructor&#39;s <code>msg.sender</code> ends up being an unintended factory/multisig contract without a working fallback — then <code>createPost</code>, <code>like</code>, <code>comment</code>, <code>uploadAvatar</code>, and <code>tip</code> <strong>all revert permanently</strong>, for every user, with no code path to ever recover. <code>tip()</code> compounds this: it requires <em>both</em> legs to succeed (<code>require(s1 &amp;&amp; s2, &quot;Transfer failed&quot;)</code>), so a broken owner-fee leg blocks the author&#39;s otherwise-fine payment too.</p>
+<p><strong>Proof of Concept:</strong> Arrange for <code>owner</code> to be a contract with no payable fallback (a plausible, real-world deployment mistake — e.g. deploying via a factory contract, or later needing to move treasury custody to a smart-contract wallet with restrictive receive logic). From that point, every call to any of the five monetized functions reverts at the <code>require</code> check. Since <code>owner</code> is immutable, this is unrecoverable by any on-chain action.</p>
+<p><strong>Recommendation:</strong> Add a guarded (ideally two-step) <code>transferOwnership</code> function, and switch the owner&#39;s share to a pull-payment pattern (credit a withdrawable balance instead of pushing inline) so a failure to pay <code>owner</code> can never block a user-facing action. In <code>tip()</code> specifically, decouple <code>s1</code> from <code>s2</code> so the author&#39;s leg cannot be held hostage by the owner&#39;s leg.</p>
+<hr>
+<h3 id="3-no-sybil-resistance-on-like-self-liking-and-unlimited-duplicat">[3] No Sybil resistance on <code>like()</code> — self-liking and unlimited duplicate likes let anyone inflate reputation metrics</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [both]</strong> — phase1: general checklist agent; phase2: promoted to a full FINDING by the first-principles agent, corroborated as a lead by 8 more agents (near-unanimous).</p>
+<p><strong>Location:</strong> <code>like()</code> L75-84.</p>
+<p><strong>Description:</strong> <code>like()</code> never checks <code>msg.sender != posts[_postId].author</code> and never de-duplicates repeat likes from the same address (<code>postLikes[_postId].push(msg.sender)</code> is an unconditional append). Any account — including the post&#39;s own author — can call <code>like()</code> on the same post any number of times (paying <code>likePrice</code> each time) to arbitrarily inflate <code>posts[postId].likes</code> and the author&#39;s <code>flames</code> reputation counter.</p>
+<p><strong>Proof of Concept:</strong> Author creates a post, then calls <code>like(postId)</code> on it repeatedly from their own address, incrementing <code>likes</code>/<code>flames</code> without bound — no check prevents <code>msg.sender == author</code> or repeat likes from the same address.</p>
+<p><strong>Recommendation:</strong> Add <code>mapping(uint256 =&gt; mapping(address =&gt; bool)) hasLiked</code> to enforce one like per address per post, and/or <code>require(msg.sender != posts[_postId].author)</code>.</p>
+<hr>
+<h3 id="4-unbounded-postcommentspostlikes-growth-can-dos-the-aggregate-g">[4] Unbounded <code>postComments</code>/<code>postLikes</code> growth can DoS the aggregate getters</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [both]</strong> — phase1: general + dos checklist agents; phase2: leads from periphery, boundary, and numerical-gap-hunter agents.</p>
+<p><strong>Location:</strong> <code>postComments</code>/<code>postLikes</code> mappings L40-41; <code>comment()</code> L89 push; <code>like()</code> L79 push (compounds Finding 3); <code>getPostComments()</code> L127-129; <code>getPostLikes()</code> L131-133.</p>
+<p><strong>Description:</strong> Both arrays grow without bound and the getters copy the entire array into memory before returning it. Because <code>like()</code> has no per-address dedup (Finding 3) and both <code>likePrice</code>/<code>commentPrice</code> are very small (0.0001/0.0003 ETH), a single account can cheaply grow either array into the tens of thousands of entries, at which point the getters exceed practical <code>eth_call</code>/on-chain gas limits and become permanently unusable for that post. <code>like()</code>/<code>comment()</code> themselves are unaffected (O(1) push) — only the read-side getters degrade.</p>
+<p><strong>Recommendation:</strong> Add paginated getters (<code>getPostLikes(postId, offset, limit)</code>), or rely on emitted events for off-chain reconstruction instead of full-array getters.</p>
+<hr>
+<h3 id="5-full-msgvalue-is-forwarded-rather-than-the-exact-price-overpay">[5] Full <code>msg.value</code> is forwarded rather than the exact price — overpayment is never refunded</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: general + access-control checklist agents; phase2: leads from 5 agents (math-precision, first-principles, asymmetry, boundary, trust-gap-hunter).</p>
+<p><strong>Location:</strong> <code>createPost()</code> L70, <code>like()</code> L81, <code>comment()</code> L90, <code>uploadAvatar()</code> L113.</p>
+<p><strong>Description:</strong> Each function checks only <code>msg.value &gt;= price</code> but forwards the <em>entire</em> <code>msg.value</code>, not just <code>price</code>. A user who overpays (stale front-end cache, a safety buffer against a possible price bump, or simple error) permanently forfeits the excess with no refund path. This is self-inflicted by the paying caller in every case — no third party can force another user to overpay — so it is rated Low rather than higher.</p>
+<p><strong>Recommendation:</strong> Forward only the required price and refund <code>msg.value - price</code> to <code>msg.sender</code>, or enforce <code>require(msg.value == price)</code>.</p>
+<hr>
+<h3 id="6-tips-10-owner-fee-rounds-down-and-is-fully-bypassed-for-tips-u">[6] <code>tip()</code>&#39;s 10% owner fee rounds down and is fully bypassed for tips under 10 wei</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: precision-math checklist agent; phase2: leads from math-precision and numerical-gap-hunter agents.</p>
+<p><strong>Location:</strong> <code>tip()</code> L101-102: <code>ownerCut = msg.value / 10; authorAmount = msg.value - ownerCut;</code></p>
+<p><strong>Description:</strong> <code>ownerCut + authorAmount == msg.value</code> always holds exactly (no dust is stuck), but floor division means the owner&#39;s cut always rounds down and the remainder goes to the author — the split favors the fee-paying side, never the fee-collecting side. Since <code>tip()</code> only requires <code>msg.value &gt; 0</code> (no minimum), any tip of 1-9 wei yields <code>ownerCut = 0</code> — the owner&#39;s fee is completely bypassed for micro-tips. This compounds Finding 1&#39;s self-tip issue at the margin (dust-value self-tips recover 100% instead of 90%), but on its own is wei-scale and not separately exploitable for material gain.</p>
+<p><strong>Recommendation:</strong> Round the owner&#39;s cut up (ceiling division) if exact fee capture matters, and/or enforce a sane minimum tip amount — which also helps close Finding 1.</p>
+<hr>
+<h3 id="7-eth-force-fed-via-selfdestruct-or-pre-funding-a-counterfactual">[7] ETH force-fed via <code>selfdestruct</code> (or pre-funding a counterfactual address) is permanently stuck — no withdraw function</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — general checklist agent. Re-verified: no <code>receive()</code>/<code>fallback()</code>/<code>withdraw()</code> defined anywhere in the contract.</p>
+<p><strong>Description:</strong> Direct ETH transfers correctly revert, but ETH can still land in the contract via <code>selfdestruct</code> from another contract or by pre-funding a counterfactual <code>CREATE2</code> deployment address. Since nothing in the contract ever reads or moves <code>address(this).balance</code> directly, any ETH that arrives this way is permanently unrecoverable by anyone, including <code>owner</code>.</p>
+<p><strong>Recommendation:</strong> Add an <code>onlyOwner</code> sweep/withdraw function for <code>address(this).balance</code>.</p>
+<hr>
+<h3 id="8-missing-username-uniqueness-check-enables-identity-squatting">[8] Missing username uniqueness check enables identity squatting</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase2 only]</strong> — first-principles agent. Re-verified: <code>createProfile()</code> L59-63 stores <code>_username</code> per-address with no uniqueness or non-empty validation.</p>
+<p><strong>Description:</strong> Any number of distinct addresses can register the identical <code>username</code> string. Any off-chain surface (frontend, indexer, tipping UI) that treats <code>profiles[x].username</code> as a trustworthy identity handle is fully spoofable — an attacker could register a popular creator&#39;s exact username from a different address to impersonate them for phishing purposes. No on-chain fund movement is directly forced by the collision itself (tips/likes are bound to <code>postId</code>/author address, not the username string), so impact depends on how a consuming frontend trusts the field.</p>
+<p><strong>Recommendation:</strong> Add a <code>mapping(string =&gt; bool) usernameTaken</code> (or a hash thereof) and require uniqueness, or explicitly document that <code>username</code> is a non-unique display label only.</p>
+<hr>
+<h3 id="9-tips-counters-record-the-full-sent-amount-not-the-90-actually-">[9] <code>tips</code> counters record the full sent amount, not the 90% actually delivered</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [phase2 only]</strong> — numerical-gap-hunter agent. Re-verified: <code>posts[_postId].tips += msg.value</code> (L99) and <code>profiles[author].tips += msg.value</code> (L100) both use the full amount, while only <code>authorAmount</code> (90%) is transferred to the author.</p>
+<p><strong>Description:</strong> Independent of Finding 1&#39;s self-tip exploit, even a single honest, non-repeated tip causes the recorded &quot;tips received&quot; stat to permanently overstate the actual ETH delivered to the author by ~11%. This is a plain accounting/bookkeeping mismatch, not an attack.</p>
+<p><strong>Recommendation:</strong> If the stat is meant to represent value actually received by the author, increment it by <code>authorAmount</code> instead of <code>msg.value</code>; otherwise document that it represents gross tip volume, not net author proceeds.</p>
+<hr>
+<h3 id="10-missing-event-emission-on-the-four-price-setters">[10] Missing event emission on the four price setters</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [phase2 only]</strong> — asymmetry agent. Every other state-changing function in the contract emits an event; <code>setPostPrice</code>/<code>setLikePrice</code>/<code>setCommentPrice</code>/<code>setPhotoPrice</code> (L118-121) do not.</p>
+<p><strong>Recommendation:</strong> Emit a <code>PriceUpdated(string field, uint256 oldPrice, uint256 newPrice)</code> event for transparency and front-running detection.</p>
+<hr>
+<h3 id="11-owner-can-set-any-price-to-an-extreme-value-with-no-bound-or-">[11] Owner can set any price to an extreme value with no bound or timelock</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — access-control checklist agent.</p>
+<p><strong>Location:</strong> <code>setPostPrice()</code>/<code>setLikePrice()</code>/<code>setCommentPrice()</code>/<code>setPhotoPrice()</code> L118-121.</p>
+<p><strong>Description:</strong> All four setters take an unbounded <code>uint256</code>, applied instantly. Setting a price to <code>type(uint256).max</code> makes that action effectively unusable for everyone (an owner-controlled, reversible per-feature pause); setting it to <code>0</code> removes the fee entirely. No third-party funds are at risk.</p>
+<p><strong>Recommendation:</strong> Add sane bounds per setter and consider a timelock before changes take effect (see also Finding 10).</p>
+<hr>
+<h3 id="12-inconsistent-profile-existence-requirement-across-payable-fun">[12] Inconsistent profile-existence requirement across payable functions</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [both]</strong> — phase1: general checklist agent; phase2: lead from the asymmetry agent.</p>
+<p><strong>Location:</strong> <code>createPost()</code> L67, <code>uploadAvatar()</code> L111 vs. <code>like()</code>/<code>comment()</code>/<code>tip()</code> (no equivalent check).</p>
+<p><strong>Description:</strong> <code>createPost</code>/<code>uploadAvatar</code> require an existing profile; <code>like</code>/<code>comment</code>/<code>tip</code> do not, so likes/comments/tips can originate from addresses with no <code>Profile</code> at all. Likely a design inconsistency rather than a vulnerability.</p>
+<p><strong>Recommendation:</strong> Apply the same <code>require(profiles[msg.sender].exists, ...)</code> to <code>like</code>/<code>comment</code>/<code>tip</code> if profile-gating is meant to be platform-wide, or document the asymmetry as intentional.</p>
+<hr>
+<h3 id="13-no-reentrancy-guard-confirmed-safe-today-via-strict-checks-ef">[13] No reentrancy guard — confirmed safe today via strict checks-effects-interactions, but structurally fragile</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [both]</strong> — phase1: general checklist agent; phase2: latent-risk leads noted by several agents alongside Finding 1&#39;s live exploit.</p>
+<p><strong>Description:</strong> Every function updates all relevant state <em>before</em> its external <code>.call</code>. This holds for <code>createPost</code>/<code>like</code>/<code>comment</code>/<code>uploadAvatar</code> because their only call target is the trusted, immutable <code>owner</code> — so no reentrancy path exists there today. <code>tip()</code>&#39;s call to the attacker-controllable <code>author</code> address is the one place this actually matters, and it is separately covered (and exploitable) as Finding 1.</p>
+<p><strong>Recommendation:</strong> Add a standard <code>nonReentrant</code> modifier to all payable functions as defense-in-depth, so any future code change that adds a second attacker-reachable payout target doesn&#39;t silently reintroduce a real exploit.</p>
+<hr>
+<h2 id="notes-on-what-was-reviewed-and-cleared-no-finding">Notes on what was reviewed and cleared (no finding)</h2>
+<ul>
+<li><strong>Access control</strong>: the single <code>owner</code> role and its four <code>onlyOwner</code> setters are consistently and correctly guarded; no missing modifiers, no confused-deputy paths (post authorship is immutable once set, not attacker-redirectable), no delegatecall/proxy surface.</li>
+<li><strong>Reentrancy fund-drain</strong>: aside from Finding 1&#39;s reputation-stat manipulation, no path was found where reentrancy extracts more ETH than an attacker legitimately contributed — checks-effects-interactions is followed everywhere, and the contract never holds a persistent balance for a classic double-withdraw.</li>
+<li><strong>Integer arithmetic</strong>: the <code>tip()</code> 90/10 split conserves value exactly for every input (<code>ownerCut + authorAmount == msg.value</code> always); no overflow/underflow paths exist (Solidity 0.8.20 checked arithmetic throughout, no downcasts).</li>
+</ul>
+<hr>
+<blockquote>
+<p>This review was performed by AI audit agents (ethskills breadth pass + pashov-methodology depth pass, reconciled). AI analysis cannot verify the complete absence of vulnerabilities and no guarantee of security is given. Findings 1-4 above should be addressed before this contract is relied upon for meaningful reputation/trust signaling or before <code>owner</code> custody is transferred to anything other than a simple, well-tested EOA.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreif7ocdsjdnucs36rzpkoc4q4znem2ghigj36sgjwd7iaqkhziyaty.ipfs.community.bgipfs.com/"><code>https://bafkreif7ocdsjdnucs36rzpkoc4q4znem2ghigj36sgjwd7iaqkhziyaty.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/317">#317</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

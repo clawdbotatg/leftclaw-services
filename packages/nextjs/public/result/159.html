@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — Final Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #159">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — Final Report</h1>
+    <p class="job-sub">Job #159 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/159"><b>Job page</b> #159</a>
+      <a class="chip" href="https://bafkreiajqkgy3ajoo7asbsvi3vvhovy3sugr6mtqe4qenim3pxeeazgsoq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card low"><div class="n">3</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#findings-not-raised-gate-rejected">Findings Not Raised (Gate-Rejected)</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#severity-summary">Severity Summary</a></li>
+      <li><a href="#code-correctness-attestation">Code Correctness Attestation</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — Final Report</h1>
+<p><strong>Job ID</strong>: 159<br><strong>Target</strong>: <code>Clones.sol</code> — EIP-1167 Minimal Proxy Library<br><strong>Repository</strong>: <a href="https://github.com/clawdbotatg/slop-computer-wallet/blob/main/packages/foundry/contracts/Clones.sol">https://github.com/clawdbotatg/slop-computer-wallet/blob/main/packages/foundry/contracts/Clones.sol</a><br><strong>Auditor</strong>: leftclaw.services automated audit agent<br><strong>Date</strong>: 2026-05-11<br><strong>Methodologies</strong>: EthSkills (4 domain skills) + Pashov (8-agent)</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p><code>Clones</code> is a Solidity library implementing EIP-1167 minimal proxy deployment via CREATE2 and deterministic address prediction. The core cryptographic logic — the EIP-1167 bytecode construction, CREATE2 address formula, and memory layout — is <strong>correct and matches the canonical OpenZeppelin implementation</strong>. No Critical or High severity vulnerabilities were found.</p>
+<p>Three Low-severity findings and one Informational finding were identified, all relating to defensive coding practices, missing input validation, and version portability. The library functions correctly as written.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="l-1-no-validation-that-implementation-has-deployed-code">[L-1] No Validation That <code>implementation</code> Has Deployed Code</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 90<br><strong>Category</strong>: Defensive validation / proxy pattern<br><strong>Location</strong>: <code>cloneDeterministic()</code> — line 22<br><strong>Confirmed by</strong>: EthSkills (evm-audit-assembly), Pashov (periphery-agent)</p>
+<p><strong>Description</strong>: <code>cloneDeterministic</code> does not verify that <code>implementation</code> has deployed bytecode before creating a proxy pointing to it. If called with <code>address(0)</code>, an EOA, or a not-yet-deployed address, the CREATE2 deployment succeeds — producing a clone whose every call returns <code>(true, &quot;&quot;)</code> silently. This is because <code>DELEGATECALL</code> to a codeless address returns success with empty data by EVM specification.</p>
+<pre><code class="language-solidity">// Clones.sol line 22 — no guard before assembly
+function cloneDeterministic(address implementation, bytes32 salt) internal returns (address instance) {
+    assembly {
+        // implementation is never validated
+        ...
+        instance := create2(0, ptr, 0x37, salt)
+    }
+</code></pre>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Call <code>cloneDeterministic(address(0), salt)</code> — succeeds, returns clone address</li>
+<li>Call any function on the returned clone — returns <code>(true, &quot;&quot;)</code> silently</li>
+<li>Caller interprets success as correct execution; actual operation did nothing</li>
+</ol>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">if (implementation.code.length == 0) revert CloneCreationFailed();
+</code></pre>
+<p>If pre-commitment deployments (CREATE2 address pre-funding before implementation exists) are a valid use case, document this explicitly in NatSpec.</p>
+<hr>
+<h3 id="l-2-missing-memory-safe-assembly-annotation-free-memory-pointer-">[L-2] Missing <code>memory-safe</code> Assembly Annotation; Free Memory Pointer Not Advanced</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 85<br><strong>Category</strong>: Assembly correctness / best practices<br><strong>Location</strong>: <code>cloneDeterministic()</code> lines 25–34; <code>predictDeterministicAddress()</code> lines 54–59<br><strong>Confirmed by</strong>: EthSkills (evm-audit-assembly), Pashov (execution-trace-agent)</p>
+<p><strong>Description</strong>: Both assembly blocks read the Solidity free memory pointer (<code>mload(0x40)</code>) to obtain a scratch buffer but never advance it after writing. Neither block uses the <code>memory-safe</code> assembly annotation (<code>assembly (&quot;memory-safe&quot;) { }</code>). Without this annotation, the Solidity optimizer cannot make correct alias analysis assumptions around the assembly, potentially degrading optimization quality in the importing contract.</p>
+<p>In <code>predictDeterministicAddress</code>, the subsequent <code>abi.encodePacked(...)</code> call allocates from the same base address as the assembly scratch, overwriting the assembly data. Functional correctness is preserved because <code>initCodeHash</code> is already captured as a stack variable before <code>abi.encodePacked</code> runs — but this is a non-obvious reliance on evaluation order.</p>
+<p>The canonical OpenZeppelin <code>Clones.sol</code> marks both blocks as <code>memory-safe</code> and explicitly advances the free memory pointer.</p>
+<pre><code class="language-solidity">// Current
+assembly {
+    let ptr := mload(0x40)
+    mstore(ptr, ...)
+    // FMP never updated
+    instance := create2(0, ptr, 0x37, salt)
+}
+
+// Recommended
+assembly (&quot;memory-safe&quot;) {
+    let ptr := mload(0x40)
+    mstore(ptr, ...)
+    mstore(0x40, add(ptr, 0x60))  // advance FMP past the 55-byte allocation (rounded up to 96)
+    instance := create2(0, ptr, 0x37, salt)
+}
+</code></pre>
+<p><strong>Recommendation</strong>: Add <code>assembly (&quot;memory-safe&quot;) { }</code> to both blocks and advance the free memory pointer by <code>0x60</code> (96 bytes, the next 32-byte-aligned boundary after the 55-byte allocation).</p>
+<hr>
+<h3 id="l-3-broad-solidity-version-pragma-allows-push0-emitting-compiler">[L-3] Broad Solidity Version Pragma Allows PUSH0-Emitting Compilers</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 80<br><strong>Category</strong>: Cross-chain portability<br><strong>Location</strong>: Line 3: <code>pragma solidity &gt;=0.8.0 &lt;0.9.0</code><br><strong>Confirmed by</strong>: EthSkills (evm-audit-general)</p>
+<p><strong>Description</strong>: The <code>&gt;=0.8.0 &lt;0.9.0</code> pragma permits compilation with Solidity ≥ 0.8.20, which defaults to the <code>paris</code> EVM target and emits the <code>PUSH0</code> opcode (EIP-3855). <code>PUSH0</code> is not recognized on chains that have not adopted the Shanghai hardfork. Deployment on such chains would produce bytecode that reverts at the first <code>PUSH0</code> instruction.</p>
+<p>This library is intended to be part of a wallet factory (<code>slop-computer-wallet</code>), which may be deployed on multiple EVM-compatible chains.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li><code>solc 0.8.20 Clones.sol</code> (default EVM target = <code>paris</code>) → emits PUSH0 in boilerplate</li>
+<li>Deploy compiled bytecode to a pre-Shanghai EVM chain → execution fails</li>
+</ol>
+<p><strong>Recommendation</strong>: Pin to a specific version (e.g., <code>pragma solidity 0.8.19;</code>) or explicitly specify <code>--evm-version london</code> in the build pipeline to prevent PUSH0 emission.</p>
+<hr>
+<h3 id="i-1-clones-with-selfdestruct-capable-implementations-can-be-dest">[I-1] Clones with <code>selfdestruct</code>-Capable Implementations Can Be Destroyed and Redeployed</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 70<br><strong>Category</strong>: Architectural / proxy design note<br><strong>Location</strong>: <code>cloneDeterministic()</code> — general design behavior<br><strong>Confirmed by</strong>: EthSkills (evm-audit-proxies), Pashov (first-principles-agent)</p>
+<p><strong>Description</strong>: EIP-1167 clones use unconditional <code>DELEGATECALL</code>, executing implementation code in the clone&#39;s context. If the implementation exposes a <code>selfdestruct</code> path (directly or through a library), invoking it through the clone destroys the <strong>clone</strong> (not the implementation), because <code>selfdestruct</code> acts on the current execution context.</p>
+<p>After destruction, the same (deployer, salt, implementation) triple produces an identical CREATE2 address, allowing re-deployment of a fresh clone. Systems relying on a clone address as a persistent, immutable identity (e.g., multi-sig wallets that pre-authorize the address) may be disrupted.</p>
+<p>Note: as of EIP-6780 (Dencun / Cancun hardfork), <code>selfdestruct</code> only destroys the contract if called in the same transaction as the contract&#39;s creation. On Dencun+ chains, post-creation selfdestruct only sends ETH; the code remains. However, pre-Dencun chains and some L2s may still fully destroy contracts.</p>
+<p><strong>Recommendation</strong>: Document in NatSpec that implementations with callable <code>selfdestruct</code> paths are incompatible with address-as-persistent-identity assumptions. On Dencun+ chains this risk is substantially reduced.</p>
+<hr>
+<h2 id="findings-not-raised-gate-rejected">Findings Not Raised (Gate-Rejected)</h2>
+<ul>
+<li><strong>Salt front-running</strong>: User-controlled salt only affects the deployer&#39;s own CREATE2 namespace. Other deployers use a different address prefix. Self-harm only — <strong>rejected</strong>.</li>
+<li><strong>abi.encodePacked hash collision</strong>: All four arguments to <code>abi.encodePacked</code> in <code>predictDeterministicAddress</code> are fixed-size types (<code>bytes1</code>, <code>address</code>, <code>bytes32</code>, <code>bytes32</code>) — no dynamic type collision possible — <strong>rejected</strong>.</li>
+</ul>
+<hr>
+<h2 id="severity-summary">Severity Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td>No validation that <code>implementation</code> has deployed code</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td>Missing <code>memory-safe</code> annotation; FMP not advanced</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td>Broad version pragma allows PUSH0 on non-Shanghai chains</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td>Clones with selfdestruct-capable implementations can be destroyed and redeployed</td>
+</tr>
+</tbody></table></div>
+<p><strong>Critical</strong>: 0 | <strong>High</strong>: 0 | <strong>Medium</strong>: 0 | <strong>Low</strong>: 3 | <strong>Info</strong>: 1</p>
+<hr>
+<h2 id="code-correctness-attestation">Code Correctness Attestation</h2>
+<p>The following were independently verified as <strong>correct</strong>:</p>
+<ul>
+<li>EIP-1167 55-byte init code construction via 3 overlapping <code>mstore</code> operations ✓</li>
+<li><code>JUMPDEST</code> at runtime-code byte 43 is consistent with <code>JUMPI</code> operand <code>0x2b</code> ✓</li>
+<li>CREATE2 address derivation formula in <code>predictDeterministicAddress</code> matches EIP-1014 ✓</li>
+<li><code>shl(0x60, implementation)</code> correctly positions the 20-byte address in the 32-byte mstore word ✓</li>
+<li><code>create2(0, ptr, 0x37, salt)</code> uses correct size parameter <code>0x37 = 55</code> ✓</li>
+<li><code>CloneCreationFailed()</code> revert on zero instance address correctly handles all failure modes ✓</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiajqkgy3ajoo7asbsvi3vvhovy3sugr6mtqe4qenim3pxeeazgsoq.ipfs.community.bgipfs.com/"><code>https://bafkreiajqkgy3ajoo7asbsvi3vvhovy3sugr6mtqe4qenim3pxeeazgsoq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/159">#159</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

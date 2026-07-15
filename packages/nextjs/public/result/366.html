@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireBIPVault — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #366">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireBIPVault</h1>
+    <p class="job-sub">Job #366 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/366"><b>Job page</b> #366</a>
+      <a class="chip" href="https://bafkreieccmzb7p4yc2ndgcvxrjytlr7zmvcxdyvrufjbthcvk5dve3qqpy.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#protocol-summary">Protocol Summary</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#coverage-gate">Coverage Gate</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — VaultfireBIPVault</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>VaultfireBIPVault</code></td>
+</tr>
+<tr>
+<td><strong>Address / Chain</strong></td>
+<td><code>0x4f7E997C85bC1207485BaB8A0041Ca1ae0Fc9061</code> on <strong>Base mainnet</strong> (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Source verification</strong></td>
+<td>Sourcify v2, full match, <code>src/VaultfireBIPVault.sol</code> (solc <code>0.8.24</code>) — pulled directly from <code>sourcify.dev/server/v2/contract/8453/0x4f7E997C85bC1207485BaB8A0041Ca1ae0Fc9061</code></td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>VaultfireBIPVault.sol</code> (354 lines, ~190 non-comment lines)</td>
+</tr>
+<tr>
+<td><strong>Out-of-scope reference</strong></td>
+<td><code>VaultfireBondInsurancePool.sol</code> at <code>0xa074e372d5221b605E9762e41B86EbdBEBF1a978</code> (the vault&#39;s immutable <code>pool</code>) — read for context only, per client&#39;s audit target being the vault, not the pool</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: Phase 0 context (protocol map, opus) → Phase 1 breadth (5 ethskills checklists, sonnet) → Phase 2 depth (12 pashov attack agents, sonnet, blind to Phase 1) → Phase 3 hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1–100)</strong></td>
+<td>50 — findings below 50 filed as Leads, per two-phase-audit-v2 reporting floor</td>
+</tr>
+</tbody></table></div>
+<p><strong>Scope note on the client&#39;s brief.</strong> The job requested focus on &quot;reentrancy in deposit/withdraw, share-price manipulation via first-depositor inflation attack, and access control on parameter updates&quot; for a &quot;Bond-Insurance-Pool vault holding assets.&quot; All three phases confirm this specific contract cannot exhibit any of those three bug classes — it is a stateless, zero-state-changing-entrypoint read-only facade (see §Protocol Summary): every <code>deposit</code>/<code>mint</code>/<code>withdraw</code>/<code>redeem</code> call reverts unconditionally, it holds no funds, and it has no owner/admin/parameter of any kind. The real economic activity (contributions, claims, payouts) lives in a separate, already-deployed contract (<code>VaultfireBondInsurancePool</code>) that this vault only reads from — that pool was out of scope for this engagement. The findings below are what all three phases actually surfaced for the in-scope contract: not reentrancy or inflation-attack bugs, but an <strong>accounting-basis mismatch</strong> that misrepresents pool state to anything trusting the vault&#39;s ERC-4626/ERC-20 interface.</p>
+<hr>
+<h2 id="protocol-summary">Protocol Summary</h2>
+<p><code>VaultfireBIPVault</code> is an immutable, stateless ERC-4626-shaped read-only adapter over <code>VaultfireBondInsurancePool</code>. It holds zero mutable storage post-construction (only <code>constant</code>s and one <code>immutable</code> pool reference), has zero functioning write paths (every <code>deposit</code>/<code>mint</code>/<code>withdraw</code>/<code>redeem</code>/<code>transfer</code>/<code>transferFrom</code>/<code>approve</code> call and every plain ETH transfer reverts with a typed error), and every accounting figure it reports (<code>totalAssets</code>, <code>totalSupply</code>, <code>balanceOf</code>, <code>isInsured</code>, <code>contributorProfile</code>, <code>vaultStats</code>) is a live, unvalidated passthrough of 8 <code>view</code> calls into the immutable <code>pool</code>. No owner, admin, role, or upgrade path exists anywhere in the contract.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><code>Overlap: 3 · Phase-1-only: 1 · Phase-2-only: 6 (leads) · Re-examined leads kept: 2 (constructor trust anchor, div-by-zero downstream — both promoted to unified Leads), demoted: 0 · Coverage holes closed: 0</code></p>
+<p>All three headline findings were independently reproduced — with distinct, self-derived numeric proofs — by both the ethskills breadth pass and 7-of-12 blind pashov attack agents. This is the strongest possible corroboration signal this methodology produces: two independent hunting phases, and within Phase 2, agents with entirely different specialties (math-precision, economic-security, invariant, periphery, first-principles, boundary, flow-gap) converged on the same defect from different angles, none aware of the others&#39; output.</p>
+<p><code>Completeness: 4 unique (Contract, function, bug-class) groups across both phases, 4 covered in the unified set below.</code></p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><strong>Zero state-changing entrypoints exist.</strong> No mutable storage exists post-construction — only <code>constant</code>s (<code>WETH_BASE</code> L148, <code>name</code>/<code>symbol</code>/<code>decimals</code> L157-159) and one <code>immutable</code> (<code>pool</code>, L151, set once at L167, never reassigned). No modifier, <code>onlyOwner</code>-style gate, or <code>msg.sender</code> check exists anywhere in the file.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Writes state</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>asset()</code>, <code>convertToShares/Assets</code>, <code>maxDeposit/Mint/Withdraw/Redeem</code>, <code>previewDeposit/Mint/Withdraw/Redeem</code>, <code>allowance</code></td>
+<td>none (<code>pure</code>)</td>
+<td>anyone</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>totalAssets()</code>, <code>totalSupply()</code>, <code>balanceOf()</code>, <code>isInsured()</code>, <code>contributorProfile()</code>, <code>vaultStats()</code></td>
+<td>none (<code>view</code>, passthrough to <code>pool</code>)</td>
+<td>anyone</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>deposit</code>/<code>mint</code> (L231/243)</td>
+<td>none — reverts <code>UseUnderlyingContribute()</code></td>
+<td>anyone (fails)</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>withdraw</code>/<code>redeem</code> (L256/268)</td>
+<td>none — reverts <code>NonRedeemable()</code></td>
+<td>anyone (fails)</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>transfer</code>/<code>transferFrom</code>/<code>approve</code> (L276/280/284)</td>
+<td>none — reverts <code>Soulbound()</code></td>
+<td>anyone (fails)</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>receive</code>/<code>fallback</code> (L347/351)</td>
+<td>none — reverts <code>UseUnderlyingContribute()</code></td>
+<td>anyone (fails)</td>
+<td>no</td>
+<td>no (ETH rejected)</td>
+</tr>
+<tr>
+<td>constructor (L165)</td>
+<td>zero-address check only (L166), not an access gate</td>
+<td>anyone, one-time at deploy</td>
+<td>sets <code>pool</code> once</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles:</strong> none. No <code>owner</code>, no <code>Ownable</code>, no role mapping. The only address with any special relationship to the contract is whoever supplies <code>pool_</code> at deploy — a one-time, non-revocable, non-transferable choice, since <code>pool</code> is <code>immutable</code>.</p>
+<p><code>Entrypoints: 0 external/public state-changing in source, 0 in inventory. Match.</code></p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Invariant that must hold</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Downstream integrator/aggregator</td>
+<td>all public views</td>
+<td>could misprice a user&#39;s &quot;redeemable share&quot; if it treats the vault&#39;s ERC-4626 interface at face value</td>
+<td><code>sum(balanceOf)==totalSupply</code>, <code>balanceOf</code>/<code>totalAssets</code> on a consistent accounting basis</td>
+<td><strong>Addressed by Finding 1, 2, 3</strong> — invariant provably fails post-payout</td>
+</tr>
+<tr>
+<td>Whoever deploys a <code>VaultfireBIPVault</code> instance</td>
+<td>constructor <code>pool_</code> argument</td>
+<td>could point an instance at a fake pool returning arbitrary values to any indexer trusting the vault&#39;s address</td>
+<td>trust boundary is off-chain (listing/indexing due diligence); no on-chain check beyond non-zero</td>
+<td><strong>Addressed by Leads</strong> — not exploitable against the already-deployed, verified-<code>pool</code> instance</td>
+</tr>
+<tr>
+<td>Any caller</td>
+<td><code>deposit</code>/<code>mint</code>/<code>withdraw</code>/<code>redeem</code>/<code>transfer</code>/<code>transferFrom</code>/<code>approve</code>, ETH send, unknown calldata</td>
+<td>none — every path reverts</td>
+<td>holds</td>
+<td><strong>Invariant holds</strong> — confirmed by every agent in both phases</td>
+</tr>
+<tr>
+<td>Pool owner (out-of-scope actor, via <code>resolveClaim</code>)</td>
+<td>pool&#39;s <code>totalPoolBalance</code>, indirectly the vault&#39;s <code>totalAssets</code>/<code>totalSupply</code></td>
+<td>can legitimately (per the pool&#39;s own design) drain <code>totalPoolBalance</code> via approved claims while every contributor&#39;s <code>balanceOf</code> stays frozen, permanently widening the accounting gap the vault displays</td>
+<td>none — this is the pool&#39;s documented design; the vault has no invariant preventing the gap, only visibility into it (<code>vaultStats().poolPaidOut</code>)</td>
+<td><strong>Addressed by Finding 1</strong> — this is the exact trigger mechanism</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[82] <strong>1. <code>balanceOf</code> (gross, monotonic) vs. <code>totalSupply</code>/<code>totalAssets</code> (net of claim payouts) breaks the ERC-20/4626 accounting identity</strong></p>
+<p><code>VaultfireBIPVault.balanceOf</code> / <code>totalSupply</code> / <code>totalAssets</code> / <code>convertToAssets</code> · Confidence: 82 · <code>[both]</code> — corroborated independently by the ethskills breadth pass and 7 of 12 blind pashov attack agents (math-precision, economic-security, invariant, periphery, first-principles, boundary, flow-gap), each with its own numeric proof.</p>
+<p><strong>Description</strong></p>
+<p><code>balanceOf(account)</code> (<code>VaultfireBIPVault.sol:202-205</code>) reads <code>pool.getContributorProfile(account).totalContributed</code> — a gross figure the pool only ever increments (<code>VaultfireBondInsurancePool.sol:196</code>, <code>profile.totalContributed += msg.value</code>), never decrements. <code>totalAssets()</code>/<code>totalSupply()</code> (<code>VaultfireBIPVault.sol:183-193</code>) both read <code>pool.totalPoolBalance()</code>, which the pool decrements on every approved insurance-claim payout (<code>VaultfireBondInsurancePool.sol:301</code>, <code>totalPoolBalance -= payoutAmount</code>) with <strong>no corresponding change to any contributor&#39;s <code>totalContributed</code></strong>. So <code>sum(balanceOf(all contributors)) == totalSupply() + pool.totalPaidOut()</code> at every block once any claim has paid out — permanently, and the gap only widens. <code>convertToAssets(shares)</code> (<code>VaultfireBIPVault.sol:211-213</code>) is a hardcoded 1:1 identity, so <code>convertToAssets(balanceOf(user))</code> reports the same overstated figure directly.</p>
+<p><strong>Proof (worked numeric trace, corroborated independently by 3 separate agents)</strong></p>
+<ol>
+<li>Alice calls <code>pool.contribute{value: 1 ether}()</code>. State: <code>totalContributed[Alice] = 1e18</code>, <code>totalPoolBalance = 1e18</code>. Vault reads: <code>totalSupply()==totalAssets()==balanceOf(Alice)==1e18</code> — consistent.</li>
+<li>Alice is now insured (<code>totalContributed &gt;= MIN_FOR_INSURED = 0.01 ETH</code>) and submits a claim for <code>0.1 ether</code> — within the pool&#39;s 10%-of-current-balance cap (<code>VaultfireBondInsurancePool.sol:243</code>, <code>maxPayout = totalPoolBalance * MAX_CLAIM_PERCENT / BPS_DENOM</code>).</li>
+<li>The pool owner calls <code>resolveClaim(id, true, 0.1 ether)</code> — an ordinary, designed pool operation (<code>VaultfireBondInsurancePool.sol:278-313</code>). Effect: <code>totalPoolBalance -= 0.1e18 → 0.9e18</code>; <code>totalContributed[Alice]</code> is untouched.</li>
+<li>Now: <code>vault.totalAssets() == vault.totalSupply() == 0.9e18</code>, but <code>vault.balanceOf(Alice) == 1e18</code> and <code>vault.convertToAssets(1e18) == 1e18</code>. <strong>A single holder&#39;s reported balance now exceeds the vault&#39;s entire reported total supply/assets (111%).</strong></li>
+<li>The flow-gap agent additionally traced that the pool&#39;s per-claim 10% cap is checked against the balance <em>at submission time</em>, not re-checked at resolution time — so several claims submitted while the balance is still high can be resolved sequentially, driving <code>totalPoolBalance</code> toward exactly zero while <code>balanceOf</code> figures stay frozen at their historical highs. At <code>totalSupply()==0</code>, the standard 4626 ratio formula <code>balanceOf(user)*totalAssets()/totalSupply()</code> divides by zero for any downstream integrator using it.</li>
+</ol>
+<p><strong>Gate trace:</strong> Gate 1 (attack execution) clears — no guard interrupts this path; it is the pool&#39;s designed, ordinary claim-resolution flow. Gate 2 (reachability) clears — achievable through entirely normal usage. Gate 3 (trigger) clears — the divergence is a passive side effect of intended pool operation, not an admin acting maliciously against documented intent. Gate 4 (impact) is capped: no funds are ever at risk in the vault itself (it holds none), and impact requires a downstream integrator to trust the ERC-4626 interface literally — exactly the audience the vault&#39;s own NatSpec targets (&quot;readable to DeFi aggregators... indexers, aggregators, and 4626-aware tooling&quot;), but no live integration relying on this was confirmed from source alone.</p>
+<p><strong>Recommendation</strong></p>
+<p>Already partially disclosed in NatSpec (<code>VaultfireBIPVault.sol:195-201</code>). If integrator-facing misrepresentation risk is judged material, choose one direction:</p>
+<ul>
+<li><strong>Option A — stop presenting this as ERC-4626/ERC-20 conformant.</strong> Rename <code>balanceOf</code>/<code>totalSupply</code> off the standard interface (e.g. <code>cumulativeContribution</code>/<code>grossContributed</code>) so generic tooling can&#39;t mechanically assume <code>sum(balanceOf)==totalSupply</code>.</li>
+<li><strong>Option B — make the accounting bases consistent.</strong> Have the pool expose (and the vault consume) a genuinely net-of-payout per-contributor figure, or surface <code>pool.totalPaidOut()</code> inline wherever <code>balanceOf</code>/<code>convertToAssets</code> are documented (currently only visible via the separate <code>vaultStats()</code> call), so a caller can self-correct.</li>
+</ul>
+<hr>
+<p>[76] <strong>2. <code>previewRedeem</code>/<code>previewWithdraw</code> (hardcoded 0) contradict <code>convertToAssets</code>/<code>convertToShares</code> (identity) for the same question</strong></p>
+<p><code>VaultfireBIPVault.previewRedeem</code> / <code>previewWithdraw</code> / <code>convertToAssets</code> / <code>convertToShares</code> · Confidence: 76 · <code>[both]</code> — raised as a finding or corroborating lead by essentially every agent across both phases (multi-agent convergence).</p>
+<p><strong>Description</strong></p>
+<p><code>convertToAssets(shares)</code> (<code>VaultfireBIPVault.sol:211-213</code>) returns <code>shares</code> unchanged. <code>previewRedeem(shares)</code> (<code>VaultfireBIPVault.sol:264-266</code>) returns <code>0</code> for the same input, unconditionally, at every block. Per EIP-4626, <code>previewRedeem</code> should track <code>convertToAssets</code> absent fee/slippage — here they are maximally contradictory (100% vs. 0%), and neither function&#39;s declaration site documents why.</p>
+<p><strong>Proof:</strong> <code>convertToAssets(1e18)</code> → <code>1e18</code>. <code>previewRedeem(1e18)</code> → <code>0</code>. Reproducible with no state precondition, same block.</p>
+<p><strong>Gate trace:</strong> Gate 1/2 clear trivially. Gate 4 caps severity: <code>redeem()</code> itself always reverts regardless of what either preview reports (<code>VaultfireBIPVault.sol:268-270</code>), so no on-chain value ever moves on the strength of the wrong number — impact is confined to off-chain tooling that cross-checks the two views or displays one without the other.</p>
+<p><strong>Recommendation:</strong> Document the divergence explicitly at both declaration sites, or make <code>previewWithdraw</code>/<code>previewRedeem</code> mirror the identity convention <code>previewDeposit</code>/<code>previewMint</code> already use (EIP-4626 explicitly instructs preview functions to ignore operational limits).</p>
+<hr>
+<p>[75] <strong>3. <code>asset()</code> returns WETH (an ERC-20 the vault never transfers/holds) while <code>totalAssets()</code> is denominated in the pool&#39;s native-ETH accounting</strong></p>
+<p><code>VaultfireBIPVault.asset</code> / <code>totalAssets</code> · Confidence: 75 · <code>[both]</code> — raised across nearly all agents in both phases.</p>
+<p><strong>Description</strong></p>
+<p><code>asset()</code> (<code>VaultfireBIPVault.sol:177-179</code>) returns <code>WETH_BASE</code> (<code>0x4200000000000000000000000000000000000006</code>) as tooling metadata; confirmed by every agent that no <code>IERC20(WETH_BASE)</code> call exists anywhere in the file. <code>IERC20(WETH_BASE).balanceOf(vault)</code> is always <code>0</code>, while <code>totalAssets()</code> (native-ETH pool accounting) is nonzero whenever the pool holds funds — a live, checkable contradiction for any integrator performing the standard defensive check &quot;does <code>asset()</code>&#39;s token balance reconcile with <code>totalAssets()</code>.&quot;</p>
+<p><strong>Gate trace:</strong> Gate 4 caps severity at Low — already disclosed in NatSpec (<code>VaultfireBIPVault.sol:174-176</code>), numerically 1:1 in value (WETH:ETH), and no transfer of either token ever occurs, so no fund-loss path exists — only automated-tooling misclassification risk.</p>
+<p><strong>Recommendation:</strong> Consider a sentinel/zero-address return, or explicit non-4626-standard denomination metadata, if broad automated-tooling compatibility matters.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[82]</td>
+<td>balanceOf (gross) vs. totalSupply/totalAssets (net) breaks the ERC-20/4626 sum invariant</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[76]</td>
+<td>previewRedeem/previewWithdraw contradict convertToAssets/convertToShares</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[75]</td>
+<td>asset() returns WETH while totalAssets() is denominated in native ETH</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>High-signal trails where all agents agreed impact is confined to off-chain/deployer-side risk, or where the exploit path could not be fully completed. Not scored.</em></p>
+<ul>
+<li><strong>Constructor validates only non-zero-ness of <code>pool_</code>, no interface/code-existence check</strong> — <code>VaultfireBIPVault.constructor</code> (<code>VaultfireBIPVault.sol:165-168</code>) — Code smells: <code>pool_ != address(0)</code> is the only guard before permanently committing the immutable <code>pool</code>; no <code>extcodesize</code>/interface probe. Raised independently by 8+ agents across both phases; every one concluded this is not exploitable against the already-deployed instance (whose <code>pool</code> is fixed and confirmed to be the genuine <code>VaultfireBondInsurancePool</code>) — a deploy-time/re-deployment-template risk only.</li>
+<li><strong>No atomic way to read <code>balanceOf(user)</code> together with <code>totalSupply()</code></strong> — <code>VaultfireBIPVault.balanceOf</code> / <code>totalSupply</code> — <code>vaultStats()</code> bundles pool-wide aggregates atomically but has no per-account sibling; an integrator computing an ownership ratio must make ≥2 separate <code>eth_call</code>s, opening a narrow cross-call staleness window if a claim resolves in between calls.</li>
+<li><strong><code>isInsured</code> badge never reflects current pool solvency</strong> — <code>VaultfireBIPVault.isInsured</code> / <code>vaultStats</code> — the pool&#39;s insured flag is permanent once earned and never re-evaluated against current pool balance; an agent that qualified early still shows <code>isInsured==true</code> after the pool has been drained toward zero by unrelated claims. Root mechanism lives in the out-of-scope pool; the vault only passes it through faithfully.</li>
+<li><strong>Forced ETH via <code>selfdestruct</code> bypasses <code>receive</code>/<code>fallback</code>, no sweep function</strong> — <code>VaultfireBIPVault.receive</code> / <code>fallback</code> (<code>VaultfireBIPVault.sol:347-353</code>) — both revert on ordinary sends, but a forced send leaves <code>address(this).balance &gt; 0</code> with no function anywhere reading or recovering it. Self-harm only (a griefer burns their own ETH); no accounting impact since nothing in the contract reads <code>address(this).balance</code>.</li>
+<li><strong>No <code>Transfer</code>/<code>Deposit</code>/<code>Withdraw</code> events ever emitted</strong> — <code>VaultfireBIPVault</code> (contract-wide) — implements <code>IERC4626</code>/<code>IERC20Metadata</code> (which declare these events) but never emits any event. Impact depends on whether any consumer indexes via event logs rather than polling views (unverified).</li>
+<li><strong><code>previewDeposit</code> ignores <code>maxDeposit==0</code></strong> — <code>VaultfireBIPVault.previewDeposit</code> / <code>maxDeposit</code> — <code>previewDeposit</code> returns a nonzero identity value despite <code>maxDeposit</code> correctly reporting 0. Zero economic consequence since <code>deposit()</code> reverts regardless; EIP-4626 explicitly permits previews to ignore max-limits.</li>
+<li><strong>Downstream divide-by-zero if <code>totalSupply()</code> reaches exactly 0</strong> — <code>VaultfireBIPVault.totalSupply</code> / <code>balanceOf</code> — an integrator computing <code>balanceOf(user) * X / totalSupply()</code> hits a hard revert if the pool is ever fully drained by approved claims (structurally possible per the traced pool claim-resolution mechanics in Finding 1). The division itself never happens inside this contract, so this is an off-chain integrator risk, not a vault-side exploit.</li>
+</ul>
+<hr>
+<h2 id="coverage-gate">Coverage Gate</h2>
+<ul>
+<li><strong>Entrypoints:</strong> 0 privileged/value-moving entrypoints exist in this contract (confirmed inventory above) — vacuously, all (zero) are addressed.</li>
+<li><strong>Threat-catalog rows:</strong> 4 rows in the Threat Model table above, 4 answered (3 by Findings 1–3, 1 — the deployer/<code>pool_</code> risk — by the Leads section).</li>
+<li><code>Coverage: 0 entrypoints in inventory (all zero, matches source), 0 addressed of 0. 4 threat rows, 4 answered. Holes closed this pass: 0.</code> Both hunting phases independently covered the full inventory and threat catalog; no re-read was needed to close a gap neither phase had examined.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant as part of an automated two-phase (ethskills breadth + pashov depth) audit pipeline, run independently for this engagement. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended for any protocol integrating with this vault or its underlying pool.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreieccmzb7p4yc2ndgcvxrjytlr7zmvcxdyvrufjbthcvk5dve3qqpy.ipfs.community.bgipfs.com/"><code>https://bafkreieccmzb7p4yc2ndgcvxrjytlr7zmvcxdyvrufjbthcvk5dve3qqpy.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/366">#366</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

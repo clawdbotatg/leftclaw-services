@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire PrivacyGuarantees — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #336">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire PrivacyGuarantees</h1>
+    <p class="job-sub">Job #336 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/336"><b>Job page</b> #336</a>
+      <a class="chip" href="https://bafkreie2yftaeknggjzoha6qaym6trfs7k3e6rutzxzsanfkxgbqsrj6aa.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">3</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#1-right-to-be-forgotten-is-not-enforced-grantconsent-has-no-dele">[1] &quot;Right to be forgotten&quot; is not enforced — grantConsent has no deletion guard</a></li>
+      <li><a href="#2-unsalted-deterministic-purposehash-enables-trivial-dictionary-">[2] Unsalted, deterministic purposeHash enables trivial dictionary attack, defeating the contract&#39;s stated privacy guarantee</a></li>
+      <li><a href="#3-checkdeletionrequest-and-isdeletionenforceable-implement-contr">[3] checkDeletionRequest and isDeletionEnforceable implement contradictory deletion semantics</a></li>
+      <li><a href="#4-canceldeletionrequest-allows-silently-reversing-an-already-enf">[4] cancelDeletionRequest() allows silently reversing an already-enforced deletion, with no event trail</a></li>
+    </ol>
+    <ol start="7">
+      <li><a href="#5-canceldeletionrequest-emits-no-event-asymmetric-vs-every-other">[5] cancelDeletionRequest() emits no event (asymmetric vs. every other state-mutating function)</a></li>
+      <li><a href="#6-requiresconsentcheckdeletionrequest-modifiers-decouple-user-fr">[6] requiresConsent/checkDeletionRequest modifiers decouple user from msg.sender — confused-deputy risk for future inheriting modules</a></li>
+      <li><a href="#7-getprivacypolicy-documentation-overstates-on-chain-guarantees-">[7] getPrivacyPolicy() documentation overstates on-chain guarantees actually enforced</a></li>
+      <li><a href="#8-datapermanentlydeleted-event-declared-but-never-emitted">[8] DataPermanentlyDeleted event declared but never emitted</a></li>
+      <li><a href="#what-was-checked-and-found-sound">What was checked and found sound</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — Vaultfire PrivacyGuarantees</h1>
+<p><strong>Target</strong>: <code>0x2711AA5f1934Fe97825F02e51cB5Da58d1759625</code> (Base)<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (5 ethskills domain checklists) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation with targeted source re-verification of every phase-unique finding.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Single contract (client-specified address)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>contracts/PrivacyGuarantees.sol</code> (95 lines)</td>
+</tr>
+<tr>
+<td><strong>Out of scope</strong></td>
+<td>The wider Vaultfire monorepo this file was compiled alongside (112 source files total) is NOT in scope — only the standalone contract deployed at this specific address, confirmed via Sourcify <code>compilationTarget</code> metadata (<code>contracts/PrivacyGuarantees.sol:PrivacyGuarantees</code>). Other contracts in the same repo (<code>ERC8004IdentityRegistry</code>, <code>ERC8004ReputationRegistry</code>, <code>ERC8004ValidationRegistry</code>) import and inherit <code>PrivacyGuarantees</code> as a base contract, but those are separately deployed elsewhere and are the subject of other, independent audit engagements — not analyzed here.</td>
+</tr>
+<tr>
+<td><strong>Total findings</strong></td>
+<td>0 Critical/High, 1 Medium, 4 Low, 3 Info</td>
+</tr>
+</tbody></table></div>
+<p><code>PrivacyGuarantees</code> is a small, self-contained consent/deletion registry: users grant or revoke consent for hashed &quot;purposes,&quot; and can request a 30-day-delayed data-deletion. It holds no funds, makes no external calls, and (as deployed at this address) has no inheritance chain — every state-mutating function is scoped to <code>msg.sender</code> only. Given its size (95 lines, single contract, no external calls), this is a small-scope engagement per the audit methodology&#39;s model-selection rule (sonnet agents throughout).</p>
+<p><strong>Reconciliation summary</strong>: Overlap: 5 findings independently corroborated by both phases (in several cases identically re-derived by 3+ agents with matching exploit traces). Phase-1-only: 1 finding (unsalted purpose-hash privacy leak — no phase-2 specialty targets hash-predictability specifically). Phase-2-only: 2 novel findings (an internal contradiction between two deletion-status primitives, and an unbounded post-enforcement cancellation gap) that phase 1&#39;s checklist-driven pass did not surface. All phase-unique findings were re-verified directly against source in this synthesis.</p>
+<hr>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><span class="pill medium">Medium</span></td>
+<td>&quot;Right to be forgotten&quot; is not enforced — <code>grantConsent</code> has no deletion guard</td>
+<td><strong>[both]</strong> — 1 phase-1 agent, 3 phase-2 agents</td>
+</tr>
+<tr>
+<td>2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Unsalted, deterministic <code>purposeHash</code> enables trivial dictionary attack</td>
+<td><strong>[phase1 only]</strong> — 1 agent; re-verified</td>
+</tr>
+<tr>
+<td>3</td>
+<td><span class="pill low">Low</span></td>
+<td><code>checkDeletionRequest</code> and <code>isDeletionEnforceable</code> implement contradictory deletion semantics</td>
+<td><strong>[phase2 only]</strong> — 1 finding + 1 corroborating lead; re-verified</td>
+</tr>
+<tr>
+<td>4</td>
+<td><span class="pill low">Low</span></td>
+<td><code>cancelDeletionRequest()</code> allows silently reversing an already-enforced deletion, no event trail</td>
+<td><strong>[phase2 only]</strong> — 1 agent, full exploit chain; re-verified</td>
+</tr>
+<tr>
+<td>5</td>
+<td><span class="pill low">Low</span></td>
+<td><code>cancelDeletionRequest()</code> emits no event (asymmetric vs. every other state-mutating function)</td>
+<td><strong>[both]</strong> — 1 phase-1 agent, 3 phase-2 agents</td>
+</tr>
+<tr>
+<td>6</td>
+<td><span class="pill info">Info</span></td>
+<td><code>requiresConsent</code>/<code>checkDeletionRequest</code> modifiers decouple <code>user</code> from <code>msg.sender</code> — confused-deputy risk for future inheriting modules</td>
+<td><strong>[both]</strong> — 1 phase-1 agent (dead-code framing), 5 phase-2 agents (escalated design-risk framing)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><span class="pill info">Info</span></td>
+<td><code>getPrivacyPolicy()</code> documentation overstates on-chain guarantees actually enforced</td>
+<td><strong>[phase1 only]</strong> — same root cause as #1</td>
+</tr>
+<tr>
+<td>8</td>
+<td><span class="pill info">Info</span></td>
+<td><code>DataPermanentlyDeleted</code> event declared but never emitted</td>
+<td><strong>[both]</strong> — 1 phase-1 agent, 4 phase-2 agents</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="1-right-to-be-forgotten-is-not-enforced-grantconsent-has-no-dele">[1] &quot;Right to be forgotten&quot; is not enforced — <code>grantConsent</code> has no deletion guard</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Location</strong>: <code>grantConsent()</code> (line 68-72), <code>checkDeletionRequest()</code> modifier (line 51-54)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1: general (PG-1). Phase 2: invariant, trust-gap, flow-gap (3 independent FINDINGS, all tracing the identical exploit chain).</p>
+<p><strong>Description</strong>: The contract&#39;s own documentation (<code>getPrivacyPolicy()</code>, guarantee #4) states: <em>&quot;Right to be forgotten - stop future writes + off-chain deletion/redaction.&quot;</em> A <code>checkDeletionRequest</code> modifier exists specifically to enforce the &quot;stop future writes&quot; half of that promise:</p>
+<pre><code class="language-solidity">modifier checkDeletionRequest(address user) {
+    require(deletionRequests[user] == 0, &quot;User has requested data deletion&quot;);
+    _;
+}
+</code></pre>
+<p>But it is never applied to <code>grantConsent()</code> — the contract&#39;s only &quot;write new data associated with a user&quot; function:</p>
+<pre><code class="language-solidity">function grantConsent(bytes32 purposeHash) external {
+    require(purposeHash != bytes32(0), &quot;Purpose hash required&quot;);
+    userConsent[msg.sender][purposeHash] = true;
+    emit ConsentGranted(msg.sender, purposeHash);
+}
+</code></pre>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>User calls <code>requestDataDeletion()</code> — <code>deletionRequests[user]</code> is set to <code>block.timestamp + 30 days</code>, <code>DataDeletionRequested</code> fires.</li>
+<li>In the very next call (or any time after, including past the 30-day window), the same user calls <code>grantConsent(purposeHash)</code> — succeeds unconditionally, <code>userConsent[user][purposeHash]</code> flips to <code>true</code>, <code>ConsentGranted</code> fires.</li>
+<li>Storage now holds a direct contradiction: <code>deletionRequests[user] != 0 &amp;&amp; userConsent[user][purposeHash] == true</code> — a &quot;future write&quot; occurred exactly as the deletion request claims to prevent.</li>
+</ol>
+<p>Not exploitable for fund loss (the contract holds no funds), but it is a genuine trust-model/correctness violation: the contract&#39;s own marketed privacy guarantee does not hold for the contract as actually deployed.</p>
+<p><strong>Recommendation</strong>: Apply <code>checkDeletionRequest(msg.sender)</code> to <code>grantConsent()</code>. Decide and document whether <code>revokeConsent()</code> should remain exempt (revocation only removes data rather than adding it, so arguably it should still be allowed post-deletion-request).</p>
+<hr>
+<h2 id="2-unsalted-deterministic-purposehash-enables-trivial-dictionary-">[2] Unsalted, deterministic <code>purposeHash</code> enables trivial dictionary attack, defeating the contract&#39;s stated privacy guarantee</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Location</strong>: <code>hashPurpose()</code> (line 60-62), <code>userConsent</code> mapping, <code>ConsentGranted</code>/<code>ConsentRevoked</code> events<br><strong>Origin</strong>: <code>[phase1 only]</code> — signatures-privacy agent. No phase-2 specialty specifically targets hash-predictability/privacy-leakage; re-verified directly against source in this synthesis.</p>
+<p><strong>Description</strong>:</p>
+<pre><code class="language-solidity">function hashPurpose(string memory purpose) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked(purpose));
+}
+</code></pre>
+<p>No salt, nonce, or per-user binding. Since <code>purposeHash</code> values are permanently public (mapping storage + indexed event topics) and the hashing scheme is public and trivial to reproduce off-chain, any observer can precompute a rainbow table over the realistic/known vocabulary of purpose strings (typically a small, fixed set exposed by the client&#39;s own frontend/docs) and instantly reverse every <code>purposeHash</code> ever emitted for any user — defeating the contract&#39;s own stated design intent (&quot;we verify without extracting,&quot; &quot;avoids writing user-provided freeform strings on-chain&quot;). Because the hash isn&#39;t bound to the consenting address either, two different users consenting to the same purpose produce identical hashes, enabling trivial cross-user correlation even without dictionary reversal.</p>
+<p>This is not a commit-reveal scheme (no reveal step exists) — the hash is used permanently as an opaque flag, so its confidentiality rests entirely on hash-inversion difficulty, which is near-zero for low-entropy, guessable purpose strings.</p>
+<p><strong>Proof of Concept</strong>: Enumerate the dApp&#39;s known purpose strings (from its own frontend/docs) → precompute <code>keccak256</code> for each off-chain, no contract interaction needed → match against on-chain <code>ConsentGranted</code> event topics or <code>userConsent</code> reads → recover exactly which purposes any address consented to, for free.</p>
+<p><strong>Recommendation</strong>: If purpose confidentiality from on-chain observers is a real design goal, require the caller to supply <code>keccak256(abi.encodePacked(purpose, salt))</code> with a client-generated high-entropy salt kept off-chain by the user/UI, rather than exposing a trivial one-argument <code>hashPurpose(string)</code> helper over the raw string. At minimum bind the hash to the user&#39;s address to remove cross-user linkability. Otherwise, correct the documentation to not claim purpose confidentiality the implementation doesn&#39;t provide.</p>
+<hr>
+<h2 id="3-checkdeletionrequest-and-isdeletionenforceable-implement-contr">[3] <code>checkDeletionRequest</code> and <code>isDeletionEnforceable</code> implement contradictory deletion semantics</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>checkDeletionRequest()</code> modifier (line 51-54) vs. <code>isDeletionEnforceable()</code> (line 106-109)<br><strong>Origin</strong>: <code>[phase2 only]</code> — trust-gap (FINDING), corroborating LEAD from asymmetry. Not surfaced by phase 1. Re-verified directly against source.</p>
+<p><strong>Description</strong>:</p>
+<pre><code class="language-solidity">function isDeletionEnforceable(address user) public view returns (bool enforceable, uint256 effectiveAt) {
+    effectiveAt = deletionRequests[user];
+    enforceable = effectiveAt &gt; 0 &amp;&amp; block.timestamp &gt;= effectiveAt;
+}
+</code></pre>
+<p><code>isDeletionEnforceable</code> correctly implements the documented 30-day grace period. But <code>checkDeletionRequest</code> — the modifier meant for the identical purpose, exported for composing modules to gate their own functions — instead reverts the instant <code>deletionRequests[user] != 0</code>, i.e. <strong>immediately at request time</strong>, 30 days before <code>isDeletionEnforceable</code> would agree the deletion is &quot;in effect.&quot; Both read the same <code>deletionRequests</code> mapping but encode different thresholds for the same real-world question. <code>requestDataDeletion()</code>&#39;s own NatSpec states &quot;Data becomes enforceable after DATA_RETENTION_PERIOD&quot; — <code>checkDeletionRequest</code> contradicts that promise by enforcing immediately.</p>
+<p><strong>Recommendation</strong>: Make <code>checkDeletionRequest</code> call <code>isDeletionEnforceable(user)</code> (or replicate its timestamp check) instead of the raw non-zero check, so both primitives agree with the documented 30-day grace period — or, if immediate lockout is actually the intended behavior, update the NatSpec on <code>requestDataDeletion</code> to say so and remove the &quot;enforceable after&quot; language.</p>
+<hr>
+<h2 id="4-canceldeletionrequest-allows-silently-reversing-an-already-enf">[4] <code>cancelDeletionRequest()</code> allows silently reversing an already-enforced deletion, with no event trail</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>cancelDeletionRequest()</code> (line 97-100)<br><strong>Origin</strong>: <code>[phase2 only]</code> — flow-gap agent, full exploit chain traced directly in source. Not surfaced by phase 1. Re-verified directly against source in this synthesis.</p>
+<p><strong>Description</strong>:</p>
+<pre><code class="language-solidity">function cancelDeletionRequest() external {
+    require(deletionRequests[msg.sender] != 0, &quot;No deletion request pending&quot;);
+    deletionRequests[msg.sender] = 0;
+}
+</code></pre>
+<p>The only guard checks that a request exists — it never checks <code>block.timestamp</code> against <code>effectiveAt</code>. A user can call this at <strong>any</strong> time, including long after <code>isDeletionEnforceable()</code> has already returned <code>true</code> and (per the contract&#39;s own documented off-chain contract) their data has already been purged/redacted off-chain. The reset is silent: <code>deletionRequests[user]</code> returns to <code>0</code>, indistinguishable from a user who never requested deletion at all, and <code>DataPermanentlyDeleted</code> (declared but never emitted anywhere — see Finding #8) provides no on-chain marker that enforcement ever actually occurred.</p>
+<p><strong>Proof of Concept</strong>: User calls <code>requestDataDeletion()</code> at t=0. At t=31 days, <code>isDeletionEnforceable()</code> returns <code>true</code>; an off-chain service purges the user&#39;s records per the documented policy. At t=40 days, the same user calls <code>cancelDeletionRequest()</code> — succeeds unconditionally, silently resetting state to &quot;no deletion ever happened,&quot; with no on-chain trace distinguishing this from a pre-enforcement change of mind.</p>
+<p><strong>Recommendation</strong>: Once <code>isDeletionEnforceable(user)</code> is true, either block <code>cancelDeletionRequest</code> (<code>require(block.timestamp &lt; deletionRequests[msg.sender])</code>) or emit <code>DataPermanentlyDeleted</code> and transition to a distinct terminal state rather than allowing an indistinguishable silent reset.</p>
+<hr>
+<h2 id="5-canceldeletionrequest-emits-no-event-asymmetric-vs-every-other">[5] <code>cancelDeletionRequest()</code> emits no event (asymmetric vs. every other state-mutating function)</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>cancelDeletionRequest()</code> (line 97-100)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1: general (PG-2, Info). Phase 2: asymmetry (FINDING), execution-trace and first-principles (corroborating leads) — 3 phase-2 agents total.</p>
+<p><strong>Description</strong>: <code>grantConsent</code>, <code>revokeConsent</code>, and <code>requestDataDeletion</code> all pair their storage write with an event. <code>cancelDeletionRequest</code> is the sole exception. Per the contract&#39;s own documented off-chain-consumer model, an event-driven redaction pipeline that reacts only to <code>DataDeletionRequested</code> has no signal that a user reversed their request.</p>
+<p><strong>Recommendation</strong>: Add <code>event DataDeletionCancelled(address indexed user);</code> and emit it in <code>cancelDeletionRequest()</code>.</p>
+<hr>
+<h2 id="6-requiresconsentcheckdeletionrequest-modifiers-decouple-user-fr">[6] <code>requiresConsent</code>/<code>checkDeletionRequest</code> modifiers decouple <code>user</code> from <code>msg.sender</code> — confused-deputy risk for future inheriting modules</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> (design risk for composability, not exploitable against this standalone deployment)<br><strong>Location</strong>: <code>requiresConsent()</code> (line 46-49), <code>checkDeletionRequest()</code> (line 51-54)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1: access-control (framed as inert dead code). Phase 2: access-control, execution-trace, periphery, first-principles, flow-gap (5 agents — the single most-corroborated observation of the entire review, escalated to a forward-looking design-risk framing).</p>
+<p><strong>Description</strong>: Unlike every state-mutating function in this contract (all hard-scoped to <code>msg.sender</code>), both exported modifiers accept an arbitrary <code>address user</code>:</p>
+<pre><code class="language-solidity">modifier requiresConsent(address user, bytes32 purposeHash) {
+    require(userConsent[user][purposeHash], &quot;User consent required&quot;);
+    _;
+}
+modifier checkDeletionRequest(address user) {
+    require(deletionRequests[user] == 0, &quot;User has requested data deletion&quot;);
+    _;
+}
+</code></pre>
+<p>This is architecturally necessary for the contract&#39;s stated role as a &quot;privacy floor for modules that inherit/compose it&quot; (confirmed: <code>ERC8004IdentityRegistry</code>, <code>ERC8004ReputationRegistry</code>, and <code>ERC8004ValidationRegistry</code> elsewhere in the repo do inherit this contract, though those are out of scope here). But nothing enforces <code>user == msg.sender</code> anywhere in this base contract. Any future inheriting module that wires a caller-supplied (rather than <code>msg.sender</code>-derived) <code>user</code> into these modifiers — e.g. <code>function f(address user) external requiresConsent(user, HASH) { ...acts on user&#39;s data... }</code> — would let any attacker trigger the gated action against any address that happens to satisfy the consent/deletion condition. Since <code>hasConsent</code>/<code>deletionRequests</code> are public getters, an attacker can always self-grant consent for their own address and pass themselves as <code>user</code> in a mismatched context, or enumerate which real addresses already satisfy the check.</p>
+<p><strong>Recommendation</strong>: No action required for this deployed instance (the modifiers are inert here — no function in this file uses them). Given confirmed downstream inheritance elsewhere in the wider Vaultfire codebase, this observation should be carried forward into the audit of any contract that actually inherits <code>PrivacyGuarantees</code> — verify every inheriting function that uses <code>requiresConsent</code>/<code>checkDeletionRequest</code> independently confirms <code>msg.sender == user</code> (or has an explicit, deliberate delegation design with its own authorization check).</p>
+<hr>
+<h2 id="7-getprivacypolicy-documentation-overstates-on-chain-guarantees-">[7] <code>getPrivacyPolicy()</code> documentation overstates on-chain guarantees actually enforced</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>getPrivacyPolicy()</code> (line 111-116)<br><strong>Origin</strong>: <code>[phase1 only]</code> — general (PG-3). Same root cause as Finding #1.</p>
+<p><strong>Description</strong>: <code>getPrivacyPolicy()</code> is <code>pure</code> and its text is permanently baked into this deployment (the contract&#39;s own NatSpec states policy changes require a full redeploy). Since guarantee #4 (&quot;Right to be forgotten - stop future writes&quot;) is not actually enforced on-chain (Finding #1), the policy text overstates what the deployed bytecode guarantees, permanently, for the life of this contract instance.</p>
+<p><strong>Recommendation</strong>: Fold into the fix for Finding #1 — either implement enforcement matching the claims, or soften the claims to accurately reflect current behavior.</p>
+<hr>
+<h2 id="8-datapermanentlydeleted-event-declared-but-never-emitted">[8] <code>DataPermanentlyDeleted</code> event declared but never emitted</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>event DataPermanentlyDeleted(address indexed user, uint256 timestamp)</code> (line 41)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1: general (PG-1, noted inline). Phase 2: boundary, first-principles, trust-gap, invariant (4 independent leads).</p>
+<p><strong>Description</strong>: No function in the contract ever emits this event — not even a hypothetical finalization step once <code>isDeletionEnforceable()</code> becomes true. Off-chain indexers/compliance tooling that expect an on-chain signal for &quot;deletion is now enforceable/permanent&quot; will never see one; the transition can only be discovered by actively polling <code>isDeletionEnforceable()</code>. Directly relevant to Finding #4 — without this event, there is no on-chain trace distinguishing enforcement from a later silent cancellation.</p>
+<p><strong>Recommendation</strong>: Add a permissionless <code>finalizeDeletion(address user)</code> function that emits <code>DataPermanentlyDeleted</code> once <code>isDeletionEnforceable(user)</code> is true, giving downstream systems and Finding #4&#39;s fix a concrete on-chain checkpoint to key off.</p>
+<hr>
+<h2 id="what-was-checked-and-found-sound">What was checked and found sound</h2>
+<p>No exploitable access-control gap: no owner, no admin role, no parameter-update functions exist (<code>PRIVACY_POLICY_VERSION</code>/<code>DATA_RETENTION_PERIOD</code> are both <code>constant</code> by design), and every state-mutating function in this file is correctly scoped to <code>msg.sender</code> only — confirmed by both phases&#39; dedicated access-control passes. No precision-math surface: the only arithmetic in the entire contract (<code>block.timestamp + DATA_RETENTION_PERIOD</code>) cannot realistically overflow under Solidity 0.8&#39;s checked arithmetic (confirmed independently by 2 agents across both phases). No economic/value-extraction surface — the contract holds no funds and makes no external calls, so reentrancy, sandwich, and fund-drain checklist classes are categorically inapplicable. No cross-user griefing or DoS surface — every mapping write is keyed strictly to <code>msg.sender</code>, architecturally ruling out one user affecting another&#39;s state. No <code>abi.encodePacked</code> collision risk in <code>hashPurpose</code> (single dynamic argument only, not the multi-argument pattern that class of bug requires).</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated two-phase audit process (breadth checklist pass + blind attacker-mindset pass + hybrid reconciliation with source-level re-verification of every finding). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. This contract holds no funds, so all findings here concern trust-model/privacy-guarantee correctness rather than direct financial risk — but Finding #6 in particular should be revisited with full context when auditing any contract that inherits <code>PrivacyGuarantees</code> elsewhere in the Vaultfire codebase. A human security review is recommended before this contract&#39;s guarantees are relied upon for compliance purposes.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreie2yftaeknggjzoha6qaym6trfs7k3e6rutzxzsanfkxgbqsrj6aa.ipfs.community.bgipfs.com/"><code>https://bafkreie2yftaeknggjzoha6qaym6trfs7k3e6rutzxzsanfkxgbqsrj6aa.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/336">#336</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

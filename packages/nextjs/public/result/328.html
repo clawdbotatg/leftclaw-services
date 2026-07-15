@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YieldBearingOutcomeTokens (yashnaman/yield-bearing-outcome-tokens) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #328">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">YieldBearingOutcomeTokens (yashnaman/yield-bearing-outcome-tokens)</h1>
+    <p class="job-sub">Job #328 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/328"><b>Job page</b> #328</a>
+      <a class="chip" href="https://bafkreigpepccjchobyq4wsr7m7zbvjl6ehu3buwwjxc66v6p4ypgze66nq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">8</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">7</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#domain-agent-coverage">Domain / agent coverage</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#confirmed-non-issues-checked-explicitly-by-one-or-both-phases-no">Confirmed non-issues (checked explicitly by one or both phases, no exploit found)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Audit — YieldBearingOutcomeTokens (yashnaman/yield-bearing-outcome-tokens)</h1>
+<p><strong>Job</strong>: leftclaw #328<br><strong>Scope</strong>: <code>src/YieldBearingOutcomeTokens.sol</code> only (per client instruction). <code>ConditionalTokens.sol</code> (Gnosis, out of tree) and <code>CTHelpers.sol</code>/interfaces were read as context, not audited.<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (8 ethskills checklist agents: general, precision-math, erc4626, erc20, access-control, assembly, flashloans, dos) → Phase 2 depth (12 pashov attacker agents, run blind to Phase 1) → hybrid reconciliation (this document).<br><strong>Model</strong>: opus (all 20 agents) — scope sized &quot;large&quot; (single contract, 332 in-scope LOC, non-trivial share/vault/ERC1155 accounting, over the 300-LOC &quot;small&quot; default).</p>
+<p><strong>Reconciliation summary</strong>: Overlap: 6 findings corroborated by both phases · Phase-1-only: 7 · Phase-2-only: 4 · Re-examined leads kept: 11, demoted: 0.<br><strong>Completeness</strong>: 17 unique (Contract, function, bug-class) findings/leads across both phases&#39; raw output, 17 covered in this unified report.<br><strong>Severity tally</strong>: 0 Critical · 0 High · 2 Medium · 8 Low · 7 Info</p>
+<p><strong>Verification note</strong>: No finding in this report reaches Critical or High. Both phases independently attempted to construct profitable, cross-user exploits around the contract&#39;s central design (share/asset accounting, reentrancy via caller-supplied <code>yieldVault</code>, cross-market shared ERC-1155 position pool). 11 of 12 Phase-2 attacker agents converged on the same reentrancy/CEI-ordering code smell, but every one of them, after tracing the exploit end-to-end, found the attack interrupted before harm (the outer <code>splitPosition</code>/merge always exactly refills what was transiently borrowed, or the whole transaction reverts). Per this audit&#39;s verification standard, findings that could not be walked to a concrete profitable exploit are reported at their demonstrated severity (Low/Info), not inflated.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-fee-on-transfer-collateral-can-block-investing-and-strand-inve">[1] Fee-on-transfer collateral can block investing and strand invested funds at redemption</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: [phase1: evm-audit-erc20]<br><strong>Location</strong>: <code>mergeAndDeposit()</code> L149-163, <code>_withdrawAndSplit()</code> L219-226<br><strong>Description</strong>: <code>collateralToken</code> is arbitrary (read from <code>yieldVault.asset()</code>, never validated). <code>ConditionalTokens.mergePositions</code>/<code>splitPosition</code> and <code>yieldVault.deposit</code>/<code>withdraw</code> all assume the exact nominal amount arrives. A fee-on-transfer collateral desyncs the actual balance from the amount the next call tries to pull, causing a revert.<br><strong>Proof of Concept</strong>: Collateral = 2% FoT token (or USDT-style fee toggled on post-deployment). A redemption needing <code>amount = 500</code> from the vault calls <code>yieldVault.withdraw(500, ...)</code>, which delivers only <code>490</code> after the fee. <code>splitPosition(..., 500)</code> then does <code>transferFrom(this, ConditionalTokens, 500)</code>, but this contract only holds <code>490</code> → reverts. The same desync blocks <code>mergeAndDeposit</code>&#39;s vault deposit (mergePositions delivers less than <code>completeSets</code> to the vault-deposit call).<br><strong>Recommendation</strong>: Measure actual received balance via before/after <code>balanceOf</code> and use that instead of the nominal amount, or restrict collateral to a vetted allowlist and document FoT tokens as unsupported.</p>
+<hr>
+<h3 id="2-raw-bool-checked-approve-reverts-for-no-return-value-tokens-eg">[2] Raw bool-checked <code>approve</code> reverts for no-return-value tokens (e.g. mainnet USDT), silently disabling yield investing</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: [phase1: evm-audit-erc20, corroborated by evm-audit-general, evm-audit-assembly]<br><strong>Location</strong>: <code>mergeAndDeposit()</code> L156, <code>_withdrawAndSplit()</code> L224<br><strong>Description</strong>: <code>require(collateralToken.approve(spender, amount), ApproveFailed())</code> decodes a <code>bool</code> return. USDT&#39;s <code>approve</code> returns no data, so the high-level call reverts on ABI-decode even though the call would otherwise have succeeded. Every <code>mergeAndDeposit</code> for USDT-class collateral reverts here; <code>deposit()</code>&#39;s try/catch swallows it, so the market silently never invests — the yield feature is dead for one of the most common collateral tokens, despite ConditionalTokens itself supporting USDT as collateral (the in-code justification is factually incorrect on this point).<br><strong>Proof of Concept</strong>: Deploy a market with <code>yieldVault.asset() == USDT</code>. Deposit matching YES/NO so <code>completeSets &gt; 0</code>. <code>mergePositions</code> succeeds; <code>USDT.approve(vault, completeSets)</code> returns no data → revert → caught by <code>deposit</code>&#39;s try/catch → both sides stay dangling forever, market never earns yield.<br><strong>Recommendation</strong>: Replace both raw <code>approve</code> calls with OpenZeppelin <code>SafeERC20.forceApprove</code>, which tolerates missing return data and safely resets non-zero allowances (also fixes finding [3]).</p>
+<hr>
+<h3 id="3-usdt-style-non-zeronon-zero-approve-can-permanently-disable-in">[3] USDT-style non-zero→non-zero approve can permanently disable investing if a vault under-pulls the approved amount</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [both — phase1: evm-audit-erc20; phase2: boundary, first-principles agents]<br><strong>Location</strong>: <code>mergeAndDeposit()</code> L156<br><strong>Description</strong>: If a non-standard <code>yieldVault.deposit</code> ever consumes less than the full approved <code>completeSets</code> while still succeeding, a residual non-zero allowance persists. The next <code>mergeAndDeposit</code>&#39;s <code>approve(spender, nonZero)</code> then reverts against a USDT-style token requiring approve-to-zero first, permanently blocking future investing for that market (redemptions are unaffected — a separate, always-fully-consumed allowance is used for <code>CONDITIONAL_TOKENS</code>).<br><strong>Proof of Concept</strong>: Requires a non-standard vault that partially consumes its allowance, combined with USDT-style collateral. Narrow precondition; no fund loss (dangling path remains redeemable).<br><strong>Recommendation</strong>: Same fix as [2] (<code>SafeERC20.forceApprove</code>).</p>
+<hr>
+<h3 id="4-missing-reentrancy-guard-vaultsharesofid-is-crediteddebited-af">[4] Missing reentrancy guard: <code>vaultSharesOf[id]</code> is credited/debited after the external vault call (CEI ordering)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [both — phase1: evm-audit-general, evm-audit-erc20; phase2: 11/12 attacker agents independently converged (math-precision, access-control, economic-security, execution-trace, invariant, periphery, asymmetry, boundary, numerical-gap, trust-gap, flow-gap)]<br><strong>Location</strong>: <code>mergeAndDeposit()</code> L163 (<code>vaultSharesOf[id] += yieldVault.deposit(...)</code>), <code>_withdrawAndSplit()</code> L219 (<code>vaultSharesOf[id] -= yieldVault.withdraw(...)</code>)<br><strong>Description</strong>: <code>vaultSharesOf[id]</code> — which <code>_investedBalance()</code> reads to price every deposit and redeem — is only written <em>after</em> the external, caller-supplied <code>yieldVault</code> call returns. There is no <code>nonReentrant</code> guard anywhere in the contract, and <code>yieldVault</code> is a fully attacker-choosable parameter (not validated or allowlisted). During the external call, <code>_investedBalance</code> is transiently understated (deposit path) or overstated (withdraw path).<br><strong>Proof of Concept</strong>: This is the most heavily investigated pattern in this audit — 11 independent attacker agents in Phase 2 traced concrete reentrancy scenarios against it (same-market share mispricing via a malicious vault, and cross-market drain of the shared ERC-1155 position pool shared by markets on the same <code>(collateralToken, conditionId)</code> but different <code>yieldVault</code>). <strong>In every traced scenario, the attack was interrupted before harm</strong>: a reentrant &quot;borrow&quot; from the shared position pool is always exactly refilled by the outer <code>splitPosition</code>/<code>mergePositions</code> before the transaction ends, or the entire transaction reverts (undoing the reentrant leg too, since <code>vaultSharesOf[id] -=</code> underflow-reverts on any over-withdrawal). Same-market mispricing is confined to a market the attacker themselves seeded with their own malicious vault — no independent third-party victim was found reachable in any traced scenario, since <code>id = keccak256(yieldVault, collateralToken, conditionId)</code> isolates all storage per vault. We could not construct a profitable, cross-user exploit despite this being the single most-attacked surface in the engagement.<br><strong>Recommendation</strong>: Add a <code>nonReentrant</code> guard to <code>deposit()</code> and <code>redeem()</code> as defense-in-depth, given both call fully attacker-chosen <code>yieldVault</code> addresses. This closes the code smell even though no working exploit was found.</p>
+<hr>
+<h3 id="5-round-to-zero-shares-vault-deposit-leaks-collateral-backing-to">[5] Round-to-zero-shares vault deposit leaks collateral backing to the yield vault&#39;s other depositors</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [both — phase1: evm-audit-precision-math, evm-audit-general, evm-audit-erc4626 (documented in-code as ACCEPTED RISK); phase2: execution-trace, first-principles agents]<br><strong>Location</strong>: <code>mergeAndDeposit()</code> L156-163 (ACCEPTED RISK comment at L158-162)<br><strong>Description</strong>: <code>vaultSharesOf[id] += yieldVault.deposit(completeSets, address(this))</code>. If the vault mints 0 shares for the merged <code>completeSets</code>, the collateral leaves the contract but <code>vaultSharesOf[id]</code> doesn&#39;t grow — a permanent leak diluting <strong>both</strong> sides&#39; shareholders, not just the caller as the in-code comment implies. The code&#39;s claimed &quot;~1 wei per attack&quot; bound only holds when the vault&#39;s share price is ≈1:1; for an appreciated share price <code>P</code>, up to <code>ceil(P)-1</code> can leak per merge, and the attack is repeatable (bounded by gas, not a hard cap).<br><strong>Proof of Concept</strong>: Attacker repeatedly supplies matching YES/NO below the vault&#39;s per-share threshold; each merge leaks sub-one-share dust to existing vault depositors while consuming the attacker&#39;s own backing + gas. Uneconomical at normal decimals/share-price; the containment reasoning in the source comment is imprecise but the practical risk is low.<br><strong>Recommendation</strong>: <code>require(minted &gt; 0)</code> after <code>yieldVault.deposit(...)</code>, letting <code>deposit()</code>&#39;s existing try/catch defer the merge instead of silently absorbing a zero-share mint.</p>
+<hr>
+<h3 id="6-redeem-has-no-graceful-degradation-if-the-external-yield-vault">[6] <code>redeem()</code> has no graceful degradation if the external yield vault cannot honor <code>withdraw</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [both — phase1: evm-audit-erc4626; phase2: economic-security, first-principles, boundary agents]<br><strong>Location</strong>: <code>redeem()</code> → <code>_withdrawAndSplit()</code> L210-225<br><strong>Description</strong>: Unlike <code>deposit()</code> (wrapped in try/catch, degrades gracefully), <code>_withdrawAndSplit</code>&#39;s <code>yieldVault.withdraw(...)</code> call is unguarded and never checks <code>maxWithdraw</code>. Any redemption whose <code>assets</code> exceed the side&#39;s dangling balance reverts entirely if the vault is paused, temporarily illiquid, or charges an unexpected withdrawal fee (which would also silently drain <code>vaultSharesOf[id]</code> faster than accounted, per finding [10]).<br><strong>Proof of Concept</strong>: Not privileged or attacker-triggered — depends on the externally chosen vault&#39;s own health/liquidity. Users can work around a temporary block by redeeming only up to the dangling balance; loss is only permanent if the vault permanently bricks.<br><strong>Recommendation</strong>: Document the assumption that the vault must always deliver exactly <code>amount</code> with no fee on withdraw. Optionally check <code>maxWithdraw</code>/support partial-fill semantics.</p>
+<hr>
+<h3 id="7-setauthorization-is-non-idempotent-re-asserting-the-current-va">[7] <code>setAuthorization</code> is non-idempotent — re-asserting the current value reverts</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [phase1: evm-audit-access-control]<br><strong>Location</strong>: <code>setAuthorization()</code> L230-236<br><strong>Description</strong>: <code>require(newIsAuthorized != isAuthorized[msg.sender][authorized], AlreadySet())</code> reverts on a no-op write. Not exploitable for authorization bypass — only the authorizer can write their own mapping entry, so nothing can front-run a revocation into a forced revert — but breaks idempotent/batch callers and scripts.<br><strong>Recommendation</strong>: Make the setter a no-op (skip the write/event) instead of reverting when the value is unchanged.</p>
+<hr>
+<h3 id="8-authorization-grant-is-global-all-markets-unlimited-and-lets-t">[8] Authorization grant is global (all markets), unlimited, and lets the operator redirect funds to an arbitrary address</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [phase1: evm-audit-access-control]<br><strong>Location</strong>: <code>redeem()</code> L167-205, <code>setAuthorization()</code> L230-236<br><strong>Description</strong>: <code>setAuthorization(op, true)</code> grants <code>op</code> the ability to <code>redeem()</code> <strong>any</strong> amount of <code>onBehalf</code>&#39;s shares across <strong>all</strong> markets, sending the resulting outcome tokens to a <code>to</code> of the operator&#39;s own choosing — not scoped to a single market, amount, or expiry, and not restricted to <code>to == onBehalf</code>. This is an intentional operator model (like ERC-1155 <code>setApprovalForAll</code>), but broader than a user authorizing &quot;redeem on my behalf for market X&quot; might assume.<br><strong>Proof of Concept</strong>: Requires the victim&#39;s own opt-in (<code>setAuthorization</code>); not exploitable without consent. Once granted, <code>attacker</code> can call <code>redeem(anyVault, anyCondition, anySide, victimShares, victim, attacker)</code> for every market where the victim holds shares.<br><strong>Recommendation</strong>: Document the grant&#39;s true scope prominently. Consider restricting <code>to == onBehalf</code> when <code>msg.sender != onBehalf</code>, or scoping authorization per-market.</p>
+<hr>
+<h3 id="9-unwhitelisted-caller-supplied-yieldvault-fragments-markets-and">[9] Unwhitelisted, caller-supplied <code>yieldVault</code> fragments markets and is the root trust boundary behind finding [4]</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [both — phase1: evm-audit-flashloans; phase2: trust-gap, economic-security agents]<br><strong>Location</strong>: <code>_id()</code> L281-283, <code>deposit()</code>/<code>redeem()</code> L80-91, L167-176<br><strong>Description</strong>: A market&#39;s identity is <code>keccak256(yieldVault, collateralToken, conditionId)</code>; <code>yieldVault</code> is supplied fresh on every call and never pinned/validated against a prior value for a given <code>conditionId</code>, nor allowlisted. Two users intending to trade &quot;the same market&quot; but passing different <code>yieldVault</code> addresses land in isolated markets that never merge into complete sets, even though they share the same underlying ERC-1155 position-id pool. This unrestricted, per-call vault selection is also the single trust boundary that every Phase 2 reentrancy/pricing lead (finding [4]) traces back to.<br><strong>Proof of Concept</strong>: UX/integration hazard, not by itself a solvency bug — confirmed the shared position-pool cannot be drained across fragmented markets (all transfers require real collateral to move; <code>splitPosition</code>/<code>mergePositions</code> are atomic).<br><strong>Recommendation</strong>: Document that <code>(yieldVault, conditionId)</code> jointly define the market; consider pinning the first-seen <code>yieldVault</code> per <code>conditionId</code> and rejecting mismatches, and/or maintaining a vetted vault allowlist to shrink the trust surface for finding [4].</p>
+<hr>
+<h3 id="10-withdraw-side-share-burn-rounding-is-not-charged-to-the-redee">[10] Withdraw-side share-burn rounding is not charged to the redeeming side, socializing wei-scale loss onto the shared invested balance</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: [phase2 only: numerical-gap agent]<br><strong>Location</strong>: <code>_withdrawAndSplit()</code> L217, <code>redeem()</code> L191-197<br><strong>Description</strong>: <code>redeem()</code> credits the counter-side&#39;s dangling balance with exactly <code>amount</code> (L195: <code>side[id][!isYes].danglingBalance += amount</code>), but <code>yieldVault.withdraw(amount, ...)</code> (L217) burns vault shares rounded <em>up</em> (standard ERC-4626 <code>previewWithdraw</code>/<code>Rounding.Ceil</code> semantics — verified: <code>vaultSharesOf[id] -= yieldVault.withdraw(...)</code> subtracts the actual shares-burned return value). The realized drop in <code>previewRedeem(vaultSharesOf[id])</code> can therefore exceed <code>amount</code> by a few wei, and that excess is not charged to the redeeming side — it silently reduces the shared invested balance both sides count as backing.<br><strong>Proof of Concept</strong>: Verified at the code level (standard OZ ERC-4626 rounds <code>withdraw</code>&#39;s share-burn up against the caller). Bounded to wei-scale per redemption on a standard vault; not independently profitable for an attacker (the &quot;gain&quot; from any single redemption&#39;s rounding accrues to the underlying vault&#39;s other depositors, not to the attacker), so this is an accounting-precision note rather than an exploitable drain.<br><strong>Recommendation</strong>: Optional: track the realized asset delta from <code>withdraw</code>&#39;s return combined with <code>previewWithdraw</code> pre-call, and charge any shortfall to the redeeming side rather than the shared pool. Low priority given the bound is wei-scale.</p>
+<hr>
+<h3 id="11-blacklistablepausable-collateral-can-freeze-already-invested-">[11] Blacklistable/pausable collateral can freeze already-invested funds</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Origin</strong>: [phase1: evm-audit-erc20]<br><strong>Location</strong>: whole-contract collateral flow (L149, 163, 219, 226)<br><strong>Description</strong>: If the collateral is a blacklist-capable token (USDC/USDT) and this contract&#39;s address is ever blacklisted, or the token is paused, both investing and redeeming the invested portion revert until the block is lifted. Standard, largely inherent risk of accepting arbitrary collateral; not independently triggerable by a third party.</p>
+<hr>
+<h3 id="12-depositsredemptions-that-round-to-zero-still-mutate-state-for">[12] Deposits/redemptions that round to zero still mutate state for no economic effect</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Origin</strong>: [phase1: evm-audit-precision-math, evm-audit-general]<br><strong>Location</strong>: <code>deposit()</code> L99-105, <code>redeem()</code> L183-189, 204<br><strong>Description</strong>: <code>shares</code>/<code>assets</code> can floor to 0 for dust-sized inputs on either side (deposit mints 0 shares while still crediting dangling with the deposited assets, donating value to existing shareholders; redeem burns real shares for a 0-token payout). Not reachable at attacker-relevant scale given the virtual-share offset (would require the side&#39;s share price to already be ≈1e6 units above par); only self-harms the caller.<br><strong>Recommendation</strong>: Optional <code>require(shares &gt; 0)</code> / <code>require(assets &gt; 0)</code> guards as defense-in-depth.</p>
+<hr>
+<h3 id="13-pragma-0834-emits-push0-confirm-target-chain-support">[13] Pragma <code>^0.8.34</code> emits PUSH0 — confirm target chain support</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Origin</strong>: [phase1: evm-audit-general]<br><strong>Location</strong>: L2<br><strong>Description</strong>: Solidity ≥0.8.20 emits PUSH0 by default. Deployment will fail on any L2/chain without Shanghai support unless compiled with an explicit older EVM version.</p>
+<hr>
+<h3 id="14-fee-charging-yield-vault-could-socialize-entryexit-fees-acros">[14] Fee-charging yield vault could socialize entry/exit fees across both sides via the shared invested balance</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Origin</strong>: [phase2 only: flow-gap agent]<br><strong>Location</strong>: <code>redeem()</code>/<code>mergeAndDeposit()</code>, <code>_investedBalance()</code> L273<br><strong>Description</strong>: <code>_investedBalance</code> is one shared quantity counted by both YES and NO sides (by design — one unit of invested collateral backs one token of each side). If the underlying vault charges a deposit/withdrawal fee, the fee realized when one side triggers a vault interaction is absorbed by the shared pool and thus partly borne by the side that never itself touched the vault, in tension with the documented &quot;each side runs its own share index&quot; design intent. Unverified whether the magnitude exceeds dust for realistic fee-charging vaults (uncommon among ERC-4626 implementations).</p>
+<hr>
+<h3 id="15-previewredeem-vs-actual-depositwithdraw-drift-on-non-standard">[15] <code>previewRedeem</code>-vs-actual <code>deposit</code>/<code>withdraw</code> drift on non-standard vaults</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Origin</strong>: [phase2 only: numerical-gap agent]<br><strong>Location</strong>: <code>_investedBalance()</code> L273-275<br><strong>Description</strong>: Share pricing reads <code>previewRedeem</code> (a view), while state is written from <code>deposit</code>/<code>withdraw</code> return values. On a non-standard vault where <code>previewRedeem(deposit(x)) &gt; x</code> (rounds in the depositor&#39;s favor, opposite of OZ&#39;s default), a merge-then-immediate-redeem could extract the surplus. Inert on standard OpenZeppelin ERC-4626 vaults, which round against the depositor in both directions; the caller-supplied, unwhitelisted <code>yieldVault</code> (finding [9]) is what admits a non-standard vault at all.</p>
+<hr>
+<h3 id="16-asymmetric-share-rounding-mint-rounds-down-burn-rounds-up-cou">[16] Asymmetric share-rounding (mint rounds down, burn rounds up) could underflow <code>vaultSharesOf[id]</code> on near-full exit</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Origin</strong>: [phase2 only: asymmetry, first-principles agents]<br><strong>Location</strong>: <code>mergeAndDeposit()</code> L163 vs <code>_withdrawAndSplit()</code> L217<br><strong>Description</strong>: <code>vaultSharesOf[id] += deposit(...)</code> books shares rounded down (standard ERC-4626); <code>vaultSharesOf[id] -= withdraw(...)</code> subtracts shares rounded up. Cumulative asymmetry over a market&#39;s lifetime could in principle make the last redemption(s) underflow-revert. Dust/DoS-scale and self-resolving (the redeemer can request slightly fewer shares); not a fund-loss path.</p>
+<hr>
+<h3 id="17-erc-4626-inflation-attack-on-the-shared-invested-balance-via-">[17] ERC-4626 inflation attack on the shared invested balance via vault donation — investigated, confirmed mitigated</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Origin</strong>: [both — phase1: evm-audit-erc4626 (deepest analysis, concluded no exploitable path); phase2: periphery, economic-security, flow-gap agents (flagged as residual lead, could not exhibit a profitable instance)]<br><strong>Location</strong>: <code>deposit()</code> L99-105, constants L55-58 (<code>VIRTUAL_SHARES = 1e6</code>, <code>VIRTUAL_ASSETS = 1</code>)<br><strong>Description</strong>: Donating collateral directly to the underlying yield vault raises <code>previewRedeem(vaultSharesOf[id])</code>, the classic first-depositor/inflation vector. Both phases independently confirmed this is properly mitigated: <code>danglingBalance</code> is internal-tracked accounting (not <code>balanceOf</code>-derived, so direct outcome-token donations are inert), and the <code>VIRTUAL_SHARES=1e6</code>/<code>VIRTUAL_ASSETS=1</code> offset raises the cost of nullifying a victim deposit of size <code>V</code> to roughly <code>2e6×V</code> in donated collateral, which is only recoverable if the attacker dominates the underlying vault&#39;s other depositors — otherwise the donation is a net subsidy to them, not a theft.</p>
+<hr>
+<h2 id="domain-agent-coverage">Domain / agent coverage</h2>
+<ul>
+<li><strong>Phase 1</strong> (8/8 checklists, no agent errors): general, precision-math, erc4626, erc20, access-control, assembly, flashloans, dos.</li>
+<li><strong>Phase 2</strong> (12/12 agents, no agent errors): math-precision, access-control, economic-security, execution-trace, invariant, periphery, first-principles, asymmetry, boundary, numerical-gap, trust-gap, flow-gap.</li>
+</ul>
+<h2 id="confirmed-non-issues-checked-explicitly-by-one-or-both-phases-no">Confirmed non-issues (checked explicitly by one or both phases, no exploit found)</h2>
+<ul>
+<li><code>_partition()</code> inline-assembly block: memory-safe, correct free-memory-pointer handling, correctly ABI-encoded (multiple agents in both phases independently confirmed).</li>
+<li><code>onlySelf</code> gate on <code>mergeAndDeposit</code>: unspoofable — no delegatecall, no proxy, no multicall primitive.</li>
+<li>No unbounded loops / user-growable arrays; force-sent ETH/tokens are inert dust, never read into accounting.</li>
+<li>Malicious/reverting <code>yieldVault</code> or malicious ERC-1155 receiver <code>to</code>: griefing is confined to the attacker&#39;s own self-selected market/output target; all reverts are atomic; the dangling path always remains redeemable, so no funds are ever permanently stuck.</li>
+<li>Live <code>previewRedeem</code>-based share pricing resists flash-loan sandwich manipulation — donating to the external vault benefits <em>all</em> of its depositors pro-rata, so an attacker&#39;s donation cost always exceeds their extractable share of it.</li>
+<li>Cross-market isolation via <code>id = keccak256(yieldVault, collateralToken, conditionId)</code> holds even under a malicious/reentrant <code>yieldVault</code> — every transfer from the shared ERC-1155 position pool requires atomic, real collateral movement, and the outer split/merge always reconciles the pool by the end of the transaction.</li>
+<li>Rounding direction is consistently protocol-favoring on the core deposit/redeem formulas (floor on both shares-minted and assets-out); no profitable deposit→redeem round trip found.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI auditor agents (ethskills breadth methodology + pashov attacker-agent depth methodology, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, and/or a bug bounty program, is recommended before mainnet deployment with meaningful TVL — in particular for the fee-on-transfer/non-standard-ERC20 collateral findings ([1],[2],[3]), given collateral tokens are fully caller-supplied and unvalidated.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreigpepccjchobyq4wsr7m7zbvjl6ehu3buwwjxc66v6p4ypgze66nq.ipfs.community.bgipfs.com/"><code>https://bafkreigpepccjchobyq4wsr7m7zbvjl6ehu3buwwjxc66v6p4ypgze66nq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/328">#328</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

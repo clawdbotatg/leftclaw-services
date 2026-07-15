@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — Job #313 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #313">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — Job #313</h1>
+    <p class="job-sub">Job #313 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/313"><b>Job page</b> #313</a>
+      <a class="chip" href="https://bafkreihb4334nvw7prxecellg3tnoybdgjzz6d6shzms77qwi77ltbzjmi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">10</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#target">Target</a></li>
+      <li><a href="#methodology-reconciliation-summary">Methodology &amp; reconciliation summary</a></li>
+      <li><a href="#executive-summary">Executive summary</a></li>
+      <li><a href="#u-1-removelastowner-can-zero-the-owner-set-permanently-bricking-">[U-1] removeLastOwner() can zero the owner set, permanently bricking the wallet</a></li>
+      <li><a href="#u-2-injected-validateuserop-upgrade-check-loop-redundant-erc-433">[U-2] Injected validateUserOp upgrade-check loop: redundant, ERC-4337-validation-phase risk, and can stall the replayable-nonce channel</a></li>
+      <li><a href="#u-3-cross-chain-replayable-upgradetoandcall-guard-if-kept-checks">[U-3] Cross-chain replayable upgradeToAndCall guard (if kept) checks code existence, not code identity</a></li>
+      <li><a href="#u-4-permissionless-initialize-emptyzero-address-owner-arrays-are">[U-4] Permissionless initialize(); empty/zero-address owner arrays are not rejected</a></li>
+      <li><a href="#u-5-flat-single-owner-authority-no-threshold-no-timelock-design-">[U-5] Flat single-owner authority — no threshold, no timelock (design note, re-examined and downgraded)</a></li>
+    </ol>
+    <ol start="9">
+      <li><a href="#u-6-unconstrained-instantly-effective-upgradeability">[U-6] Unconstrained, instantly-effective upgradeability</a></li>
+      <li><a href="#u-7-replayable-ops-carry-no-validuntilvalidafter-valid-on-every-">[U-7] Replayable ops carry no validUntil/validAfter — valid on every chain, forever, resubmittable by anyone (re-examined, downgraded)</a></li>
+      <li><a href="#u-8-webauthn-passkey-verification-accepts-user-presence-only-req">[U-8] WebAuthn passkey verification accepts user-presence only (requireUV: false)</a></li>
+      <li><a href="#u-9-secp256k1-signature-malleability-not-rejected-accepted-desig">[U-9] secp256k1 signature malleability not rejected (accepted design)</a></li>
+      <li><a href="#u-10-index-based-owner-removal-is-fragile-to-cross-chain-owner-s">[U-10] Index-based owner removal is fragile to cross-chain owner-set divergence (confirmed self-healing on re-examination)</a></li>
+      <li><a href="#u-11-validateuserop-reverts-rather-than-returning-the-1-sentinel">[U-11] validateUserOp reverts rather than returning the 1 sentinel on malformed signature-format input</a></li>
+      <li><a href="#u-12-addowneraddressaddownerpublickey-accept-zero-value-owners-w">[U-12] addOwnerAddress/addOwnerPublicKey accept zero-value owners with no sanity check</a></li>
+      <li><a href="#refuted-considered-and-dismissed">Refuted / considered and dismissed</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — Job #313</h1>
+<h2 id="target">Target</h2>
+<ul>
+<li><strong>Audited address:</strong> <code>0x2ec3ae4f5f3c8155a9c13dce82bef09361a0cb16</code> (Base mainnet, chain 8453)</li>
+<li><strong>Contract type:</strong> Solady <code>LibClone.deployERC1967</code> minimal proxy. Confirmed by bytecode disassembly — the runtime <code>SLOAD</code>s the canonical EIP-1967 implementation slot (<code>0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc</code>) and <code>DELEGATECALL</code>s to it.</li>
+<li><strong>Resolved implementation:</strong> <code>0x00000110dcdedc9581cb5ecb8467282f2926534d</code>. Sourcify reports an <strong>exact_match</strong> verification on Base: it is Coinbase&#39;s open-source <strong><code>CoinbaseSmartWallet</code></strong> (ERC-4337 smart account), built on Solady&#39;s <code>UUPSUpgradeable</code>, a custom <code>MultiOwnable</code> access-control mixin, WebAuthn/secp256r1 (passkey) signatures, and <code>ERC1271</code>.</li>
+<li><strong>In-scope files</strong> (default scope — exclude <code>lib/</code>, <code>interfaces/</code>, <code>mocks/</code>, <code>test/</code>): <code>src/CoinbaseSmartWallet.sol</code> (358 LOC), <code>src/MultiOwnable.sol</code> (287 LOC), <code>src/ERC1271.sol</code> (156 LOC) — 801 LOC / 3 contracts. <code>lib/</code> dependencies (Solady, webauthn-sol, account-abstraction, OpenZeppelin) were read for cross-file call-site verification but treated as trusted, independently-audited dependencies.</li>
+<li><strong>Note:</strong> the on-disk source was diffed byte-for-byte against the raw Sourcify verification payload — no local tampering. The deployed implementation contains exactly <strong>one</strong> deviation from Coinbase&#39;s canonical upstream <code>CoinbaseSmartWallet.sol</code>: an injected loop in <code>validateUserOp</code> (lines 169–183, see U-2 below). Every other line matches canonical.</li>
+<li>The audited proxy is an <strong>active, in-use wallet</strong> on Base — on-chain history shows USDC/AERO/ETH transfers spanning several months, current balance ≈0.00637 ETH. Supplementary context only; no claim is made about the owner&#39;s identity.</li>
+</ul>
+<h2 id="methodology-reconciliation-summary">Methodology &amp; reconciliation summary</h2>
+<p>Two-phase audit per <code>~/skills/two-phase-audit.md</code>: Phase 1 (ethskills breadth — 6 parallel domain-checklist agents: general, precision-math, erc4337, proxies, signatures, access-control) → Phase 2 (pashov depth — 12 parallel blind attacker-mindset agents: 9 specialty + 3 gap-hunter) → this reconciliation. Both phases ran as genuine independent parallel agent fan-outs against the same 3 in-scope files, phase 2 blind to phase 1&#39;s results.</p>
+<p><strong>Completeness:</strong> 14 unique (Contract, function, bug-class) combinations identified across both phases (13 from phase 1, 1 phase-2-only — a validation-phase nonce-consumption mechanic). All 14 are covered below, consolidated into 12 unified findings (U-2 merges 3 group-keys — P1-6, P1-7, and the phase-2-only nonce-stall mechanic — because they share one root cause and one fix: the injected <code>validateUserOp</code> loop).</p>
+<p><strong>Overlap:</strong> 5 findings corroborated by both phases (U-2, U-3, U-4, U-10, U-11) · <strong>Phase-1-only:</strong> 7 (U-1, U-5, U-6, U-7, U-8, U-9, U-12) · <strong>Phase-2-only:</strong> 0 standalone (1 sub-mechanic folded into U-2) · <strong>Re-examined leads kept:</strong> 7 · <strong>demoted:</strong> 2 (U-5, U-7 — downgraded Medium→Low on re-examination, reasoning below).</p>
+<p>Every Critical/High-candidate finding was walked to a concrete exploit; none survived at that severity — the ceiling in this codebase is Medium, and only where a single authorized owner action produces irreversible loss.</p>
+<h2 id="executive-summary">Executive summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>9</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>1</td>
+</tr>
+</tbody></table></div>
+<p>The 3 in-scope contracts are, with one exception, byte-identical to Coinbase&#39;s canonical, widely-deployed, independently-audited <code>CoinbaseSmartWallet</code>. The sole code deviation (U-2) was independently rediscovered by 11 of the 12 blind phase-2 agents plus 2 of 6 phase-1 domain agents — the strongest corroboration signal in this audit — yet every concrete exploit path through it terminates in a revert or an owner-recoverable liveness hiccup, not fund loss or unauthorized access. The two Medium findings (U-1, U-7) are both present in Coinbase&#39;s <em>canonical</em> upstream code (not specific to this deployment) and require the wallet&#39;s own owner to trigger; they are documented here as real, severe-impact-but-low-likelihood footguns rather than externally exploitable vulnerabilities.</p>
+<hr>
+<h2 id="u-1-removelastowner-can-zero-the-owner-set-permanently-bricking-">[U-1] <code>removeLastOwner()</code> can zero the owner set, permanently bricking the wallet</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1: access-control, erc4337]</code><br><strong>Location</strong>: <code>MultiOwnable.removeLastOwner()</code> — MultiOwnable.sol:137-144; allow-listed in <code>CoinbaseSmartWallet.canSkipChainIdValidation()</code> — CoinbaseSmartWallet.sol:281-292</p>
+<p><strong>Root cause</strong>: <code>removeOwnerAtIndex</code> refuses to remove the last owner (<code>ownerCount()==1</code> → <code>revert LastOwner()</code>, MultiOwnable.sol:122-124). <code>removeLastOwner</code> is its mirror-image: it requires exactly one owner remain and removes it (MultiOwnable.sol:137-144), driving <code>ownerCount()</code> to 0. <code>_removeOwnerAtIndex</code> never decrements <code>nextOwnerIndex</code>, only increments <code>removedOwnersCount</code> (MultiOwnable.sol:263) — <code>ownerCount() = nextOwnerIndex - removedOwnersCount</code> (MultiOwnable.sol:193-195). <code>initialize()</code>&#39;s only guard is <code>nextOwnerIndex() != 0</code> (CoinbaseSmartWallet.sol:128-130), which stays permanently true once any owner has ever been added — re-initialization is impossible. Every mutating function is <code>onlyOwner</code>, so once <code>ownerCount()==0</code> nothing can ever add a new owner again.</p>
+<p><strong>Concrete exploit walk</strong>: Sole owner O calls <code>removeLastOwner(index, ownerBytes)</code> — passes <code>onlyOwner</code>, <code>ownersRemaining()==1</code>. <code>_removeOwnerAtIndex</code> deletes the slot and increments <code>removedOwnersCount</code> to equal <code>nextOwnerIndex</code>. <code>ownerCount()</code> → 0. <code>initialize()</code> still reverts <code>Initialized()</code> forever. No function in either contract can add an owner without first passing <code>onlyOwner</code>, which now has zero valid callers. All held assets (currently ≈0.00637 ETH plus historical USDC/AERO flows through this address) are permanently frozen. <code>removeLastOwner.selector</code> is also in <code>canSkipChainIdValidation</code>&#39;s allow-list (CoinbaseSmartWallet.sol:286), so one owner-signed replayable UserOp bricks every chain-deployment of this wallet address in one shot.</p>
+<p><strong>Verification note</strong>: this exact function is present unmodified in Coinbase&#39;s canonical, publicly-audited <code>CoinbaseSmartWallet</code>/<code>MultiOwnable</code> — it is not specific to this deployment. It appears to be an intentional &quot;formally decommission this wallet&quot; primitive rather than a coding defect, but its name and NatSpec (<code>&quot;Removes owner at the given index, which should be the only current owner&quot;</code>) give no warning that this is irreversible and no recovery path exists. Severity kept at Medium (not High) because it requires the wallet&#39;s own authorized owner to invoke it — no external attacker path exists — but the impact (total, permanent, unrecoverable loss of the wallet and its funds from a single call) is severe enough that Low would understate it.</p>
+<p><strong>Recommendation</strong>: If this decommissioning behavior is intentional, gate it behind an explicit two-step confirmation or a distinctly-named function that makes the irreversibility unambiguous, and strip <code>removeLastOwner.selector</code> from <code>canSkipChainIdValidation</code> so a single signature cannot brick every chain deployment at once.</p>
+<hr>
+<h2 id="u-2-injected-validateuserop-upgrade-check-loop-redundant-erc-433">[U-2] Injected <code>validateUserOp</code> upgrade-check loop: redundant, ERC-4337-validation-phase risk, and can stall the replayable-nonce channel</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both — highest corroboration in this audit: phase1 P1-6/P1-7 + 11 of 12 phase2 agents]</code><br><strong>Location</strong>: <code>CoinbaseSmartWallet.validateUserOp()</code> — CoinbaseSmartWallet.sol:169-183 (the <strong>only</strong> deviation from Coinbase&#39;s canonical upstream source in this deployment)</p>
+<pre><code class="language-solidity">// Check for upgrade calls in the batch and validate implementation has code
+bytes[] memory calls = abi.decode(userOp.callData[4:], (bytes[]));
+for (uint256 i; i &lt; calls.length; i++) {
+    bytes memory callData = calls[i];
+    bytes4 selector = bytes4(callData);
+
+    if (selector == UUPSUpgradeable.upgradeToAndCall.selector) {
+        address newImplementation;
+        assembly {
+            // Skip reading the first 32 bytes (length prefix) + 4 bytes (function selector)
+            newImplementation := mload(add(callData, 36))
+        }
+        if (newImplementation.code.length == 0) revert InvalidImplementation(newImplementation);
+    }
+}
+</code></pre>
+<p><strong>Root cause</strong>: this block only runs on the <code>executeWithoutChainIdValidation</code> (cross-chain replayable) path and scans batched calls for <code>upgradeToAndCall</code>, reverting if the target implementation has no code on the <em>current</em> chain. It is fully redundant: Solady&#39;s <code>UUPSUpgradeable.upgradeToAndCall</code> (lib/solady/src/utils/UUPSUpgradeable.sol:83-93) already <code>staticcall</code>s <code>proxiableUUID()</code> on the new implementation and reverts <code>UpgradeFailed()</code> when it returns anything other than the ERC-1967 slot — a codeless address returns empty data, so that call already fails at <em>execution</em> time, on every chain, with or without this loop. All 12 phase-2 agents and 2 of 6 phase-1 domain agents independently confirmed no signature-bypass, fund-theft, or privilege-escalation path through this code — every constructed attack path (short/malformed batch elements, code-existence spoofing, cross-chain address squatting) terminates in a revert, not a bypass.</p>
+<p>Three concrete effects were verified:</p>
+<ol>
+<li><p><strong>Bundler-rejection risk</strong> (<code>[phase1: P1-6]</code>, corroborated by 9 phase-2 agents): <code>newImplementation.code.length</code> compiles to <code>EXTCODESIZE</code> on a calldata-derived address, executed during the ERC-4337 <em>validation</em> phase. ERC-7562 canonical-mempool rules restrict <code>EXTCODE*</code> opcodes on addresses outside the permitted entity set during validation; a strict public bundler may drop the UserOp in simulation. Unverified in general — depends on the specific bundler&#39;s ERC-7562 enforcement — but the risk is real and easy to avoid by not touching foreign code in validation at all.</p>
+</li>
+<li><p><strong>Out-of-bounds read on malformed input</strong> (<code>[phase1: P1-7]</code>, corroborated by 8 phase-2 agents): matching <code>bytes4(callData) == upgradeToAndCall.selector</code> only guarantees <code>callData.length &gt;= 4</code>; the unconditional <code>mload(add(callData, 36))</code> requires <code>&gt;= 36</code>. A batch element with the right selector but fewer bytes reads adjacent memory as <code>newImplementation</code>. Owner-signed input only (self-harm); the near-certain outcome is the same <code>InvalidImplementation</code> revert on a garbage address, and even were it skipped, the real <code>upgradeToAndCall</code> call would separately fail to ABI-decode the truncated calldata at execution.</p>
+</li>
+<li><p><strong>Validation-phase revert can stall the sequential replayable-nonce channel</strong> (phase-2-only — independently surfaced by 3 agents, most concretely proven by the flow-gap agent): every <em>other</em> failure path in this system that can result from a malformed/inapplicable op resolves at <strong>execution</strong> time, which ERC-4337 v0.6&#39;s EntryPoint catches — the sequential <code>REPLAYABLE_NONCE_KEY</code> nonce is still consumed, and the channel self-heals for the next queued op. This injected check is the <strong>only</strong> condition in the entire contract that reverts during <strong>validation</strong> instead. Concretely: if an owner signs a replayable batch where sequence N is <code>upgradeToAndCall(newImpl, ...)</code> and <code>newImpl</code> has no code yet on chain B, <code>validateUserOp</code> reverts at validation on chain B — a compliant bundler&#39;s <code>simulateValidation</code> never includes it on-chain, so the nonce is never consumed there, and every later-sequenced replayable op (N+1, N+2, …) is blocked behind it until <code>newImpl</code> is deployed on chain B. <strong>This is owner-recoverable</strong>: because EntryPoint&#39;s per-key sequence enforcement only requires <em>a</em> valid op at that exact <code>(key, sequence)</code> slot, the owner can sign and submit an alternate innocuous replayable op (e.g. a no-op <code>addOwnerAddress</code> targeting an existing owner scenario, or simply waiting for <code>newImpl</code>&#39;s deployment) to advance past the stuck slot — it is not a permanent brick, and no third party can trigger or worsen it.</p>
+</li>
+</ol>
+<p><strong>Recommendation</strong>: delete the entire injected block (lines 169-183, i.e. revert to canonical upstream <code>validateUserOp</code>). This resolves all three effects at once: Solady&#39;s own <code>proxiableUUID()</code> check already blocks codeless-implementation upgrades at execution time (self-healing, nonce-consuming), the EXTCODESIZE-in-validation risk disappears, and the OOB-read surface disappears with the assembly block that caused it.</p>
+<hr>
+<h2 id="u-3-cross-chain-replayable-upgradetoandcall-guard-if-kept-checks">[U-3] Cross-chain replayable <code>upgradeToAndCall</code> guard (if kept) checks code <em>existence</em>, not code <em>identity</em></h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — <code>[phase1: P1-5]</code>, <code>[phase2: agents 4, 7, 10]</code><br><strong>Location</strong>: <code>validateUserOp()</code> — CoinbaseSmartWallet.sol:175-181</p>
+<p><strong>Root cause</strong>: the U-2 check (<code>newImplementation.code.length == 0</code>) only proves <em>some</em> code exists at the target address on the current chain — not that it is the intended <code>CoinbaseSmartWallet</code> implementation. Contract addresses only carry identical bytecode across chains when deployed via CREATE2 with identical initcode; a CREATE-deployed (nonce-dependent) address, or one an attacker pre-populates with unrelated code on another chain, would satisfy this check while pointing the proxy at foreign logic.</p>
+<p><strong>Concrete exploit walk</strong>: owner signs a replayable <code>upgradeToAndCall(0xIMPL, initData)</code> where <code>0xIMPL</code> is legitimate on chain A (say, CREATE-deployed by a factory whose nonce differs per chain). On chain B, <code>0xIMPL</code> happens to already hold unrelated code with nonzero length (attacker-controlled, or simply a different contract that landed at that address through unrelated activity). Replaying the signed op on chain B passes this check and upgrades that deployment to foreign logic. <strong>Not exploitable</strong> if the team&#39;s actual deployment process always uses CREATE2 with identical initcode across chains (same address ⟹ same bytecode by construction) — which is standard practice for this class of wallet and was not falsifiable from on-chain data alone.</p>
+<p><strong>Relationship to U-2</strong>: this finding is superseded if U-2&#39;s recommended fix (delete the check entirely) is applied — there would then be no validation-time upgrade guard to strengthen. Reported separately because it has a distinct implication: <em>if</em> the team wants to keep a validation-time cross-chain upgrade guard for other reasons, code-identity (<code>EXTCODEHASH == expectedHash</code>) rather than code-existence is the correct primitive.</p>
+<p><strong>Recommendation</strong>: if the U-2 loop is kept for any reason, verify implementation identity, not mere existence. Otherwise, moot — remove per U-2.</p>
+<hr>
+<h2 id="u-4-permissionless-initialize-emptyzero-address-owner-arrays-are">[U-4] Permissionless <code>initialize()</code>; empty/zero-address owner arrays are not rejected</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — <code>[phase1: P1-3]</code>, <code>[phase2: agents 9 (&quot;reinitialization&quot;), 10 (&quot;empty-owners-boundary&quot;)]</code><br><strong>Location</strong>: <code>CoinbaseSmartWallet.initialize()</code> — CoinbaseSmartWallet.sol:127-133; <code>MultiOwnable._initializeOwners()</code> — MultiOwnable.sol:213-228</p>
+<p><strong>Root cause</strong>: <code>initialize</code> has no caller restriction, gated only by <code>nextOwnerIndex() != 0</code> (verified at CoinbaseSmartWallet.sol:128). <code>initialize([])</code> is accepted (the owner-add loop simply runs zero times) and leaves <code>nextOwnerIndex==0</code> — the wallet is left un-owned yet permanently re-initializable, since the guard never trips.</p>
+<p><strong>Concrete exploit walk</strong>: (a) if a proxy is ever deployed without <code>initialize</code> bundled atomically in the same transaction as deployment, any address can front-run <code>initialize(attackerOwners)</code> and seize the wallet before the legitimate owner&#39;s call lands — standard uninitialized-proxy risk, mitigated entirely by the deploying factory&#39;s atomicity (this proxy was deployed via <code>LibClone.deployERC1967</code>, which itself provides no atomicity guarantee — that responsibility sits in the calling factory, out of scope here and not independently verified). (b) a buggy/malicious factory calling <code>initialize([])</code> leaves a silently un-owned, still-reinitializable wallet with no on-chain signal beyond an absent owner-added event.</p>
+<p><strong>Recommendation</strong>: reject empty owner arrays (and <code>address(0)</code>/zero-pubkey entries, see U-12) in <code>initialize</code>/<code>_initializeOwners</code>. Verify the actual deploying factory&#39;s transaction bundles deployment and initialization atomically.</p>
+<hr>
+<h2 id="u-5-flat-single-owner-authority-no-threshold-no-timelock-design-">[U-5] Flat single-owner authority — no threshold, no timelock (design note, re-examined and downgraded)</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <em>(demoted from phase 1&#39;s Medium — see reasoning)</em><br><strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>MultiOwnable._checkOwner()</code> — MultiOwnable.sol:271-277; <code>_authorizeUpgrade</code> — CoinbaseSmartWallet.sol:352</p>
+<p><strong>Root cause</strong>: every privileged function (<code>addOwner*</code>, <code>removeOwnerAtIndex</code>, <code>execute</code>, <code>executeBatch</code>, <code>upgradeToAndCall</code>) accepts any single registered owner — no m-of-n threshold, no timelock, no veto for co-owners. A single compromised owner key can unilaterally evict every other owner and take full control.</p>
+<p><strong>Re-examination / demotion reasoning</strong>: this is not a coding defect but the documented, intentional trust model of Coinbase Smart Wallet — &quot;multi-owner&quot; here means <em>multiple equally-privileged keys</em> (e.g. one per device), not an m-of-n multisig. A threshold requirement would be a product-design change, not a bug fix, and the exploit precondition (&quot;attacker already controls one of your registered owner keys&quot;) is equivalent to full compromise for any single-signer credential scheme, not something specific to this contract. Downgraded from the phase-1 domain agent&#39;s Medium to Low: documentation/UX note, not a vulnerability.</p>
+<p><strong>Recommendation</strong>: document the equal-trust model explicitly for integrators and end users so they understand that adding a co-owner is equivalent to giving that key full control.</p>
+<hr>
+<h2 id="u-6-unconstrained-instantly-effective-upgradeability">[U-6] Unconstrained, instantly-effective upgradeability</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: access-control, erc4337, proxies]</code><br><strong>Location</strong>: <code>_authorizeUpgrade()</code> — CoinbaseSmartWallet.sol:352; <code>canSkipChainIdValidation()</code> — CoinbaseSmartWallet.sol:281-292</p>
+<p><strong>Root cause</strong>: <code>_authorizeUpgrade</code> is a bare <code>onlyOwner</code> with no timelock or implementation allow-list. <code>upgradeToAndCall.selector</code> is in <code>canSkipChainIdValidation</code>&#39;s allow-list, so a single owner signature upgrades the account on every chain sharing that signature, immediately.</p>
+<p><strong>Recommendation</strong>: consider a timelock or implementation allow-list for upgrades if stronger guarantees are desired; otherwise document the total-upgradeability trust assumption.</p>
+<hr>
+<h2 id="u-7-replayable-ops-carry-no-validuntilvalidafter-valid-on-every-">[U-7] Replayable ops carry no <code>validUntil</code>/<code>validAfter</code> — valid on every chain, forever, resubmittable by anyone (re-examined, downgraded)</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <em>(demoted from phase 1&#39;s Medium — see reasoning)</em><br><strong>Origin</strong>: <code>[phase1: erc4337]</code><br><strong>Location</strong>: <code>validateUserOp()</code> — CoinbaseSmartWallet.sol:151-153, 161-188; <code>getUserOpHashWithoutChainId()</code> — CoinbaseSmartWallet.sol:263-265</p>
+<p><strong>Root cause</strong>: per the NatSpec at CoinbaseSmartWallet.sol:151-153 and verified in the code, <code>validationData</code> always encodes <code>validUntil=0, validAfter=0</code> (indefinite). <code>getUserOpHashWithoutChainId</code> drops <code>block.chainid</code> from the signed digest. A replayable-path UserOp is valid on every chain sharing the wallet&#39;s address, forever, and — because a submitted signed UserOp becomes publicly visible — resubmittable by any third party (<code>sender</code> is still bound via <code>UserOperationLib.hash</code>, confining this to the same wallet address, but not to a chain or time window).</p>
+<p><strong>Re-examination / demotion reasoning</strong>: this is explicit, NatSpec-documented canonical behavior, not an implementation defect — the comment at line 151-153 states the indefinite validity outright. The content of any such op was owner-authorized to begin with; a third party can only <em>relay</em> it faster/wider than the owner intended, not forge new authority. Downgraded to Low: a documentation/expectation-setting matter, not a vulnerability, consistent with the treatment of U-5.</p>
+<p><strong>Recommendation</strong>: make this an explicitly documented, load-bearing invariant in user-facing materials (&quot;a replayable signature authorizes its content on every chain, forever, until executed&quot;). Consider <code>validUntil</code> support or an owner-controlled replay-epoch nonce if bounding is later desired.</p>
+<hr>
+<h2 id="u-8-webauthn-passkey-verification-accepts-user-presence-only-req">[U-8] WebAuthn passkey verification accepts user-presence only (<code>requireUV: false</code>)</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: signatures, erc4337]</code><br><strong>Location</strong>: <code>_isValidSignature()</code> — CoinbaseSmartWallet.sol:342</p>
+<p><strong>Root cause</strong>: <code>WebAuthn.verify({..., requireUV: false, ...})</code> enforces only the User-Present (UP) bit, not User-Verified (UV — biometric/PIN). Challenge binding (<code>abi.encode(hash)</code>) is correctly verified.</p>
+<p><strong>Recommendation</strong>: if passkeys are intended as a strong factor, set <code>requireUV: true</code> and provision credentials accordingly, or document that current passkey security reduces to device-possession.</p>
+<hr>
+<h2 id="u-9-secp256k1-signature-malleability-not-rejected-accepted-desig">[U-9] secp256k1 signature malleability not rejected (accepted design)</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: signatures]</code><br><strong>Location</strong>: <code>_isValidSignature()</code> — CoinbaseSmartWallet.sol:334, via Solady <code>SignatureCheckerLib.isValidSignatureNow</code></p>
+<p><strong>Root cause</strong>: Solady&#39;s <code>SignatureCheckerLib</code> does not enforce canonical low-<code>s</code>; both <code>(r,s,v)</code> and <code>(r, n-s, v^1)</code> validate for the same signer. Not exploitable for replay/double-spend within these contracts — ERC-4337 nonce uniqueness is EntryPoint-managed, not signature-keyed.</p>
+<p><strong>Recommendation</strong>: document for any external infrastructure that might deduplicate by raw signature bytes instead of <code>(sender, nonce)</code>.</p>
+<hr>
+<h2 id="u-10-index-based-owner-removal-is-fragile-to-cross-chain-owner-s">[U-10] Index-based owner removal is fragile to cross-chain owner-set divergence (confirmed self-healing on re-examination)</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — <code>[phase1: signatures]</code>, <code>[phase2: agent 11 — &quot;cross-chain-owner-desync&quot;]</code><br><strong>Location</strong>: <code>removeOwnerAtIndex</code>/<code>removeLastOwner</code> — MultiOwnable.sol:121-144, 253-263; replay path CoinbaseSmartWallet.sol:163-167</p>
+<p><strong>Root cause</strong>: owner removal is keyed by <code>index</code>, matched against <code>keccak256(owner_) != keccak256(owner)</code> (MultiOwnable.sol:256). If owner sets diverge across chains (different add/remove ordering or timing), a replayed removal targeting a stale index either removes the wrong entry — <strong>blocked</strong> by the hash-match revert (independently confirmed by phase-2 agent 11) — or reverts outright, consuming the sequential replayable nonce on that chain and stalling subsequent replayable ops there (the same self-healing/owner-recoverable class of issue as U-2&#39;s stall mechanic).</p>
+<p><strong>Recommendation</strong>: consider keying replayable owner-removal by owner-bytes rather than index, or document the cross-chain ordering-discipline requirement.</p>
+<hr>
+<h2 id="u-11-validateuserop-reverts-rather-than-returning-the-1-sentinel">[U-11] <code>validateUserOp</code> reverts rather than returning the <code>1</code> sentinel on malformed signature-format input</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — <code>[phase1: erc4337]</code>, <code>[phase2: agent 12 — &quot;sim-affordance&quot;]</code><br><strong>Location</strong>: <code>_isValidSignature()</code> — CoinbaseSmartWallet.sol:319, 326, 340, 345</p>
+<p><strong>Root cause</strong>: ERC-4337 convention is that signature-format failures return <code>1</code> (<code>SIG_VALIDATION_FAILED</code>) for clean bundler simulation; only structural/protocol violations should revert. Here, malformed <code>SignatureWrapper</code> encoding, out-of-range <code>ownerIndex</code>, mismatched owner-bytes length, or invalid WebAuthn auth encoding all revert the entire call instead.</p>
+<p><strong>Recommendation</strong>: wrap decode/owner-lookup paths so recoverable signature-format issues return <code>1</code>; reserve reverts for nonce-key/selector routing violations.</p>
+<hr>
+<h2 id="u-12-addowneraddressaddownerpublickey-accept-zero-value-owners-w">[U-12] <code>addOwnerAddress</code>/<code>addOwnerPublicKey</code> accept zero-value owners with no sanity check</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: access-control, signatures]</code><br><strong>Location</strong>: MultiOwnable.sol:101-111, 236-244</p>
+<p><strong>Root cause</strong>: neither <code>addOwnerAddress(address(0))</code> nor <code>addOwnerPublicKey(0,0)</code> is rejected. <strong>Confirmed not exploitable</strong> for signature forgery — Solady&#39;s <code>SignatureCheckerLib.isValidSignatureNow</code> short-circuits on a zero signer (the <code>for { signer := ... } signer {}</code> guard, independently re-confirmed by phase-2 agents 2 and 8 by direct inspection of <code>SignatureCheckerLib.sol:40</code>). Residual risk is an accounting/UX footgun: a dead <code>address(0)</code> owner consumes an index and inflates <code>ownerCount()</code>, interacting with U-1/U-4.</p>
+<p><strong>Recommendation</strong>: require <code>owner != address(0)</code> in <code>addOwnerAddress</code>/<code>_initializeOwners</code>; require <code>!(x==0 &amp;&amp; y==0)</code> in <code>addOwnerPublicKey</code>.</p>
+<hr>
+<h2 id="refuted-considered-and-dismissed">Refuted / considered and dismissed</h2>
+<ul>
+<li><strong>Zero-address owner → ecrecover-to-zero signature bypass</strong>: refuted independently by phase-1 (<code>SIG-4</code>) and phase-2 (agents 2, 8) — <code>SignatureCheckerLib</code>&#39;s zero-signer guard blocks this structurally.</li>
+<li><strong><code>MultiOwnable</code> counter overflow</strong> (<code>nextOwnerIndex++</code>/<code>removedOwnersCount++</code>, phase-2 agent 1): refuted — uint256 overflow requires ~2^256 owner operations, not reachable.</li>
+<li><strong>Memory-vs-calldata ABI decode divergence</strong> between <code>validateUserOp</code>&#39;s in-memory re-decode and <code>executeWithoutChainIdValidation</code>&#39;s calldata decode (phase-2 agent 9): refuted — both are strict Solidity 0.8 ABI decoders that revert identically on malformed input; no divergent-interpretation encoding was constructed.</li>
+<li><strong>Implementation contract direct initialization/upgrade/self-destruct</strong>: refuted — constructor seeds <code>owner[0]=address(0)</code> (CoinbaseSmartWallet.sol:113-118), permanently failing <code>initialize()</code>&#39;s guard on the implementation itself; Solady&#39;s <code>onlyProxy</code> modifier additionally blocks direct <code>upgradeToAndCall</code> calls on the implementation.</li>
+<li><strong>Storage collision</strong> across <code>MultiOwnable</code> (ERC-7201), the ERC-1967 implementation slot, and stateless <code>ERC1271</code>: refuted — all namespaced/hashed slots, no sequential storage overlap.</li>
+<li><strong>Self-call (<code>address(this)</code>) privilege escalation</strong>: refuted — <code>execute</code>/<code>executeBatch</code> are <code>onlyEntryPointOrOwner</code>; no path lets an externally-called target re-enter them as a non-owner, non-EntryPoint caller.</li>
+<li><strong>ERC-1271 replay-safe hash / EIP-712 domain separator caching bugs</strong>: refuted — <code>chainId</code> + <code>address(this)</code> are bound fresh on every call, no caching.</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihb4334nvw7prxecellg3tnoybdgjzz6d6shzms77qwi77ltbzjmi.ipfs.community.bgipfs.com/"><code>https://bafkreihb4334nvw7prxecellg3tnoybdgjzz6d6shzms77qwi77ltbzjmi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/313">#313</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

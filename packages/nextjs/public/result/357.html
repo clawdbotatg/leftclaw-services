@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireCapabilityCredentials — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #357">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireCapabilityCredentials</h1>
+    <p class="job-sub">Job #357 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/357"><b>Job page</b> #357</a>
+      <a class="chip" href="https://bafkreifa225fhuv5yg3njvvfex6h2fwyaysnnmwlxkbsdu3jmcqrb4fss4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">6</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#1-removedde-authorized-issuer-permanently-retains-the-ability-to">[1] Removed/de-authorized issuer permanently retains the ability to revoke every credential it ever issued</a></li>
+      <li><a href="#2-approved-issuer-can-self-issue-a-credential-to-itself-as-the-a">[2] Approved issuer can self-issue a credential to itself as the agent</a></li>
+      <li><a href="#3-unbounded-never-pruned-credentialholder-arrays-revocation-rese">[3] Unbounded, never-pruned credential/holder arrays; revocation resets the &quot;one active credential&quot; guard, enabling cheap re-issue growth</a></li>
+      <li><a href="#4-credential-validity-fields-credentialactive-agentprofilesactiv">[4] Credential validity fields (Credential.active, agentProfiles.activeCredentials) go stale on passive expiry — direct hit on the client&#39;s &quot;expiry enforcement by consumers&quot; focus area</a></li>
+      <li><a href="#5-addtaskproof-is-not-restricted-to-the-credentials-original-iss">[5] addTaskProof is not restricted to the credential&#39;s original issuer</a></li>
+      <li><a href="#6-identityregistryisagentactive-status-is-checked-only-once-at-i">[6] identityRegistry.isAgentActive() status is checked only once, at issuance — never re-validated afterward</a></li>
+    </ol>
+    <ol start="7">
+      <li><a href="#7-identityregistryisagentactive-external-call-has-no-trycatch-ga">[7] identityRegistry.isAgentActive() external call has no try/catch, gas cap, or fallback</a></li>
+      <li><a href="#8-no-way-for-on-chain-consumers-to-filter-to-only-active-credent">[8] No way for on-chain consumers to filter to only-active credentials without O(n) extra calls</a></li>
+      <li><a href="#9-owner-is-a-single-immutable-point-of-failure-with-unrestricted">[9] Owner is a single, immutable point of failure with unrestricted, instant, uncapped control over the issuer set</a></li>
+      <li><a href="#10-unchecked-counter-increment-lacks-inline-safety-justification">[10] unchecked counter increment lacks inline safety justification</a></li>
+      <li><a href="#summary">Summary</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — VaultfireCapabilityCredentials</h1>
+<p><strong>Target</strong>: <code>VaultfireCapabilityCredentials</code> at <code>0x4C7fddDdae8855283e98dA80BDf7aEa51A0b772B</code> on Base (chain 8453)<br><strong>Source</strong>: Verified via Sourcify (full match), single file, 354 lines<br><strong>Client focus areas</strong>: credential-ID uniqueness, expiry enforcement by consumers, revocation, self-issuance prevention<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (4 ethskills domain checklists: general, precision-math, access-control, dos) → Phase 2 depth (12 independent pashov attacker-mindset agents, run blind to phase 1) → hybrid reconciliation with targeted source re-verification of every phase-unique finding.</p>
+<p><strong>Reconciliation summary</strong>: Overlap: 5 findings confirmed independently by both phases · Phase-1-only: 4 · Phase-2-only: 1 · Re-examined leads kept: 10, demoted: 0.<br><strong>Completeness</strong>: 10 unique (function-area, bug-class) groups identified across both phases&#39; raw output; all 10 are covered below.</p>
+<hr>
+<h2 id="1-removedde-authorized-issuer-permanently-retains-the-ability-to">[1] Removed/de-authorized issuer permanently retains the ability to revoke every credential it ever issued</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — corroborated. Phase 1: <code>evm-audit-general</code>, <code>evm-audit-access-control</code>. Phase 2: 8 of 12 independent attacker agents (access-control, execution-trace, invariant, periphery-adjacent, first-principles, asymmetry, boundary, trust-gap, flow-gap) converged on this exact bug unprompted.<br><strong>Location</strong>: <code>revokeCredential()</code> lines 288-309; <code>removeIssuer()</code> lines 165-168<br><strong>Description</strong>: <code>revokeCredential</code>&#39;s authorization is <code>require(msg.sender == cred.issuedBy || msg.sender == owner)</code> (lines 300-304) — it checks the immutable, point-in-time <code>issuedBy</code> field but never re-validates current <code>approvedIssuers</code> status. This is inconsistent with <code>issueCredential</code>/<code>addTaskProof</code>, which both use the <code>onlyIssuer</code> modifier (live <code>approvedIssuers[msg.sender]</code> check) on every call. <code>removeIssuer()</code> only flips the mapping — it has no way to reach into already-stored <code>Credential.issuedBy</code> values. The result: an issuer who is explicitly de-authorized (e.g. for being compromised or malicious) retains permanent, standing power to deactivate every credential it ever issued, indefinitely, with no expiry and no recourse (there is no reactivation function).<br><strong>Proof of Concept</strong>:</p>
+<ol>
+<li><code>owner</code> calls <code>approveIssuer(I)</code>.</li>
+<li><code>I</code> calls <code>issueCredential(agentX, capHash, 0)</code> → credential #7 created, <code>issuedBy = I</code>, <code>active = true</code>, permanent (no expiry).</li>
+<li><code>owner</code> discovers <code>I</code> is compromised/malicious and calls <code>removeIssuer(I)</code> — <code>approvedIssuers[I] = false</code>. <code>I</code> is now correctly blocked from <code>issueCredential</code>/<code>addTaskProof</code> (both use <code>onlyIssuer</code>).</li>
+<li><code>I</code> calls <code>revokeCredential(7)</code>. The check <code>msg.sender == cred.issuedBy</code> (<code>I == I</code>) passes — <code>approvedIssuers[I]</code> is never read. Credential #7 is deactivated: <code>agentProfiles[agentX].activeCredentials -= 1</code>, <code>agentCapability[agentX][capHash] = 0</code>.</li>
+<li><code>I</code> can repeat step 4 for every credential it ever issued, at any time in the future, fully griefing agents the owner believed were protected by the removal.</li>
+</ol>
+<p>Walked end-to-end: no guard interrupts steps 1-4; all actions are normal admin/issuer lifecycle operations (approve → issue → remove → revoke), not an unusual precondition. Harm (permanent, unrecoverable loss of a specific agent&#39;s verified credential) is concrete and irreversible — no <code>reactivateCredential</code> exists anywhere in the contract.<br><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">         require(
+-            msg.sender == cred.issuedBy || msg.sender == owner,
++            msg.sender == owner ||
++            (msg.sender == cred.issuedBy &amp;&amp; approvedIssuers[msg.sender]),
+             &quot;VaultfireCapabilityCredentials: only issuer or owner can revoke&quot;
+         );
+</code></pre>
+<hr>
+<h2 id="2-approved-issuer-can-self-issue-a-credential-to-itself-as-the-a">[2] Approved issuer can self-issue a credential to itself as the agent</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> <em>(downgraded from an initial High call in phase 1 — see verification note)</em><br><strong>Origin</strong>: <code>[phase1-only]</code> — <code>evm-audit-general</code>, <code>evm-audit-access-control</code>. Re-examined against source in this synthesis pass: confirmed, no phase-2 agent independently raised this angle.<br><strong>Location</strong>: <code>issueCredential()</code> lines 181-247<br><strong>Description</strong>: <code>issueCredential</code> is gated only by <code>onlyIssuer</code>; nothing requires <code>agent != msg.sender</code>. The owner is auto-approved as issuer in the constructor, and <code>approveIssuer</code> lets owner add any address with no restriction. Any approved issuer that is also a registered active agent in <code>identityRegistry</code> can call <code>issueCredential(self, capabilityHash, expiresAt)</code> and mint itself a fully &quot;active&quot; credential with zero independent verification — directly undermining the contract&#39;s stated purpose (&quot;proof that an agent can actually do what it claims&quot;).<br><strong>Proof of Concept</strong>: An approved issuer address that is simultaneously <code>isAgentActive == true</code> in the identity registry calls <code>issueCredential(selfAddress, keccak256(&quot;data-analysis&quot;), 0)</code>. All checks pass (<code>onlyIssuer</code>, <code>isAgentActive</code>, no existing active credential) → succeeds. Can then call <code>addTaskProof</code> repeatedly to fabricate an inflated proof history (compounds with Finding 5).<br><strong>Verification note</strong>: The exploit requires a specific precondition — the acting issuer must also be independently registered as an active agent in a separate, out-of-scope identity-registry contract — and requires a <em>trusted</em> role (an approved issuer) to misuse its granted permission for self-dealing, rather than an arbitrary unprivileged third party. Per this audit&#39;s verification standard, this combination of a non-default precondition plus a privileged actor as the &quot;attacker&quot; supports Medium rather than High.<br><strong>Recommendation</strong>: <code>require(agent != msg.sender, &quot;issuer cannot self-issue&quot;);</code> in <code>issueCredential</code>. If self-issuance is intended for owner-bootstrapping, scope that exception narrowly and flag such credentials (e.g. a <code>selfIssued</code> bool) so consumers can discount them.</p>
+<hr>
+<h2 id="3-unbounded-never-pruned-credentialholder-arrays-revocation-rese">[3] Unbounded, never-pruned credential/holder arrays; revocation resets the &quot;one active credential&quot; guard, enabling cheap re-issue growth</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> <em>(phase 1&#39;s dos checklist agent initially rated High assuming a malicious/compromised issuer; reconciled down — see note)</em><br><strong>Origin</strong>: <code>[both]</code>. Phase 1: <code>evm-audit-dos</code>, <code>evm-audit-general</code>. Phase 2: independently raised by 8+ of 12 agents (as findings by execution-trace, invariant, periphery; as leads by math-precision, economic-security, asymmetry, boundary, numerical-gap, flow-gap).<br><strong>Location</strong>: <code>issueCredential()</code> pushes at lines 232-233; <code>revokeCredential()</code> lines 288-309; <code>getAgentCredentials()</code> lines 323-325; <code>getCapabilityHolders()</code> lines 327-329<br><strong>Description</strong>: <code>_agentCredentials[agent]</code> and <code>_capabilityHolders[capabilityHash]</code> are append-only; nothing removes an element, including on revoke. Critically, <code>revokeCredential()</code> resets <code>agentCapability[cred.agent][cred.capabilityHash]</code> to <code>0</code> (line 305), so the very next <code>issueCredential()</code> call for that same pair takes the <code>existingId == 0</code> fast path and skips the &quot;already exists&quot; check entirely — no need to wait for expiry. A single approved issuer can grow both arrays without bound by alternating <code>issueCredential</code>/<code>revokeCredential</code> on one <code>(agent, capabilityHash)</code> pair. Both arrays are returned in full by view getters, so any on-chain consumer iterating them is exposed to gas-limit DoS once large enough; <code>_capabilityHolders</code> additionally accumulates duplicate entries for the same agent across repeat issuances.<br><strong>Proof of Concept</strong>: Approved issuer loops <code>issueCredential(agent, capHash, ...)</code> → <code>revokeCredential(id)</code> N times (cheap on Base/Arbitrum/Polygon, the chains this contract&#39;s NatSpec targets). After N iterations, <code>getAgentCredentials</code>/<code>getCapabilityHolders</code> return arrays large enough that any on-chain consumer calling them in a state-changing transaction runs out of gas and reverts.<br><strong>Verification note</strong>: Triggering the aggressive growth pattern requires a currently-or-formerly-trusted issuer role to act (not an arbitrary unprivileged party), and no on-chain consumer contract is in scope to confirm real gas-limit impact today — reconciled to Medium rather than phase 1&#39;s initial High.<br><strong>Recommendation</strong>: Swap-and-pop on revoke; track holder membership via <code>mapping(bytes32 =&gt; mapping(address =&gt; bool))</code> to avoid duplicate pushes; replace full-array getters with paginated variants (<code>offset, limit</code>) plus a length getter.</p>
+<hr>
+<h2 id="4-credential-validity-fields-credentialactive-agentprofilesactiv">[4] Credential validity fields (<code>Credential.active</code>, <code>agentProfiles.activeCredentials</code>) go stale on passive expiry — direct hit on the client&#39;s &quot;expiry enforcement by consumers&quot; focus area</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code>. Phase 1: <code>evm-audit-general</code> (both the <code>getCredential().active</code> angle and the <code>agentProfiles.activeCredentials</code> counter angle). Phase 2: independently raised as full findings by 4 of 12 agents (invariant, periphery, first-principles, flow-gap) and as leads by 2 more (boundary, numerical-gap).<br><strong>Location</strong>: <code>Credential.active</code>; <code>getCredential()</code> line 315; <code>agentProfiles.activeCredentials</code>; contrast with the correctly-computed <code>hasActiveCredential()</code> line 331-336<br><strong>Description</strong>: <code>active</code> is only flipped <code>false</code> by explicit <code>revokeCredential()</code> or by the lazy-replacement branch inside <code>issueCredential()</code> when re-issuing for the same capability — never by the mere passage of <code>expiresAt</code>. Only the purpose-built <code>hasActiveCredential()</code> correctly ANDs <code>active</code> with the expiry check. Any consumer reading <code>getCredential()</code> and checking <code>.active</code> alone (a natural mistake given the field name) treats an expired credential as currently valid. The same staleness applies to <code>agentProfiles.activeCredentials</code>, which over-counts real-time-valid credentials after natural expiry with no follow-up transaction.<br><strong>Proof of Concept</strong>: Issue with <code>expiresAt = block.timestamp + 1</code>. One block later the credential is logically expired (<code>hasActiveCredential</code> correctly returns <code>false</code>), but <code>getCredential(id).active</code> still reads <code>true</code> and <code>getAgentProfile(agent).activeCredentials</code> still counts it — until someone happens to call <code>revokeCredential</code> or reissue for that exact <code>(agent, capabilityHash)</code> pair.<br><strong>Recommendation</strong>: Compute real-time validity in <code>getCredential()</code>&#39;s returned struct (<code>active &amp;&amp; (expiresAt==0 || expiresAt&gt;block.timestamp)</code>) without touching storage, and/or document prominently that only <code>hasActiveCredential()</code> reflects real-time validity — raw <code>active</code>/<code>activeCredentials</code> are lifecycle-only fields, not consumer-safe validity signals.</p>
+<hr>
+<h2 id="5-addtaskproof-is-not-restricted-to-the-credentials-original-iss">[5] <code>addTaskProof</code> is not restricted to the credential&#39;s original issuer</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code>. Phase 1: <code>evm-audit-access-control</code> (full finding, concrete PoC). Phase 2: raised as leads by periphery and trust-gap agents (demoted to lead under phase 2&#39;s stricter &quot;trusted-role-trigger&quot; gating, since it requires a second approved issuer to act).<br><strong>Location</strong>: <code>addTaskProof()</code> lines 254-281<br><strong>Description</strong>: Only <code>onlyIssuer</code> is checked — not <code>msg.sender == cred.issuedBy</code>. Any currently-approved issuer, not just the one accountable for a given credential, can inflate <code>taskProofCount</code>/<code>totalTaskProofs</code> on any active, non-expired credential it never issued.<br><strong>Proof of Concept</strong>: Issuer A issues credential #1 to Agent X. Unrelated Issuer B calls <code>addTaskProof(1)</code> repeatedly — succeeds every time, <code>taskProofCount</code> climbs with no relation to work B verified. Compounds with Finding 2 (self-issued credentials can then be padded by the same or a colluding issuer).<br><strong>Recommendation</strong>: <code>require(msg.sender == cred.issuedBy || msg.sender == owner)</code>.</p>
+<hr>
+<h2 id="6-identityregistryisagentactive-status-is-checked-only-once-at-i">[6] <code>identityRegistry.isAgentActive()</code> status is checked only once, at issuance — never re-validated afterward</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase2-only]</code> — independently raised by 6 of 12 agents (economic-security, access-control, execution-trace, invariant, periphery, flow-gap; the last formalized it as a full finding). Re-examined against source in this synthesis pass: confirmed — <code>identityRegistry</code> is referenced exactly once in the whole contract, at line 195 inside <code>issueCredential</code>; no other function queries it.<br><strong>Location</strong>: <code>issueCredential()</code> line 195; contrast with <code>hasActiveCredential()</code> (never re-checks the registry) and <code>addTaskProof()</code> (never re-checks the registry)<br><strong>Description</strong>: The only real-world trust check this contract performs — &quot;is this agent actually legitimate&quot; — happens once at issuance and is never revalidated. If the identity registry later deactivates/bans an agent (for misconduct unrelated to this contract), that agent&#39;s existing credentials (especially permanent ones, <code>expiresAt == 0</code>) continue reporting as valid via <code>hasActiveCredential()</code> forever, and issuers can keep calling <code>addTaskProof</code> to further pad its record. This directly contradicts the contract&#39;s own stated design goal: &quot;agents with verified credentials get priority... when routing tasks.&quot;<br><strong>Proof of Concept</strong>: Agent X receives a permanent credential while <code>isAgentActive(X) == true</code>. X is later banned/deactivated in the identity registry (an event this contract has no visibility into). <code>hasActiveCredential(X, capHash)</code> still returns <code>true</code> indefinitely; any downstream task router trusting this contract&#39;s signal keeps prioritizing a banned agent.<br><strong>Recommendation</strong>: Re-check <code>identityRegistry.isAgentActive(agent)</code> inside <code>hasActiveCredential()</code> (and/or gate <code>addTaskProof</code> on it), or provide a mechanism for issuers/owner to mass-revoke a deactivated agent&#39;s credentials.</p>
+<hr>
+<h2 id="7-identityregistryisagentactive-external-call-has-no-trycatch-ga">[7] <code>identityRegistry.isAgentActive()</code> external call has no try/catch, gas cap, or fallback</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — <code>evm-audit-dos</code>. Re-examined against source: confirmed — no <code>try/catch</code> anywhere in the contract, no <code>{gas: ...}</code> stipend on the call at line 195, <code>identityRegistry</code> is <code>immutable</code> with no way to swap it out.<br><strong>Location</strong>: <code>issueCredential()</code> lines 193-196<br><strong>Description</strong>: The contract&#39;s only credential-minting entry point makes a mandatory, unmitigated external call to the immutable <code>identityRegistry</code>. If the registry ever reverts (paused, buggy upgrade, compromised admin), issuance is permanently bricked with no recourse — the registry address cannot be changed. Default ABI decoding also forwards effectively all remaining gas and copies the full return buffer, so a misbehaving registry could inflate return data to grief the caller&#39;s gas budget.<br><strong>Proof of Concept</strong>: If the (out-of-scope) registry&#39;s admin pauses it or a bug makes <code>isAgentActive</code> revert unconditionally, every <code>issueCredential</code> call reverts permanently with no owner-side workaround in this contract.<br><strong>Recommendation</strong>: Wrap in <code>try/catch</code> with a distinct &quot;registry unavailable&quot; revert reason; bound forwarded gas or use a fixed-size <code>staticcall</code> return read; consider making the registry address governance-updatable (with timelock).</p>
+<hr>
+<h2 id="8-no-way-for-on-chain-consumers-to-filter-to-only-active-credent">[8] No way for on-chain consumers to filter to only-active credentials without O(n) extra calls</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — <code>evm-audit-dos</code>. Re-examined against source: confirmed — <code>getAgentCredentials()</code> returns the raw, unfiltered ID array; a caller must independently call <code>getCredential(id)</code> per entry to determine current validity.<br><strong>Location</strong>: <code>getAgentCredentials()</code> lines 323-325 combined with <code>getCredential()</code> lines 315-321<br><strong>Description</strong>: Corollary of Findings 3 and 4 — because historical IDs are never pruned and validity fields go stale, any consumer wanting only currently-active credentials must perform one extra call per historical entry. This compounds gas cost for any on-chain consumer even under purely honest, non-malicious usage (normal revoke/re-issue churn over time).<br><strong>Recommendation</strong>: Maintain a separate, actively-pruned index of currently-active credential IDs per agent, since <code>agentCapability[agent][capabilityHash]</code> already gives O(1) lookup of the current active ID for a known capability.</p>
+<hr>
+<h2 id="9-owner-is-a-single-immutable-point-of-failure-with-unrestricted">[9] Owner is a single, immutable point of failure with unrestricted, instant, uncapped control over the issuer set</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — <code>evm-audit-general</code>, <code>evm-audit-access-control</code>. Re-examined against source: confirmed — <code>owner</code> is <code>immutable</code> (line 58), set once in the constructor, no transfer/renounce/recovery function exists; <code>approveIssuer</code>/<code>removeIssuer</code> have no timelock and no cap on issuer count.<br><strong>Location</strong>: <code>owner</code> (line 58); <code>approveIssuer()</code>/<code>removeIssuer()</code> (lines 159-168); constructor (lines 130-136)<br><strong>Description</strong>: This is a design/centralization observation rather than an independently-exploitable bug (no unprivileged attacker path exists) — noted because it materially amplifies the blast radius of Findings 1, 2, and 5: if the owner key is compromised, an attacker gets instant, undelayed ability to approve sybil issuers and mint/inflate fraudulent credentials system-wide; if lost, the issuer set is frozen forever (no new issuers, no removal of a bad one).<br><strong>Recommendation</strong>: Use a multisig/timelock as <code>owner</code>; add a timelock delay on <code>approveIssuer</code>; consider a cap or governance step for growing the issuer set. Treat as an operational/deployment recommendation rather than a code defect.</p>
+<hr>
+<h2 id="10-unchecked-counter-increment-lacks-inline-safety-justification">[10] <code>unchecked</code> counter increment lacks inline safety justification</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1&#39;s <code>evm-audit-precision-math</code> agent and phase 2&#39;s math-precision attacker agent both traced this independently and both concluded it is not exploitable (would require ~2^256 issuances to wrap).<br><strong>Location</strong>: <code>issueCredential()</code> line 218 — <code>unchecked { credentialId = ++_credentialCounter; }</code><br><strong>Recommendation</strong>: Add a comment justifying the <code>unchecked</code> block&#39;s safety, or drop it — the gas savings are negligible relative to the rest of the function&#39;s SSTOREs.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><span class="pill high">High</span></td>
+<td>Removed issuer retains permanent revoke rights over its past credentials</td>
+<td>both — 10 of 16 total agent passes</td>
+</tr>
+<tr>
+<td>2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Self-issuance not prevented (issuer can credential itself as agent)</td>
+<td>phase1-only, re-examined</td>
+</tr>
+<tr>
+<td>3</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Unbounded arrays + revoke-then-reissue guard bypass</td>
+<td>both</td>
+</tr>
+<tr>
+<td>4</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Stale <code>active</code>/<code>activeCredentials</code> fields past passive expiry</td>
+<td>both</td>
+</tr>
+<tr>
+<td>5</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>addTaskProof</code> not scoped to original issuer</td>
+<td>both</td>
+</tr>
+<tr>
+<td>6</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Identity-registry status never re-validated post-issuance</td>
+<td>phase2-only, re-examined</td>
+</tr>
+<tr>
+<td>7</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>identityRegistry</code> external call unguarded (no try/catch/gas cap)</td>
+<td>phase1-only, re-examined</td>
+</tr>
+<tr>
+<td>8</td>
+<td><span class="pill low">Low</span></td>
+<td>O(n) external calls needed for consumers to filter active credentials</td>
+<td>phase1-only, re-examined</td>
+</tr>
+<tr>
+<td>9</td>
+<td><span class="pill low">Low</span></td>
+<td>Owner centralization / no timelock on issuer approval</td>
+<td>phase1-only, re-examined</td>
+</tr>
+<tr>
+<td>10</td>
+<td><span class="pill info">Info</span></td>
+<td><code>unchecked</code> counter lacks inline justification</td>
+<td>both</td>
+</tr>
+</tbody></table></div>
+<p><strong>Totals</strong>: 1 High, 5 Medium, 2 Low, 1 Info (10 findings).</p>
+<p>No Critical findings — this contract holds no funds, tokens, or ETH; all identified issues are trust-model/access-control/data-integrity gaps in a reputation-registry contract, not direct fund-loss vectors.</p>
+<blockquote>
+<p>⚠️ This review was performed by AI audit agents (ethskills breadth pass + pashov-methodology attacker-mindset pass, reconciled by an orchestrating model). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Independent human review, and on-chain monitoring, are strongly recommended before this contract is relied upon for high-value task-routing decisions.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifa225fhuv5yg3njvvfex6h2fwyaysnnmwlxkbsdu3jmcqrb4fss4.ipfs.community.bgipfs.com/"><code>https://bafkreifa225fhuv5yg3njvvfex6h2fwyaysnnmwlxkbsdu3jmcqrb4fss4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/357">#357</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

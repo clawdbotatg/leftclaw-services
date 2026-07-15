@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire `ScopedDelegation` — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #363">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire `ScopedDelegation`</h1>
+    <p class="job-sub">Job #363 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/363"><b>Job page</b> #363</a>
+      <a class="chip" href="https://bafkreic3j2vw5for65owxrz4knkz6ltgsogpynvv4flpacl56ccwytunlm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#methodology-note-source-unavailable-bytecode-level-assessment-on">⚠️ Methodology note — source unavailable, bytecode-level assessment only</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#other-observations">Other observations</a></li>
+      <li><a href="#recommendation">Recommendation</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Review — Vaultfire <code>ScopedDelegation</code></h1>
+<p><strong>Target:</strong> <code>0x716C4f0a822f8A7F73126aEe123ACa0Db225a3DC</code> (Base, chain 8453)<br><strong>Job:</strong> leftclaw.services job #363<br><strong>Requested focus:</strong> bypasses of the selector allowlist (fallback/receive, delegatecall,<br>multicall unwrapping); day-boundary arithmetic for dailyCap resets; expiry off-by-one;<br>revocation atomicity.</p>
+<hr>
+<h2 id="methodology-note-source-unavailable-bytecode-level-assessment-on">⚠️ Methodology note — source unavailable, bytecode-level assessment only</h2>
+<p>This contract is <strong>not verified</strong> on BaseScan and has <strong>no match on Sourcify</strong><br>(<code>sourcify.dev/server/v2/contract/8453/0x716C...</code> returns <code>&quot;match&quot;: null</code>). A<br>targeted web search for a public &quot;Vaultfire ScopedDelegation&quot; repository turned<br>up nothing. No client message clarified a source location (<code>messages.sh 363</code><br>returned an empty list).</p>
+<p>Per the audit&#39;s fallback procedure, source-level analysis was not possible, so<br>this report is a <strong>bytecode-level structural assessment</strong>, not the standard<br>two-phase (ethskills breadth + pashov depth) pipeline. That pipeline requires<br>readable source — running 21 LLM sub-agents against decompiled/guessed<br>pseudocode would produce findings that <em>look</em> line-quoted but aren&#39;t grounded<br>in real code, which fails this audit&#39;s verification standard (&quot;quote the<br>relevant source lines... walk every exploit path before rating Critical/High&quot;).<br>Instead, the deployed bytecode itself was disassembled and cross-referenced<br>against extracted revert strings and resolved function selectors — every claim<br>below is backed by a specific bytecode offset, quoted below.</p>
+<p><strong>This <em>is</em> confirmed to be the correct contract.</strong> The runtime bytecode<br>contains these embedded revert strings, confirming it is Vaultfire&#39;s<br><code>ScopedDelegation</code> and giving a strong signal of its actual field/behavior<br>names even without compiled ABI/source:</p>
+<pre><code>ScopedDelegation: maxTotalValue ...      ScopedDelegation: scope not active
+ScopedDelegation: tx count exceeds...    ScopedDelegation: invalid duration...
+ScopedDelegation: caller is not ...      ScopedDelegation: exceeds total ...
+ScopedDelegation: rateLimit less...      ScopedDelegation: maxTxCount exceeds...
+ScopedDelegation: contract not a[llowed] ScopedDelegation: agent not regi[stered]
+ScopedDelegation: maxValuePerTx ...      ScopedDelegation: function not a[llowed]
+ScopedDelegation: parent scope e[xceeded] ScopedDelegation: cannot self-de[legate]
+ScopedDelegation: must have at l[east]   ScopedDelegation: exceeds per-tx...
+ScopedDelegation: not authorized         ScopedDelegation: duration excee[ds]
+ScopedDelegation: parent scope n[ot active] ScopedDelegation: scope expired
+ScopedDelegation: rate limited           ScopedDelegation: not grantee
+ScopedDelegation: not grantor            ScopedDelegation: zero owner
+exceeds parent remaining                 ...restrictive than parent
+...registered or inactive
+</code></pre>
+<p>These confirm scope hierarchies (parent/child scopes), per-tx and total value<br>caps, a rate limiter, expiry, an agent-identity check, and a contract<br>allowlist — consistent with the client&#39;s description.</p>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Unverified contract — bytecode disassembly only, no <code>.sol</code> source</td>
+</tr>
+<tr>
+<td><strong>Address</strong></td>
+<td><code>0x716C4f0a822f8A7F73126aEe123ACa0Db225a3DC</code> (checksum-verified)</td>
+</tr>
+<tr>
+<td><strong>Chain</strong></td>
+<td>Base mainnet (8453)</td>
+</tr>
+<tr>
+<td><strong>Runtime bytecode</strong></td>
+<td>7,534 bytes (disassembled in full, <code>cast disassemble</code>)</td>
+</tr>
+<tr>
+<td><strong>Verification checked</strong></td>
+<td>BaseScan (unverified), Sourcify v2 (<code>match: null</code>), public web search (no repo found)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="high-confidence-architectural-finding-1-the-contract-never-itsel">[High-confidence architectural finding] <strong>1. The contract never itself calls out — enforcement is not self-contained</strong></h3>
+<p><code>ScopedDelegation</code> (whole contract) · Confidence: 80</p>
+<p><strong>Description</strong></p>
+<p>The full 7,534-byte runtime was disassembled (<code>cast disassemble</code>, 4,332<br>instructions). It contains <strong>zero <code>CALL</code>, zero <code>CALLCODE</code>, and zero<br><code>DELEGATECALL</code> opcodes anywhere</strong>. The only external-call opcode present is<br><code>STATICCALL</code>, at exactly three sites (offsets <code>0x0c11</code>, <code>0x141b</code>, <code>0x146c</code>) —<br>consistent with read-only lookups against the identity/bond/reputation<br>registries referenced by the resolved selectors <code>identityRegistry()</code>,<br><code>bondsRegistry()</code>, <code>reputationRegistry()</code>.</p>
+<p>This means <code>ScopedDelegation</code> <strong>cannot itself forward or execute</strong> the<br>&quot;delegated&quot; action against an allowlisted target contract — there is no code<br>path in this contract that performs <code>target.call(data)</code> on behalf of a<br>grantee. It can only record/validate scope state (budget, dailyCap, perTxCap,<br>expiry, allowlists) in storage and revert if a check fails.</p>
+<p><strong>Why this matters for the requested focus areas:</strong> the client&#39;s brief asked<br>us to hunt for ways to <em>bypass</em> the contract/function-selector allowlist via<br><code>delegatecall</code>, <code>fallback</code>/<code>receive</code>, or multicall-unwrapping <em>from inside this<br>contract</em>. All three are structurally ruled out (see Findings 2–3 below) —<br>but that is almost beside the point, because <strong>this contract is not the thing<br>doing the calling in the first place.</strong> If the intended system design is<br>&quot;grantee calls into <code>ScopedDelegation</code>, which checks the scope and then<br>executes the call on the grantee&#39;s behalf,&quot; that design is <strong>not what is<br>deployed</strong>. Some other, not-provided contract (an executor/router) must be<br>the one issuing the <code>CALL</code>, and it must independently choose to consult<br><code>ScopedDelegation</code> before acting.</p>
+<p><strong>Concrete exploit path:</strong> unless every allowlisted target contract<br>independently gates its sensitive functions on <code>msg.sender == ScopedDelegation</code><br>(unusual, and not something this system controls for arbitrary third-party<br>allowlisted contracts), a grantee — or anyone holding the grantee&#39;s signing<br>key/session — can simply call the target contract <strong>directly</strong>, with their own<br>key, never touching <code>ScopedDelegation</code> at all. None of <code>budget</code>, <code>dailyCap</code>,<br><code>perTxCap</code>, <code>expiry</code>, the contract allowlist, or the function-selector<br>allowlist are consulted by that direct call, because they only exist as<br>storage checks inside a contract that is never in the actual call path. This<br>is a complete bypass of every control the client asked us to stress-test —<br>not through a clever selector trick, but because the enforcement point and<br>the execution point are two different (and here, only one deployed) contracts.</p>
+<p><strong>Severity rationale:</strong> capped at High rather than Critical because this audit<br>cannot see the off-chain/on-chain executor or integration layer that<br>presumably calls <code>ScopedDelegation.checkAndConsume(...)</code>-style functions<br>before acting — if that layer exists and is the <em>only</em> way grantee actions<br>ever reach allowlisted contracts, the risk is materially lower. That<br>executor was not provided and does not appear to exist at this address.</p>
+<p><strong>Fix:</strong> Either (a) provide/verify the executor contract for a follow-up audit<br>of the full call path, and confirm grantee keys have no way to act on<br>allowlisted targets except through it, or (b) if <code>ScopedDelegation</code> is<br>intended to be the executor, add an actual <code>execute(scopeId, target, data)</code><br>function that performs the <code>CALL</code> itself after passing all checks — no such<br>function exists in the deployed bytecode today.</p>
+<hr>
+<h3 id="ruled-out-2-fallbackreceive-based-bypass-not-present">[Ruled out] <strong>2. Fallback/receive-based bypass — not present</strong></h3>
+<p><code>ScopedDelegation</code> (dispatcher) · Confidence: 95</p>
+<p><strong>Description:</strong> The function dispatcher&#39;s default (no-selector-match) branch<br>at offset <code>0x0139</code>–<code>0x013c</code> is a bare <code>PUSH1 0x00 / DUP1 / REVERT</code> — an<br>argumentless revert, which is what Solidity emits when <strong>no</strong> <code>fallback()</code> or<br><code>receive()</code> function is defined. There is no code path that accepts a call<br>with an unrecognized selector or plain ETH transfer. The client&#39;s specific<br>concern (&quot;bypass via fallback/receive&quot;) does not apply to this contract.</p>
+<hr>
+<h3 id="ruled-out-3-delegatecall-multicall-unwrapping-bypass-not-present">[Ruled out] <strong>3. Delegatecall / multicall-unwrapping bypass — not present</strong></h3>
+<p><code>ScopedDelegation</code> (whole contract) · Confidence: 95</p>
+<p><strong>Description:</strong> As established in Finding 1, <code>DELEGATECALL</code> does not appear<br>anywhere in the 4,332-instruction disassembly. A &quot;multicall unwrapping&quot; bypass<br>requires either delegatecall-based batching (absent) or a batching function<br>that loops over encoded sub-calls and dispatches them internally; no <code>CALL</code><br>opcode of any kind exists to be batched. Both specific bypass vectors named in<br>the brief are structurally absent from this contract&#39;s code.</p>
+<hr>
+<h3 id="medium-unverifiable-without-source-4-dailycaprate-limit-resets-a">[Medium, unverifiable without source] <strong>4. dailyCap/rate-limit resets are timestamp-rolling, not calendar-day buckets — plausible boundary-timing weakness</strong></h3>
+<p><code>ScopedDelegation</code> (rate-limit logic, multiple offsets) · Confidence: 55</p>
+<p><strong>Description:</strong> The bytecode contains <strong>no <code>DIV</code> or <code>MOD</code> opcode anywhere</strong>.<br>A calendar-day-bucket implementation (<code>block.timestamp / 1 days</code> to compute a<br>day index) requires <code>DIV</code>; its total absence across the whole contract rules<br>that pattern out. Every time-based check instead follows the shape <code>SLOAD (stored timestamp) → TIMESTAMP → LT/GT → conditional jump</code>, and resets follow<br>the shape <code>TIMESTAMP → ADD (add a period constant) → SSTORE</code> (e.g. offsets<br><code>0x0216</code>–<code>0x021c</code>, <code>0x068e</code>–<code>0x0693</code>, <code>0x07ee</code>–<code>0x07f4</code>, <code>0x0c74</code>–<code>0x0c7a</code>).<br>This is the signature of a <strong>rolling window</strong> — &quot;has <code>period</code> seconds elapsed<br>since <code>lastReset</code>?&quot; — not a UTC-midnight bucket.</p>
+<p>This rules out the classic <em>calendar</em>-boundary bug the client asked about<br>(a cap trivially resetting right at UTC midnight), but rolling windows have<br>their own well-known weakness: if the check is <code>timestamp &lt; lastReset + period</code> with no additional bucketing, a grantee can spend the full cap right<br>before a window rolls over and again right after, extracting close to 2×<br>the intended cap in a short interval. <strong>This cannot be confirmed as an actual<br>bug</strong> without the source-level formula (need to see the exact comparator —<br><code>&lt;</code> vs <code>&lt;=</code> — and whether <code>lastReset</code> is updated per-transaction or only on<br>full-window rollover); flagged as a Lead for source-level follow-up rather<br>than a confirmed finding.</p>
+<p><strong>Recommendation:</strong> on re-audit with source, confirm whether <code>lastReset</code> is<br>updated (a) once when the window is first crossed, or (b) on every<br>transaction (which would make it a sliding window with a different, generally<br>worse, property — effectively no reliable cap at all under steady<br>transaction flow). Consider fixed calendar-day or fixed-epoch bucketing if a<br>hard daily ceiling is the actual intent.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Trails with concrete code smells where the full exploit path could not be<br>completed without source — high-signal but not independently verifiable<br>from bytecode alone.</em></p>
+<ul>
+<li><strong>Expiry off-by-one</strong> — <code>ScopedDelegation</code> (scope-expiry check) — Code<br>smell: <code>SLOAD → TIMESTAMP → LT</code> pattern recurs at 5+ sites (e.g. <code>0x0218</code>,<br><code>0x05e9</code>, <code>0x1cf8</code>, <code>0x1d22</code>); operand order before <code>LT</code> (i.e. whether the<br>check is <code>expiry &lt; now</code> or <code>now &lt; expiry</code>, and whether it&#39;s strict or would<br>need <code>LT</code>+<code>EQ</code>/<code>ISZERO</code> combinations for <code>&lt;=</code>) could not be reliably<br>resolved from raw opcodes without symbolic stack tracing across 12+<br>intervening jumps per site. Recommend a direct source-level check of<br>whether a scope is valid <em>at exactly</em> its expiry timestamp or one second<br>before/after, per the client&#39;s specific ask.</li>
+<li><strong>Revocation atomicity</strong> — <code>ScopedDelegation</code> (revoke path, selector<br>unresolved — likely one of <code>0x9a803b9a</code>, <code>0x9c91614f</code>, <code>0xe4b7d622</code>,<br><code>0xe9a593ac</code>, <code>0xeebcf633</code>, <code>0xf34e49c2</code>, none of which resolve in public<br>4byte/openchain signature databases) — Code smell: cannot trace SSTORE<br>ordering across a revoke function from raw bytecode with confidence high<br>enough to assert atomicity one way or the other. Needs source.</li>
+<li><strong>Parent/child scope accounting</strong> — the revert strings <code>&quot;exceeds parent remaining&quot;</code>, <code>&quot;...restrictive than parent&quot;</code>, and <code>&quot;parent scope e[xceeded]&quot;</code><br>indicate a scope-inheritance/chain-depth model (<code>MAX_CHAIN_DEPTH()</code>,<br><code>chains(uint256)</code> both resolve via openchain.xyz signature DB). Recursive<br>or chained scope budget accounting is a classic source of double-spend /<br>rounding bugs in delegation systems and should be a priority checklist item<br>once source is available — no such review was possible here.</li>
+</ul>
+<hr>
+<h2 id="other-observations">Other observations</h2>
+<ul>
+<li><strong>Storage slot 0</strong> holds <code>0x000000000000000000000000fa15ee28939b222b0448261a22156070f0a7813c</code><br>— a 20-byte address, consistent with an <code>Ownable</code>-style <code>owner</code> as slot 0<br>(selectors <code>owner()</code> and <code>transferOwnership(address)</code> both resolve cleanly<br>against public signature databases and are wired into the dispatcher).</li>
+<li><strong>Not a proxy.</strong> All three EIP-1967 slots (implementation, admin, beacon)<br>are zero. This is the actual logic contract, not a delegatecall proxy.</li>
+<li><strong>Zero on-chain history.</strong> <code>eth_getLogs</code> for this address across the full<br>block range returns <strong>no events, ever</strong>. No transfers were found via<br><code>alchemy_getAssetTransfers</code>. As of this audit (2026-07-09), the contract<br>appears to have been deployed but never used — no scope has been created,<br>delegated, or revoked on-chain. Worth confirming with the client that this<br>is the intended live deployment and not a stale/abandoned address.</li>
+</ul>
+<hr>
+<h2 id="recommendation">Recommendation</h2>
+<p>The single highest-value next step is <strong>source verification</strong>. Once verified<br>(or a GitHub repo is provided), a full two-phase audit (ethskills 20-domain<br>checklist breadth + pashov 12-agent attacker-mindset depth, reconciled) can<br>directly confirm or refute Findings 1 and 4 above and resolve both Leads with<br>concrete line-quoted proof, per this audit&#39;s normal verification standard.<br>Finding 1 in particular — the complete absence of any <code>CALL</code>/<code>DELEGATECALL</code><br>in the deployed code — is significant enough that it should be resolved<br>before this contract is treated as a functioning enforcement point in<br>production.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant against <strong>unverified,<br>disassembled bytecode only</strong> — no Solidity source was available for this<br>target. This is a materially lower-confidence review than a source-level<br>audit: structural claims (opcode presence/absence, storage layout, control<br>flow) are directly verifiable from the bytecode and are reported at high<br>confidence; anything requiring precise operand/variable semantics could not<br>be confirmed and is reported as a Lead. AI analysis can never verify the<br>complete absence of vulnerabilities and no guarantee of security is given.<br>A source-level re-audit is strongly recommended before relying on this<br>contract&#39;s access controls in production.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreic3j2vw5for65owxrz4knkz6ltgsogpynvv4flpacl56ccwytunlm.ipfs.community.bgipfs.com/"><code>https://bafkreic3j2vw5for65owxrz4knkz6ltgsogpynvv4flpacl56ccwytunlm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/363">#363</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeploymentBatcher — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #384">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">DeploymentBatcher</h1>
+    <p class="job-sub">Job #384 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/384"><b>Job page</b> #384</a>
+      <a class="chip" href="https://bafkreicfmdbsg4ltz32whjpjsr72k4i6vi2svjwmdullaj63r7uc6n6rcq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — DeploymentBatcher</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>0x02D7abC547F8B1e7E2D7a919D8D1005918361750</code> on <strong>Base</strong> (chain id 8453)</td>
+</tr>
+<tr>
+<td><strong>Contract</strong></td>
+<td><code>DeploymentBatcher</code> (verified, Solidity <code>0.8.30</code>, retrieved from BaseScan)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>DeploymentBatcher.sol</code> (2393 lines — <code>DeploymentBatcherPhase3Helper</code>, <code>DeploymentBatcherShareMeshHelper</code>, <code>DeploymentBatcherUtilsHelper</code>, <code>DeploymentBatcherPhase1Module</code>, <code>DeploymentBatcherPhase2Module</code>, <code>DeploymentBatcher</code>) · <code>LinearVesting4626.sol</code> (104 lines)</td>
+</tr>
+<tr>
+<td><strong>Excluded from scope</strong></td>
+<td>Interface files (<code>contracts/*/interfaces/*.sol</code>), vendored dependencies (<code>node_modules/@openzeppelin</code>, <code>@layerzerolabs</code>, <code>@uniswap</code>, <code>permit2</code>, <code>solidity-bytes-utils</code>) — read for context, not audited</td>
+</tr>
+<tr>
+<td><strong>Out-of-scope dependencies</strong></td>
+<td><code>ICreatorOVault</code>/<code>ICreatorOVaultWrapper</code> (vault/wrapper), <code>ICreatorShareOFT</code> (ShareOFT), <code>IRegistry4626</code> (registry), <code>ICCALaunchArm</code> (auction arm), gauge controllers, oracle — bytecode is deployed via an external CREATE2 store and not present in this snapshot</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase audit: Phase 0 context (3 agents: access-control inventory, protocol map, external-surface map) → Phase 1 breadth (8 domain checklists: general, precision-math, erc20, bridges, assembly/CREATE2, access-control, erc4626, defi-amm) → Phase 2 depth (12 attacker-mindset agents, blind to Phase 1) → Turn-3 hybrid reconciliation + coverage gate. All agents ran on Opus (large scope: ~2,500 in-scope LOC).</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>50</td>
+</tr>
+</tbody></table></div>
+<p><strong>Note on prior audit history</strong>: <code>LinearVesting4626.sol</code> contains inline comments referencing prior fixes (<code>FIX: CLV-01</code>, <code>FIX: CLV-02</code>, <code>FIX: CLV-03</code>), indicating this codebase has been through at least one prior audit round. This review was run fresh, from source, with no reference to any prior report — every finding below comes from this engagement&#39;s own Phase 0/1/2 agents.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap</strong> (found independently by both breadth and depth phases): 3 — the unguarded payout-router setters, the ShareOFT fee-on-transfer accounting gap, and the tautological bytecode-identity check that (among other things) enables the cross-tenant ShareOFT finding.</li>
+<li><strong>Phase-1-only</strong>: 21 findings/leads.</li>
+<li><strong>Phase-2-only</strong>: 5 findings/leads, including the highest-severity finding in this report (cross-tenant ShareOFT hijack).</li>
+<li><strong>Re-examined leads kept</strong>: 2 — the cross-tenant ShareOFT hijack (single-agent lead, promoted to Finding after the orchestrator independently re-derived and confirmed the full mechanism against source, see Finding #1) and the fee-on-transfer accounting gap (promoted from LEAD to Finding after 9+ independent agent-instances across both phases converged on it from different lenses). Demoted: the registry-peer-trust concern is kept as a <strong>Lead</strong>, not a Finding, because its exploitability is entirely contingent on the out-of-scope registry&#39;s access control, which could not be verified — confidence held below the 50 floor.</li>
+<li><strong>Coverage holes closed</strong>: 1 — protocol map Open Question #6 (&quot;can caller-supplied <code>vault</code>/<code>wrapper</code>/<code>shareOFT</code>/<code>ccaLaunchArm</code> ever be a contract the batcher did not itself deploy for that <code>baseSalt</code>?&quot;) was resolved by a targeted re-read of <code>deployPhase3Strategies</code>/<code>deployShareMeshLpManager</code>: for <code>vault</code>, the <code>owner()==params.owner</code> precheck (combined with <code>_requireOwner</code>) effectively prevents cross-tenant hijack because vault ownership has already transferred to the real deployment owner by the time Phase 3 is callable. For <code>ccaLaunchArm</code>, no equivalent binding exists — this gap is what Findings #4 and #7 (hook whitelist / poolKey validation) already capture from a different angle.</li>
+<li><strong>Confidence floor used</strong>: 50. Findings below 50 confidence are listed under <strong>Leads</strong> rather than as scored Findings, per the reporting floor.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[92] <strong>1. Cross-tenant ShareOFT hijack via caller-controlled <code>shareOftSaltOverride</code> — attacker&#39;s wrapper becomes a permanent, unauthorized minter on a victim&#39;s ShareOFT</strong></p>
+<p><code>DeploymentBatcherPhase1Module.finalizePhase1Split</code> · Confidence: 92 · Severity: <strong>High</strong></p>
+<p><strong>Description</strong><br>The ShareOFT&#39;s CREATE2 salt (<code>deriveShareOftSalt(owner, shareSymbolLower, version)</code>, DeploymentBatcher.sol:473-479) and its constructor args (<code>abi.encode(shareName, shareSymbolUpper, oftBootstrapRegistry, batcher)</code>, line 837) both omit <code>creatorToken</code> — and <code>shareOftSaltOverride</code> is a caller-supplied <code>bytes32</code> accepted by both <code>deployPhase1CoreWithSalt</code> and <code>finalizePhase1WithSalt</code>. Because Phase 1a and Phase 1b are separate transactions, an attacker can read a victim&#39;s <code>shareOftSalt</code> (public via the <code>phase1SplitStates</code> mapping or the <code>Phase1CoreDeployed</code> event) and <code>shareName</code>/<code>shareSymbol</code> (visible in the victim&#39;s own Phase-1a calldata) after the victim&#39;s Phase 1a but before their Phase 1b, then race their own self-service deployment — using <code>shareOftSaltOverride</code> set to the victim&#39;s salt and copying the victim&#39;s exact <code>shareName</code>/<code>shareSymbol</code> — to deploy the ShareOFT first, with the attacker&#39;s own wrapper wired as an authorized minter (<code>setMinter(attackerWrapper, true)</code>, line 854). When the victim&#39;s own <code>finalizePhase1Split</code> later runs, <code>create2Deployer.deploy</code> reverts on the address collision, and the <code>catch</code> branch (lines 843-849) adopts the attacker&#39;s already-deployed contract — its &quot;verification&quot; (<code>verifyHash != shareOftInitCodeHash</code>) is tautological (both sides are computed from the same inputs in the same call) so it cannot detect the substitution. The victim&#39;s finalize then <em>adds</em> the victim&#39;s wrapper as an additional minter (<code>setMinter</code> is additive, matching the codebase&#39;s <code>set*(address,bool)</code> grant/revoke convention used everywhere else) without removing the attacker&#39;s. The attacker&#39;s wrapper remains a permanently authorized minter on what is now the victim&#39;s official, registry-registered ShareOFT, letting the attacker mint/dilute it at will by depositing attacker-controlled (potentially worthless) <code>attackerToken</code> into their own wrapper.</p>
+<p>Severity is High rather than Critical because the attack requires winning a front-running race in the public window between a victim&#39;s Phase 1a and Phase 1b transactions — a real, standard-MEV-tooling-winnable condition, but a precondition nonetheless.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function deriveShareOftSalt(address owner, string calldata shareSymbolLower, string calldata version)
+     external
+     pure
+     returns (bytes32)
+ {
+-    bytes32 base = keccak256(abi.encodePacked(owner, shareSymbolLower));
++    bytes32 base = keccak256(abi.encodePacked(creatorToken, owner, shareSymbolLower));
+     return keccak256(abi.encodePacked(base, &quot;CreatorShareOFT:&quot;, version));
+ }
+</code></pre>
+<p>Add <code>creatorToken</code> to the salt preimage (and to <code>shareOftArgs</code> at line 837) so the ShareOFT&#39;s CREATE2 identity is properly namespaced per-deployment. As defense-in-depth, also replace the tautological <code>verifyHash</code> check (line 846-847, see Finding #6) with a genuine greenfield check on the adopted contract (e.g. assert its <code>vault</code>/minter set is unconfigured) before wiring it. Consider removing caller control over <code>shareOftSaltOverride</code> entirely, since it is what makes the collision trivial to force rather than requiring an actual preimage collision.</p>
+<hr>
+<p>[95] <strong>2. <code>whitelistPayoutRouterOnWrapper</code> / <code>setPayoutRouterShareOftNoFees</code> have no caller authorization — any address can inject itself into an in-flight deployment&#39;s fee-exemption/whitelist during the batcher-ownership window</strong></p>
+<p><code>DeploymentBatcher.whitelistPayoutRouterOnWrapper</code> / <code>DeploymentBatcher.setPayoutRouterShareOftNoFees</code> · Confidence: 95 · Severity: <strong>High</strong></p>
+<p><strong>Description</strong><br>Both functions (DeploymentBatcher.sol:2028-2033, 2037-2042) are <code>external</code> with no <code>msg.sender</code> check — their only guard is that the batcher currently owns the target (<code>IOwnableView(wrapper/shareOFT).owner() == address(this)</code>). Every other state-changing function on this contract is gated by <code>_requireOwner(params.owner)</code> or <code>onlyProtocolTreasury</code>; these two are not. The wrapper and ShareOFT are deployed with <code>tempOwner = address(this)</code> in Phase 1 and are only transferred to <code>owner</code>/<code>protocolTreasury</code> at the end of <code>finalizePhase2Execution</code> (lines 1140-1146) — a separate, later transaction. This is not an edge case: the multi-transaction window exists on <em>every single deployment</em>, by design. Any third party can call these functions during that window to permanently whitelist an arbitrary address on the wrapper, or mark an arbitrary address fee-exempt (<code>OperationType.NoFees = 2</code>) on the ShareOFT — a flag/entry that persists after ownership transfers to treasury, with no revocation path anywhere in the contract. This finding was independently re-derived, blind, by 10 of the 20 total hunting agents across both phases (Phase 1: general, access-control; Phase 2: access-control, execution-trace, invariant, periphery-adjacent boundary/asymmetry agents, first-principles, flow-gap-hunter, trust-gap-hunter).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-function whitelistPayoutRouterOnWrapper(address wrapper, address payoutRouter) external {
++function whitelistPayoutRouterOnWrapper(address wrapper, address payoutRouter) external onlyProtocolTreasury {
+     if (wrapper == address(0) || payoutRouter == address(0)) revert ZeroAddress();
+     address wrapperOwner = IOwnableView(wrapper).owner();
+     if (wrapperOwner != address(this)) revert WrapperOwnerMismatch(wrapper, wrapperOwner);
+     ICreatorOVaultWrapper(wrapper).setWhitelist(payoutRouter, true);
+ }
+
+-function setPayoutRouterShareOftNoFees(address shareOFT, address payoutRouter) external {
++function setPayoutRouterShareOftNoFees(address shareOFT, address payoutRouter) external onlyProtocolTreasury {
+     if (shareOFT == address(0) || payoutRouter == address(0)) revert ZeroAddress();
+     address shareOwner = IOwnableView(shareOFT).owner();
+     if (shareOwner != address(this)) revert ShareOftOwnerMismatch(shareOFT, shareOwner);
+     ICreatorShareOFT(shareOFT).setAddressType(payoutRouter, 2);
+ }
+</code></pre>
+<p>(Alternatively gate via <code>_requireOwner</code> bound to the specific deployment&#39;s owner, if the payout-router configuration is meant to be creator-controlled rather than treasury-controlled.)</p>
+<hr>
+<p>[75] <strong>3. CREATOR/USDC Uniswap v3 pool initialization price is unvalidated and front-runnable</strong></p>
+<p><code>DeploymentBatcherPhase3Helper.deployPhase3Strategies</code> · Confidence: 75 · Severity: <strong>Medium</strong></p>
+<p><strong>Description</strong><br><code>params.initialSqrtPriceX96</code> (DeploymentBatcher.sol:175-181) is accepted with no sanity check against the protocol&#39;s own creator-token oracle (resolved moments later for Charm/Ajna wiring, but never used to bound the pool price). Because <code>createPool</code>/<code>initialize</code> on the canonical Uniswap v3 factory are permissionless, a third party can create and initialize the CREATOR/USDC pool ahead of the batcher&#39;s Phase 3 transaction with a skewed price; <code>getPool(...)</code> then returns the attacker&#39;s pool and the batcher&#39;s own <code>initialize</code> branch is silently skipped entirely. This pool becomes the price anchor for the Charm vault/strategy deployed immediately after, letting an arbitrageur extract value once the strategy provides liquidity at the wrong ratio.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+uint160 refSqrtPriceX96 = _oracleSqrtPriceX96(params.creatorToken, usdc); // resolve before the pool block
+ address v3Pool = IUniswapV3Factory(uniswapV3Factory).getPool(params.creatorToken, usdc, V3_FEE_TIER);
+ if (v3Pool == address(0)) {
+     if (params.initialSqrtPriceX96 == 0) revert MissingInitialSqrtPriceX96();
++    _requireWithinBand(params.initialSqrtPriceX96, refSqrtPriceX96);
+     v3Pool = IUniswapV3Factory(uniswapV3Factory).createPool(params.creatorToken, usdc, V3_FEE_TIER);
+     if (v3Pool == address(0)) revert V3PoolMissing();
+     IUniswapV3Pool(v3Pool).initialize(params.initialSqrtPriceX96);
++} else {
++    (uint160 spot,,,,,,) = IUniswapV3Pool(v3Pool).slot0();
++    _requireWithinBand(spot, refSqrtPriceX96); // reject a front-run/mispriced existing pool
+ }
+</code></pre>
+<hr>
+<p>[72] <strong>4. ShareMesh Uniswap v4 hook whitelist is populated from unvalidated caller input and never reconciled with the pool&#39;s actual hook</strong></p>
+<p><code>DeploymentBatcherShareMeshHelper.deployShareMeshLpManager</code> · Confidence: 72 · Severity: <strong>Medium</strong></p>
+<p><strong>Description</strong><br><code>params.hooksToApprove[]</code> and <code>params.poolHook</code> (DeploymentBatcher.sol:405-411) are approved on a freshly deployed hook registry independently of <code>poolKey.hooks</code>, which is read separately from the caller-supplied <code>params.ccaLaunchArm.getPoolKey()</code> (line 418). Nothing checks <code>poolKey.hooks == params.poolHook</code>, and the registry&#39;s declared <code>InvalidPoolCurrencies</code>/<code>InvalidTickSpacing</code> errors (lines 1626-1627) are never used to validate <code>poolKey.currency0/1</code>/<code>tickSpacing</code> either. The &quot;approved hooks&quot; registry therefore provides no guarantee about the hook the LP manager actually binds to and invokes on every liquidity operation, and <code>params.ccaLaunchArm</code> itself is never cross-checked against the batcher&#39;s own recorded deployment state for that <code>baseSalt</code>.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> PoolKey memory poolKey = cca.getPoolKey();
++require(address(poolKey.hooks) == params.poolHook, &quot;hook mismatch&quot;);
++require(poolKey.currency0 == expectedCurrency0 &amp;&amp; poolKey.currency1 == expectedCurrency1, &quot;InvalidPoolCurrencies&quot;);
+ IOVaultLPManagerMesh(out.lpManager).configurePool(poolManager, params.positionManager, permit2, poolKey);
+</code></pre>
+<hr>
+<p>[55] <strong>5. ShareOFT/creatorToken transfer-fee not reconciled across the CCA/auction/Solana/vesting split legs</strong></p>
+<p><code>DeploymentBatcherPhase2Module.finalizePhase2Execution</code> / <code>launchDeferredAuctionExecution</code> · Confidence: 55 · Severity: <strong>Medium</strong> (contingent — see caveat)</p>
+<p><strong>Description</strong><br>The batcher&#39;s own code proves the ShareOFT has a per-address transfer-fee mechanism (<code>setAddressType(_, 2 /*NoFees*/)</code>, line 2041, explicitly commented &quot;mark fee-exempt&quot;). The vesting leg is fee-safe — <code>LinearVesting4626.seed()</code> records <code>token.balanceOf(this)</code>, the actually-received amount. The LP-reserve transfer to the CCA (line 1116) and the retained auction allocation (later validated by <code>balanceOf(this) &lt; amount</code> in <code>launchDeferredAuctionExecution</code>, line 1253) both use the nominal pre-transfer split amount with no balance-delta reconciliation. If the batcher is not itself marked fee-exempt on the ShareOFT, every deployment&#39;s CCA/auction legs are silently under-funded, and in the worst case the retained balance falls below the recorded <code>auctionAmount</code>, permanently bricking <code>launchDeferredAuction</code> for that deployment (compounding Finding #9/#10 below, since <code>hasActivePendingAuction</code> then has no clear path). This concern was independently raised by 9 of 20 total hunting agents across both phases, each from a different specialty lens (precision-math, erc20, erc4626, economic-security, invariant, asymmetry, boundary, numerical-gap-hunter, flow-gap-hunter).</p>
+<p><strong>Confidence caveat</strong>: the ShareOFT&#39;s actual fee model, and whether the batcher/vesting/CCA addresses are auto-exempt as protocol-internal addresses, could not be verified — the ShareOFT implementation is out of scope (deployed via an external bytecode store, not present in this snapshot). The volume of independent, blind, cross-lens corroboration is what keeps this at Medium/55 rather than as a bare Lead.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+uint256 balBefore = IERC20(params.shareOFT).balanceOf(params.ccaLaunchArm);
+ IERC20(params.shareOFT).safeTransfer(params.ccaLaunchArm, result.lpReserveAmount);
++uint256 received = IERC20(params.shareOFT).balanceOf(params.ccaLaunchArm) - balBefore;
++// use `received`, not the nominal `lpReserveAmount`, in any downstream accounting
+</code></pre>
+<p>Or, more simply, mark the batcher (and any intermediate holding contracts) <code>NoFees</code> on the ShareOFT before distribution.</p>
+<hr>
+<p>[70] <strong>6. Hardcoded 200k executor gas and zero native value on the Solana-bound OFT <code>lzReceive</code> option</strong></p>
+<p><code>DeploymentBatcherPhase2Module._bridgeShareAllocationToSolana</code> · Confidence: 70 · Severity: <strong>Medium</strong></p>
+<p><strong>Description</strong><br><code>extraOptions</code> (DeploymentBatcher.sol:1219-1221) are built from a compile-time <code>DEFAULT_SHARE_BRIDGE_GAS_LIMIT = 200_000</code> gas and <code>0</code> native value. A Solana-side OFT credit commonly needs lamports to create/rent the recipient&#39;s associated token account; supplying <code>0</code> provides none, and neither figure is tunable per-destination without redeploying the Phase 2 module. Because the Base-side debit happens before Solana-side execution, under-provisioning risks the cross-chain message failing on delivery after the source tokens are already gone, with no in-contract recovery path.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-extraOptions: OptionsBuilder.addExecutorLzReceiveOption(
+-    OptionsBuilder.newOptions(), DEFAULT_SHARE_BRIDGE_GAS_LIMIT, 0
+-),
++extraOptions: OptionsBuilder.addExecutorLzReceiveOption(
++    OptionsBuilder.newOptions(), shareBridgeGasLimit, shareBridgeNativeValue
++), // both admin-configurable via a treasury setter, not compile-time constants
+</code></pre>
+<hr>
+<p>[80] <strong>7. Solana-lane misconfiguration or failure reverts the entire <code>finalizePhase2</code> — every deployment is permanently coupled to bridge liveness</strong></p>
+<p><code>DeploymentBatcherPhase2Module.finalizePhase2Execution</code> / <code>_bridgeShareAllocationToSolana</code> · Confidence: 80 · Severity: <strong>Medium</strong></p>
+<p><strong>Description</strong><br>The Solana leg (30% of every deposit) always runs; any misconfiguration (<code>runtime.enabled == false</code>, unset <code>solanaDestination</code>/peer, <code>msg.value</code> below the quoted fee) reverts the <em>entire</em> <code>finalizePhase2</code> call, including the <code>creatorToken</code> pull — there is no path to finalize a deployment without successfully bridging. Once <code>IOFT.send</code> itself succeeds, the Base-side debit is final with no in-contract recovery if delivery later fails on the Solana side.</p>
+<p><strong>Fix</strong><br>Decouple the bridge from the rest of finalize: on a bridge-config failure, escrow the 30% allocation for later manual/permissioned dispatch instead of reverting the whole deployment, and expose an explicit retry/rescue entry point for a send that succeeded on Base but failed to land on Solana.</p>
+<hr>
+<h3 id="below-threshold-findings-confidence-75-description-only">Below-threshold Findings (confidence &lt; 75, description only)</h3>
+<p>[68] <strong>8. <code>hasActivePendingAuction</code> has no admin/rescue clear path if the CCA launch permanently reverts</strong></p>
+<p><code>DeploymentBatcher.launchDeferredAuction</code> / <code>_recordFinalizePhase2Effects</code> · Confidence: 68 · Severity: Low</p>
+<p>If <code>ICCALaunchArm.launchAuctionWithReserve</code> permanently reverts, <code>hasActivePendingAuction[keccak(creatorToken,owner)]</code> (set at line 2102, only cleared by a <em>successful</em> <code>launchDeferredAuction</code>, line 2172) can never be cleared — <code>resetPhase1State</code> explicitly refuses to run while it is set (lines 2358-2360). Because the key is <code>(creatorToken, owner)</code> without a version component, this permanently blocks <em>any future redeployment</em> for that owner/token pair, not just the stuck one. Raised independently by 4 Phase-2 agents (invariant, first-principles, asymmetry, flow-gap-hunter).</p>
+<p>[65] <strong>9. <code>resetPhase1State</code> cannot actually unstick a same-version deployment</strong></p>
+<p><code>DeploymentBatcher.resetPhase1State</code> · Confidence: 65 · Severity: Low</p>
+<p>Clears <code>phase1SplitStates[baseSalt]</code>, but the vault/wrapper were already CREATE2-deployed at addresses derived from the same <code>baseSalt</code> with no existence-check-and-adopt guard (contrast the OFTBootstrapRegistry path, which does check, lines 774-778). Re-running <code>deployPhase1CoreWithSalt</code> for the same version reverts on the CREATE2 collision — the tuple stays stuck for that version regardless of the reset; only a version bump unblocks it. Root cause shared with Lead below (vault/wrapper CREATE2 deploys lack the collision-tolerant recovery pattern applied elsewhere).</p>
+<p>[62] <strong>10. ShareOFT salt collision across two of the <em>same</em> owner&#39;s deployments (default, non-override derivation)</strong></p>
+<p><code>DeploymentBatcherPhase1Module._phase1Identity</code> / <code>deriveShareOftSalt</code> · Confidence: 62 · Severity: Low</p>
+<p>If the same <code>owner</code> deploys two different <code>creatorToken</code>s with identical <code>shareSymbol</code>+<code>version</code> and no override, both derive the identical <code>shareOftSalt</code> (see Finding #1&#39;s root cause). The second deployment&#39;s finalize silently adopts and re-wires the first&#39;s ShareOFT. Self-harm only (same owner, no attacker needed) — distinct mechanism from Finding #1. Same fix (bind salt to <code>creatorToken</code>) resolves both.</p>
+<p>[65] <strong>11. Deposit bounds and split math hardcode an 18-decimal <code>creatorToken</code> with no <code>decimals()</code> validation</strong></p>
+<p><code>DeploymentBatcherPhase2Module._validateFinalizePhase2</code> · Confidence: 65 · Severity: Low</p>
+<p><code>[50_000_000e18, 100_000_000e18]</code> bounds (lines 920-921) are compared against <code>params.depositAmount</code> with no read of <code>IERC20Metadata(creatorToken).decimals()</code>. A non-18-decimal creator token makes the bound practically unreachable (DoS on that deployment) or economically wrong-sized. Self-inflicted by the deployment owner&#39;s own token choice. Raised independently by 3 Phase-1 agents (precision-math, erc20, erc4626).</p>
+<p>[60] <strong>12. Fee-on-transfer <code>creatorToken</code> breaks <code>finalizePhase2</code> (nominal amount trusted, not balance-delta measured)</strong></p>
+<p><code>DeploymentBatcherPhase2Module.finalizePhase2Entry</code> / <code>finalizePhase2Execution</code> · Confidence: 60 · Severity: Low</p>
+<p><code>safeTransferFrom</code> pulls the nominal <code>depositAmount</code>, then <code>wrapper.deposit(depositAmount)</code> is called with the same nominal figure rather than the actually-received balance delta. Atomic revert on a fee-on-transfer token, no fund loss, but permanently bricks that deployment for such tokens.</p>
+<p>[80] <strong>13. Hardcoded 0.3% Uniswap v3 fee tier makes the Finding #3 front-run target deterministic</strong></p>
+<p><code>DeploymentBatcherPhase3Helper</code> (<code>V3_FEE_TIER = 3000</code>, line 77) · Confidence: 80 · Severity: Low</p>
+<p>Compile-time constant; narrows Finding #3&#39;s front-run to one deterministic pool address (<code>token</code>/<code>usdc</code>/<code>3000</code>) and removes tier flexibility.</p>
+<p>[55] <strong>14. First deposit into the freshly-deployed, predictable-address vault has no minimum-shares/slippage guard</strong></p>
+<p><code>DeploymentBatcherPhase2Module.finalizePhase2Execution</code> · Confidence: 55 · Severity: Low</p>
+<p><code>shareTokens = wrapper.deposit(depositAmount)</code> (line 1105) is trusted with no <code>require(shareTokens &gt;= minExpected)</code>. The vault&#39;s whitelist blocks the classic share-mint-then-donate variant, but not a plain <code>creatorToken</code> donation to the (publicly derivable, pre-deposit) vault address, which — depending on the out-of-scope vault&#39;s virtual-share protection — could deflate minted shares toward zero.</p>
+<p>[85] <strong>15. Module hot-swap codehash allowlist defaults to &quot;open&quot; when unset</strong></p>
+<p><code>DeploymentBatcher._validatePhaseModuleCodehash</code> · Confidence: 85 · Severity: Low</p>
+<p><code>approvedPhaseModuleCodehashes[module]</code> defaults to <code>bytes32(0)</code>, and the validator short-circuits (<code>if (expected == bytes32(0)) return;</code>) — i.e. no codehash was ever pre-approved, so the check is a no-op unless the treasury separately opts in via <code>approvePhaseModuleCodehash</code>. Treasury-gated, not third-party exploitable, but nullifies the stated defense-in-depth for a compromised/mistaken treasury.</p>
+<p>[80] <strong>16. No timelock on instant delegatecall-module swap</strong></p>
+<p><code>DeploymentBatcher.setPhase1Module</code> / <code>setPhase2Module</code> · Confidence: 80 · Severity: Low</p>
+<p>A single immutable <code>protocolTreasury</code> can redirect all future Phase 1/2 execution (delegatecall, full batcher context) in one transaction with no delay and no event emission on swap. Compounds Finding #15.</p>
+<p>[70] <strong>17. Codehash pin is checked only at <code>set</code>-time, never re-verified at each delegatecall use</strong></p>
+<p><code>DeploymentBatcher._delegatePhase1</code> / <code>_delegatePhase2</code> · Confidence: 70 · Severity: Low</p>
+<p>Even when a codehash <em>is</em> pinned, it is validated once at <code>setPhase1Module</code>/<code>setPhase2Module</code> time and never re-checked via <code>extcodehash</code> before each subsequent delegatecall. Largely neutralized on Base post-EIP-6780, but structurally decoupled.</p>
+<p>[78] <strong>18. <code>wireDeploymentHelpers</code> skips the <code>batcher()</code>/codehash checks that <code>setPhase2Module</code> enforces</strong></p>
+<p><code>DeploymentBatcher.wireDeploymentHelpers</code> · Confidence: 78 · Severity: Low</p>
+<p><code>phase2Module</code> (and other helpers) can also be assigned via <code>wireDeploymentHelpers</code> with none of <code>setPhase2Module</code>&#39;s defensive checks. A misconfigured module wired this way silently bricks all Phase-2 paths until corrected. Treasury-only, recoverable.</p>
+<p>[65] <strong>19. Surplus native-fee refund via low-level <code>.call</code> occurs mid-execution, before ownership handoff (CEI ordering)</strong></p>
+<p><code>DeploymentBatcherPhase2Module._bridgeShareAllocationToSolana</code> · Confidence: 65 · Severity: Low</p>
+<p>The refund (line 1234-1236) hands control to <code>msg.sender</code> while the batcher still owns the wrapper/ShareOFT/vault. <code>nonReentrant</code> blocks re-entry into guarded entrypoints, but Finding #2&#39;s two unguarded functions remain reachable during this window if <code>msg.sender</code> is a malicious contract. If <code>msg.sender</code> rejects ETH, the whole finalize reverts.</p>
+<p>[60] <strong>20. <code>quoteOFT</code>&#39;s <code>OFTLimit</code> is discarded; bridge amount not bounds-checked against lane min/max</strong></p>
+<p><code>DeploymentBatcherPhase2Module._bridgeShareAllocationToSolana</code> · Confidence: 60 · Severity: Low</p>
+<p>Only <code>amountReceivedLD</code> is used; the returned <code>OFTLimit</code> is never checked against the ~30M-token Solana allocation. Compounds Finding #7 (an out-of-range amount reverts the whole finalize) for large deposits. Availability concern only, no value loss.</p>
+<p>[55] <strong>21. <code>deployPhase1Core</code>&#39;s OFTBootstrapRegistry path discards <code>deploy()</code>&#39;s return value; relies on an undocumented content-addressing invariant in <code>computeAddress</code></strong></p>
+<p><code>DeploymentBatcherPhase1Module.deployPhase1Core</code> · Confidence: 55 · Severity: Low</p>
+<p><code>computeAddress(oftBootstrapSalt, codeIds.oftBootstrap)</code> passes a raw <code>codeId</code> where the interface expects an init-code hash (contrast the ShareOFT path, which passes a real hash). Only self-consistent if the external <code>bytecodeStore</code> is content-addressed with zero constructor args — unverifiable from in-scope code, likely benign but undocumented.</p>
+<p>[90] <strong>22. Bytecode-identity cross-check in the ShareOFT recovery path is tautological (always-true, dead security check)</strong></p>
+<p><code>DeploymentBatcherPhase1Module.finalizePhase1Split</code> · Confidence: 90 · Severity: Low (root-cause contributor to <strong>Finding #1</strong>, High)</p>
+<p><code>verifyHash</code> and <code>shareOftInitCodeHash</code> are computed from identical inputs in the same transaction (lines 838, 846) — the guard can never fail. This is the mechanism that lets Finding #1&#39;s cross-tenant substitution go undetected; even a &quot;correct&quot; bytecode-identity check would not have caught it, since the attacker&#39;s contract genuinely is built from the expected bytecode. Listed separately because it is a distinct code-level defect worth fixing on its own even where Finding #1&#39;s salt-namespacing fix is applied.</p>
+<p>[60] <strong>23. <code>LinearVesting4626</code>&#39;s declared <code>NotSeeded</code> error is never enforced</strong></p>
+<p><code>LinearVesting4626.sol</code> (error declared line 35, unused; <code>vestedAmount</code> fallback branch line 69; <code>release()</code>/<code>release(address)</code> lines 83, 93) · Confidence: 60 · Severity: Low</p>
+<p><code>vestedAmount()</code> falls back to a live-balance calculation when <code>seeded == false</code>, and nothing prevents <code>release()</code>/<code>release(address)</code> from running in that state. Not reachable via the batcher&#39;s own atomic fund-then-seed call sequence today, but a pre-seed release (if ever reachable) would permanently shrink the beneficiary&#39;s frozen allocation, since <code>seed()</code> photographs the <em>post-release</em> balance. Raised independently by 3 Phase-2 agents.</p>
+<hr>
+<h3 id="info-no-scored-confidence-informational-only">Info (no scored confidence — informational only)</h3>
+<ul>
+<li><strong>Solana bridge dust stranded by OFT shared-decimal truncation</strong> — <code>_bridgeShareAllocationToSolana</code> — <code>solanaAmount</code> (18-decimal) is cleaned down to the OFT&#39;s shared-decimal granularity by <code>send</code>; the sub-<code>1e12</code>-wei remainder stays in the batcher with no sweep function. Economically negligible (&lt;1e-6 tokens per deployment).</li>
+<li><strong>No balance reconciliation between wrapper&#39;s returned <code>shareTokens</code> and actual ShareOFT balance received</strong> — <code>finalizePhase2Execution</code> — all four split legs are sized from the wrapper&#39;s self-reported return value with no <code>balanceOf</code> delta check. Latent-only under the current trust model (wrapper is protocol-deployed).</li>
+<li><strong><code>LinearVesting4626.seed()</code> reverts with the semantically wrong <code>ZeroDuration</code> error on zero balance</strong> — line 61 reuses an error meant for a zero constructor <code>durationSeconds</code>. Not reachable in the live flow; a debugging trap only.</li>
+<li><strong>Broad trust in external <code>bytecodeStore</code> bytecode for all CREATE2 sites beyond ShareOFT</strong> — every deploy site except the ShareOFT recovery branch trusts the store&#39;s bytecode for a <code>codeId</code> validated only as non-zero, with no post-deploy code-identity assertion. Central, unavoidable trust boundary of the whole protocol.</li>
+</ul>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[92]</td>
+<td>Cross-tenant ShareOFT hijack via <code>shareOftSaltOverride</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>[95]</td>
+<td>Unguarded <code>whitelistPayoutRouterOnWrapper</code> / <code>setPayoutRouterShareOftNoFees</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>[75]</td>
+<td>Unvalidated/front-runnable Uniswap v3 pool init price</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[72]</td>
+<td>ShareMesh hook whitelist disconnected from live pool hook</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[55]</td>
+<td>ShareOFT/creatorToken fee-on-transfer not reconciled across split legs</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[70]</td>
+<td>Hardcoded 200k gas / zero value on Solana OFT option</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[80]</td>
+<td>Bridge failure/misconfiguration bricks entire <code>finalizePhase2</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>[68]</td>
+<td><code>hasActivePendingAuction</code> has no rescue path</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[65]</td>
+<td><code>resetPhase1State</code> cannot unstick same-version deployment</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[62]</td>
+<td>ShareOFT salt collision, same owner</td>
+</tr>
+<tr>
+<td>11</td>
+<td>[65]</td>
+<td>18-decimal <code>creatorToken</code> assumption in deposit bounds</td>
+</tr>
+<tr>
+<td>12</td>
+<td>[60]</td>
+<td>Fee-on-transfer <code>creatorToken</code> breaks <code>finalizePhase2</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>[80]</td>
+<td>Hardcoded 0.3% Uniswap v3 fee tier</td>
+</tr>
+<tr>
+<td>14</td>
+<td>[55]</td>
+<td>No slippage guard on first vault deposit</td>
+</tr>
+<tr>
+<td>15</td>
+<td>[85]</td>
+<td>Module codehash allowlist defaults open</td>
+</tr>
+<tr>
+<td>16</td>
+<td>[80]</td>
+<td>No timelock on module swap</td>
+</tr>
+<tr>
+<td>17</td>
+<td>[70]</td>
+<td>Codehash checked at set-time, not use-time</td>
+</tr>
+<tr>
+<td>18</td>
+<td>[78]</td>
+<td><code>wireDeploymentHelpers</code> skips module validation</td>
+</tr>
+<tr>
+<td>19</td>
+<td>[65]</td>
+<td>Surplus refund CEI ordering</td>
+</tr>
+<tr>
+<td>20</td>
+<td>[60]</td>
+<td><code>quoteOFT</code> limits ignored</td>
+</tr>
+<tr>
+<td>21</td>
+<td>[55]</td>
+<td><code>deploy()</code> return discarded / <code>computeAddress</code> semantics</td>
+</tr>
+<tr>
+<td>22</td>
+<td>[90]</td>
+<td>Tautological bytecode check (root cause of #1)</td>
+</tr>
+<tr>
+<td>23</td>
+<td>[60]</td>
+<td><code>LinearVesting4626</code> <code>NotSeeded</code> never enforced</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass — either because the exploit is contingent on out-of-scope contract behavior, or because reachability from the audited entrypoints could not be constructed. Not scored (confidence &lt; 50).</em></p>
+<ul>
+<li><strong>Registry-supplied LayerZero peer trusted over the treasury default</strong> — <code>DeploymentBatcherPhase2Module._ensureRegistryAndShareOftPeerWired</code> — Code smells: a non-zero registry-returned peer (<code>reg.getRemoteOFTPeerBytes32</code>) is written onto the ShareOFT via <code>setPeer</code> with no check that it matches the treasury&#39;s <code>solanaShareOftPeer</code> default. — If the out-of-scope registry allows the token owner (not just treasury) to write <code>setRemoteOFTPeerBytes32</code>, a creator could pre-seed a malicious peer and redirect the bridged 30% allocation; the registry&#39;s access control could not be verified from in-scope source, so this stays a Lead rather than a scored Finding.</li>
+<li><strong>Registry-mapping squatting via first-finalizer-wins</strong> — <code>DeploymentBatcherPhase2Module._ensureRegistryAndShareOftPeerWired</code> — Code smells: <code>reg.registerToken(...)</code> is keyed by <code>creatorToken</code> alone, and any self-declared <code>owner</code> can be first to finalize for a given <code>creatorToken</code>, permanently setting that token&#39;s registry-wide vault/shareOFT/gauge/oracle pointers. — Requires holding ≥50M of the target <code>creatorToken</code> (the <code>MIN_FIRST_DEPOSIT</code> floor) plus the Solana bridge fee to even attempt, and downstream impact depends on the out-of-scope registry&#39;s read/write semantics.</li>
+<li><strong>Vault/wrapper CREATE2 deploys lack a collision-tolerant recovery path</strong> (root cause of Finding #9) — <code>DeploymentBatcherPhase1Module.deployPhase1Core</code> — Code smells: unlike the OFTBootstrapRegistry (existence-checked) and ShareOFT (try/catch adopt) deploy sites in the same function, the vault/wrapper deploys have neither. — If the external <code>create2Deployer</code> is permissionlessly callable by anyone (unverified, out of scope), a front-run occupation of the deterministic address would brick that <code>(creatorToken, owner, version)</code> tuple with no recovery; contingent on external deployer access control.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p>34 external/public state-changing functions across the 7 in-scope contracts (LinearVesting4626=3, Phase3Helper=1, ShareMeshHelper=1, UtilsHelper=0 pure, Phase1Module=2, Phase2Module=7, DeploymentBatcher=20).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Guard</th>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>onlyProtocolTreasury</code> (immutable, no transfer/renounce)</td>
+<td><code>setSolanaConfig</code>, <code>setSolanaShareOftPeer</code>, <code>wireDeploymentHelpers</code>, <code>setPhase2Module</code>, <code>setPhase1Module</code>, <code>approvePhaseModuleCodehash</code>, <code>setOVaultRuntimeConfig</code>, <code>setVaultRolePolicyConfig</code>, <code>resetPhase1State</code></td>
+</tr>
+<tr>
+<td><code>_requireOwner(params.owner)</code> (<code>msg.sender==params.owner</code>, self-declared per call) + <code>nonReentrant</code></td>
+<td><code>deployPhase1CoreWithSalt</code>, <code>finalizePhase1WithSalt</code>, <code>deployPhase2Core[WithRolePolicy]</code>, <code>finalizePhase2[WithPermit2]</code>, <code>launchDeferredAuction</code>, <code>deployPhase3Strategies</code>, <code>deployShareMeshLpManager</code></td>
+</tr>
+<tr>
+<td><code>msg.sender==batcher</code> (external helper, immutable)</td>
+<td><code>Phase3Helper.deployPhase3Strategies</code>, <code>ShareMeshHelper.deployShareMeshLpManager</code></td>
+</tr>
+<tr>
+<td><code>address(this)==batcher</code> (delegatecall module self-check)</td>
+<td>every <code>Phase1Module</code>/<code>Phase2Module</code> entrypoint</td>
+</tr>
+<tr>
+<td><strong>Unguarded (no caller check)</strong></td>
+<td><code>LinearVesting4626.release()</code> (fixed recipient — griefing-timing only, see Threat Model); <strong><code>whitelistPayoutRouterOnWrapper</code></strong> and <strong><code>setPayoutRouterShareOftNoFees</code></strong> (Finding #2)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles</strong>: <code>protocolTreasury</code> (immutable) — 9 admin setters + terminal owner of most deployed contracts, no transfer/revoke/renounce. <code>batcher</code> (immutable per helper/module). <code>seeder</code>/<code>beneficiary</code> (LinearVesting4626, both immutable). No <code>Ownable</code>, no two-step transfer anywhere in scope — all privileged principals are immutable except the hot-swappable <code>phase1Module</code>/<code>phase2Module</code> pointers (single-step treasury swap, optional and default-open codehash allowlist — Finding #15).</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary caller</td>
+<td><code>whitelistPayoutRouterOnWrapper</code> / <code>setPayoutRouterShareOftNoFees</code></td>
+<td>Persistent whitelist/fee-exemption grant on any in-flight deployment</td>
+<td><strong>Addressed by Finding #2</strong></td>
+</tr>
+<tr>
+<td>Attacker racing a victim&#39;s Phase-1a→1b window</td>
+<td><code>finalizePhase1Split</code> via <code>shareOftSaltOverride</code></td>
+<td>Permanent unauthorized minter status on a victim&#39;s ShareOFT</td>
+<td><strong>Addressed by Finding #1</strong> (root cause: <strong>Finding #22</strong>)</td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>LinearVesting4626.release()</code></td>
+<td>Force a release at a time of their choosing (fixed recipient)</td>
+<td>Examined — invariant holds (no fund redirection, timing-only griefing, no scored finding)</td>
+</tr>
+<tr>
+<td>Deployment <code>owner</code> (self-declared)</td>
+<td>Phase 1/2/3 for a <code>baseSalt</code> they control</td>
+<td>Free self-service deployment for any <code>creatorToken</code></td>
+<td>Not a violation — intended permissionless design</td>
+</tr>
+<tr>
+<td>Third party front-running Uniswap v3 pool creation</td>
+<td><code>deployPhase3Strategies</code></td>
+<td>Set a manipulated CREATOR/USDC anchor price</td>
+<td><strong>Addressed by Finding #3</strong></td>
+</tr>
+<tr>
+<td>Caller-supplied <code>params.hooksToApprove[]</code>/<code>poolHook</code></td>
+<td>ShareMesh hook registry</td>
+<td>Arbitrary hook approved without binding to the live pool</td>
+<td><strong>Addressed by Finding #4</strong></td>
+</tr>
+<tr>
+<td>Compromised/malicious <code>protocolTreasury</code></td>
+<td>Module hot-swap (<code>setPhase1Module</code>/<code>setPhase2Module</code>) with default-open codehash allowlist</td>
+<td>Arbitrary delegatecall code running with full batcher storage/msg.sender/msg.value</td>
+<td><strong>Addressed by Finding #15/#16</strong></td>
+</tr>
+<tr>
+<td>LayerZero endpoint/relayer (black-box)</td>
+<td><code>IOFT.send</code> during the Solana bridge leg</td>
+<td>Cause bridge failure after an irreversible Base-side debit</td>
+<td><strong>Addressed by Finding #7</strong></td>
+</tr>
+<tr>
+<td>Any address reentering during a CREATE2 constructor / OFT <code>send</code> / ETH refund</td>
+<td>Batcher state mid-<code>finalizePhase2</code>/<code>deployPhase3Strategies</code></td>
+<td>Reenter a <code>nonReentrant</code>-guarded function</td>
+<td>Examined — <code>nonReentrant</code> covers all public entrypoints; the only reachable reentry target during the mid-execution refund window is Finding #2&#39;s own unguarded functions (<strong>Finding #19</strong> documents the CEI ordering, no additional exploit beyond Finding #2)</td>
+</tr>
+<tr>
+<td><code>params.vault</code>/<code>wrapper</code>/<code>ccaLaunchArm</code> supplied as a non-batcher-deployed contract</td>
+<td>Phase 3 / ShareMesh prechecks</td>
+<td>Substitute an arbitrary contract for the real deployment&#39;s vault/CCA</td>
+<td><strong>Coverage-gate re-read (closed this pass)</strong>: for <code>vault</code>, the <code>owner()==params.owner</code> precheck combined with <code>_requireOwner</code> prevents cross-tenant substitution because ownership has already transferred to the real owner by the time Phase 3 is callable. For <code>ccaLaunchArm</code>, no equivalent binding exists — captured by <strong>Finding #4</strong> (Lead: registry-mapping squatting notes the related <code>creatorToken</code>-only registry keying)</td>
+</tr>
+<tr>
+<td>Registry write access (out-of-scope ACL)</td>
+<td><code>_ensureRegistryAndShareOftPeerWired</code></td>
+<td>Redirect the bridged Solana allocation via a planted peer</td>
+<td><strong>Lead</strong> (confidence &lt; 50, contingent on unverifiable registry ACL)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage</strong>: 34 entrypoints in inventory, 34 addressed (23 direct findings/leads + 11 examined with &quot;invariant holds&quot; or &quot;not a violation&quot; notes above). 11 threat-catalog rows, 11 answered. Coverage holes closed this pass: 1 (the <code>params.vault</code>/<code>ccaLaunchArm</code> substitution question).</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit system (23 sub-agents across 3 phases: context-building, breadth checklist review, and depth attacker-mindset analysis). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. The out-of-scope dependencies (vault, wrapper, ShareOFT, registry, CCA launch arm, gauge controllers, oracle) were not available in this snapshot and several findings&#39; severity is contingent on their behavior — a full audit of those contracts is strongly recommended before mainnet deployment of any un-audited component. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicfmdbsg4ltz32whjpjsr72k4i6vi2svjwmdullaj63r7uc6n6rcq.ipfs.community.bgipfs.com/"><code>https://bafkreicfmdbsg4ltz32whjpjsr72k4i6vi2svjwmdullaj63r7uc6n6rcq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/384">#384</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

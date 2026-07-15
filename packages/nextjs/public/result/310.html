@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Obol Validator Manager (OVM) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #310">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Obol Validator Manager (OVM)</h1>
+    <p class="job-sub">Job #310 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/310"><b>Job page</b> #310</a>
+      <a class="chip" href="https://bafkreie6g6gdsf57mv5rhcmiync4sp2be5dyceexy56ggbo7p3znevimqm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">5</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">6</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#confirmed-non-issues-explicitly-investigated-no-finding">Confirmed Non-Issues (explicitly investigated, no finding)</a></li>
+      <li><a href="#severity-summary">Severity Summary</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — Obol Validator Manager (OVM)</h1>
+<p><strong>Target</strong>: <code>ObolValidatorManager</code> + <code>ObolValidatorManagerFactory</code><br><strong>Deployed instance audited</strong>: <code>0x2c26B5A373294CaccBd3DE817D9B7C6aea7De584</code> (Ethereum mainnet), verified source pulled from Sourcify<br><strong>Context supplied by client</strong>: &quot;OVM Factory&quot; — <a href="https://docs.obol.org/learn/readme/obol-splits">https://docs.obol.org/learn/readme/obol-splits</a><br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (7 domain-checklist agents: general, precision-math, access-control, erc20, dos, defi-staking, assembly) → Phase 2 depth (12 independent attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation (this document).<br><strong>Scope note</strong>: The verified source is a single flattened file containing well-known, heavily-audited Solmate (<code>ERC20</code>, <code>ReentrancyGuard</code>) and Solady (<code>Ownable</code>, <code>OwnableRoles</code>, <code>SafeTransferLib</code>) library code, plus two custom contracts that are the actual audit target: <code>ObolValidatorManager</code> (~511 lines) and <code>ObolValidatorManagerFactory</code> (~101 lines). All findings below concern the custom contracts and their use of the audited libraries / external system contracts (ETH2 deposit contract, EIP-7251 consolidation predeploy, EIP-7002 withdrawal predeploy). Library internals were reviewed for correct usage but not re-audited as novel code.</p>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Unique (Contract, function) tuples raised across both phases</strong>: 16, all 16 covered in the unified findings below (0 dropped).</li>
+<li><strong>Overlap</strong>: 9 of 16 items were found independently by both Phase 1 and Phase 2 (marked <code>[both]</code> below) — strong corroboration, including one item independently rediscovered by 9 of the 19 total agents (7 Phase-1 + 12 Phase-2).</li>
+<li><strong>Phase-1-only</strong>: 4 items (mostly Info-level documentation/scoping notes).</li>
+<li><strong>Phase-2-only</strong>: 3 items, most notably the sharpest new finding of the audit (<code>transfer()</code> incomplete ownership handover).</li>
+<li><strong>Re-examined leads kept</strong>: all phase-unique items were re-confirmed against source during reconciliation; none were demoted.</li>
+<li><strong>No Critical or High severity findings.</strong> Every path that looked promising for unprivileged fund extraction was traced to a concrete dead end (checks-effects-interactions ordering, bounded/checked arithmetic, or an already-required role) by at least one and usually several independent agents across both phases. The confirmed findings are privilege-boundary and role-scoping issues (Medium) plus a cluster of low-severity/latent robustness gaps.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-setamountofprincipalstake-is-gated-by-setbeneficiaryrole-letti">[1] <code>setAmountOfPrincipalStake</code> is gated by <code>SET_BENEFICIARY_ROLE</code>, letting that role redirect reward funds to itself</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: AccessControl-1, Staking-2. Phase 2: found independently by 6 of 12 agents (access-control, first-principles, asymmetry, boundary, trust-gap, flow-gap), some as direct FINDINGs.<br><strong>Location</strong>: <code>ObolValidatorManager.setAmountOfPrincipalStake()</code> (line 1857), <code>setBeneficiary()</code> (line 1848), <code>_distributeFunds()</code> (lines 2160-2222)<br><strong>Description</strong>: <code>setAmountOfPrincipalStake</code> overwrites <code>amountOfPrincipalStake</code> — the single variable <code>_distributeFunds</code> uses to decide how much of the contract&#39;s balance is paid to <code>principalRecipient</code> (as &quot;principal&quot;) versus <code>rewardRecipient</code> (as &quot;reward&quot;). This function is gated by <code>SET_BENEFICIARY_ROLE</code> (bit <code>0x04</code>) rather than a dedicated role. That role&#39;s name and its other function (<code>setBeneficiary</code>, which only changes the principal recipient <em>address</em>) imply a narrower scope than &quot;control the entire principal/reward split.&quot; A holder of <code>SET_BENEFICIARY_ROLE</code> who was only meant to be trusted with address rotation can instead redirect funds that should go to <code>rewardRecipient</code> — a party protected by a separate, distinct role (<code>SET_REWARD_ROLE</code>).<br><strong>Proof of Concept</strong>: Owner grants Alice <code>SET_BENEFICIARY_ROLE</code> (intending only &quot;she can update the beneficiary address&quot;). Alice calls <code>setBeneficiary(alice)</code> → <code>principalRecipient = alice</code>. Alice calls <code>setAmountOfPrincipalStake(type(uint128).max)</code>. Anyone then calls <code>distributeFunds()</code>. In <code>_distributeFunds</code>, since <code>_fundsToBeDistributed &lt;= amountOfPrincipalStake</code> is now always true, the entire distributable balance — including what should have been reward — is classified as principal and paid to Alice. <code>rewardRecipient</code> receives nothing.<br><strong>Recommendation</strong>: Gate <code>setAmountOfPrincipalStake</code> behind <code>onlyOwner</code>, or introduce a dedicated role (e.g. a new bit distinct from both <code>SET_BENEFICIARY_ROLE</code> and <code>SET_REWARD_ROLE</code>) so address management and economic-split control are not conflated.</p>
+<h3 id="2-sweep-lets-the-owner-redirect-the-principal-recipients-already">[2] <code>sweep()</code> lets the owner redirect the principal recipient&#39;s already-credited pull balance to an arbitrary address</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: General-3, AccessControl-2, Staking-5. Phase 2: found by 4 of 12 agents (execution-trace, periphery, trust-gap — as a direct FINDING, flow-gap).<br><strong>Location</strong>: <code>ObolValidatorManager.sweep()</code> (lines 1876-1896)<br><strong>Description</strong>: The pull-payment pattern (<code>distributeFundsPull()</code> → <code>pullBalances[recipient]</code>) exists to give a recipient a safe, self-custodied claim they alone can withdraw via <code>withdrawPullBalance</code>. However, <code>sweep(beneficiary, amount)</code> lets the <strong>owner</strong> redirect those already-credited funds: it always debits <code>pullBalances[principalRecipient]</code>, but when <code>beneficiary != address(0)</code> (owner-only branch), it sends the ETH to that arbitrary address instead of to <code>principalRecipient</code>. This defeats the pull mechanism&#39;s safety guarantee for principal funds that have already been &quot;distributed&quot; into the recipient&#39;s ledger.<br><strong>Proof of Concept</strong>: <code>distributeFundsPull()</code> credits <code>pullBalances[principalRecipient] = 10 ETH</code>. Before the recipient calls <code>withdrawPullBalance</code>, the owner calls <code>sweep(attackerAddr, 0)</code>. <code>_checkOwner()</code> passes; <code>sweepAmount = pullBalances[principalRecipient] = 10 ETH</code>; balance zeroed; 10 ETH sent to <code>attackerAddr</code> instead of the rightful principal recipient.<br><strong>Recommendation</strong>: Debit the pull balance of the actual destination being paid (require the caller to be that account, or restrict <code>sweep</code>&#39;s destination to <code>principalRecipient</code> only), rather than always debiting <code>principalRecipient</code>&#39;s balance while allowing redirection elsewhere.</p>
+<h3 id="3-transfer-performs-an-incomplete-ownership-handover-roles-and-r">[3] <code>transfer()</code> performs an incomplete ownership handover — roles and <code>rewardRecipient</code> survive</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase 2 only]</code> — execution-trace agent, reported as a direct FINDING with a concrete attack chain. Corroborates and sharpens Phase 1&#39;s General-2 (Low), which flagged the same code but without the pre-planted-role attack scenario.<br><strong>Location</strong>: <code>ObolValidatorManager.transfer()</code> (lines 2009-2017), <code>transferOwnership()</code> (line 2080)<br><strong>Description</strong>: <code>transfer(newBeneficiary, newOwner)</code> — presented as the mechanism to hand over an OVM instance to a new owner — only updates <code>principalRecipient</code> and the owner slot. It never revokes previously-granted operator roles (<code>WITHDRAWAL_ROLE</code>, <code>CONSOLIDATION_ROLE</code>, <code>SET_BENEFICIARY_ROLE</code>, <code>RECOVER_FUNDS_ROLE</code>, <code>SET_REWARD_ROLE</code>, <code>DEPOSIT_ROLE</code>) and never resets <code>rewardRecipient</code>. A new owner receiving an OVM (e.g. via a secondary transfer of a validator-manager position) inherits any previously-granted operators they never authorized and have no on-chain visibility into.<br><strong>Proof of Concept</strong>: Owner A grants <code>SET_REWARD_ROLE</code> to an EOA they control, then calls <code>transfer(newBeneficiary, B)</code> to hand the contract to buyer B. Post-handover, the EOA still holds <code>SET_REWARD_ROLE</code> and calls <code>setRewardRecipient(attackerAddr)</code>, redirecting all future reward distributions to the former owner&#39;s collaborator — with B, the new owner, unaware anything is wrong.<br><strong>Recommendation</strong>: Have <code>transfer()</code> clear the role bitmap for all known role bits (or expose a bulk-revoke the new owner is required to invoke as part of accepting a handover), and/or document prominently that role grants and <code>rewardRecipient</code> are NOT reset by <code>transfer()</code>/<code>transferOwnership()</code>.</p>
+<h3 id="4-instant-timelock-free-redirection-of-all-principal-by-the-owne">[4] Instant, timelock-free redirection of all principal by the owner or <code>SET_BENEFICIARY_ROLE</code></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase 1 only]</code> — AccessControl-3. Re-examined during reconciliation: confirmed against source; no phase-2 agent flagged this as a distinct issue (several touched adjacent territory in findings [1]/[2] but not this specific timelock angle), so it is kept as a Phase-1-only, re-confirmed item rather than dropped.<br><strong>Location</strong>: <code>setBeneficiary()</code> (line 1848), <code>transfer()</code> (line 2009)<br><strong>Description</strong>: <code>principalRecipient</code> can be changed instantly, with no timelock or delay window, by the owner or any <code>SET_BENEFICIARY_ROLE</code> holder. Combined with finding [1], a compromised or malicious owner/role-holder can front-run a distribution, redirect <code>principalRecipient</code> to themselves, and capture funds with no advance warning to the legitimate recipient.<br><strong>Proof of Concept</strong>: Owner (or <code>SET_BENEFICIARY_ROLE</code> holder) calls <code>setBeneficiary(attacker)</code>, then <code>distributeFunds()</code> — all principal ETH is sent to <code>attacker</code> in the same block.<br><strong>Recommendation</strong>: Consider a timelock or 2-step confirmation on beneficiary changes, and/or require a multisig owner. This reflects inherent trust-model centralization rather than an unauthorized-third-party exploit; at minimum, document the trust assumption prominently for integrators/depositors.</p>
+<h3 id="5-deposit-never-verifies-withdrawalcredentials-point-back-to-thi">[5] <code>deposit()</code> never verifies <code>withdrawal_credentials</code> point back to this contract</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: Staking-1 (defi-staking agent). Phase 2: boundary agent, LEAD, corroborating.<br><strong>Location</strong>: <code>ObolValidatorManager.deposit()</code> (lines 1829-1845)<br><strong>Description</strong>: <code>deposit()</code> forwards a caller-supplied <code>withdrawal_credentials</code> to the ETH2 deposit contract and unconditionally executes <code>amountOfPrincipalStake += msg.value</code>, without checking that the credentials actually designate this OVM (<code>0x01</code>/<code>0x02</code> prefix + <code>address(this)</code>) as the withdrawal destination. <code>DEPOSIT_ROLE</code> is a role distinct from <code>SET_BENEFICIARY_ROLE</code>/owner, so a narrowly-scoped operator trusted only to fund validators could (via misconfiguration or malice) point a deposit&#39;s credentials elsewhere. The ETH then never returns to this contract, but principal accounting is inflated regardless — causing later legitimate rewards from other validators sharing this OVM to be misclassified as principal and routed away from <code>rewardRecipient</code>. This also exposes the classic DVT/DKG withdrawal-credential front-running risk (an operator who knows the pubkey in advance can pre-deposit with their own credentials).<br><strong>Proof of Concept</strong>: <code>DEPOSIT_ROLE</code> holder calls <code>deposit{value: 32 ETH}(pubkeyX, attackerCredentials, sig, root)</code>. <code>amountOfPrincipalStake</code> increases by 32 ETH regardless of where the funds actually end up. Later, 32 ETH of legitimate rewards from other validators sharing the OVM arrive; <code>distributeFunds()</code> classifies them as principal (since <code>amountOfPrincipalStake</code> is inflated) and pays <code>principalRecipient</code>, starving <code>rewardRecipient</code>.<br><strong>Recommendation</strong>: Require <code>withdrawal_credentials.length == 32</code> and that it encodes this contract&#39;s own address (<code>withdrawal_credentials[0] == 0x01</code> or <code>0x02</code>, and the trailing 20 bytes equal <code>address(this)</code>).</p>
+<h3 id="6-validateandreturnfee-silently-returns-fee0-and-system-contract">[6] <code>_validateAndReturnFee()</code> silently returns fee=0 and system-contract calls no-op against a code-less address</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: General-1, Assembly-1 (with empirical forge verification). Phase 2: corroborated by 5 of 12 agents (economic-security, periphery, boundary, numerical-gap, flow-gap).<br><strong>Location</strong>: <code>_validateAndReturnFee()</code> (lines 2132-2139), consumed by <code>consolidate()</code> (line 1941) and <code>withdraw()</code> (line 1973)<br><strong>Description</strong>: <code>_validateAndReturnFee</code> performs <code>feeContract.staticcall(&quot;&quot;)</code> and only reverts if the call itself fails (<code>!readOK</code>). A low-level <code>staticcall</code>/<code>call</code> to an address with no deployed code returns <code>(true, &quot;&quot;)</code> — no <code>extcodesize</code>/<code>code.length</code> check is performed on any of the three immutable system-contract addresses. If <code>withdrawalSystemContract</code>/<code>consolidationSystemContract</code> were misconfigured or point to a chain/pre-fork state where the Pectra predeploys don&#39;t exist, <code>fee</code> decodes to <code>0</code> (empirically verified: <code>uint256(bytes32(&quot;&quot;))  == 0</code>), which passes the <code>fee &gt; maxAllowedFee</code> guard, and the subsequent request <code>.call{value: fee}(...)</code> also succeeds silently against the same no-code address. The transaction reports success (emits <code>ConsolidationRequested</code>/<code>WithdrawalRequested</code>, refunds <code>msg.value</code>) while no request was ever actually queued on the beacon chain.<br><strong>Proof of Concept</strong>: Deploy with <code>withdrawalSystemContract</code> pointing at a no-code address. <code>withdraw([pubkey], [amount], 0, recipient)</code> with <code>msg.value = 0</code> succeeds, emits the event, but nothing is queued.<br><strong>Recommendation</strong>: Require <code>code.length &gt; 0</code> on all three system-contract immutables at construction; require <code>feeData.length == 32</code> in <code>_validateAndReturnFee</code> before decoding.</p>
+<h3 id="7-fundspendingwithdrawal-downcast-guard-checks-the-wrong-value-l">[7] <code>fundsPendingWithdrawal</code> downcast guard checks the wrong value (latent, economically unreachable)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: Precision-1, corroborated by Assembly agent. Phase 2: corroborated by 6 of 12 agents (math-precision, access-control, invariant, asymmetry, numerical-gap, flow-gap) — near-unanimous independent agreement.<br><strong>Location</strong>: <code>_distributeFunds()</code> line 2212/2214, guard at line 2192/2194<br><strong>Description</strong>: <code>fundsPendingWithdrawal = uint128(_memoryFundsPendingWithdrawal + _principalPayout + _rewardPayout)</code>. The only overflow guard (<code>if (_fundsToBeDistributed &gt; type(uint128).max) revert</code>) bounds the <em>new</em> distribution amount, not the <em>cumulative sum</em> being downcast (pre-existing pending balance + new payouts). If that sum exceeded <code>type(uint128).max</code> (~3.4e38 wei ≈ 3.4e20 ETH), the cast would silently truncate, breaking the <code>fundsPendingWithdrawal == sum(pullBalances)</code> invariant.<br><strong>Proof of Concept</strong>: Every one of the 6+ agents that traced this concluded it requires combined balances roughly 12 orders of magnitude beyond total ETH supply (~1.2e8 ETH) — not reachable in practice for a native-ETH contract.<br><strong>Recommendation</strong>: For correctness/defense-in-depth, guard the actual downcast value: <code>require(_memoryFundsPendingWithdrawal + _principalPayout + _rewardPayout &lt;= type(uint128).max)</code>, or use <code>SafeCast</code>.</p>
+<h3 id="8-threshold-based-aggregate-balance-classification-can-reclassif">[8] Threshold-based aggregate-balance classification can reclassify accrued reward as principal (design tradeoff — needs protocol confirmation)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: General-LEAD, Staking-3. Phase 2: corroborated by 6 of 12 agents (math-precision, invariant, first-principles, asymmetry, numerical-gap, flow-gap), several supplying concrete numeric traces independently.<br><strong>Location</strong>: <code>_distributeFunds()</code> (lines 2160-2222, branch at line 2176/2178)<br><strong>Description</strong>: Classification of incoming ETH as &quot;principal&quot; vs. &quot;reward&quot; is based on the <em>aggregate</em> undistributed balance at the moment <code>distributeFunds</code>/<code>distributeFundsPull</code> (both permissionless) is called, not on the origin of each wei. Since <code>receive()</code> accepts ETH from anyone, a party can nudge the aggregate over <code>principalThresholdWei</code> with a small deposit, causing accrued reward ETH to be classified and paid as principal — this also wrongly decrements <code>amountOfPrincipalStake</code> by reward money.<br><strong>Proof of Concept</strong> (numerical-gap agent&#39;s trace): <code>principalThreshold</code> = 16 ETH, <code>amountOfPrincipalStake = 2048 ETH</code> (active large-balance validator that never fully exits), 10 ETH of rewards have genuinely accrued (correctly sub-threshold, would be reward if distributed now). <code>principalRecipient</code> sends 6 ETH of dust via <code>receive()</code>, pushing the distributable balance to 16 ETH ≥ threshold. Anyone calls <code>distributeFunds()</code>: the entire 16 ETH (including the 10 ETH of real reward) is classified as principal and paid to <code>principalRecipient</code>; <code>rewardRecipient</code> receives 0 of the reward it was owed at that moment.<br><strong>Assessment</strong>: This mirrors the documented 0xSplits/Obol Optimistic-Withdrawal-Recipient threshold design (mitigated operationally by calling <code>distributeFunds</code> frequently, before rewards accumulate past the threshold), and for validators that fully exit it can self-correct over the position&#39;s lifetime. Whether the residual risk (permanent misallocation for validators that never fully exit, e.g. post-Pectra max-effective-balance validators, or misallocation compounded by slashing — see the related Phase-1 Staking-3 slashing scenario) is acceptable depends on Obol&#39;s intended reward/principal semantics. Flagged for the team to confirm rather than asserted as a clean bug, given the volume of independent agents that converged on it with concrete numeric proofs.<br><strong>Recommendation</strong>: Document the &quot;distribute frequently&quot; operational requirement prominently for integrators; consider whether classification could be driven by confirmed per-withdrawal amounts rather than aggregate live balance.</p>
+<h3 id="9-unbounded-atomic-batch-loops-in-consolidatewithdraw-self-infli">[9] Unbounded, atomic batch loops in <code>consolidate()</code>/<code>withdraw()</code> — self-inflicted gas DoS and all-or-nothing batch failure</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase 1 only]</code> — DoS-1. Re-examined: confirmed against source (no explicit cap on <code>pubKeys.length</code> in <code>withdraw</code>, nor on <code>requests.length</code> in <code>consolidate</code>); no phase-2 agent raised this specific angle independently, kept as Phase-1-only re-confirmed item.<br><strong>Location</strong>: <code>consolidate()</code> (lines 1914-1950), <code>withdraw()</code> (lines 1953-1983)<br><strong>Description</strong>: Both functions iterate caller-supplied arrays with no upper bound, and any single failed system-contract call reverts the entire batch. However, both are gated by <code>CONSOLIDATION_ROLE</code>/<code>WITHDRAWAL_ROLE</code>, and the arrays are supplied by that same authorized caller — not third-party-injectable — making this self-inflicted rather than an attacker-triggerable DoS against another party.<br><strong>Recommendation</strong>: Add an explicit upper bound on batch sizes for documented safe sizing; optionally support partial-failure processing.</p>
+<h3 id="10-single-step-ownership-transfer-in-transfer-and-exposed-renoun">[10] Single-step ownership transfer in <code>transfer()</code> and exposed <code>renounceOwnership</code> can permanently strand admin control</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase 1 only]</code> — AccessControl-4. Re-examined: confirmed against source; distinct from finding [3] (this is about losing control entirely via typo/renounce, not about a former owner retaining latent control).<br><strong>Location</strong>: <code>transfer()</code> (lines 2009-2017, uses single-step <code>transferOwnership</code>), <code>renounceOwnership()</code> override (line 2085)<br><strong>Description</strong>: Although Solady&#39;s <code>Ownable</code> exposes a safe 2-step handover, <code>transfer()</code> uses the single-step <code>transferOwnership</code>, so a typo in <code>newOwner</code> (only the zero-address is guarded) permanently transfers ownership to an unrecoverable address. Separately, <code>renounceOwnership()</code> is exposed and, once called, permanently disables all <code>onlyOwner</code> capability — including future role grants/revocations — while existing role holders continue to function indefinitely.<br><strong>Recommendation</strong>: Route <code>transfer()</code>&#39;s ownership change through the existing 2-step handover, and/or consider overriding <code>renounceOwnership</code> to revert given the contract&#39;s reliance on an owner for role management.</p>
+<h3 id="11-push-mode-distributefunds-can-be-blocked-by-a-reverting-recip">[11] Push-mode <code>distributeFunds()</code> can be blocked by a reverting recipient — fully mitigated by the pull-mode fallback</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: DoS-2, Staking-4. Phase 2: corroborated by economic-security agent (LEAD).<br><strong>Location</strong>: <code>_distributeFunds(PUSH)</code>/<code>_payout()</code> (lines 2216-2235)<br><strong>Description</strong>: In PUSH mode, a single reverting <code>principalRecipient</code> or <code>rewardRecipient</code> blocks the entire distribution (both payouts happen in one call using Solady&#39;s reverting, non-force <code>safeTransferETH</code>). This is not a permanent fund lock: <code>distributeFundsPull()</code> is always permissionless and callable, credits <code>pullBalances</code> with no external call, and recipients (or the owner, via <code>sweep</code>) can always recover through the pull path.<br><strong>Recommendation</strong>: No change strictly required; document <code>distributeFundsPull</code> as the guaranteed-liveness path when recipients may be untrusted contracts.</p>
+<h3 id="12-recoverfundswithdrawpullbalance-lack-the-nonreentrant-guard-u">[12] <code>recoverFunds</code>/<code>withdrawPullBalance</code> lack the <code>nonReentrant</code> guard used by other value-moving functions</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: ERC20-1. Phase 2: corroborated by 5 of 12 agents (access-control, economic-security, invariant, asymmetry, trust-gap) — every agent that traced a concrete reentry attempt confirmed checks-effects-interactions ordering prevents any double-spend.<br><strong>Location</strong>: <code>recoverFunds()</code> (line 1986), <code>withdrawPullBalance()</code> (line 1994)<br><strong>Description</strong>: Unlike <code>sweep</code>, <code>distributeFunds</code>, <code>distributeFundsPull</code>, <code>consolidate</code>, and <code>withdraw</code> (all <code>nonReentrant</code>), these two functions are not. No agent across either phase could construct an exploit — both zero the relevant balance/state before making the external call — but the inconsistency is a defense-in-depth gap that would become load-bearing if either function&#39;s logic changes in the future.<br><strong>Recommendation</strong>: Add <code>nonReentrant</code> to both functions for consistency and future-proofing.</p>
+<h3 id="13-obolvalidatormanager-constructor-omits-threshold-bounds-valid">[13] <code>ObolValidatorManager</code> constructor omits threshold-bounds validation that the factory enforces</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1: General-5. Phase 2: numerical-gap agent, corroborating.<br><strong>Location</strong>: constructor (lines 1790-1814) vs. <code>ObolValidatorManagerFactory.createObolValidatorManager()</code> (lines 2330-2331)<br><strong>Description</strong>: The factory rejects <code>principalThreshold == 0</code> and <code>&gt; 2048 * 1e9</code> (gwei), but the OVM constructor itself accepts any <code>uint64</code> value. A directly-deployed (non-factory) instance could have <code>principalThreshold == 0</code> (classifying everything as principal) or an extreme value (breaking the intended threshold-vs-reward split entirely).<br><strong>Recommendation</strong>: Move the bounds checks into the OVM constructor so every deployment path is validated, not just the factory path.</p>
+<h3 id="14-principalthreshold-upper-bound-check-allows-exactly-2048-eth-">[14] <code>principalThreshold</code> upper-bound check allows exactly 2048 ETH despite &quot;below 2048 ether&quot; documentation</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase 1 only]</code> — Precision-2. Re-examined: confirmed as written (<code>&gt; 2048 * 1e9</code> permits equality); no phase-2 agent raised this specific documentation mismatch.<br><strong>Location</strong>: <code>createObolValidatorManager()</code> (line 2331)<br><strong>Description</strong>: NatSpec/error naming says &quot;must be below 2048 ether,&quot; but the check (<code>&gt; 2048 * 1e9</code>) permits the boundary value itself. Harmless — no overflow, purely a policy-ceiling off-by-one against documentation.<br><strong>Recommendation</strong>: Change to <code>&gt;=</code> or update the documentation to &quot;at most 2048 ether.&quot;</p>
+<h3 id="15-refundexcessfee-can-silently-strand-eth-on-a-failed-refund-no">[15] <code>_refundExcessFee</code> can silently strand ETH on a failed refund; no zero-address check on <code>excessFeeRecipient</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase 2 only]</code> — economic-security, execution-trace (new: missing zero-address check), periphery, boundary agents, all as LEAD.<br><strong>Location</strong>: <code>_refundExcessFee()</code> (lines 2151-2157), called from <code>consolidate()</code>/<code>withdraw()</code><br><strong>Description</strong>: If the excess-fee refund <code>.call</code> fails, the code only emits <code>UnsentExcessFee</code> — the ETH remains in the contract and gets folded into the next distribution as reward/principal rather than returned to the fee payer. Additionally, no check prevents <code>excessFeeRecipient == address(0)</code>; a call to the zero address with value succeeds, silently &quot;burning&quot; the excess into general contract balance instead of triggering the <code>UnsentExcessFee</code> fallback path a caller might expect.<br><strong>Recommendation</strong>: Consider requiring <code>excessFeeRecipient != address(0)</code>, and/or crediting stranded excess to a pull balance rather than leaving it as undifferentiated contract balance.</p>
+<h3 id="16-batch-fee-staleness-assumption-in-consolidatewithdraw">[16] Batch fee-staleness assumption in <code>consolidate</code>/<code>withdraw</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase 2 only]</code> — invariant agent, LEAD, assessed as likely non-issue.<br><strong>Location</strong>: <code>consolidate()</code>/<code>withdraw()</code>, fee read once via <code>_validateAndReturnFee</code> then reused per-operation in the loop.<br><strong>Description</strong>: Reading the EIP-7251/7002 predeploy fee once and charging that same fee for every operation in the batch assumes the fee is constant within a transaction. The agent confirmed this matches the documented predeploy semantics (fee updates only at block boundaries), so this is noted as an external-dependency assumption rather than a defect.<br><strong>Recommendation</strong>: None required; noted for completeness/documentation.</p>
+<hr>
+<h2 id="confirmed-non-issues-explicitly-investigated-no-finding">Confirmed Non-Issues (explicitly investigated, no finding)</h2>
+<ul>
+<li><strong>Weird-ERC20 behaviors</strong> (fee-on-transfer, rebasing, ERC777 hooks, approve races, blocklists, decimals) — not applicable; the OVM is a pure-ETH contract and <code>recoverFunds</code> is the only, narrowly-scoped, non-accounting-critical ERC20 touchpoint.</li>
+<li><strong>Returndata bombing</strong> — not exploitable; all <code>.call</code>/<code>.staticcall</code> targets are immutable canonical system-contract addresses, never attacker-controllable.</li>
+<li><strong>Reentrancy on all guarded functions, and on the two unguarded ones (<code>recoverFunds</code>, <code>withdrawPullBalance</code>)</strong> — checks-effects-interactions ordering prevents any double-spend; confirmed independently by at least 7 different agents across both phases.</li>
+<li><strong>Fee/refund accounting in <code>consolidate</code>/<code>withdraw</code></strong> — net-zero against contract balance; never dips into pull-earmarked funds; the <code>msg.value &gt;= totalFee</code> check and refund logic hold under adversarial tracing.</li>
+<li><strong><code>fundsPendingWithdrawal == sum(pullBalances)</code> and <code>balance &gt;= fundsPendingWithdrawal</code> invariants</strong> — hold across every mutation path (deposit, distribute PUSH/PULL, sweep, withdrawPullBalance) except the latent, economically-unreachable case in finding [7].</li>
+<li><strong>Factory (<code>ObolValidatorManagerFactory</code>)</strong> — permissionless deployment is by design (no shared state to corrupt); parameter validation on <code>owner</code>/recipients/threshold is complete; uses <code>CREATE</code> (not <code>CREATE2</code>), so no metamorphic/address-prediction concerns; ENS registration calls use high-level interface calls that revert cleanly on a code-less registrar.</li>
+<li><strong>Assembly usage</strong> — no inline assembly written by the custom contracts; Solady/Solmate library assembly (used for <code>Ownable</code>, <code>OwnableRoles</code>, <code>SafeTransferLib</code>) is well-audited and correctly invoked.</li>
+<li><strong>Compiler/version footguns</strong> — <code>pragma solidity =0.8.19</code>, no PUSH0 emission, no L2/multichain push0 concern for this deployment.</li>
+</ul>
+<hr>
+<h2 id="severity-summary">Severity Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>6</td>
+</tr>
+</tbody></table></div>
+<p><strong>Overall assessment</strong>: No unprivileged, no-precondition path to fund loss was found by either phase&#39;s agents, despite deep adversarial tracing across 19 independent agent runs. The confirmed issues cluster around <strong>role-scoping and privilege-boundary design</strong> — several distinct mechanisms (<code>setAmountOfPrincipalStake</code>, <code>sweep</code>&#39;s redirect branch, <code>transfer</code>&#39;s incomplete handover, instant beneficiary changes) all reduce to the same underlying theme: roles and ownership in this contract grant broader economic control than their names imply, and handovers/grants are not defensively scoped. We recommend the team prioritize findings [1]–[5] (all Medium) before further deployment, as they affect the integrity of the principal/reward split that is the contract&#39;s core economic promise.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreie6g6gdsf57mv5rhcmiync4sp2be5dyceexy56ggbo7p3znevimqm.ipfs.community.bgipfs.com/"><code>https://bafkreie6g6gdsf57mv5rhcmiync4sp2be5dyceexy56ggbo7p3znevimqm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/310">#310</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

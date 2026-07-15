@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — VaultIDV4 &amp; VaultIDRegistry — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #205">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — VaultIDV4 &amp; VaultIDRegistry</h1>
+    <p class="job-sub">Job #205 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/205"><b>Job page</b> #205</a>
+      <a class="chip" href="https://bafkreih5x4sin64vdzyjhbhxe6iyn2sgiojdprneeyan5mrnltvxkjdpry.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#risk-matrix">Risk Matrix</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — VaultIDV4 &amp; VaultIDRegistry</h1>
+<p><strong>Date:</strong> 2026-05-19<br><strong>Methodology:</strong> ethskills (7 specialized checklists) + pashov (8-agent methodology)<br><strong>Targets:</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+<th>Chain</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>VaultIDV4</td>
+<td><code>0x491684F8E8FE944b0F55bC76678B9A107f394C9C</code></td>
+<td>Base (8453)</td>
+</tr>
+<tr>
+<td>VaultIDRegistry</td>
+<td><code>0x917080A405e6BeC9b811A1617DDc7338D2EfA225</code></td>
+<td>Base (8453)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>VaultIDV4 is a soulbound ERC721 credential NFT system with associated VaultIDRegistry for managing issuer profiles and subscriptions. Three <strong>High</strong> severity vulnerabilities were confirmed by both audit methodologies. All three undermine the core trust model of the credential system: (1) token holders can bypass issuer revocations, (2) admin revocations can be nullified using the recovery mechanism, and (3) admin-deactivated issuers can self-reactivate. These findings share a common root cause pattern — state flags are set but not protected against overwrites or bypass paths.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>High</strong></td>
+<td>3</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>2</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>3</td>
+</tr>
+<tr>
+<td><strong>Info</strong></td>
+<td>3</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="high">HIGH</h3>
+<hr>
+<h3 id="h-1-token-holder-bypasses-issuer-revocation-via-double-revokeunr">[H-1] Token Holder Bypasses Issuer Revocation via Double-Revoke/Unrevoke</h3>
+<p><strong>Severity:</strong> High<br><strong>Confirmed by:</strong> ethskills (evm-audit-general), pashov (access-control-agent, invariant-agent)<br><strong>Location:</strong> <code>revoke()</code> and <code>unrevoke()</code> in VaultIDV4.sol  </p>
+<p><strong>Description:</strong><br><code>revoke()</code> unconditionally sets <code>_revokedByIssuer[tokenId] = isIssuer</code>. When the <strong>token owner</strong> calls <code>revoke()</code> on a credential that was already issuer-revoked, <code>isIssuer</code> is <code>false</code>, silently overwriting the <code>true</code> flag left by the issuer. The token owner then calls <code>unrevoke()</code>, which branches on <code>_revokedByIssuer[tokenId] == false</code> (the else path) and permits the token owner to clear the revocation entirely. An issuer&#39;s credential revocation is bypassed in exactly two on-chain transactions.</p>
+<p><strong>Proof of Concept:</strong></p>
+<ol>
+<li>Issuer calls <code>revoke(tokenId)</code> → <code>vaults[tokenId].revoked = true</code>, <code>_revokedByIssuer[tokenId] = true</code>.</li>
+<li>Token owner calls <code>revoke(tokenId)</code>:<ul>
+<li><code>isOwner = true</code>, <code>isIssuer = false</code>.</li>
+<li>Authorization check passes.</li>
+<li><code>_revokedByIssuer[tokenId] = false</code> ← issuer flag <strong>overwritten</strong>.</li>
+</ul>
+</li>
+<li>Token owner calls <code>unrevoke(tokenId)</code>:<ul>
+<li><code>_revokedByIssuer[tokenId] == false</code> → else branch.</li>
+<li><code>msg.sender == tokOwner</code> → allowed.</li>
+<li><code>vaults[tokenId].revoked = false</code>.</li>
+</ul>
+</li>
+<li><code>isValid(tokenId)</code> returns <code>true</code>. Credential is valid again.</li>
+</ol>
+<p><strong>Recommendation:</strong><br>Never overwrite <code>_revokedByIssuer</code> to <code>false</code> from a non-issuer caller. Only set it <code>true</code> when the issuer revokes:</p>
+<pre><code class="language-diff">  v.revoked = true;
+- _revokedByIssuer[tokenId] = isIssuer;
++ if (isIssuer) _revokedByIssuer[tokenId] = true;
+</code></pre>
+<hr>
+<h3 id="h-2-admin-revocation-bypassed-via-recovery-wallet">[H-2] Admin Revocation Bypassed via Recovery Wallet</h3>
+<p><strong>Severity:</strong> High<br><strong>Confirmed by:</strong> ethskills (evm-audit-general), pashov (access-control-agent, first-principles-agent)<br><strong>Location:</strong> <code>recoverVault()</code> and <code>setRecoveryWallet()</code> in VaultIDV4.sol  </p>
+<p><strong>Description:</strong><br><code>recoverVault()</code> constructs the replacement vault with <code>revoked: issuerRevoked</code> — that is, the <code>_revokedByIssuer[tokenId]</code> flag — rather than <code>v.revoked</code>. When the contract owner (protocol admin) revokes a token, <code>_revokedByIssuer</code> remains <code>false</code> (admin is not an issuer). The recovery produces a fresh credential with <code>revoked = false</code>, silently voiding the admin revocation.</p>
+<p>Compounding this: <code>setRecoveryWallet()</code> has no check for whether the token is currently revoked, so the token holder can install a recovery wallet even after admin revocation, then immediately trigger recovery.</p>
+<p><strong>Proof of Concept:</strong></p>
+<ol>
+<li>Admin calls <code>revoke(tokenId)</code> → <code>vaults[tokenId].revoked = true</code>, <code>_revokedByIssuer[tokenId] = false</code>.</li>
+<li>Token holder calls <code>setRecoveryWallet(tokenId, attackerAddress)</code> — no revocation check, succeeds.</li>
+<li><code>attackerAddress</code> calls <code>recoverVault(tokenId)</code>:<ul>
+<li><code>issuerRevoked = _revokedByIssuer[tokenId] = false</code>.</li>
+<li>New vault: <code>revoked: false</code>.</li>
+</ul>
+</li>
+<li><code>isValid(newTokenId)</code> returns <code>true</code>.</li>
+</ol>
+<p><strong>Recommendation:</strong><br>Option A — carry the full revocation state through recovery:</p>
+<pre><code class="language-diff">  vaults[newTokenId] = Vault({
+      recoveryWallet: address(0),
+      expiry: v.expiry,
+-     revoked: issuerRevoked,
++     revoked: v.revoked,
+      ...
+  });
++ if (v.revoked) _revokedByIssuer[newTokenId] = issuerRevoked;
+</code></pre>
+<p>Option B — block recovery entirely when the token is revoked:</p>
+<pre><code class="language-diff">+ require(!v.revoked, &quot;Cannot recover a revoked credential&quot;);
+</code></pre>
+<hr>
+<h3 id="h-3-admin-deactivated-issuer-can-self-reactivate">[H-3] Admin-Deactivated Issuer Can Self-Reactivate</h3>
+<p><strong>Severity:</strong> High<br><strong>Confirmed by:</strong> ethskills (evm-audit-access-control), pashov (access-control-agent, first-principles-agent)<br><strong>Location:</strong> <code>registerOrUpdateIssuerProfile()</code> in VaultIDRegistry.sol  </p>
+<p><strong>Description:</strong><br><code>registerOrUpdateIssuerProfile()</code> unconditionally sets <code>profile.active = true</code> on every call, including updates to existing profiles. When the admin calls <code>deactivateIssuer(addr)</code> to revoke an issuer&#39;s minting rights (e.g., for regulatory non-compliance), the issuer bypasses the deactivation with a single call to <code>registerOrUpdateIssuerProfile(anyValidName, ...)</code>. Critically, the issuer&#39;s <code>verified</code> flag is also preserved through the deactivation–reactivation cycle since <code>registerOrUpdateIssuerProfile</code> does not touch <code>profile.verified</code>. A previously-verified deactivated issuer re-emerges as both active and verified.</p>
+<p><strong>Proof of Concept:</strong></p>
+<ol>
+<li>Admin calls <code>deactivateIssuer(issuer)</code> → <code>issuerProfiles[issuer].active = false</code>.</li>
+<li>Issuer calls <code>registerOrUpdateIssuerProfile(&quot;LegitName&quot;, ...)</code> → <code>profile.active = true</code>.</li>
+<li><code>canIssuerMint(issuer)</code> returns <code>true</code> (given active subscription).</li>
+<li><code>isIssuerVerified(issuer)</code> returns <code>true</code> (verified flag preserved).</li>
+</ol>
+<p><strong>Recommendation:</strong><br>Only set <code>profile.active = true</code> for newly registered profiles, not updates:</p>
+<pre><code class="language-diff">  IssuerProfile storage profile = issuerProfiles[msg.sender];
+  bool isNew = bytes(profile.name).length == 0;
+  profile.name = name;
+  profile.logoURI = logoURI;
+  profile.bannerURI = bannerURI;
+  profile.description = description;
+  profile.website = website;
+  profile.social = social;
+- profile.active = true;
++ if (isNew) profile.active = true;
+  if (isNew) emit IssuerProfileRegistered(msg.sender, name);
+  else emit IssuerProfileUpdated(msg.sender);
+</code></pre>
+<hr>
+<h3 id="medium">MEDIUM</h3>
+<hr>
+<h3 id="m-1-instant-registry-swap-without-timelock">[M-1] Instant Registry Swap Without Timelock</h3>
+<p><strong>Severity:</strong> Medium<br><strong>Confirmed by:</strong> ethskills (evm-audit-access-control)<br><strong>Location:</strong> <code>setRegistry()</code> in VaultIDV4.sol  </p>
+<p><strong>Description:</strong><br>The contract owner can replace <code>registry</code> with an arbitrary address in a single transaction, with no timelock or two-step protection. The <code>registry</code> is the trust anchor for all minting validation (<code>canIssuerMint</code>, <code>isIssuerActive</code>, <code>consumeBasicMint</code>), revocation authorization (<code>isIssuerActive</code> in <code>revoke</code>/<code>unrevoke</code>/<code>extendExpiry</code>), and subscription-based minting. A compromised or malicious owner key could atomically substitute a registry that returns <code>true</code> for all checks, enabling unconstrained minting of credentials attributed to any issuer.</p>
+<p><strong>Recommendation:</strong><br>Implement a two-step registry update with a minimum delay (e.g., 48 hours) so users and issuers have time to react. Emit a proposal event immediately and enforce the delay before applying.</p>
+<hr>
+<h3 id="m-2-lapsed-subscription-issuers-retain-administrative-rights">[M-2] Lapsed-Subscription Issuers Retain Administrative Rights</h3>
+<p><strong>Severity:</strong> Medium<br><strong>Confirmed by:</strong> ethskills (evm-audit-access-control), pashov (access-control-agent)<br><strong>Location:</strong> <code>revoke()</code>, <code>unrevoke()</code>, <code>extendExpiry()</code> in VaultIDV4.sol  </p>
+<p><strong>Description:</strong><br>The <code>isIssuer</code> authorization check in <code>revoke()</code>, <code>unrevoke()</code>, and <code>extendExpiry()</code> calls <code>registry.isIssuerActive()</code>, which only verifies <code>profile.active &amp;&amp; name != &quot;&quot;</code>. It does not verify whether the issuer has an active ISSUER-tier subscription. An issuer whose subscription has expired — and who can no longer mint new credentials via <code>issuerMint()</code> — retains indefinite ability to revoke, unrevoke, and extend expiry of every credential they previously issued. This creates an asymmetry where administrative power over existing credentials outlives the paid relationship.</p>
+<p><strong>Recommendation:</strong><br>Decide the intended lifetime of issuer administrative rights. If they should be co-extensive with subscription validity, replace <code>isIssuerActive()</code> with <code>canIssuerMint()</code> in the <code>revoke</code>, <code>unrevoke</code>, and <code>extendExpiry</code> authorization checks. If perpetual administrative rights are intended, document this explicitly.</p>
+<hr>
+<h3 id="low">LOW</h3>
+<hr>
+<h3 id="l-1-extendexpiry-unconditionally-reactivates-revoked-membership">[L-1] <code>extendExpiry</code> Unconditionally Reactivates Revoked Membership</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confirmed by:</strong> ethskills (evm-audit-general), pashov (invariant-agent)<br><strong>Location:</strong> <code>extendExpiry()</code> in VaultIDV4.sol  </p>
+<p><strong>Description:</strong><br>When <code>extendExpiry()</code> is called on a <code>MEMBERSHIP</code> credential whose <code>vaults[tokenId].revoked == true</code>, the function sets <code>memberships[tokenId].active = true</code> without checking the revoked state. This creates an invariant violation: <code>isValid()</code> returns <code>false</code> for the credential (correctly checking <code>v.revoked</code>), but any external integrator reading <code>memberships[tokenId].active</code> directly sees <code>true</code>. Off-chain systems or future contracts relying on the public <code>memberships</code> mapping for membership validity checks would be misled.</p>
+<p><strong>Recommendation:</strong><br>Conditionally update membership <code>active</code> status:</p>
+<pre><code class="language-diff">  if (v.credType == CredentialType.MEMBERSHIP) {
+      memberships[tokenId].expiry = newExpiry;
+-     memberships[tokenId].active = true;
++     if (!v.revoked) memberships[tokenId].active = true;
+  }
+</code></pre>
+<hr>
+<h3 id="l-2-usdc-blocklist-on-feerecipient-permanently-freezes-usdc-mint">[L-2] USDC Blocklist on <code>feeRecipient</code> Permanently Freezes USDC Minting</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confirmed by:</strong> ethskills (evm-audit-erc20)<br><strong>Location:</strong> <code>mintWithUSDC()</code> in VaultIDV4.sol  </p>
+<p><strong>Description:</strong><br>USDC implements a blocklist. If <code>feeRecipient</code> is ever added to USDC&#39;s blocklist, all calls to <code>mintWithUSDC()</code> will revert because <code>safeTransferFrom(msg.sender, feeRecipient, usdcMintPrice)</code> fails when the recipient is blocklisted. The owner can update <code>feeRecipient</code>, but response latency creates a minting downtime window. The same risk applies to CLAWD if it adds blocklist functionality.</p>
+<p><strong>Recommendation:</strong><br>Monitor <code>feeRecipient</code> for USDC/CLAWD blocklist status and maintain an incident response runbook. Consider using a dedicated fee collection contract that cannot be user-targeted.</p>
+<hr>
+<h3 id="l-3-unchecked-mint-counter-increment-theoretical-wrap-with-extre">[L-3] <code>unchecked</code> Mint Counter Increment: Theoretical Wrap with Extreme Quota</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confirmed by:</strong> ethskills (evm-audit-precision-math)<br><strong>Location:</strong> <code>consumeBasicMint()</code> in VaultIDRegistry.sol  </p>
+<p><strong>Description:</strong><br><code>unchecked { sub.mintsUsedInPeriod += 1; }</code> is safe for any <code>basicMintQuota</code> less than <code>type(uint32).max</code>. However, if the owner ever sets <code>basicMintQuota = type(uint32).max</code>, a user at <code>mintsUsedInPeriod = type(uint32).max - 1</code> passes the guard (<code>&gt;= max</code> is false for <code>max-1</code>), increments to 0 via wraparound, and the quota barrier is permanently bypassed for subsequent mints in the same period.</p>
+<p><strong>Recommendation:</strong><br>Add a cap in <code>setBasicMintQuota</code>: <code>require(_basicMintQuota &lt; type(uint32).max)</code>.</p>
+<hr>
+<h3 id="info">INFO</h3>
+<hr>
+<h3 id="i-1-push0-opcode-is-supported-on-base-no-action-required">[I-1] PUSH0 Opcode Is Supported on Base — No Action Required</h3>
+<p>Both contracts use <code>pragma solidity ^0.8.24</code> which emits the PUSH0 opcode. Base adopted PUSH0 support in the Canyon upgrade (January 2024). Verified safe for the current target chain; any future deployment to chains without PUSH0 support should recompile with <code>--evm-version paris</code>.</p>
+<hr>
+<h3 id="i-2-vaultcontract-unset-at-deployment-creates-silent-subscriptio">[I-2] <code>vaultContract</code> Unset at Deployment Creates Silent Subscription Failure</h3>
+<p><code>VaultIDRegistry.vaultContract</code> is initialized to <code>address(0)</code>. Until <code>setVaultContract()</code> is called, all <code>mintWithSubscription()</code> calls revert with <code>NotVaultContract</code>. There is no on-chain check or constructor enforcement. A deployment checklist gap could leave subscription minting silently non-functional.</p>
+<p><strong>Recommendation:</strong> Set <code>vaultContract</code> in the constructor or emit a deployment checklist requirement.</p>
+<hr>
+<h3 id="i-3-setbackupwallet-is-a-redundant-alias">[I-3] <code>setBackupWallet</code> Is a Redundant Alias</h3>
+<p><code>setBackupWallet(uint256, address)</code> is a one-line delegate to <code>setRecoveryWallet()</code>. It adds ABI surface with no new functionality. Remove it or retain for backward compatibility with explicit documentation.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<ul>
+<li><p><strong>Instant Registry Swap → Unlimited Credential Minting:</strong> A compromised owner swaps <code>registry</code> to a contract returning <code>true</code> for all queries. Unauthorized users can <code>issuerMint</code> credentials attributed to any issuer. Severity depends entirely on owner key custody.</p>
+</li>
+<li><p><strong>ERC777 CLAWD Reentrancy Surface:</strong> In <code>purchaseSubscription</code>, the token transfer to <code>feeRecipient</code> occurs before <code>sub.paidThrough</code> and <code>sub.active</code> are written. If CLAWD implements ERC777 hooks and <code>feeRecipient</code> is an ERC777-aware contract, the <code>tokensReceived</code> callback fires before subscription state is committed. The <code>nonReentrant</code> modifier protects the outer call but does not cover cross-contract calls into other functions. Full path requires knowledge of CLAWD&#39;s implementation.</p>
+</li>
+<li><p><strong>Tier-Switch Quota Reset Enabling Extra Mints Per Window:</strong> Switching BASIC→ISSUER→BASIC within a subscription window resets <code>mintsUsedInPeriod = 0</code> each time due to the <code>sub.tier != tier</code> check in <code>purchaseSubscription</code>. At current prices (1M CLAWD for ISSUER vs 100K for BASIC) this is economically irrational, but the vulnerability exists structurally if pricing changes.</p>
+</li>
+</ul>
+<hr>
+<h2 id="risk-matrix">Risk Matrix</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>VaultIDV4</th>
+<th>VaultIDRegistry</th>
+<th>Exploitable By</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-1: Issuer revocation bypass</td>
+<td>✓</td>
+<td>—</td>
+<td>Token holder</td>
+</tr>
+<tr>
+<td>H-2: Admin revocation bypass</td>
+<td>✓</td>
+<td>—</td>
+<td>Token holder</td>
+</tr>
+<tr>
+<td>H-3: Issuer self-reactivation</td>
+<td>—</td>
+<td>✓</td>
+<td>Deactivated issuer</td>
+</tr>
+<tr>
+<td>M-1: Registry swap</td>
+<td>✓</td>
+<td>—</td>
+<td>Compromised owner</td>
+</tr>
+<tr>
+<td>M-2: Lapsed issuer rights</td>
+<td>✓</td>
+<td>✓</td>
+<td>Lapsed issuer</td>
+</tr>
+<tr>
+<td>L-1: Membership state inconsistency</td>
+<td>✓</td>
+<td>—</td>
+<td>Issuer/token owner</td>
+</tr>
+<tr>
+<td>L-2: USDC blocklist DoS</td>
+<td>✓</td>
+<td>✓</td>
+<td>External (USDC admin)</td>
+</tr>
+<tr>
+<td>L-3: Quota counter wrap</td>
+<td>—</td>
+<td>✓</td>
+<td>Owner (extreme setting)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<blockquote>
+<p>⚠️ This report was produced by an AI-assisted automated audit workflow. AI analysis cannot guarantee the complete absence of vulnerabilities. Independent team security review, bug bounty programs, and on-chain monitoring are strongly recommended before production use.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreih5x4sin64vdzyjhbhxe6iyn2sgiojdprneeyan5mrnltvxkjdpry.ipfs.community.bgipfs.com/"><code>https://bafkreih5x4sin64vdzyjhbhxe6iyn2sgiojdprneeyan5mrnltvxkjdpry.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/205">#205</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

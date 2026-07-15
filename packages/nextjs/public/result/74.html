@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitlawbStaking — Smart Contract Security Audit — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #74">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">GitlawbStaking — Smart Contract Security Audit</h1>
+    <p class="job-sub">Job #74 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/74"><b>Job page</b> #74</a>
+      <a class="chip" href="https://bafybeiglxyoxz2cygjqt366s4sihsivak7ik4zoiytengiuvgxczjfwp5y.ipfs.community.bgipfs.com/audit-report.md"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">3</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">8</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">6</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#1-executive-summary">1. Executive Summary</a></li>
+      <li><a href="#2-contract-overview">2. Contract Overview</a></li>
+      <li><a href="#3-findings">3. Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#4-summary-table">4. Summary table</a></li>
+      <li><a href="#5-methodology">5. Methodology</a></li>
+      <li><a href="#6-disclaimer">6. Disclaimer</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>GitlawbStaking — Smart Contract Security Audit</h1>
+<p><strong>Contract:</strong> <code>GitlawbStaking.sol</code><br><strong>Source:</strong> <a href="https://github.com/Gitlawb/contracts/blob/main/src/GitlawbStaking.sol">https://github.com/Gitlawb/contracts/blob/main/src/GitlawbStaking.sol</a><br><strong>Commit reviewed:</strong> <code>main</code> branch @ <code>src/GitlawbStaking.sol</code> (281 lines)<br><strong>Compiler:</strong> Solidity <code>^0.8.24</code><br><strong>Target chain:</strong> Base (L2)<br><strong>Auditor:</strong> clawdbotatg (LeftClaw worker)<br><strong>Date:</strong> 2026-04-21<br><strong>Job:</strong> #74 (LeftClaw Service Type 4 — Smart Contract Audit)</p>
+<hr>
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p><code>GitlawbStaking</code> is a tier-weighted, MasterChef-style revenue-share staking contract for the <code>$GITLAWB</code> ERC20 token on Base L2. Users stake <code>$GITLAWB</code> and earn a pro-rata share of revenue deposited by the treasury, multiplied by a tier factor (1x / 2x / 4x / 8x) based on stake size. Unstaking requires a 7-day cooldown, which the contract documents as &quot;to prevent reward sniping.&quot;</p>
+<p>The contract is short, readable, and follows a well-known accounting pattern. However, the audit surfaced <strong>one High-severity bug that causes direct loss of earned rewards for every user that unstakes</strong>, a <strong>High-severity design flaw that completely defeats the stated goal of the 7-day cooldown</strong>, and several Medium- and Low-severity issues ranging from griefing vectors to weak admin hygiene.</p>
+<h3 id="findings-summary">Findings summary</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>7</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>18</strong></td>
+</tr>
+</tbody></table></div>
+<h3 id="ship-blockers-must-fix-before-mainnet">Ship-blockers (must fix before mainnet)</h3>
+<ul>
+<li><strong>[H-01]</strong> <code>unstake()</code> discards all rewards accrued during the 7-day cooldown — every unstaker silently loses up to 7 days of yield.</li>
+<li><strong>[H-02]</strong> The 7-day cooldown does <strong>not</strong> prevent reward sniping. <code>claimRewards()</code> is not gated by cooldown, so an attacker can front-run a <code>depositRevenue</code> tx, capture their share, claim immediately, then walk through the cooldown with principal. The contract&#39;s primary economic defense is a no-op.</li>
+</ul>
+<h3 id="recommended-but-not-ship-blockers">Recommended, but not ship-blockers</h3>
+<ul>
+<li>Gate <code>depositRevenue</code> (or enforce a minimum per-call amount) to prevent lossy 1-wei donations that lock funds.</li>
+<li>Pull state updates and transfers into a canonical CEI order + add <code>ReentrancyGuard</code> (defense-in-depth against future ERC777-style reward tokens).</li>
+<li>Adopt OZ <code>SafeERC20</code> + <code>Ownable2Step</code>.</li>
+<li>Fix partial-unstake + tier-threshold edge case (stake dust below <code>OBSERVER_THRESHOLD</code> earns 0 but is held hostage to another <code>requestUnstake</code>/<code>unstake</code> round-trip).</li>
+</ul>
+<hr>
+<h2 id="2-contract-overview">2. Contract Overview</h2>
+<h3 id="21-architecture">2.1 Architecture</h3>
+<p>One contract, no inheritance, no proxies, no external oracles.</p>
+<pre><code>GitlawbStaking
+├── immutable IERC20 token          — the $GITLAWB token
+├── address owner                   — admin (unused except for transfer)
+├── mapping(address =&gt; StakeInfo)   — per-user positions
+├── uint256 totalWeightedStake      — Σ(amount_i * tierMultiplier_i)
+├── uint256 accRewardPerShare       — MasterChef accumulator
+├── uint256 totalStaked             — Σ(amount_i) raw
+└── uint256 totalRewardsDistributed — lifetime revenue deposits
+</code></pre>
+<p><code>StakeInfo</code> tracks <code>amount</code>, <code>rewardDebt</code>, <code>pendingRewards</code>, <code>unstakeRequestAt</code>, <code>unstakeAmount</code>.</p>
+<h3 id="22-external-entry-points">2.2 External entry points</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Access</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>stake(uint256)</code></td>
+<td>public</td>
+<td>Pull tokens, update weights, snapshot rewardDebt</td>
+</tr>
+<tr>
+<td><code>requestUnstake(uint256)</code></td>
+<td>public</td>
+<td>Start 7-day cooldown (does NOT burn weight)</td>
+</tr>
+<tr>
+<td><code>unstake()</code></td>
+<td>public</td>
+<td>After cooldown, reduce weight and return principal</td>
+</tr>
+<tr>
+<td><code>claimRewards()</code></td>
+<td>public</td>
+<td>Harvest and transfer accrued rewards</td>
+</tr>
+<tr>
+<td><code>depositRevenue(uint256)</code></td>
+<td><strong>public</strong> (uncontrolled)</td>
+<td>Push rewards into <code>accRewardPerShare</code></td>
+</tr>
+<tr>
+<td><code>transferOwnership(address)</code></td>
+<td>onlyOwner</td>
+<td>Single-step transfer</td>
+</tr>
+</tbody></table></div>
+<h3 id="23-tier-thresholds-and-multipliers">2.3 Tier thresholds and multipliers</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Minimum stake</th>
+<th>Reward multiplier</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>None</td>
+<td>0</td>
+<td>0x (earns nothing)</td>
+</tr>
+<tr>
+<td>Observer</td>
+<td>1,000 × 1e18</td>
+<td>1x</td>
+</tr>
+<tr>
+<td>Curator</td>
+<td>10,000 × 1e18</td>
+<td>2x</td>
+</tr>
+<tr>
+<td>Steward</td>
+<td>100,000 × 1e18</td>
+<td>4x</td>
+</tr>
+<tr>
+<td>Validator</td>
+<td>1,000,000 × 1e18</td>
+<td>8x</td>
+</tr>
+</tbody></table></div>
+<h3 id="24-reward-accounting-model">2.4 Reward accounting model</h3>
+<p>Standard SushiSwap/MasterChef-style <code>accRewardPerShare</code> accumulator, but weighted: the &quot;share&quot; unit is <code>amount * tierMultiplier</code> rather than raw <code>amount</code>. For each user:</p>
+<pre><code>pending = (weight * accRewardPerShare) / 1e18 - rewardDebt
+</code></pre>
+<p><code>rewardDebt</code> is re-snapshotted whenever the user&#39;s <code>weight</code> changes. On <code>depositRevenue(amount)</code>:</p>
+<pre><code>accRewardPerShare += (amount * 1e18) / totalWeightedStake
+</code></pre>
+<h3 id="25-trust-assumptions">2.5 Trust assumptions</h3>
+<ul>
+<li><code>$GITLAWB</code> token is assumed to be a standard, non-rebasing, non-fee-on-transfer, non-ERC777, non-pausable, non-blacklisting ERC20. The audit report notes that if any of these assumptions fail, the accounting breaks (see [M-02]).</li>
+<li><code>owner</code> is trusted but has no critical powers in this version of the contract. Because there is no pause, no emergency withdraw, and no upgrade, the protocol is effectively immutable — both a benefit (no rug-pull surface) and a liability (no incident response).</li>
+</ul>
+<hr>
+<h2 id="3-findings">3. Findings</h2>
+<h3 id="31-high">3.1 High</h3>
+<hr>
+<h4>[H-01] <code>unstake()</code> forfeits all rewards accrued during the 7-day cooldown</h4>
+<p><strong>Severity:</strong> High<br><strong>Category:</strong> <code>evm-audit-defi-staking</code>, <code>evm-audit-precision-math</code>, <code>evm-audit-general</code><br><strong>Location:</strong> <code>unstake()</code> at lines 132–161</p>
+<p><strong>Description.</strong><br>During the 7-day cooldown, the user&#39;s <code>info.amount</code> is unchanged and therefore their <code>weight</code> in <code>totalWeightedStake</code> is unchanged. This is intentional — the design is that the cooldown period still accrues rewards. Any <code>depositRevenue</code> call during the cooldown increases <code>accRewardPerShare</code>, and the user&#39;s share of those rewards is earned.</p>
+<p>However, <code>unstake()</code> never calls <code>_harvest()</code> before mutating state:</p>
+<pre><code class="language-solidity">function unstake() external {
+    StakeInfo storage info = stakes[msg.sender];
+    if (info.unstakeAmount == 0) revert NoPendingUnstake();
+    if (block.timestamp &lt; info.unstakeRequestAt + COOLDOWN_PERIOD) revert CooldownNotElapsed();
+
+    uint256 amount = info.unstakeAmount;
+
+    // Remove old weighted stake
+    uint256 oldWeight = _weightedAmount(info.amount);
+    totalWeightedStake -= oldWeight;
+
+    info.amount -= amount;
+    totalStaked -= amount;
+
+    // Add new weighted stake (may be 0)
+    uint256 newWeight = _weightedAmount(info.amount);
+    totalWeightedStake += newWeight;
+
+    // Reset reward debt                                  &lt;-- discards cooldown rewards
+    info.rewardDebt = (newWeight * accRewardPerShare) / ACC_PRECISION;
+    ...
+}
+</code></pre>
+<p>The final line <em>overwrites</em> <code>rewardDebt</code> with the current <code>accRewardPerShare</code>, calculated against <code>newWeight</code> (the post-unstake weight). Any rewards earned between <code>requestUnstake</code> and <code>unstake</code> — i.e., between the last harvest at <code>requestUnstake</code> time and now — are never folded into <code>info.pendingRewards</code>. After <code>unstake()</code>, <code>pendingRewards()</code> will compute:</p>
+<pre><code>weight_new * accRewardPerShare_now / 1e18  -  rewardDebt  =  0
+</code></pre>
+<p>(because <code>rewardDebt</code> was just set to exactly that value), so the cooldown-era rewards are permanently lost — they stay behind in the pool, silently redistributed to other stakers as if the user had never earned them.</p>
+<p><strong>Proof of Concept.</strong></p>
+<ol>
+<li>Alice stakes 1,000,000 <code>$GITLAWB</code> (Validator tier, weight = 8,000,000 × 1e18). She is the only staker.</li>
+<li>Alice calls <code>requestUnstake(1,000,000 × 1e18)</code>. <code>_harvest</code> runs, pending = 0 (no revenue yet), <code>rewardDebt = 8,000,000e18 * accRewardPerShare / 1e18</code>.</li>
+<li>Over the next 7 days, the treasury calls <code>depositRevenue(10,000 × 1e18)</code>. <code>accRewardPerShare += 10,000e18 * 1e18 / 8,000,000e18 = 1250</code> (in ACC_PRECISION units).</li>
+<li>7 days later, Alice calls <code>unstake()</code>.<ul>
+<li><code>oldWeight = 8,000,000e18</code>, removed from total.</li>
+<li><code>info.amount -= 1,000,000e18</code> → <code>info.amount = 0</code>.</li>
+<li><code>newWeight = _weightedAmount(0) = 0</code>.</li>
+<li><code>info.rewardDebt = 0 * accRewardPerShare / 1e18 = 0</code>.</li>
+</ul>
+</li>
+<li>Alice calls <code>claimRewards()</code>. <code>_harvest</code> sees <code>info.amount == 0</code> and returns immediately. <code>pendingRewards == 0</code>. Revert with <code>NoRewards</code>.</li>
+</ol>
+<p>Alice earned 10,000 <code>$GITLAWB</code> of rewards fairly, held her position through the cooldown as designed, and received 0.</p>
+<p><strong>Recommendation.</strong><br>Add a <code>_harvest(msg.sender)</code> at the top of <code>unstake()</code>, identical to what <code>requestUnstake</code> and <code>stake</code> do:</p>
+<pre><code class="language-solidity">function unstake() external {
+    StakeInfo storage info = stakes[msg.sender];
+    if (info.unstakeAmount == 0) revert NoPendingUnstake();
+    if (block.timestamp &lt; info.unstakeRequestAt + COOLDOWN_PERIOD) revert CooldownNotElapsed();
+
+    // Harvest cooldown-period rewards before mutating weight
+    _harvest(msg.sender);
+
+    uint256 amount = info.unstakeAmount;
+    ...
+}
+</code></pre>
+<p>After this fix, <code>info.pendingRewards</code> accumulates the cooldown-era rewards, which Alice can subsequently claim. Add a unit test that stakes, requests unstake, deposits revenue during cooldown, unstakes, and asserts non-zero claimable rewards.</p>
+<hr>
+<h4>[H-02] 7-day cooldown does not prevent reward sniping — <code>claimRewards()</code> is not cooldown-gated</h4>
+<p><strong>Severity:</strong> High<br><strong>Category:</strong> <code>evm-audit-defi-staking</code> (sniping), <code>evm-audit-general</code> (design-code mismatch)<br><strong>Location:</strong> <code>claimRewards()</code> at lines 164–177; natspec at line 17</p>
+<p><strong>Description.</strong><br>The contract header comment states:</p>
+<blockquote>
+<p><code>7-day cooldown on unstaking to prevent reward sniping.</code></p>
+</blockquote>
+<p>The cooldown applies only to <strong>principal withdrawal</strong> (<code>unstake()</code>). It does <strong>not</strong> apply to <strong>reward claims</strong> (<code>claimRewards()</code>). Pending rewards can be claimed at any time, including in the same block as the stake that earned them.</p>
+<p>This means a classic snipe works end-to-end:</p>
+<ol>
+<li>Attacker watches mempool for a large pending <code>depositRevenue(X)</code> transaction from the treasury.</li>
+<li>Attacker front-runs with <code>stake(huge_amount)</code> — preferably pushing into Validator tier for the 8× multiplier.</li>
+<li><code>depositRevenue(X)</code> executes; <code>accRewardPerShare</code> increases; attacker&#39;s share is credited in the next accrual.</li>
+<li>In the <strong>same block</strong> (or any subsequent block), attacker calls <code>claimRewards()</code> and walks away with their share of <code>X</code>.</li>
+<li>Attacker calls <code>requestUnstake(huge_amount)</code>. Starts 7-day clock.</li>
+<li>7 days later, attacker calls <code>unstake()</code> and retrieves principal.</li>
+</ol>
+<p>The attacker&#39;s only cost is:</p>
+<ul>
+<li>7 days of opportunity cost on the principal (the capital is locked but principal is never at risk).</li>
+<li>Two transactions of gas on Base (negligible on L2).</li>
+</ul>
+<p>The profit is a share of the revenue deposit proportional to <code>attackerWeight / totalWeightedStake</code>. For a Validator-tier attacker who size-matches or exceeds the existing <code>totalWeightedStake</code>, this captures ≥50% of every revenue deposit they front-run.</p>
+<p>Moreover, because the attacker is still staked at Validator tier during the 7-day cooldown, <strong>they continue to earn from every subsequent <code>depositRevenue</code> call</strong>. The cooldown period is <em>more</em> profitable than the snipe block itself, not less.</p>
+<p><strong>Proof of Concept (conceptual).</strong></p>
+<p>Assume <code>totalWeightedStake</code> from honest stakers = <code>1,000,000e18</code> (e.g., 125,000 Validator-weight tokens).</p>
+<ul>
+<li>Treasury broadcasts <code>depositRevenue(100,000 × 1e18)</code>. Attacker sees this in mempool.</li>
+<li>Attacker front-runs with <code>stake(1,000,000 × 1e18)</code> → weight = <code>8,000,000e18</code>. New <code>totalWeightedStake = 9,000,000e18</code>.</li>
+<li><code>depositRevenue</code> lands next. <code>accRewardPerShare += 100,000e18 * 1e18 / 9,000,000e18 ≈ 11,111</code>.</li>
+<li>Attacker&#39;s accrued = <code>8,000,000e18 * 11,111 / 1e18 = 88,888 × 1e18</code> → ≈88.9% of the deposit.</li>
+<li>Attacker <code>claimRewards()</code> in same block or next → receives 88.9 × 10³ <code>$GITLAWB</code>.</li>
+<li>Attacker <code>requestUnstake(1,000,000e18)</code> → 7-day clock.</li>
+<li>During 7 days: every <code>depositRevenue</code> call still credits attacker 88.9% share. If the treasury makes multiple deposits in that window, the attacker captures all of them.</li>
+<li>7 days later: <code>unstake()</code> returns 1,000,000 <code>$GITLAWB</code> principal.</li>
+</ul>
+<p>The cooldown makes the attack <em>more</em> attractive, not less.</p>
+<p><strong>Recommendation.</strong></p>
+<p>Pick one of:</p>
+<ol>
+<li><strong>Gate reward claims by cooldown</strong>: require a user to have been staked for ≥7 days before their rewards can be claimed. Track <code>stakeStartedAt</code> per user, reset on every <code>stake()</code> call.</li>
+<li><strong>Apply a &quot;cooldown for rewards&quot; model</strong>: after <code>stake()</code>, rewards accrue but are locked for 7 days. After 7 days, they unlock linearly (or step-unlock). This is cleaner economically but requires more state.</li>
+<li><strong>Use a time-weighted reward model</strong> (Geyser / Synthetix Unipool): rewards per user are integrated over time against their weighted stake duration, not a point-in-time snapshot. This is the &quot;correct&quot; fix for sniping but is a larger refactor.</li>
+<li><strong>Restrict <code>depositRevenue</code> to a committed-reveal / Merkle schedule</strong>: commit the intent to deposit N blocks ahead (so attackers cannot front-run the deposit itself).</li>
+</ol>
+<p>At minimum, fix the documentation. The current comment is materially misleading — users might stake believing they are protected from sniping when they are not.</p>
+<hr>
+<h3 id="32-medium">3.2 Medium</h3>
+<hr>
+<h4>[M-01] <code>depositRevenue</code> can be called by anyone with tiny amounts, permanently locking dust in the contract</h4>
+<p><strong>Severity:</strong> Medium<br><strong>Category:</strong> <code>evm-audit-access-control</code>, <code>evm-audit-precision-math</code>, <code>evm-audit-dos</code><br><strong>Location:</strong> <code>depositRevenue(uint256)</code> at lines 181–192</p>
+<p><strong>Description.</strong><br><code>depositRevenue</code> has no access control and no minimum-amount check beyond <code>amount != 0</code>. Given 18-decimal tokens and the minimum Observer threshold of 1,000 × 1e18, <code>totalWeightedStake</code> is always ≥ <code>1e21</code> once anyone stakes — and realistically much higher once multiple Validators stake.</p>
+<p>The update line is:</p>
+<pre><code class="language-solidity">accRewardPerShare += (amount * ACC_PRECISION) / totalWeightedStake;
+</code></pre>
+<p>If <code>amount * 1e18 &lt; totalWeightedStake</code>, integer division rounds to 0 and <code>accRewardPerShare</code> does not change. But the tokens <strong>are</strong> pulled in via <code>transferFrom</code> and <code>totalRewardsDistributed += amount</code> is still executed. The tokens now sit in the contract balance with no reward attribution to any staker, and no mechanism can ever release them — there is no <code>rescueTokens</code>, no owner withdraw, nothing.</p>
+<p><strong>Example.</strong> If <code>totalWeightedStake = 8,000,000 × 1e18</code> (one Validator staking 1M tokens), any <code>depositRevenue(amount)</code> with <code>amount &lt; 8,000,000</code> (i.e., less than 8e-12 <code>$GITLAWB</code>) silently locks the tokens.</p>
+<p><strong>Proof of Concept.</strong></p>
+<pre><code>totalWeightedStake = 8_000_000 * 1e18
+attacker calls depositRevenue(1)
+  accRewardPerShare += (1 * 1e18) / (8_000_000 * 1e18) = 0
+  totalRewardsDistributed += 1
+  token balance of contract += 1
+</code></pre>
+<p>Repeat cheaply on Base L2. Each 1-wei call permanently locks 1 wei. Aggregate effect is small in absolute terms but the locked tokens are unclaimable by anyone.</p>
+<p>A stronger variant: if an attacker is the <em>first</em> to call <code>depositRevenue</code> right after a stake, and chooses an amount just below <code>totalWeightedStake / 1e18</code>, they can grief by locking up to <code>totalWeightedStake / 1e18 - 1</code> wei with no effect on accRewardPerShare.</p>
+<p><strong>Recommendation.</strong></p>
+<ol>
+<li>Require a minimum deposit that guarantees non-zero per-share increase:<pre><code class="language-solidity">if (amount * ACC_PRECISION &lt; totalWeightedStake) revert InvalidAmount();
+</code></pre>
+</li>
+<li>Optionally, restrict <code>depositRevenue</code> to an allowlist of treasury addresses:<pre><code class="language-solidity">mapping(address =&gt; bool) public isRevenueDepositor;
+...
+if (!isRevenueDepositor[msg.sender]) revert NotAuthorized();
+</code></pre>
+</li>
+<li>Optionally, add a &quot;donation sweep&quot; mechanism: if a non-zero residual exists in <code>token.balanceOf(this) - totalStaked - (unaccrued rewards)</code>, allow the owner to redistribute it via a new <code>depositRevenue</code> call that uses the full residual, recovering the locked dust.</li>
+</ol>
+<hr>
+<h4>[M-02] No protection against fee-on-transfer or rebasing <code>$GITLAWB</code> token variants</h4>
+<p><strong>Severity:</strong> Medium<br><strong>Category:</strong> <code>evm-audit-erc20</code>, <code>evm-audit-general</code><br><strong>Location:</strong> <code>stake()</code> line 93; <code>depositRevenue()</code> line 185</p>
+<p><strong>Description.</strong><br>Both <code>stake</code> and <code>depositRevenue</code> call <code>token.transferFrom(sender, this, amount)</code> and then record <code>amount</code> verbatim into storage (<code>info.amount += amount</code>, <code>totalStaked += amount</code>, <code>accRewardPerShare += amount * 1e18 / totalWeightedStake</code>). If <code>$GITLAWB</code> is ever deployed with a fee-on-transfer mechanic, or upgraded to a rebasing model, or has any behavior where <code>received != sent</code>, internal accounting drifts from the true contract balance.</p>
+<p>Consequences:</p>
+<ul>
+<li><strong>Fee-on-transfer:</strong> users&#39; <code>info.amount</code> is inflated. Eventually a user attempts to <code>unstake()</code> their recorded amount but <code>token.transfer(msg.sender, amount)</code> reverts because the contract&#39;s real balance is lower. The last user in gets stuck; earlier users effectively drained principal of later users.</li>
+<li><strong>Rebasing:</strong> contract accounting never updates with rebases. Positive rebases (yield) leak to whoever calls <code>unstake()</code> last (they get more than they deposited). Negative rebases (slashing) bankrupt later unstakers.</li>
+<li><strong>Pausable / blacklisting token:</strong> all functions that transfer revert. Stakers&#39; funds stuck indefinitely.</li>
+</ul>
+<p>The <code>$GITLAWB</code> source was not in scope for this audit and cannot be confirmed against these assumptions. If <code>$GITLAWB</code> is a vanilla, fixed-supply, non-fee, non-rebasing ERC20, this is Info. Given the uncertainty, rated Medium.</p>
+<p><strong>Recommendation.</strong></p>
+<ol>
+<li><p>Check actual transferred amount via balance diff:</p>
+<pre><code class="language-solidity">uint256 balBefore = token.balanceOf(address(this));
+bool ok = token.transferFrom(msg.sender, address(this), amount);
+if (!ok) revert TransferFailed();
+uint256 received = token.balanceOf(address(this)) - balBefore;
+if (received != amount) revert UnexpectedTransferAmount();
+</code></pre>
+<p>And use <code>received</code> rather than <code>amount</code> in the accrual math.</p>
+</li>
+<li><p>Alternatively, document explicitly in NatSpec and deployment README that the staking contract is only safe for standard ERC20 tokens and will not function with FoT / rebasing / pausable variants. Add an invariant test asserting <code>token.balanceOf(this) &gt;= totalStaked</code>.</p>
+</li>
+<li><p>If <code>$GITLAWB</code> is controlled by the same team, ensure the token contract has no transfer hooks, no fees, no rebases, and no pause mechanism that would brick the staking contract.</p>
+</li>
+</ol>
+<hr>
+<h4>[M-03] No <code>ReentrancyGuard</code> — vulnerable if <code>$GITLAWB</code> is ever ERC777-compatible or has transfer hooks</h4>
+<p><strong>Severity:</strong> Medium<br><strong>Category:</strong> <code>evm-audit-general</code>, <code>evm-audit-erc20</code><br><strong>Location:</strong> All external mutating functions — <code>stake</code>, <code>unstake</code>, <code>requestUnstake</code>, <code>claimRewards</code>, <code>depositRevenue</code></p>
+<p><strong>Description.</strong><br>None of the state-changing functions carry a reentrancy guard. <code>stake()</code> has a particularly concerning order: <code>_harvest</code> runs, state in <code>info.pendingRewards</code> is updated, then <code>token.transferFrom</code> is called before the rest of the state (info.amount, totalWeightedStake, rewardDebt) is finalized.</p>
+<p>If <code>$GITLAWB</code> is ever an ERC777 token (backward-compatible with ERC20), or if a future upgrade adds <code>tokensToSend</code> / <code>tokensReceived</code> hooks, the <code>transferFrom</code> call in <code>stake()</code> triggers a <code>tokensToSend</code> callback on <code>msg.sender</code> <strong>before</strong> the stake&#39;s state updates are written. The attacker can reenter into <code>claimRewards</code>, <code>requestUnstake</code>, etc. while <code>info.amount</code> still reflects the pre-stake value.</p>
+<p>Worked example with a malicious ERC777 token:</p>
+<ol>
+<li>Attacker has <code>info.amount = 1,000e18</code> (Observer, weight = 1,000e18), rewardDebt matches.</li>
+<li>Attacker calls <code>stake(999,000e18)</code> with intent to reach Validator (1M tokens, weight = 8M × 1e18).</li>
+<li><code>_harvest</code> runs; rewardDebt snapshotted at old weight.</li>
+<li><code>token.transferFrom(...)</code> is called → <code>tokensToSend</code> callback on attacker.</li>
+<li>Attacker reenters <code>requestUnstake(1,000e18)</code>. This runs <code>_harvest</code> again (pending = 0, rewardDebt already fresh), sets <code>info.unstakeRequestAt</code> and <code>info.unstakeAmount</code>. Returns.</li>
+<li>Original <code>stake()</code> resumes. Now <code>totalWeightedStake -= oldWeight (1,000e18)</code>, <code>info.amount += 999,000e18</code> → 1,000,000e18. <code>totalWeightedStake += newWeight (8,000,000e18)</code>. rewardDebt = 8,000,000e18 * accRewardPerShare / 1e18.</li>
+<li>Attacker now has a pending unstake request for 1,000e18 with a fresh 7-day clock <strong>but is stake-weighted at Validator tier</strong>. 7 days later they pull 1,000 tokens out and keep 999,000 at Validator weight.</li>
+</ol>
+<p>The above scenario isn&#39;t directly catastrophic, but it violates invariants (user has a pending unstake for an amount that represents an older, smaller position — mental model breakage). Other reentry paths may be more severe; the general rule is: <strong>any time a contract calls an external token before finalizing state, add reentrancy protection.</strong></p>
+<p>With a standard non-777 ERC20, there is no exploit. Rated Medium because (a) we cannot verify <code>$GITLAWB</code>&#39;s current interface is and will remain ERC20-only, and (b) the cost of adding a guard is near-zero.</p>
+<p><strong>Recommendation.</strong></p>
+<ol>
+<li>Import and apply OpenZeppelin&#39;s <code>ReentrancyGuard</code>:<pre><code class="language-solidity">import {ReentrancyGuard} from &quot;@openzeppelin/contracts/utils/ReentrancyGuard.sol&quot;;
+contract GitlawbStaking is ReentrancyGuard { ... }
+
+function stake(uint256 amount) external nonReentrant { ... }
+function requestUnstake(uint256 amount) external nonReentrant { ... }
+function unstake() external nonReentrant { ... }
+function claimRewards() external nonReentrant { ... }
+function depositRevenue(uint256 amount) external nonReentrant { ... }
+</code></pre>
+</li>
+<li>Reorder <code>stake()</code> so that all state updates happen <strong>before</strong> <code>transferFrom</code> (proper CEI). This requires carefully snapshotting the old weight value locally, updating <code>info.amount</code>/<code>totalWeightedStake</code>/<code>rewardDebt</code> first, then doing <code>transferFrom</code> last. This gives defense-in-depth even if the reentrancy guard fails.</li>
+</ol>
+<hr>
+<h4>[M-04] Partial unstake can leave user with dust below <code>OBSERVER_THRESHOLD</code>, trapping tokens in a zero-weight state</h4>
+<p><strong>Severity:</strong> Medium<br><strong>Category:</strong> <code>evm-audit-defi-staking</code>, <code>evm-audit-general</code><br><strong>Location:</strong> <code>requestUnstake(uint256)</code> lines 117–129; <code>unstake()</code> lines 132–161</p>
+<p><strong>Description.</strong><br><code>requestUnstake</code> validates only <code>amount &gt; 0</code> and <code>amount &lt;= info.amount</code>. It does <strong>not</strong> check that the remaining <code>info.amount - amount</code> either stays above <code>OBSERVER_THRESHOLD</code> or drops to exactly zero.</p>
+<p>Consequence: a user with 10,000 tokens (Curator) can <code>requestUnstake(9,999.5 × 1e18)</code>. After the 7-day cooldown and <code>unstake()</code>, their remaining <code>info.amount = 0.5 × 1e18</code> (dust below Observer threshold). The remaining dust has <code>_weightedAmount() = 0</code>, earns no rewards, and cannot be increased via <code>stake()</code> because <code>stake</code> enforces the minimum <em>on the post-stake amount</em>.</p>
+<p>Actually, <strong>the user CAN re-stake</strong> — the <code>stake()</code> check is <code>if (info.amount &lt; OBSERVER_THRESHOLD) revert BelowMinimumStake();</code> which is applied to the <strong>new</strong> <code>info.amount</code> after addition. So they could stake another 999.5 tokens to become Observer again. But the dust itself is stuck in a non-productive state until fully unstaked. More importantly, the asymmetry is weird:</p>
+<ul>
+<li><code>stake()</code> enforces min threshold.</li>
+<li><code>requestUnstake()</code> doesn&#39;t enforce &quot;leaving above threshold or fully exiting.&quot;</li>
+</ul>
+<p>A user who doesn&#39;t realize this will unstake &quot;everything but a little&quot; and end up with dust earning 0%, then need a second full-lifecycle <code>requestUnstake + 7 day wait + unstake</code> to retrieve the rest. UX footgun, not a direct fund-loss, but violates user expectations and creates weird accounting states.</p>
+<p><strong>Recommendation.</strong><br>Enforce the symmetry at <code>requestUnstake</code>:</p>
+<pre><code class="language-solidity">function requestUnstake(uint256 amount) external {
+    StakeInfo storage info = stakes[msg.sender];
+    if (amount == 0) revert InvalidAmount();
+    if (amount &gt; info.amount) revert InsufficientStake();
+
+    uint256 remaining = info.amount - amount;
+    if (remaining != 0 &amp;&amp; remaining &lt; OBSERVER_THRESHOLD) revert BelowMinimumStake();
+
+    _harvest(msg.sender);
+    info.unstakeRequestAt = block.timestamp;
+    info.unstakeAmount = amount;
+    emit UnstakeRequested(msg.sender, amount, block.timestamp + COOLDOWN_PERIOD);
+}
+</code></pre>
+<p>This forces either a full exit or remaining ≥ Observer threshold. No dust states.</p>
+<hr>
+<h3 id="33-low">3.3 Low</h3>
+<hr>
+<h4>[L-01] <code>transferOwnership</code> is single-step — no <code>Ownable2Step</code></h4>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> <code>evm-audit-access-control</code><br><strong>Location:</strong> <code>transferOwnership(address)</code> lines 276–280</p>
+<p><strong>Description.</strong> Single-step transfer with no <code>acceptOwnership</code> flow. Mistyping <code>newOwner</code> (wrong checksum, wrong address) permanently locks the contract out of its (currently unused) owner role. The only validation is <code>newOwner != address(0)</code>.</p>
+<p><strong>Recommendation.</strong> Use OpenZeppelin <code>Ownable2Step</code> or implement a pending-owner pattern:</p>
+<pre><code class="language-solidity">address public pendingOwner;
+function transferOwnership(address newOwner) external onlyOwner {
+    if (newOwner == address(0)) revert ZeroAddress();
+    pendingOwner = newOwner;
+}
+function acceptOwnership() external {
+    if (msg.sender != pendingOwner) revert NotPendingOwner();
+    owner = pendingOwner;
+    pendingOwner = address(0);
+}
+</code></pre>
+<p>Note: since the contract&#39;s <code>owner</code> has no functional powers (no pause, no upgrade, no admin setters), the practical impact of this bug is zero in the current version. But if any admin function is added in a v2, the pattern must be upgraded simultaneously.</p>
+<hr>
+<h4>[L-02] Constructor missing zero-address check on token</h4>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> <code>evm-audit-general</code><br><strong>Location:</strong> constructor at lines 77–80</p>
+<p><strong>Description.</strong></p>
+<pre><code class="language-solidity">constructor(address _token) {
+    token = IERC20(_token);
+    owner = msg.sender;
+}
+</code></pre>
+<p>No validation that <code>_token != address(0)</code>. A fat-finger deployment bricks the contract from block zero (all <code>token.*</code> calls will revert). Since <code>token</code> is <code>immutable</code>, no recovery.</p>
+<p><strong>Recommendation.</strong></p>
+<pre><code class="language-solidity">constructor(address _token) {
+    if (_token == address(0)) revert ZeroAddress();
+    token = IERC20(_token);
+    owner = msg.sender;
+}
+</code></pre>
+<hr>
+<h4>[L-03] Raw <code>IERC20.transfer</code> / <code>transferFrom</code> — should use <code>SafeERC20</code></h4>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> <code>evm-audit-erc20</code><br><strong>Location:</strong> <code>stake()</code> line 93, <code>unstake()</code> line 157, <code>claimRewards()</code> line 173, <code>depositRevenue()</code> line 185</p>
+<p><strong>Description.</strong> The contract uses <code>bool ok = token.transfer(...)</code> and checks <code>ok</code>. This works for well-behaved ERC20s that return bool. But it fails for:</p>
+<ul>
+<li>Tokens that don&#39;t return a bool (classic USDT on Ethereum mainnet).</li>
+<li>Tokens that return false without reverting even on success (<code>Tether Gold</code> and similar edge-case tokens).</li>
+</ul>
+<p>Since <code>$GITLAWB</code> is presumably a standard ERC20, this is Info in practice. Still, using OZ&#39;s <code>SafeERC20</code> is best practice and protects against a future scenario where the protocol wants to support additional reward tokens.</p>
+<p><strong>Recommendation.</strong></p>
+<pre><code class="language-solidity">using SafeERC20 for IERC20;
+
+token.safeTransferFrom(msg.sender, address(this), amount);
+token.safeTransfer(msg.sender, amount);
+</code></pre>
+<p>Remove the <code>TransferFailed</code> custom error, since <code>safeTransfer</code> reverts with a decoded message on failure.</p>
+<hr>
+<h4>[L-04] <code>requestUnstake</code> silently overwrites a prior pending request, resetting the cooldown</h4>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> <code>evm-audit-general</code>, <code>evm-audit-defi-staking</code><br><strong>Location:</strong> <code>requestUnstake(uint256)</code> lines 117–129</p>
+<p><strong>Description.</strong> If a user already has <code>info.unstakeAmount &gt; 0</code> with a cooldown in progress, calling <code>requestUnstake</code> again overwrites both <code>unstakeAmount</code> and <code>unstakeRequestAt</code> with new values. This resets the 7-day timer without warning.</p>
+<p><strong>Proof of Concept.</strong> Alice calls <code>requestUnstake(100 × 1e18)</code> on day 0. On day 6.9, Alice (panicking or confused) calls <code>requestUnstake(200 × 1e18)</code>. Her cooldown clock is now reset; she has to wait 7 more days. No event indicates that a previous request was clobbered.</p>
+<p><strong>Recommendation.</strong> Revert if a pending request already exists, forcing the user to either <code>unstake</code> (if cooldown elapsed) or call a new <code>cancelUnstake</code> function:</p>
+<pre><code class="language-solidity">function requestUnstake(uint256 amount) external {
+    StakeInfo storage info = stakes[msg.sender];
+    if (info.unstakeAmount != 0) revert UnstakePending();
+    ...
+}
+
+function cancelUnstake() external {
+    StakeInfo storage info = stakes[msg.sender];
+    if (info.unstakeAmount == 0) revert NoPendingUnstake();
+    info.unstakeAmount = 0;
+    info.unstakeRequestAt = 0;
+}
+</code></pre>
+<p>Alternatively, if overwriting is the desired UX, at least emit a distinct event (<code>UnstakeRequestReplaced</code>) so offchain indexers can track it.</p>
+<hr>
+<h4>[L-05] <code>transferOwnership</code> without emitting an event</h4>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> <code>evm-audit-access-control</code><br><strong>Location:</strong> <code>transferOwnership(address)</code> lines 276–280</p>
+<p><strong>Description.</strong> No event is emitted on ownership change. Offchain monitors, block explorers&#39; Contract tab, and governance dashboards all rely on an <code>OwnershipTransferred</code> event to update their views.</p>
+<p><strong>Recommendation.</strong></p>
+<pre><code class="language-solidity">event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+function transferOwnership(address newOwner) external {
+    if (msg.sender != owner) revert NotOwner();
+    if (newOwner == address(0)) revert ZeroAddress();
+    emit OwnershipTransferred(owner, newOwner);
+    owner = newOwner;
+}
+</code></pre>
+<hr>
+<h4>[L-06] No emergency pause or escape hatch — contract is fully immutable</h4>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> <code>evm-audit-access-control</code>, <code>evm-audit-general</code><br><strong>Location:</strong> Contract-wide</p>
+<p><strong>Description.</strong> There is no <code>pause()</code> function, no emergency withdraw, no way to migrate users to a new staking contract, and no way to recover mis-sent tokens (ERC20 other than <code>$GITLAWB</code> sent to the contract are stuck forever — relevant if anyone mistakenly airdrops to the address). This is partly a feature (no rug surface, fully trustless) and partly a liability (no ability to respond to a bug in <code>$GITLAWB</code> itself, e.g., if the token gets paused or frozen, all stakers&#39; principal is locked).</p>
+<p><strong>Recommendation.</strong> Consider at minimum adding:</p>
+<ul>
+<li>A <code>pause()</code> guarded by the owner that blocks <code>stake</code> and <code>depositRevenue</code> (but leaves <code>unstake</code> and <code>claimRewards</code> open, to avoid stranding users).</li>
+<li>A <code>rescueToken(IERC20 alien, address to, uint256 amount)</code> callable by owner, restricted so that <code>alien != token</code> (cannot rug the staking token).</li>
+</ul>
+<p>These trade off some centralization for incident response. If the project&#39;s north star is full immutability, skip and document explicitly.</p>
+<hr>
+<h4>[L-07] Solidity <code>^0.8.24</code> — floating pragma</h4>
+<p><strong>Severity:</strong> Low<br><strong>Category:</strong> <code>evm-audit-general</code><br><strong>Location:</strong> <code>pragma solidity ^0.8.24;</code> line 2</p>
+<p><strong>Description.</strong> The caret pragma allows any compiler version <code>&gt;=0.8.24 &lt;0.9.0</code>. For production contracts, pin to the exact version tested and audited to avoid compiling with a future version that may have different codegen, different optimizer behavior, or a new compiler bug.</p>
+<p>Also note: <code>^0.8.24</code> emits the <code>push0</code> opcode. Base L2 supports <code>push0</code> (post-Shanghai hardfork), so this is fine on Base specifically, but any multichain redeployment must confirm target chain&#39;s support.</p>
+<p><strong>Recommendation.</strong> Pin to <code>pragma solidity 0.8.24;</code> (no caret). Document the exact tested compiler version in the repo README.</p>
+<hr>
+<h3 id="34-info">3.4 Info</h3>
+<hr>
+<h4>[I-01] <code>_harvest</code> returns silently for users with <code>info.amount == 0</code></h4>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> <code>_harvest(address)</code> lines 252–264</p>
+<p><strong>Description.</strong></p>
+<pre><code class="language-solidity">function _harvest(address staker) internal {
+    StakeInfo storage info = stakes[staker];
+    if (info.amount == 0) return;
+    ...
+}
+</code></pre>
+<p>If a user has <code>info.amount == 0</code> but <code>info.pendingRewards &gt; 0</code> (e.g., they&#39;ve already unstaked but not yet claimed), <code>_harvest</code> returns early. Then <code>claimRewards()</code> proceeds to transfer <code>info.pendingRewards</code>. This works correctly because <code>claimRewards</code> reads <code>info.pendingRewards</code> after the early-return and transfers it. No bug. Just noting the control flow so maintainers don&#39;t accidentally break the invariant in the future.</p>
+<p><strong>Recommendation.</strong> Add a comment documenting that early-return from <code>_harvest</code> is safe because <code>pendingRewards</code> is already snapshotted.</p>
+<hr>
+<h4>[I-02] Stakers with weight = 0 do not accrue but occupy storage</h4>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> <code>_weightedAmount(uint256)</code> lines 266–272</p>
+<p><strong>Description.</strong> If a user partially unstakes below <code>OBSERVER_THRESHOLD</code> (see M-04 above), their <code>info.amount &gt; 0</code> but <code>_weightedAmount(info.amount) = 0</code>. They occupy a storage slot but accrue nothing and distort &quot;unique staker count&quot; metrics. Not exploitable. Cleaning this up is part of the M-04 fix.</p>
+<hr>
+<h4>[I-03] <code>Staked</code> event fires <code>getTier(msg.sender)</code> after state update — correct, but worth noting</h4>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> <code>stake()</code> line 113</p>
+<p><strong>Description.</strong> <code>getTier(msg.sender)</code> reads the new tier after <code>info.amount += amount</code>. This is the intended behavior (event reports the user&#39;s post-stake tier). Verified correct.</p>
+<hr>
+<h4>[I-04] Tier thresholds and multipliers are <code>constant</code> and immutable</h4>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> lines 33–38</p>
+<p><strong>Description.</strong> All tier thresholds and the cooldown period are <code>constant</code>. If tokenomics change (e.g., protocol wants to add a new tier, adjust thresholds for market price, or shorten the cooldown for a liquidity event), redeployment is required and users must migrate. This is an intended design tradeoff; flagging for the record.</p>
+<hr>
+<h4>[I-05] <code>import {IERC20} from &quot;lib/forge-std/src/interfaces/IERC20.sol&quot;;</code> — unusual import path</h4>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> line 4</p>
+<p><strong>Description.</strong> Importing <code>IERC20</code> from <code>forge-std</code> works but is unconventional. The canonical import is from OpenZeppelin or a project-local interfaces directory. Using forge-std IERC20 means the production deployment depends on forge-std&#39;s interface definition, which is a testing framework rather than a production dependency. Not a bug, but worth switching to <code>@openzeppelin/contracts/token/ERC20/IERC20.sol</code> or similar for clarity.</p>
+<hr>
+<h2 id="4-summary-table">4. Summary table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-01</td>
+<td><span class="pill high">High</span></td>
+<td><code>unstake()</code> forfeits cooldown-period rewards</td>
+<td><code>unstake()</code> 132–161</td>
+</tr>
+<tr>
+<td>H-02</td>
+<td><span class="pill high">High</span></td>
+<td>7-day cooldown does not prevent reward sniping</td>
+<td><code>claimRewards()</code> 164–177</td>
+</tr>
+<tr>
+<td>M-01</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>depositRevenue</code> dust locks tokens</td>
+<td><code>depositRevenue()</code> 181–192</td>
+</tr>
+<tr>
+<td>M-02</td>
+<td><span class="pill medium">Medium</span></td>
+<td>No FoT / rebase / pause token protection</td>
+<td><code>stake()</code> 93, <code>depositRevenue()</code> 185</td>
+</tr>
+<tr>
+<td>M-03</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Missing <code>ReentrancyGuard</code></td>
+<td>all external mutators</td>
+</tr>
+<tr>
+<td>M-04</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Partial unstake can leave sub-threshold dust</td>
+<td><code>requestUnstake()</code> 117–129</td>
+</tr>
+<tr>
+<td>L-01</td>
+<td><span class="pill low">Low</span></td>
+<td>Single-step <code>transferOwnership</code></td>
+<td>line 276</td>
+</tr>
+<tr>
+<td>L-02</td>
+<td><span class="pill low">Low</span></td>
+<td>Missing zero-address check on token</td>
+<td>constructor 77</td>
+</tr>
+<tr>
+<td>L-03</td>
+<td><span class="pill low">Low</span></td>
+<td>Raw <code>IERC20</code> calls instead of SafeERC20</td>
+<td>lines 93, 157, 173, 185</td>
+</tr>
+<tr>
+<td>L-04</td>
+<td><span class="pill low">Low</span></td>
+<td><code>requestUnstake</code> silently overwrites prior request</td>
+<td>line 117</td>
+</tr>
+<tr>
+<td>L-05</td>
+<td><span class="pill low">Low</span></td>
+<td>No event on ownership transfer</td>
+<td>line 276</td>
+</tr>
+<tr>
+<td>L-06</td>
+<td><span class="pill low">Low</span></td>
+<td>No pause / rescue / escape hatch</td>
+<td>contract-wide</td>
+</tr>
+<tr>
+<td>L-07</td>
+<td><span class="pill low">Low</span></td>
+<td>Floating pragma <code>^0.8.24</code></td>
+<td>line 2</td>
+</tr>
+<tr>
+<td>I-01</td>
+<td><span class="pill info">Info</span></td>
+<td><code>_harvest</code> early-return control flow</td>
+<td>line 252</td>
+</tr>
+<tr>
+<td>I-02</td>
+<td><span class="pill info">Info</span></td>
+<td>Zero-weight stakers linger in storage</td>
+<td>line 266</td>
+</tr>
+<tr>
+<td>I-03</td>
+<td><span class="pill info">Info</span></td>
+<td><code>Staked</code> event reports post-stake tier</td>
+<td>line 113</td>
+</tr>
+<tr>
+<td>I-04</td>
+<td><span class="pill info">Info</span></td>
+<td>Tier constants are immutable</td>
+<td>lines 33–38</td>
+</tr>
+<tr>
+<td>I-05</td>
+<td><span class="pill info">Info</span></td>
+<td>Unusual <code>IERC20</code> import from forge-std</td>
+<td>line 4</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="5-methodology">5. Methodology</h2>
+<p>This audit applied the <code>evm-audit-master</code> methodology (<a href="https://github.com/austintgriffith/evm-audit-skills">https://github.com/austintgriffith/evm-audit-skills</a>) with specialist checklists drawn from the following domains:</p>
+<ul>
+<li><code>evm-audit-general</code> (191 items) — cross-cutting Solidity/EVM issues</li>
+<li><code>evm-audit-precision-math</code> (91 items) — rounding, precision, overflow</li>
+<li><code>evm-audit-erc20</code> (91 items) — weird ERC20 behaviors</li>
+<li><code>evm-audit-defi-staking</code> (125 items) — staking, cooldown, sniping patterns</li>
+<li><code>evm-audit-access-control</code> (43 items) — ownership, permissioning</li>
+<li><code>evm-audit-dos</code> (51 items) — gas griefing, unbounded loops</li>
+</ul>
+<p>Every item on each checklist was applied to the contract&#39;s 281 lines of source. Findings were deduplicated across categories (e.g., H-01 touched both <code>defi-staking</code> and <code>precision-math</code>; consolidated under its dominant category).</p>
+<p>Sources: beirao.xyz security checklists, Dacian security articles, ERC4626 primer (devdacian), RareSkills comprehensive security reference, Sigma Prime liquid restaking research, weird-erc20 (d-xo), multichain-auditor (0xJuancito).</p>
+<hr>
+<h2 id="6-disclaimer">6. Disclaimer</h2>
+<p>This audit reviews the contract source at the commit/version indicated. It does not cover:</p>
+<ul>
+<li>The <code>$GITLAWB</code> ERC20 token implementation (not in scope).</li>
+<li>Deployment scripts, governance configuration, treasury setup, or operational procedures.</li>
+<li>Frontend integrations or offchain infrastructure.</li>
+<li>Post-audit modifications — any change to the contract invalidates findings.</li>
+</ul>
+<p>A clean audit report does not guarantee absence of bugs; it reflects a best-effort review against the referenced checklists on the date above. The client should consider a second, independent review and a production bug bounty before material deployment.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafybeiglxyoxz2cygjqt366s4sihsivak7ik4zoiytengiuvgxczjfwp5y.ipfs.community.bgipfs.com/audit-report.md"><code>https://bafybeiglxyoxz2cygjqt366s4sihsivak7ik4zoiytengiuvgxczjfwp5y.ipfs.community.bgipfs.com/audit-report.md</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/74">#74</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

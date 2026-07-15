@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RwagmiB20Launcher — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #304">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">RwagmiB20Launcher</h1>
+    <p class="job-sub">Job #304 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/304"><b>Job page</b> #304</a>
+      <a class="chip" href="https://bafkreiatrfpei4pcqqj4htgjq46eir7qabxzvwuoct6ui6fnkppi26tiza.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#reconciliation-notes">Reconciliation notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — RwagmiB20Launcher</h1>
+<p>Two-phase audit: Phase 1 (ethskills, breadth — 6 checklist agents) → Phase 2 (pashov, depth — 12 attacker agents, run blind to Phase 1) → hybrid reconciliation.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>RwagmiB20Launcher.sol</code> — Base mainnet <code>0x274d92df0d1ceff9080360191fee0d3299c21b49</code></td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Default (all in-scope <code>.sol</code>, excluding interfaces/lib)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>RwagmiB20Launcher.sol</code> (541 LOC)</td>
+</tr>
+<tr>
+<td><strong>Phase 1 agents</strong></td>
+<td>general, precision-math, access-control, erc20, defi-amm, assembly (6, opus)</td>
+</tr>
+<tr>
+<td><strong>Phase 2 agents</strong></td>
+<td>9 single-specialty + 3 gap-hunter (12, opus)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Summary</strong>: <code>RwagmiB20Launcher</code> is a one-transaction launcher that creates a Base &quot;B20&quot; token, initializes a Uniswap v4 pool through an owner-allowlisted hook, seeds single-sided launch liquidity into an owner-allowlisted LP locker, and runs owner-allowlisted post-launch extensions. <code>launchB20</code> is permissionless; every hook/locker/extension/pairedToken/mevModule address must be on the owner&#39;s allowlist, but every other parameter is fully caller-controlled.</p>
+<p><strong>Reconciliation summary</strong>: 16 unique findings after cross-phase dedup (from ~35 phase-1 raw findings and ~40 phase-2 raw findings/leads). Overlap: 7 findings independently confirmed by both phases · Phase-1-only: 5 · Phase-2-only: 4. All phase-unique findings were re-examined directly against source in this reconciliation pass; all 9 were confirmed and kept at their stated (or adjusted) severity — none were demoted or dropped.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="medium">Medium</h3>
+<p><strong>1. CREATE2 token address is namespaced only by <code>(variant, salt)</code>, not by caller — any launch is front-runnable and hijackable</strong> <code>[both — phase1: general/erc20, phase2: 8 of 12 agents]</code></p>
+<p><code>RwagmiB20Launcher._validatePredictedTokenPair</code> / <code>_createB20</code> · Confidence: 95</p>
+<p><strong>Description</strong><br><code>getB20Address(uint8(b20.variant), address(this), b20.salt)</code> (line 343) and <code>createB20(uint8(b20.variant), b20.salt, ...)</code> (line 410) both pass <code>address(this)</code> — the launcher itself — as the CREATE2 sender, never <code>msg.sender</code>, so the deployed token address depends only on the caller-chosen, mempool-visible <code>salt</code>. An attacker who observes a victim&#39;s pending <code>launchB20(config, salt=S)</code> can front-run with their own <code>launchB20</code> reusing salt <code>S</code>: their token deploys first at <code>getB20Address(variant, launcher, S)</code>, and the victim&#39;s <code>createB20</code> reverts on the CREATE2 collision — bricking the victim&#39;s launch, or, if that address was pre-computed/advertised by a frontend, letting the attacker&#39;s look-alike token occupy it and capture the victim&#39;s intended fee stream and buyers.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- b20Factory.getB20Address(uint8(b20.variant), address(this), b20.salt);
++ bytes32 effectiveSalt = keccak256(abi.encode(msg.sender, b20.salt));
++ b20Factory.getB20Address(uint8(b20.variant), address(this), effectiveSalt);
+</code></pre>
+<p>(mirror the same <code>effectiveSalt</code> derivation at the <code>createB20</code> call site, line 410)</p>
+<hr>
+<p><strong>2. Documented &quot;10% RWAGMI&quot; protocol fee is never enforced — any direct caller can route 100% of LP fees to themselves</strong> <code>[phase2 only — 2 of 12 agents, re-verified directly against source in reconciliation]</code></p>
+<p><code>RwagmiB20Launcher._validateRewards</code> · Confidence: 92</p>
+<p><strong>Description</strong><br>The contract&#39;s NatSpec (line 30) documents a &quot;default 90% creator / 10% RWAGMI&quot; fee split, but <code>_validateRewards</code> (lines 289-305) only enforces that <code>rewardRecipients</code>/<code>rewardBps</code>/<code>rewardAdmins</code> are parallel, non-empty (≤7), non-zero-address, and that <code>rewardBps</code> sums to exactly 10,000 — there is no RWAGMI address constant/immutable anywhere in the file (confirmed: grepped every <code>constant</code>/<code>immutable</code> declaration) and no minimum-bps floor for any specific recipient. A caller supplying <code>rewardRecipients=[attacker]</code>, <code>rewardBps=[10000]</code> satisfies every check and captures 100% of that token&#39;s perpetual LP fees.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function _validateRewards(LockerConfig memory cfg) internal pure {
+      ...
+      if (totalBps != BPS_DENOMINATOR) revert InvalidRewardBps();
++     // require a fixed protocol recipient with a minimum floor, e.g.:
++     // require(_containsWithMinBps(cfg, RWAGMI_TREASURY, MIN_PROTOCOL_BPS), NoProtocolFee());
+  }
+</code></pre>
+<hr>
+<p><strong>3. Admin-mode <code>initCalls</code> filter is a narrow two-selector blocklist, and <code>_createB20</code>&#39;s supply check validates only the launcher&#39;s own balance — together allow a hidden pre-mint</strong> <code>[both — phase1: access-control/erc20/general (3 of 6), phase2: 6 of 12 agents]</code></p>
+<p><code>RwagmiB20Launcher._validateB20AmmInitCalls</code> / <code>_createB20</code> · Confidence: 90</p>
+<p><strong>Description</strong><br>For <code>AdminMode.Admin</code>, caller-supplied <code>initCalls</code> execute with role gates bypassed (forwarded verbatim, line 410); the only filters block the <code>updateMultiplier</code> selector and <code>grantRole(OPERATOR_ROLE, ...)</code> specifically (lines 514-533) — every other selector, including <code>grantRole(DEFAULT_ADMIN_ROLE/MINT_ROLE, ...)</code> and direct <code>mint(...)</code>, passes through unchecked. <code>_createB20</code>&#39;s post-creation invariant (lines 416-418) only checks that the <strong>launcher&#39;s own balance</strong> equals <code>expectedSupply</code> — it never checks <code>totalSupply()</code>. A caller can include <code>mint(launcher, expectedSupply)</code> (satisfies the balance check) plus <code>mint(attacker, HUGE)</code> (a hidden pre-mint invisible to the launcher&#39;s checks and understated in the <code>B20TokenCreated</code> event), then dump the hidden supply into the freshly-seeded pool against unsuspecting buyers.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ // Positive allowlist instead of two-selector blocklist in _validateB20AmmInitCalls
++ if (!_isAllowedAdminSelector(selector)) revert DisallowedInitCall(selector);
+  ...
+- if (balance != expectedSupply) revert UnexpectedLaunchSupply();
++ if (balance != expectedSupply) revert UnexpectedLaunchSupply();
++ if (b20.totalSupply() != expectedSupply) revert HiddenPreMint();
+</code></pre>
+<hr>
+<p><strong>4. Single-step <code>Ownable</code> governs every trust boundary; a compromised owner routes future launches&#39; funds through attacker-controlled modules</strong> <code>[phase1 only — access-control; re-verified directly against source]</code></p>
+<p><code>RwagmiB20Launcher.setHook</code> / <code>setLocker</code> / <code>setExtension</code> / <code>setMevModule</code> / <code>setPairedToken</code> · Confidence: 80</p>
+<p><strong>Description</strong><br>Confirmed directly: the contract inherits plain OZ <code>Ownable</code> (line 10, 36) with no timelock and no <code>Ownable2Step</code>. All five allowlist setters are <code>onlyOwner</code> with no delay (lines 101, 107, 112, 117, 124). A compromised or mistaken owner can enable a malicious hook/locker/extension/MEV module; any subsequent user who launches through the now-&quot;trusted&quot; module has their minted supply (pulled by the locker) and/or <code>msg.value</code> ETH (forwarded via <code>receiveTokens{value: msgValue}</code>) exposed to attacker-controlled code. The victims here are future permissionless callers of <code>launchB20</code>, not the owner itself.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- function setExtension(address extension, bool enabled) external onlyOwner {
++ function setExtension(address extension, bool enabled) external onlyOwner {
++     // route through a timelock; require an enforced delay before an allowlist
++     // entry becomes usable in launchB20
+</code></pre>
+<hr>
+<h3 id="low">Low</h3>
+<p><strong>5. Hook-returned <code>startingTick</code> is never reconciled with the launcher&#39;s locally-computed <code>expectedStartingTick</code></strong> <code>[both — phase1: general/precision-math/defi-amm (3 of 6), phase2: 7 of 12 agents]</code></p>
+<p><code>RwagmiB20Launcher.launchB20</code> · Confidence: 75</p>
+<p><strong>Description</strong><br><code>expectedStartingTick</code> is computed locally (lines 193-194) and used to validate that all launch positions are one-sided (line 195) <em>before</em> <code>initializePool</code> is called; the hook&#39;s actual returned <code>startingTick</code> (line 200) is used only in the emitted event and never compared. If the allowlisted hook&#39;s tick derivation ever rounds/snaps differently (Phase 2&#39;s numerical-gap agent traced a concrete one-tick boundary case where an edge-touching position becomes two-sided), the one-sided-liquidity invariant the launcher validated no longer matches the pool&#39;s real state. Not independently exploitable from in-scope source alone — the hook implementation is out of scope and trusted — but no code-level guarantee prevents the divergence.</p>
+<hr>
+<p><strong>6. Admin-mode AMM-safety checks are a launch-instant snapshot; retained admin can invalidate every one of them post-launch</strong> <code>[both — phase1: erc20/defi-amm (2 of 6), phase2: 7 of 12 agents]</code></p>
+<p><code>RwagmiB20Launcher._assertB20AmmSafety</code> · Confidence: 70 (admin-action gated — no unprivileged amplifier; kept Low, not Medium, per judging Gate 3)</p>
+<p><strong>Description</strong><br><code>_assertB20AmmSafety</code> enforces non-rebasing/unpaused/open-transfer/permissive-mint state only at launch time. <code>AdminMode.Admin</code> tokens retain <code>DEFAULT_ADMIN_ROLE</code> on <code>initialAdmin</code> (nothing in this contract revokes it), so the same admin can call <code>updateMultiplier</code> (rebase), <code>pause</code>, re-grant <code>OPERATOR_ROLE</code>, or tighten transfer/mint policies the very next block — after liquidity is already locked into the pool. This is consistent with the disclosed &quot;Admin&quot; (mutable) trust model, but the launch-time filtering could give LPs/buyers a misleading impression of durable safety.</p>
+<hr>
+<p><strong>7. Immutable-mode &quot;no live admin&quot; check only enumerates three hardcoded addresses</strong> <code>[both — phase1: erc20/access-control (2 of 6), phase2: 1 of 12 (independently converged)]</code></p>
+<p><code>RwagmiB20Launcher._assertB20AmmSafety</code> · Confidence: 65</p>
+<p><strong>Description</strong><br>The immutable-mode assertion checks <code>hasRole(DEFAULT_ADMIN_ROLE, ...)</code> against exactly <code>{initialAdmin=0, address(this), b20Factory}</code> (lines 504-511). A <code>DEFAULT_ADMIN_ROLE</code> grant to any fourth address (e.g. a factory-configured treasury or bootstrap co-admin) is invisible to this check, so a token that isn&#39;t actually immutable could still pass validation and be advertised as <code>AdminMode.Immutable</code>. Not exploitable via any caller-controlled path in this contract; depends on out-of-scope factory bootstrap behavior.</p>
+<hr>
+<p><strong>8. <code>forceApprove</code> to the locker is never reset; no post-launch balance-drained assertion</strong> <code>[both — phase1: erc20, phase2: 1 of 12 (independently converged)]</code></p>
+<p><code>RwagmiB20Launcher.launchB20</code> · Confidence: 65</p>
+<p><strong>Description</strong><br>The launcher approves the locker for exactly <code>poolSupply</code> and calls <code>placeLiquidity</code> (lines 213-226), but never resets the allowance afterward and never asserts the launcher&#39;s own balance reaches zero. If the locker pulls less than the full approved amount (e.g. rounding across positions), a residual allowance and stranded dust persist indefinitely with no sweep/rescue function.</p>
+<hr>
+<p><strong>9. Unchecked negation of <code>tickIfToken0IsB20</code> reverts unconditionally at <code>type(int24).min</code>; no explicit tick-range validation</strong> <code>[both — phase1: general/precision-math, phase2: 1 of 12 + 1 corroborating]</code></p>
+<p><code>RwagmiB20Launcher.launchB20</code> / <code>_validatePool</code> · Confidence: 60</p>
+<p><strong>Description</strong><br><code>int24</code> is asymmetric (<code>min = -8388608</code>); <code>-pool.tickIfToken0IsB20</code> overflows and reverts with an opaque panic when <code>tickIfToken0IsB20 == type(int24).min</code>. <code>_validatePool</code> never bounds the tick to Uniswap&#39;s valid range (<code>±887272</code>) before the sign flip. Self-DoS only (caller&#39;s own malformed config) — not a third-party exploit.</p>
+<hr>
+<p><strong>10. <code>MAX_STATIC_LP_FEE</code> permits fees up to 100% of swap value, enabling honeypot-style pools</strong> <code>[phase1 only — defi-amm; re-verified directly against source]</code></p>
+<p><code>RwagmiB20Launcher._validatePool</code> · Confidence: 70</p>
+<p><strong>Description</strong><br>Confirmed directly: <code>MAX_STATIC_LP_FEE = 1_000_000</code> (line 44), the only bound on <code>pool.lpFee</code> besides Uniswap v4&#39;s own ceiling (line 329). Since the LP position is owned by the locker and fees are distributed to caller-chosen <code>rewardRecipients</code> (finding 2 above shows this can be 100% attacker-controlled), a caller can launch with e.g. a 99% static fee, siphoning nearly all of a buyer&#39;s input as &quot;fee.&quot; Publicly visible on-chain in the <code>PoolKey</code>, which partially mitigates.</p>
+<hr>
+<p><strong>11. <code>grantRole</code> role-check is skipped for calldata shorter than 68 bytes</strong> <code>[phase1 only — assembly; re-verified directly against source]</code></p>
+<p><code>RwagmiB20Launcher._validateB20AmmInitCalls</code> · Confidence: 55</p>
+<p><strong>Description</strong><br>Confirmed directly: <code>if (selector != GRANT_ROLE_SELECTOR || callData.length &lt; 68) continue;</code> (line 523) skips the <code>OPERATOR_ROLE</code> check entirely for any <code>grantRole</code>-selectored call shorter than 68 bytes. Against a standard Solidity ABI decoder this is safe (a too-short static-argument call reverts on the token side too), but it is a defense-in-depth gap dependent on the B20 token&#39;s exact calldata handling, which is out of scope.</p>
+<hr>
+<p><strong>12. Asymmetric allowlist validation — <code>setHook</code> checks the interface, other setters accept any address</strong> <code>[phase1 only — general/access-control; re-verified directly against source]</code></p>
+<p><code>RwagmiB20Launcher.setHook</code> vs. <code>setLocker</code>/<code>setExtension</code>/<code>setMevModule</code>/<code>setPairedToken</code> · Confidence: 55</p>
+<p><strong>Description</strong><br>Confirmed directly: <code>setHook</code> validates via <code>_supportsHookV2</code> (ERC-165 + code-length check, lines 101-105) before enabling; the other four setters (lines 107-127) perform no validation at all. An owner mistake (e.g. <code>setExtension(eoaAddress, true)</code>) can silently enable a non-conforming address; a subsequent launch could forward ETH to an EOA via <code>receiveTokens{value:...}</code> with no revert to signal the misconfiguration.</p>
+<hr>
+<p><strong>13. <code>_validateB20Metadata</code> trusts its own guessed factory ABI layout when decoding caller-supplied <code>params</code></strong> <code>[phase2 only — 1 of 12, re-verified directly against source]</code></p>
+<p><code>RwagmiB20Launcher._validateB20Metadata</code> · Confidence: 55</p>
+<p><strong>Description</strong><br>The event-truth guarantee (&quot;direct callers cannot emit a launch event describing a different token,&quot; lines 307-311) holds only if the launcher&#39;s local <code>AssetCreateParams</code> decode of the opaque <code>params</code> bytes (lines 80-86, 312-322) is byte-identical to the external <code>B20Factory</code>&#39;s own decode of the same bytes. Confirmed the launcher never reads metadata back from the created token to cross-check. If the two layouts diverge, validation could pass while the factory mints a token with different name/symbol/decimals than the emitted event describes. Unverifiable further without the factory source (out of scope).</p>
+<hr>
+<p><strong>14. Caller-controlled <code>mevModuleData</code>/<code>poolData</code> can neuter a launch&#39;s own MEV protection</strong> <code>[phase1 only — defi-amm]</code></p>
+<p><code>RwagmiB20Launcher.launchB20</code> · Confidence: 50</p>
+<p><strong>Description</strong><br>While <code>mevModule</code>/<code>hook</code> addresses are owner-allowlisted, their opaque data payloads (lines 209, 246) are fully caller-controlled and unvalidated by the launcher. A caller can configure their own launch&#39;s anti-snipe parameters to be trivially weak — self-harm only, contingent on the allowlisted modules validating their own inputs.</p>
+<hr>
+<p><strong>15. No timelock/multisig on <code>Ownable</code>; <code>renounceOwnership</code> reachable</strong> <code>[phase1 only — access-control; re-verified directly against source]</code></p>
+<p><code>RwagmiB20Launcher</code> (contract-level) · Confidence: 50</p>
+<p><strong>Description</strong><br>Confirmed directly: plain OZ <code>Ownable</code> (line 10, 36), single-step <code>transferOwnership</code>, <code>renounceOwnership()</code> not overridden. A typo or accidental renouncement permanently freezes all allowlist administration and the <code>deprecated</code> kill-switch — an availability risk, not direct fund loss. Overlaps with finding 4 (recommend <code>Ownable2Step</code> + override <code>renounceOwnership()</code> to revert).</p>
+<hr>
+<h3 id="informational">Informational</h3>
+<p><strong>16. <code>TokenAlreadyLaunched</code> guard is unreachable dead code</strong> <code>[phase2 only — 2 of 12, re-verified directly against source]</code></p>
+<p><code>RwagmiB20Launcher.launchB20</code> line 187 · Confidence: n/a</p>
+<p><strong>Description</strong><br>Confirmed directly: because the token address is CREATE2-deterministic in <code>(variant, launcher, salt)</code> (finding 1), any relaunch with a previously-used salt already reverts inside the factory&#39;s <code>createB20</code> before line 187 is reached — <code>_deployments[token]</code> cannot be non-zero at that point. Harmless.</p>
+<p><strong>Other verified-clean items</strong> (no material risk, noted for completeness):</p>
+<ul>
+<li>Extension-supply bps accounting is mathematically exact — <code>_extensionSupply()</code> and <code>_runExtensions()</code> use identical floor-division per term; zero dust, no under/over-transfer. <code>[both]</code></li>
+<li><code>_assertB20AmmSafety</code>&#39;s four transfer/mint policy scopes may not be the B20 token&#39;s complete policy surface — unverifiable without the token spec (out of scope). <code>[phase2 only]</code></li>
+<li>No cross-transaction MEV-unprotected window — <code>launchB20</code> is fully atomic and <code>nonReentrant</code>. <code>[both]</code></li>
+<li><code>abi.decode</code>/selector-extraction assembly patterns are memory-safe under Solidity 0.8.28. <code>[phase1 only]</code></li>
+</ul>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Findings 5, 6, 7, 8, 9, 13 above already represent the promoted, source-verified leads from this audit — no additional unverified leads remain outside the numbered findings.</em></p>
+<hr>
+<h2 id="reconciliation-notes">Reconciliation notes</h2>
+<ul>
+<li><strong>Salt-collision (finding 1)</strong> was the single most-corroborated issue: independently flagged by both phase-1 checklist agents and 8 of 12 phase-2 attacker agents, several with a full proof-of-concept including an address-hijack variant beyond simple griefing.</li>
+<li><strong>RWAGMI fee bypass (finding 2)</strong> was missed entirely by Phase 1&#39;s checklist-driven pass (no checklist item covers &quot;is the protocol&#39;s own documented revenue split enforced on-chain&quot;) and only surfaced through Phase 2&#39;s first-principles/flow-gap attacker agents — a good illustration of why the two-phase approach catches different bug classes.</li>
+<li>All Phase-1-only and Phase-2-only findings were re-examined against the live source in this reconciliation pass (not just re-stated); all were confirmed as accurate descriptions of the code and kept, several with confidence adjusted to reflect single-phase corroboration versus the double-corroborated findings.</li>
+<li>No Critical or High findings survived judging gates. The contract&#39;s <code>nonReentrant</code> guard, exact-balance minting check (partially bypassable per finding 3), and owner-allowlisted external-call surface close off most third-party fund-loss paths under an honest-owner assumption; the two Medium-severity unprivileged findings (salt collision, RWAGMI fee bypass) are the most actionable items for a pre-mainnet fix.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI agents (ethskills checklist pass + pashov attacker-mindset pass, cross-reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, bug bounty program, and on-chain monitoring are strongly recommended before this contract is deployed as the sole gate for permissionless token launches.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiatrfpei4pcqqj4htgjq46eir7qabxzvwuoct6ui6fnkppi26tiza.ipfs.community.bgipfs.com/"><code>https://bafkreiatrfpei4pcqqj4htgjq46eir7qabxzvwuoct6ui6fnkppi26tiza.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/304">#304</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

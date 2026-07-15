@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire AgentSLAEnforcer — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #364">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire AgentSLAEnforcer</h1>
+    <p class="job-sub">Job #364 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/364"><b>Job page</b> #364</a>
+      <a class="chip" href="https://bafkreibnno3hzgcthnypcwzw6o4hlfj4v7xgc5t4vaqti6p2zg776sqcqm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  
+
+  <main class="report">
+<h1>Security Audit Report — Vaultfire AgentSLAEnforcer</h1>
+<p><strong>Target:</strong> <code>0xc0b7cFF13C7C7f4DAF36A7c67da47B2Cb311335D</code> on Base (chain 8453)<br><strong>Requested focus:</strong> SLA-breach detection correctness, penalty math, access control on SLA-parameter updates.<br><strong>Audit type:</strong> Two-phase (ethskills breadth + pashov depth) — <strong>not executable for this target; see below.</strong></p>
+<h2 id="status-source-unavailable-audit-could-not-be-completed">Status: Source Unavailable — Audit Could Not Be Completed</h2>
+<p>The requested two-phase methodology (checklist-driven breadth pass + attacker-mindset<br>depth pass) requires readable Solidity source: agents reason about named functions,<br>control flow, and require/revert conditions. That precondition was not met for this<br>target, and every fallback path available to this auditor was exhausted without<br>recovering it. Details and evidence below, so the client can judge whether to<br>re-submit once source is available.</p>
+<h3 id="what-was-tried">What was tried</h3>
+<ol>
+<li><p><strong>BaseScan (Base&#39;s Etherscan-family explorer).</strong></p>
+<ul>
+<li><code>basescan.org/address/0xc0b7cFF13C7C7f4DAF36A7c67da47B2Cb311335D#code</code> was<br>fetched directly; the page shows <em>&quot;Are you the contract creator? Verify and<br>Publish your contract source code today!&quot;</em> — i.e. <strong>not verified</strong>.</li>
+<li>The legacy <code>api.basescan.org</code> v1 endpoint is deprecated (<code>NOTOK</code>); the v2<br>endpoint (<code>api.etherscan.io/v2/api?chainid=8453</code>) requires an API key this<br>auditor does not have access to (<code>Missing/Invalid API Key</code>).</li>
+</ul>
+</li>
+<li><p><strong>Sourcify</strong> (<code>sourcify.dev</code>), full match and partial match, both queried for<br>chain 8453 at this address:</p>
+<pre><code>GET https://sourcify.dev/server/v2/contract/8453/0xc0b7...335D?fields=all
+→ {&quot;match&quot;: null, &quot;creationMatch&quot;: null, &quot;runtimeMatch&quot;: null}
+</code></pre>
+<p>No full or partial match. Not verified there either.</p>
+</li>
+<li><p><strong>Proxy check.</strong> Read the EIP-1967 implementation slot<br>(<code>0x360894a1...</code>) and admin slot (<code>0xb531...</code>) directly via <code>eth_getStorageAt</code><br>on Base — both are zero. This is <strong>not an EIP-1967 proxy</strong>, so there is no<br>verified implementation contract to fall back to.</p>
+</li>
+<li><p><strong>Bytecode-level fallback</strong> (per the source-unavailable exception in this<br>auditor&#39;s operating procedure). Runtime bytecode was pulled directly from<br>chain (<code>eth_getCode</code>, 7,303 bytes) and run through selector/argument recovery<br>(<code>evmole</code>) plus manual <code>cast sig</code> matching against likely domain vocabulary<br>(&quot;SLA&quot;, &quot;breach&quot;, &quot;penalty&quot;, &quot;agent&quot;, &quot;compliance&quot;, etc.). Findings:</p>
+<ul>
+<li><p><strong>31 external functions total</strong>, non-proxy, single-contract bytecode.</p>
+</li>
+<li><p>Only a handful resolve with confidence, all administrative/boilerplate —<br>the SLA-specific business logic (breach detection, penalty computation)<br>could <strong>not</strong> be named or reconstructed:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Selector</th>
+<th>Mutability</th>
+<th>Args</th>
+<th>Identity</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x8da5cb5b</code></td>
+<td>view</td>
+<td>—</td>
+<td><code>owner()</code> (standard <code>Ownable</code>)</td>
+</tr>
+<tr>
+<td><code>0xf2fde38b</code></td>
+<td>nonpayable</td>
+<td><code>address</code></td>
+<td><code>transferOwnership(address)</code></td>
+</tr>
+<tr>
+<td><code>0x92c1ee40</code></td>
+<td>view</td>
+<td>—</td>
+<td><code>bondsRegistry()</code> — public address getter</td>
+</tr>
+<tr>
+<td><code>0x2bb2d3d7</code></td>
+<td>view</td>
+<td><code>uint256</code></td>
+<td><code>slas(uint256)</code> — public mapping/array getter, name recovered by signature-guess match</td>
+</tr>
+<tr>
+<td><code>0x26eb0f4a</code></td>
+<td><strong>nonpayable</strong></td>
+<td><code>address, bool</code></td>
+<td>unresolved — the only function actually exercised on-chain (see below)</td>
+</tr>
+<tr>
+<td>remaining 26 selectors</td>
+<td>mixed view/pure/nonpayable/payable (one <code>payable</code>, args up to 6×<code>uint256</code>)</td>
+<td>—</td>
+<td>unresolved</td>
+</tr>
+</tbody></table></div>
+</li>
+<li><p><strong>On-chain activity is minimal</strong>: contract balance 0, outgoing nonce 1<br>(single outbound call made by the contract itself), and only <strong>two</strong><br>event logs exist in the contract&#39;s entire history (from genesis to the<br>current head, block 48,420,421):</p>
+<pre><code>tx 0x745074283b46b75d8567b12ed0c4d3962da61459db4144b60d87a0b0fb96662c (block 44,961,726)
+tx 0xf466ff2f1128066b3701beb0f9d5c701c66268c379cfe0c967054104c6b44999 (block 44,961,737)
+</code></pre>
+<p>Both are calls from the <strong>same EOA</strong><br>(<code>0xA054f831B562e729F8D268291EBde1B2EDcFb84F</code>) to selector <code>0x26eb0f4a</code><br>with identical calldata — <code>(address = caller itself, bool = true)</code> —<br>each emitting one log with topic0<br><code>0x65e09d96f472ddf60226ae031a48ccf6be9c545e89dcd5f299e8884a857a67bc</code>,<br>one indexed <code>address</code> topic (the same caller), and <code>data = 0x…0001</code><br>(<code>true</code>). This is consistent with a self-registration / self-activation<br>call (e.g. an agent flipping its own &quot;active&quot; flag), but the event and<br>function names could not be confirmed without source, and <strong>no SLA<br>breach, penalty, or parameter-update call has ever been made on this<br>contract</strong> — there is no on-chain execution trace to validate the<br>penalty-math or breach-detection logic against even empirically.</p>
+</li>
+</ul>
+<p>Reconstructing 31 functions&#39; actual control flow and arithmetic from raw<br>EVM opcodes without a decompiler (Heimdall/Dedaub-class tooling, not<br>available in this environment) to the fidelity required to responsibly<br>assert or rule out a Critical/High finding — per this engagement&#39;s own<br>verification standard (&quot;walk every exploit path… quote the relevant<br>source lines&quot;) — was not achievable. Publishing severity ratings for<br>breach-detection or penalty-math logic that cannot be shown in source<br>would be guesswork, not audit.</p>
+</li>
+</ol>
+<h3 id="recommendation-to-client">Recommendation to client</h3>
+<p>Verify the contract&#39;s source on BaseScan (or Sourcify) and resubmit. Once<br>source is available, this target is in-scope for the standard two-phase audit<br>and should specifically receive <code>evm-audit-precision-math</code> (penalty math),<br><code>evm-audit-access-control</code> (SLA-parameter update gating), and a dedicated<br>breach-detection correctness pass per the original brief.</p>
+<h3 id="what-could-be-stated-with-confidence-from-what-was-recoverable">What could be stated with confidence from what was recoverable</h3>
+<ul>
+<li>The contract is <strong>not</strong> an EIP-1967 proxy (implementation/admin slots are<br>zero) — whatever logic exists is not upgradeable through that pattern.</li>
+<li>It exposes a standard OpenZeppelin-style <code>Ownable</code> surface<br>(<code>owner()</code> / <code>transferOwnership(address)</code>), so at least one centralized<br>admin role exists. Whether SLA-parameter-update functions are correctly<br>gated behind that same role (the client&#39;s stated focus) could not be<br>verified — the relevant selectors are unresolved and their <code>require</code>/modifier<br>logic is not visible without decompiled source.</li>
+<li>Real-world usage is essentially nil (2 txs total, both self-directed by one<br>EOA, no value ever held) — so even if there is a bug, it has not yet been<br>exercised in a way that would leave forensic evidence on-chain.</li>
+</ul>
+<p>No findings are rated (Critical/High/Medium/Low) because none could be<br>substantiated against source, per this engagement&#39;s verification standard.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibnno3hzgcthnypcwzw6o4hlfj4v7xgc5t4vaqti6p2zg776sqcqm.ipfs.community.bgipfs.com/"><code>https://bafkreibnno3hzgcthnypcwzw6o4hlfj4v7xgc5t4vaqti6p2zg776sqcqm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/364">#364</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

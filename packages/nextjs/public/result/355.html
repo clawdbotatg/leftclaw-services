@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireTrustOracle — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #355">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireTrustOracle</h1>
+    <p class="job-sub">Job #355 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/355"><b>Job page</b> #355</a>
+      <a class="chip" href="https://bafkreicxjvm637j7isyhhspuvn5di3naabawfwmyiq43oda236ga73aszi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">3</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#1-submitattestation-has-no-attester-side-access-control-any-addr">[1] submitAttestation has no attester-side access control — any address can arbitrarily inflate or destroy any agent&#39;s trust score for free</a></li>
+      <li><a href="#2-fixed-weight-ema-past-1000-attestations-makes-long-established">[2] Fixed-weight EMA past 1,000 attestations makes long-established agents cheaper to manipulate, not harder</a></li>
+      <li><a href="#3-compounding-truncation-in-the-running-average-reconstruction-c">[3] Compounding truncation in the running-average reconstruction causes systematic score drift</a></li>
+      <li><a href="#4-unbounded-per-agentper-attester-id-arrays-create-a-permanent-g">[4] Unbounded per-agent/per-attester ID arrays create a permanent getter-DoS risk</a></li>
+      <li><a href="#5-taskid-and-evidencehash-are-never-validated-against-a-real-tas">[5] taskId and evidenceHash are never validated against a real task</a></li>
+    </ol>
+    <ol start="7">
+      <li><a href="#6-no-staleness-enforcement">[6] No staleness enforcement</a></li>
+      <li><a href="#7-no-minimum-sample-size-signal">[7] No minimum-sample-size signal</a></li>
+      <li><a href="#8-averagequality-0-is-ambiguous">[8] averageQuality == 0 is ambiguous</a></li>
+      <li><a href="#9-minor-code-hygiene-notes">[9] Minor code-hygiene notes</a></li>
+      <li><a href="#10-hard-dependency-on-external-isagentactive-with-no-fallback">[10] Hard dependency on external isAgentActive() with no fallback</a></li>
+      <li><a href="#explicitly-ruled-out-checked-no-finding">Explicitly Ruled Out (checked, no finding)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — VaultfireTrustOracle</h1>
+<p><strong>Target:</strong> <code>VaultfireTrustOracle</code> — <a href="https://basescan.org/address/0xF945aA87dB4E1d14aa7d0572501afa166374B776"><code>0xF945aA87dB4E1d14aa7d0572501afa166374B776</code></a> (Base, chain 8453)<br><strong>Source:</strong> verified on Sourcify (full match), compiler <code>0.8.25+commit.b61c2a91</code>, 1 file / 180 in-scope code lines<br><strong>Client focus areas:</strong> staleness handling, score-range validation, access control on update functions<br><strong>Methodology:</strong> Two-phase audit — Phase 1 breadth (5 ethskills checklists: general, precision-math, access-control, oracles, DoS) → Phase 2 depth (12 blind pashov attacker agents: 9 specialty + 3 gap-hunter) → hybrid reconciliation</p>
+<p><strong>Reconciliation summary:</strong> Overlap: 4 findings corroborated in both phases (unanimous 12/12 phase-2 agents + independent confirmation from 3 of 5 phase-1 checklists on the primary finding) · Phase-1-only: 7 · Phase-2-only: 0 (all phase-2 findings/leads map onto phase-1 findings) · All leads re-examined and kept at stated confidence.</p>
+<hr>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>Critical</strong></td>
+<td><code>submitAttestation</code> has no attester-side access control — any address can arbitrarily inflate or destroy any agent&#39;s trust score for free</td>
+<td><code>[both]</code> — unanimous 12/12 phase-2 agents + all 4 applicable phase-1 checklists</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>High</strong></td>
+<td>Fixed-weight EMA past 1,000 attestations makes long-established agents <em>cheaper</em> to manipulate, not harder</td>
+<td><code>[both]</code> — phase1: oracles/general/precision-math, phase2: 4 independent agents</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Medium</strong></td>
+<td>Compounding truncation in the running-average reconstruction causes systematic score drift</td>
+<td><code>[both]</code> — phase1: precision-math, phase2: 2 independent agents (+ independently verified by the orchestrator)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>High</strong></td>
+<td>Unbounded per-agent/per-attester ID arrays create a permanent getter-DoS risk for downstream consumers</td>
+<td><code>[both]</code> — phase1: dos, phase2: 5+ agent leads</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Medium</strong></td>
+<td><code>taskId</code> and <code>evidenceHash</code> are never validated against a real task — &quot;verified performance&quot; claims are unverifiable</td>
+<td><code>[phase1: oracles]</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Low</strong></td>
+<td>No staleness enforcement — <code>lastUpdated</code> is exposed but nothing forces consumers to check it</td>
+<td><code>[phase1: oracles + general]</code> — directly addresses client&#39;s &quot;staleness handling&quot; focus</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Low</strong></td>
+<td>No minimum-sample-size signal — a single attestation fully determines a new agent&#39;s score</td>
+<td><code>[phase1: oracles]</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Low</strong></td>
+<td><code>averageQuality == 0</code> is ambiguous between &quot;no data&quot; and &quot;worst possible score&quot;</td>
+<td><code>[phase1: general]</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Info</strong></td>
+<td>Unchecked counter increment lacks justification comment; PUSH0/multichain deployment note</td>
+<td><code>[phase1: precision-math + general]</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Info</strong></td>
+<td>Hard dependency on external <code>isAgentActive()</code> with no fallback</td>
+<td><code>[phase1: dos]</code></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="1-submitattestation-has-no-attester-side-access-control-any-addr">[1] <code>submitAttestation</code> has no attester-side access control — any address can arbitrarily inflate or destroy any agent&#39;s trust score for free</h2>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Corroboration</strong>: <code>[both]</code> — found independently by <strong>all 12</strong> phase-2 attacker agents (unanimous) and by the access-control, oracles, general, and DoS phase-1 checklists (precision-math did not target this area but independently found the related truncation bug below).<br><strong>Location</strong>: <code>submitAttestation()</code> lines 142-202, <code>_updatePerformance()</code> lines 208-242</p>
+<p><strong>Description</strong>: <code>submitAttestation</code> gates only the <em>target</em> of the attestation (<code>identityRegistry.isAgentActive(agent)</code>) — the <em>attester</em> (<code>msg.sender</code>) needs no registration, stake, fee, or prior relationship to the agent. The contract does compute <code>isVerified = identityRegistry.isAgentActive(msg.sender)</code>, but this flag is purely cosmetic — it only increments a separate <code>verifiedAttestations</code> counter and never gates or weights whether the score counts toward <code>averageQuality</code>:</p>
+<pre><code class="language-solidity">if (perf.totalAttestations &lt; MAX_FOR_TRUE_AVG) {
+    uint256 totalScore = perf.averageQuality * perf.totalAttestations;
+    totalScore += newScore;
+    perf.totalAttestations += 1;
+    perf.averageQuality = totalScore / perf.totalAttestations;   // unconditional — verified or not
+} else {
+    perf.averageQuality = (perf.averageQuality * 9 + newScore) / 10;  // unconditional
+    perf.totalAttestations += 1;
+}
+if (verified) { perf.verifiedAttestations += 1; }   // only affects this separate counter
+</code></pre>
+<p>Compounding this, the only anti-spam mechanism — <code>_hasAttested[msg.sender][agent][taskId]</code> — is skipped entirely when <code>taskId == 0</code>, which the contract&#39;s own documentation defines as the valid, expected value for &quot;standalone&quot; attestations (<code>taskId</code> doc comment: &quot;Reference to task (0 if standalone)&quot;). Even when <code>taskId &gt; 0</code>, the guard only blocks exact reuse of the same <code>(attester, agent, taskId)</code> triple; since <code>taskId</code> is a bare, attacker-chosen integer never validated against any real task or escrow system, incrementing it (<code>1, 2, 3, ...</code>) defeats the guard just as completely as using <code>0</code>.</p>
+<p>The self-attestation guard (<code>agent != msg.sender</code>, line 154) provides no real protection either — it blocks only the literal same address, not a second wallet the agent operator also controls.</p>
+<p><strong>Impact</strong>: Any address, with no registration or economic stake, can move <code>performance[agent].averageQuality</code> to any value between 0 and 10000 for any active agent, at the cost of L2 gas alone. This directly and completely defeats the contract&#39;s stated purpose — the NatSpec&#39;s own example, &quot;this agent completed 47 tasks with a 96% satisfaction rate,&quot; is fully fabricable by a single unfunded EOA in dozens of cheap transactions, or by two colluding &quot;verified&quot; agents producing an indistinguishable-from-genuine record. Severity is Critical rather than High because there is no precondition beyond ordinary gas, no cap on direction or magnitude, and this contract exists specifically to be a trust primitive other Vaultfire contracts are expected to consume for real decisions (bonding, staking, access control) — several of which are in this same audit queue.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Attacker picks any active, registered <code>victimAgent</code> (or a <code>colludingAgent</code> they also control).</li>
+<li>From a single fresh, unregistered EOA, loop: <code>submitAttestation(victimAgent, 0, 0, keccak256(&quot;x&quot;), keccak256(&quot;y&quot;))</code> (taskId=0 skips all dedup) — repeat N times to crash the score, or use <code>qualityScore=10000</code> against a colluding agent to pump it.</li>
+<li>Numeric trace (verified independently by two agents and the orchestrator): a legitimately-earned <code>averageQuality=9500</code> over 50 real attestations collapses to <code>(9500*50 + 0*500)/550 ≈ 863</code> (a 91% drop) after 500 cheap spam calls from one address. A brand-new agent reaches <code>averageQuality=10000</code> after its very first self-serving call.</li>
+</ol>
+<p><strong>Recommendation</strong>: Require the attester to satisfy a real Sybil-resistance precondition before their score counts — e.g. require <code>identityRegistry.isAgentActive(msg.sender)</code> (gate, not just record), and/or require attestations to reference a task validated against an external task/escrow registry that can confirm <code>msg.sender</code> was the genuine counterparty. Apply anti-spam dedup/rate-limiting regardless of <code>taskId</code>. See phase2-report.md for a concrete diff.</p>
+<hr>
+<h2 id="2-fixed-weight-ema-past-1000-attestations-makes-long-established">[2] Fixed-weight EMA past 1,000 attestations makes long-established agents cheaper to manipulate, not harder</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Corroboration</strong>: <code>[both]</code> — phase1&#39;s oracles, general, and precision-math checklists independently flagged this; 4 of 12 phase-2 agents (math-precision, periphery, first-principles, trust-gap) independently derived and quantified it.<br><strong>Location</strong>: <code>_updatePerformance()</code> lines 217-225</p>
+<p><strong>Description</strong>: Below <code>MAX_FOR_TRUE_AVG</code> (1000) attestations, each new score has diminishing weight <code>~1/n</code> on the true running average — the intended &quot;more history = harder to move&quot; property. At <code>totalAttestations &gt;= 1000</code>, the code switches instantly to a flat-10%-weight EMA (<code>(avg*9+newScore)/10</code>) forever after, with no scaling by accumulated history. This is a discontinuous ~100x jump in per-call influence at the exact threshold meant to represent a agent becoming &quot;established.&quot;</p>
+<p><strong>Proof of Concept</strong>: An agent with <code>averageQuality=9500</code> after 5,000 or even 50,000,000 legitimate attestations can be dragged to ~500 by roughly 29 cheap <code>qualityScore=0</code> spam calls (<code>9500 * 0.9^29 ≈ 460</code>), or pumped from a low baseline to ~9900 in ~16 calls (<code>0.9^16 ≈ 0.185</code>) — independent of how much real history exists. This inverts the intended trust property: the agents whose scores matter most (long track record) become the <em>cheapest per call</em> to manipulate once they cross the threshold.</p>
+<p><strong>Recommendation</strong>: Use a decay factor that scales with accumulated sample size (e.g. weight ∝ <code>1/min(N, cap)</code> for a much larger cap) rather than a fixed 10%, or restrict full EMA weight to <code>verified</code> attestations only.</p>
+<hr>
+<h2 id="3-compounding-truncation-in-the-running-average-reconstruction-c">[3] Compounding truncation in the running-average reconstruction causes systematic score drift</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Corroboration</strong>: <code>[both]</code> — phase1&#39;s precision-math checklist flagged this; 2 of 12 phase-2 agents (math-precision, numerical-gap) independently derived it with concrete numeric traces; the orchestrator independently re-verified the exact arithmetic before including it in this report.<br><strong>Location</strong>: <code>_updatePerformance()</code> lines 217-221</p>
+<p><strong>Description</strong>: <code>totalScore = perf.averageQuality * perf.totalAttestations</code> reconstructs the cumulative sum from the already floor-divided <code>averageQuality</code> rather than persisting an exact running sum. Every step&#39;s rounding loss compounds into the next and never self-corrects, since the &quot;sum&quot; fed into each division is itself already-truncated.</p>
+<p><strong>Verified Proof of Concept</strong> (re-derived independently):</p>
+<pre><code>avg, n = 0, 0
+for score in [3, 0, 0]:
+    totalScore = avg*n + score
+    n += 1
+    avg = totalScore // n
+# call1 score=3: avg = 3/1 = 3
+# call2 score=0: avg = 3/2 = 1   (true running sum is 3, true mean so far is 1.5)
+# call3 score=0: avg = 2/3 = 0   (true mean of [3,0,0] is exactly 1)
+</code></pre>
+<p>Three legitimate, distinctly-keyed attestations with an exact-integer true mean of <code>1</code> produce a stored <code>averageQuality</code> of <code>0</code> — not a rounding-ambiguity case, a demonstrably wrong result. Ascending scores <code>1..10</code> pin the average at <code>1</code> against a true average of <code>5</code> (verified by the orchestrator); the error grows to ~500x understatement by 1000 attestations under adversarial ordering, and to a consistent ~2.5-5% downward bias under ordinary random traffic. The error is one-directional (always downward, since Solidity <code>/</code> floors) and affects every agent, not just attacked ones.</p>
+<p><strong>Recommendation</strong>: Persist an explicit <code>totalScoreSum</code> accumulator (bounded, <code>&lt;= 10000*1000</code>, no overflow risk) and derive <code>averageQuality = totalScoreSum / totalAttestations</code> from that exact value each call instead of reconstructing it from the rounded average. See phase2-report.md for a concrete diff.</p>
+<hr>
+<h2 id="4-unbounded-per-agentper-attester-id-arrays-create-a-permanent-g">[4] Unbounded per-agent/per-attester ID arrays create a permanent getter-DoS risk</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Corroboration</strong>: <code>[both]</code> — phase1&#39;s DoS checklist; 5+ of 12 phase-2 agents flagged this as a lead (impact caveated on an unconfirmed downstream on-chain consumer).<br><strong>Location</strong>: <code>_agentAttestations</code>/<code>_attesterAttestations</code> (lines 75, 78), <code>getAgentAttestations()</code>/<code>getAttesterAttestations()</code> (lines 277-283)</p>
+<p><strong>Description</strong>: Every <code>submitAttestation</code> call (unlimited, per Finding 1) pushes onto both arrays with no cap; the getters return the full array in one call. An attacker can grow a target&#39;s array until any on-chain consumer calling the getter reverts out-of-gas permanently (arrays never shrink), or until off-chain <code>eth_call</code> integrators exceed RPC gas caps. Rated High rather than Medium given Finding 1 makes the enabling spam completely free and unbounded — this is not a separate cost/effort barrier, it inherits Finding 1&#39;s zero-cost trigger.</p>
+<p><strong>Recommendation</strong>: Paginate the getters (<code>offset</code>, <code>limit</code>); consider reconstructing history from <code>AttestationSubmitted</code> events off-chain instead of maintaining on-chain enumeration arrays.</p>
+<hr>
+<h2 id="5-taskid-and-evidencehash-are-never-validated-against-a-real-tas">[5] <code>taskId</code> and <code>evidenceHash</code> are never validated against a real task</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1: oracles]</code> — re-examined against source, confirmed; several phase-2 agents noted this as the root enabler of Finding 1 rather than filing it separately.<br><strong>Location</strong>: <code>submitAttestation()</code> lines 142-160</p>
+<p><strong>Description</strong>: Only <code>categoryHash</code> is required non-zero; <code>evidenceHash</code> can be <code>bytes32(0)</code>, and <code>taskId</code> is never checked against any task/escrow contract. This undermines the &quot;verifiable... off-chain evidence&quot; premise in the contract&#39;s own NatSpec, independent of the spam volume in Finding 1 — even a single, well-intentioned attester can reference a task that never existed.</p>
+<p><strong>Recommendation</strong>: Require <code>evidenceHash != 0</code>; validate <code>taskId</code> against a real task/escrow contract confirming the referenced task existed and that <code>msg.sender</code> was the legitimate counterparty.</p>
+<hr>
+<h2 id="6-no-staleness-enforcement">[6] No staleness enforcement</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: oracles + general]</code> — directly addresses the client&#39;s &quot;staleness handling&quot; focus area.<br><strong>Location</strong>: <code>AgentPerformance.lastUpdated</code> (line 50), <code>getPerformance()</code> (lines 256-275)</p>
+<p><strong>Description</strong>: <code>lastUpdated</code> is correctly tracked and exposed (positive control), but there is no heartbeat concept, no documented expected update frequency, and no helper that reverts/flags on staleness. An agent that goes dormant keeps a frozen, seemingly-current score indefinitely unless every integrator remembers to independently check <code>lastUpdated</code> — the same integration-mistake class flagged repeatedly for Chainlink <code>updatedAt</code> staleness checks.</p>
+<p><strong>Recommendation</strong>: Add a convenience <code>isStale(agent, maxAge)</code> / <code>getPerformanceIfFresh(agent, maxAge)</code> helper; document a recommended <code>maxAge</code> in NatSpec.</p>
+<hr>
+<h2 id="7-no-minimum-sample-size-signal">[7] No minimum-sample-size signal</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: oracles]</code><br><strong>Location</strong>: <code>_updatePerformance()</code> lines 217-221</p>
+<p><strong>Description</strong>: The first attestation sets <code>averageQuality</code> outright (division by 1); <code>totalAttestations</code> is available to defend against this but nothing forces a consumer to check it.</p>
+<p><strong>Recommendation</strong>: Expose a confidence-aware getter that reverts/flags below a minimum sample count.</p>
+<hr>
+<h2 id="8-averagequality-0-is-ambiguous">[8] <code>averageQuality == 0</code> is ambiguous</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: general]</code></p>
+<p><strong>Description</strong>: Both a brand-new agent and one successfully driven to 0 via Finding 1 read identically unless <code>totalAttestations</code> is also checked.</p>
+<p><strong>Recommendation</strong>: Document that <code>averageQuality</code> must always be interpreted together with <code>totalAttestations</code>, or expose a <code>hasHistory</code> bool.</p>
+<hr>
+<h2 id="9-minor-code-hygiene-notes">[9] Minor code-hygiene notes</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: precision-math + general]</code></p>
+<ul>
+<li><code>unchecked { attestationId = ++_attestationCounter; }</code> (line 173) lacks the checklist-required justification comment (not practically exploitable — would need ~1.15e77 calls to overflow).</li>
+<li>The contract&#39;s NatSpec states intent to deploy on Base, Avalanche, Arbitrum, and Polygon; Solidity ≥0.8.20 emits <code>PUSH0</code> by default, which rolled out at different times across those chains. Pin an explicit <code>--evm-version</code> before reusing this build on a target that may lack <code>PUSH0</code> support.</li>
+</ul>
+<hr>
+<h2 id="10-hard-dependency-on-external-isagentactive-with-no-fallback">[10] Hard dependency on external <code>isAgentActive()</code> with no fallback</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: dos]</code><br><strong>Location</strong>: <code>submitAttestation()</code> lines 157-160, 171</p>
+<p><strong>Description</strong>: If <code>identityRegistry</code> ever reverts or pauses, <code>submitAttestation</code> becomes fully unusable with no circuit breaker. Normal architectural coupling, not a bug in this contract, but worth documenting as an accepted dependency.</p>
+<hr>
+<h2 id="explicitly-ruled-out-checked-no-finding">Explicitly Ruled Out (checked, no finding)</h2>
+<ul>
+<li><strong>Reentrancy</strong>: <code>nonReentrant</code> guard present; the only external call (<code>identityRegistry.isAgentActive</code>) compiles to <code>STATICCALL</code> (interface marked <code>view</code>), which cannot itself perform state-changing reentrancy. Confirmed independently by both phases.</li>
+<li><strong><code>qualityScore &lt;= 10000</code> range check</strong>: correctly enforced with no off-by-one.</li>
+<li><strong>Centralization/admin risk</strong>: no owner, no pausability, no upgradeability — cuts both ways (no rug risk, but also no remediation path once Finding 1 is exploited; noted as a contributing severity factor, not a separate finding).</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an autonomous AI audit pipeline (two independent methodologies: checklist-breadth + blind attacker-depth, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Finding 1 should be treated as urgent and load-bearing for any downstream contract that consumes <code>performance[agent].averageQuality</code> for real decisions.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicxjvm637j7isyhhspuvn5di3naabawfwmyiq43oda236ga73aszi.ipfs.community.bgipfs.com/"><code>https://bafkreicxjvm637j7isyhhspuvn5di3naabawfwmyiq43oda236ga73aszi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/355">#355</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SlopComputer — Final Security Audit Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #145">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">SlopComputer — Final Security Audit Report</h1>
+    <p class="job-sub">Job #145 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/145"><b>Job page</b> #145</a>
+      <a class="chip" href="https://bafkreiabk2ldimf5xq6udr64bj4lpmyiqdjufkihhxqmkkfhnx7gr6hdla.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#informational-findings">Informational Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#finding-comparison-both-methodologies">Finding Comparison: Both Methodologies</a></li>
+      <li><a href="#severity-summary">Severity Summary</a></li>
+      <li><a href="#positive-notes">Positive Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>SlopComputer — Final Security Audit Report</h1>
+<p><strong>Target:</strong> <a href="https://github.com/clawdbotatg/slop-computer-contracts/blob/main/packages/foundry/contracts/SlopComputer.sol"><code>SlopComputer.sol</code></a><br><strong>Chain:</strong> Base (chain 8453)<br><strong>Audited commit:</strong> <code>main</code> branch, May 2026<br><strong>Methodology:</strong> ethskills (5 domain skills) + pashov (8-agent framework)<br><strong>Date:</strong> 2026-05-10</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p><code>SlopComputer</code> is a single-owner on-chain registry for podcast episodes stored as a singly-linked list. There are <strong>no third-party funds at risk</strong>, no ERC20/ETH handling, no upgradability, and no off-chain signature usage. The contract&#39;s security surface is narrow: all writes are <code>onlyOwner</code>, and the only material attack vectors are DoS-against-the-owner and ownership-management best-practice gaps.</p>
+<p>Both audit methodologies converged on the same three findings, all Low severity. No High or Critical findings were identified.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="l-1-on-linked-list-traversal-in-deleteepisode-can-permanently-bl">[L-1] O(N) Linked-List Traversal in <code>deleteEpisode</code> Can Permanently Block Tail Deletion</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> High (confirmed by both methodologies)<br><strong>Location:</strong> <code>deleteEpisode()</code>, lines 116–121</p>
+<p><strong>Description:</strong><br>When the episode to delete is not the head, <code>deleteEpisode</code> must find its predecessor by walking the entire list:</p>
+<pre><code class="language-solidity">bytes32 cursor = head;
+while (_episodes[cursor].nextId != id) {   // line 118
+    cursor = _episodes[cursor].nextId;
+}
+</code></pre>
+<p>This is O(N) in episode count. Each storage read costs ~2,100 gas (cold) on Base. With Base&#39;s 30M block gas limit, the ceiling is approximately <strong>14,000 episodes</strong> before a tail deletion permanently reverts with out-of-gas. Once this limit is hit, the oldest episodes can never be removed without first deleting all newer ones in order.</p>
+<p><strong>Exploit path (owner-only, self-inflicted):</strong></p>
+<ol>
+<li>Owner accumulates &gt; 14,000 episodes over time.</li>
+<li>Owner calls <code>deleteEpisode(tailId)</code> — the tail is at position N-1.</li>
+<li>The while loop iterates N-1 times, consuming O(N × 2100) gas.</li>
+<li>Transaction reverts OOG. The tail episode is permanently undeletable.</li>
+</ol>
+<p><strong>Recommendation:</strong><br>Accept a caller-supplied predecessor ID and verify it with a single storage read, reducing deletion to O(1):</p>
+<pre><code class="language-diff">- function deleteEpisode(bytes32 id) external onlyOwner {
++ function deleteEpisode(bytes32 id, bytes32 hintPredecessorId) external onlyOwner {
+      if (_episodes[id].id == bytes32(0)) revert EpisodeNotFound(id);
+      bytes32 nextId = _episodes[id].nextId;
+      if (head == id) {
+          head = nextId;
+      } else {
+-         bytes32 cursor = head;
+-         while (_episodes[cursor].nextId != id) {
+-             cursor = _episodes[cursor].nextId;
+-         }
+-         _episodes[cursor].nextId = nextId;
++         if (_episodes[hintPredecessorId].nextId != id)
++             revert InvalidPredecessor(hintPredecessorId);
++         _episodes[hintPredecessorId].nextId = nextId;
+      }
+      if (live == id) live = bytes32(0);
+      delete _episodes[id];
+      unchecked { episodeCount -= 1; }
+      emit EpisodeDeleted(id);
+  }
+</code></pre>
+<p>Alternatively, use a doubly-linked list so each node carries a <code>prevId</code> pointer for O(1) predecessor lookup.</p>
+<hr>
+<h3 id="l-2-single-step-ownership-transfer-missing-ownable2step">[L-2] Single-Step Ownership Transfer — Missing <code>Ownable2Step</code></h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> High (confirmed by both methodologies)<br><strong>Location:</strong> <code>import</code> (line 18), <code>contract SlopComputer is Ownable</code> (line 24)</p>
+<p><strong>Description:</strong><br>The contract uses OpenZeppelin&#39;s <code>Ownable</code>, which implements single-step <code>transferOwnership</code>. A single erroneous call <code>sc.transferOwnership(wrongAddress)</code> irrevocably hands over control with no confirmation step. The original owner has no recourse unless the recipient cooperates.</p>
+<p>On live networks the deploy script hardcodes ownership to a single EOA (<code>ATG_ETH</code>). A phishing attack or fat-finger on <code>transferOwnership</code> permanently transfers management of the entire registry.</p>
+<p><strong>Recommendation:</strong><br>Replace <code>Ownable</code> with <code>Ownable2Step</code>, which requires the new owner to explicitly call <code>acceptOwnership()</code>:</p>
+<pre><code class="language-diff">- import { Ownable } from &quot;@openzeppelin/contracts/access/Ownable.sol&quot;;
++ import { Ownable2Step, Ownable } from &quot;@openzeppelin/contracts/access/Ownable2Step.sol&quot;;
+
+- contract SlopComputer is Ownable {
++ contract SlopComputer is Ownable2Step {
+</code></pre>
+<p>No other changes are needed — <code>Ownable2Step</code> is a drop-in upgrade.</p>
+<hr>
+<h3 id="l-3-inherited-renounceownership-permanently-freezes-registry-man">[L-3] Inherited <code>renounceOwnership()</code> Permanently Freezes Registry Management</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> High (confirmed by both methodologies)<br><strong>Location:</strong> Inherited <code>Ownable.renounceOwnership()</code></p>
+<p><strong>Description:</strong><br>OpenZeppelin&#39;s <code>Ownable</code> exposes <code>renounceOwnership()</code> which sets <code>owner</code> to <code>address(0)</code>. After this call, all <code>onlyOwner</code> functions — <code>addEpisode</code>, <code>goLive</code>, <code>goOffline</code>, <code>setEpisodeContract</code>, <code>setEpisodeUrl</code>, <code>deleteEpisode</code> — permanently revert. The registry becomes eternally read-only with no on-chain recovery path.</p>
+<p>This is particularly dangerous given the single-EOA ownership model: a phishing transaction disguised as something else, or a replay attack in a multi-step signing flow, could call <code>renounceOwnership()</code> inadvertently.</p>
+<p><strong>Recommendation:</strong><br>Override <code>renounceOwnership</code> to revert:</p>
+<pre><code class="language-solidity">/// @dev Intentionally disabled — ownership of this registry should never be abandoned.
+function renounceOwnership() public override onlyOwner {
+    revert(&quot;SlopComputer: ownership cannot be renounced&quot;);
+}
+</code></pre>
+<p>If intentional &quot;seal the registry forever&quot; behavior is desired, document it explicitly and gate it behind an additional confirmation parameter.</p>
+<hr>
+<h2 id="informational-findings">Informational Findings</h2>
+<h3 id="i-1-on-view-functions-may-timeout-for-large-lists">[I-1] O(N) View Functions May Timeout for Large Lists</h3>
+<p><strong>Location:</strong> <code>indexOf()</code> (line 161), <code>getEpisodes(index, amount)</code> (line 175)</p>
+<p>These view functions traverse the list linearly. <code>indexOf</code> walks the entire list from head; <code>getEpisodes</code> skips <code>index</code> entries before returning. For large lists (thousands of episodes), RPC calls can exceed node-side gas limits and time out. No on-chain state impact. Use <code>getEpisodesFrom</code> (cursor-based) for sequential reads; it is O(1) per call once the cursor is known.</p>
+<h3 id="i-2-single-eoa-centralization">[I-2] Single EOA Centralization</h3>
+<p><strong>Location:</strong> <code>DeploySlopComputer.s.sol</code> line 22; all <code>onlyOwner</code> functions</p>
+<p>All registry management depends on a single EOA (<code>0x34aA3F359A9D614239015126635CE7732c18fDF3</code>). For a personal project registry this is expected. If the registry becomes infrastructure consumed by external dApps, migrating ownership to a multisig (e.g., Gnosis Safe) would reduce the risk of a single key compromise affecting downstream consumers.</p>
+<h3 id="i-3-pragma-solidity-0820-emits-push0-verify-cross-chain-use">[I-3] <code>pragma solidity ^0.8.20</code> Emits PUSH0 — Verify Cross-Chain Use</h3>
+<p><strong>Location:</strong> Line 2</p>
+<p>Solidity ≥0.8.20 emits the <code>PUSH0</code> opcode (Shanghai EVM). Base supports PUSH0 (Canyon upgrade, January 2024), so the stated deployment is unaffected. If redeployed to pre-Canyon chains or custom app-chains, deployment will fail. Not an action item for Base.</p>
+<h3 id="i-4-latest-returns-a-zero-struct-for-empty-list-undocumented-cal">[I-4] <code>latest()</code> Returns a Zero-Struct for Empty List — Undocumented Caller Responsibility</h3>
+<p><strong>Location:</strong> <code>latest()</code> (line 151)</p>
+<p><code>latest()</code> returns <code>_episodes[bytes32(0)]</code> when the list is empty — a fully zero-initialized <code>Episode</code> struct. The NatSpec correctly documents this. Off-chain consumers must check <code>ep.id == bytes32(0)</code> to distinguish an empty list from a valid episode. No on-chain risk; purely a consumer-side concern.</p>
+<hr>
+<h2 id="finding-comparison-both-methodologies">Finding Comparison: Both Methodologies</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>ethskills</th>
+<th>pashov</th>
+<th>Final Severity</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>O(N) traversal DoS in <code>deleteEpisode</code></td>
+<td>L-1</td>
+<td>F-1 [85]</td>
+<td><strong>Low</strong></td>
+</tr>
+<tr>
+<td>Missing <code>Ownable2Step</code></td>
+<td>L-2</td>
+<td>F-2 [80]</td>
+<td><strong>Low</strong></td>
+</tr>
+<tr>
+<td><code>renounceOwnership()</code> freeze risk</td>
+<td>L-3</td>
+<td>F-3 [75]</td>
+<td><strong>Low</strong></td>
+</tr>
+<tr>
+<td>O(N) view function timeout</td>
+<td>I-1</td>
+<td>Lead</td>
+<td><strong>Info</strong></td>
+</tr>
+<tr>
+<td>Single-EOA centralization</td>
+<td>I-2</td>
+<td>(noted)</td>
+<td><strong>Info</strong></td>
+</tr>
+<tr>
+<td>PUSH0 compatibility</td>
+<td>I-3</td>
+<td>(N/A — Base supported)</td>
+<td><strong>Info</strong></td>
+</tr>
+<tr>
+<td><code>latest()</code> zero-struct caller responsibility</td>
+<td>(noted)</td>
+<td>Lead</td>
+<td><strong>Info</strong></td>
+</tr>
+</tbody></table></div>
+<p>All three Low findings were independently confirmed by both audit methodologies, increasing confidence. No findings were disputed between the two passes.</p>
+<hr>
+<h2 id="severity-summary">Severity Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>4</td>
+</tr>
+</tbody></table></div>
+<p><strong>No third-party funds are at risk in any finding.</strong> All Low findings are operational/best-practice concerns affecting only the contract owner&#39;s ability to manage the registry.</p>
+<hr>
+<h2 id="positive-notes">Positive Notes</h2>
+<ul>
+<li><strong>Correct use of <code>abi.encode</code></strong> in <code>getId</code>: uses <code>abi.encode</code> (not <code>abi.encodePacked</code>), preventing cross-input hash collisions.</li>
+<li><strong>Correct CEI pattern</strong>: <code>deleteEpisode</code> clears <code>live</code> and performs <code>delete _episodes[id]</code> before emitting the event — no reentrancy surface despite the checks-effects ordering.</li>
+<li><strong>Invariant preservation</strong>: All four key list invariants (<code>episodeCount == reachable count</code>, <code>head</code> validity, <code>live</code> validity, full reachability from head) are correctly maintained across all state-changing functions.</li>
+<li><strong>Thorough test coverage</strong>: The test suite covers head/middle/tail deletion, pagination boundary cases, cursor-based pagination, ownership transfer, and the live→recorded URL swap flow.</li>
+<li><strong>Deploy-time safety check</strong>: <code>DeploySlopComputer.s.sol</code> verifies post-deploy owner == ATG_ETH, preventing accidental misdeploys on live networks.</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiabk2ldimf5xq6udr64bj4lpmyiqdjufkihhxqmkkfhnx7gr6hdla.ipfs.community.bgipfs.com/"><code>https://bafkreiabk2ldimf5xq6udr64bj4lpmyiqdjufkihhxqmkkfhnx7gr6hdla.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/145">#145</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

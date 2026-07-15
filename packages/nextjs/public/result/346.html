@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire DilithiumAttestor — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #346">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire DilithiumAttestor</h1>
+    <p class="job-sub">Job #346 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/346"><b>Job page</b> #346</a>
+      <a class="chip" href="https://bafkreicwzyqlw27ai4pctgjmtcvd4xnkin2ja6jzylwka47fkp5y7eb4hi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#high-severity">High Severity</a></li>
+      <li><a href="#medium-severity">Medium Severity</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#low-severity">Low Severity</a></li>
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report: Vaultfire DilithiumAttestor</h1>
+<p><strong>Target:</strong> <code>DilithiumAttestor</code> at <code>0xef703bBe9b21960ede3e96abBB0Bbd0c525Fe050</code> (Base, chain 8453)<br><strong>In-scope contracts:</strong> <code>DilithiumAttestor.sol</code>, <code>IStarkVerifier.sol</code> (source verified via Sourcify full match; compiler 0.8.25; OpenZeppelin v5.1.0 dependencies)<br><strong>Methodology:</strong> Two-phase audit — Phase 1 breadth (4 parallel checklist-driven agents: general, signatures, access-control, precision-math) → Phase 2 depth (12 parallel attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation (this document).<br><strong>Reconciliation summary:</strong> Overlap: 6 findings independently confirmed by both phases · Phase-1-only: 3 · Phase-2-only: 1 (documentation-narrative observation, folded into the primary finding below) · Demoted on re-examine: 0.<br><strong>Completeness:</strong> every unique (contract, function, bug-class) raised by either phase&#39;s raw agent output is represented below.</p>
+<p><strong>Independent on-chain verification performed by the orchestrator and multiple agents:</strong> <code>origin() = 0xA054f831B562e729F8D268291EBde1B2EDcFb84F</code> (a plain EOA, not the multisig the contract&#39;s own NatSpec recommends), <code>zkEnabled() = false</code>, <code>verifierAddress() = address(0)</code> — confirming the live deployment operates in pure signature-only mode, with the entire ZK/STARK code path permanently dead.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<p>The client&#39;s job description for this audit calls the target a &quot;post-quantum Dilithium signature attestor/verifier&quot; and asks for a review of &quot;correctness of the verification path relative to the Dilithium reference.&quot; Both audit phases immediately surfaced a foundational problem with that premise: <strong>the contract&#39;s own NatSpec explicitly discloses it implements plain ECDSA (secp256k1), not Dilithium, and provides zero post-quantum protection.</strong> There is no Dilithium code anywhere in scope. Beyond that headline issue, both phases converged — with unusually strong, unanimous cross-agent corroboration in Phase 2 (12 of 12 independent agents reached the identical conclusion via different reasoning paths) — on a second, more conventional but equally serious defect: the origin signature that authorizes each attestation is never bound to the submitting address, letting anyone who observes a valid signature (trivially available once used, since all transaction calldata is public) front-run or replay it to steal &quot;prover&quot; credit for someone else&#39;s attestation. Both phases also independently confirmed the live <code>origin</code> signer is a plain EOA — not the multisig the contract&#39;s own documentation recommends — with no rotation or recovery mechanism should that key ever be compromised.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>2</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="high-severity">High Severity</h2>
+<h3 id="h-1-contract-name-and-natspec-claim-post-quantum-dilithium-secur">[H-1] Contract name and NatSpec claim post-quantum &quot;Dilithium&quot; security; the deployed contract provides zero post-quantum protection</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (general agent, headline finding) — the misrepresentation itself is a documentation/narrative-level issue that phase-2&#39;s code-exploit-focused agents did not independently surface as a distinct finding, but it was verified directly against the contract&#39;s own source and the client&#39;s own job description<br><strong>Location:</strong> contract-level NatSpec, lines 9-25</p>
+<p>The contract&#39;s own NatSpec states, verbatim: <em>&quot;IMPORTANT: Despite the name, this contract uses standard ECDSA (secp256k1) signature verification, NOT post-quantum Dilithium signatures... AUDIT-C4: Dilithium verification is NOT implemented.&quot;</em> Yet the surrounding docstring for the overall system still headlines <em>&quot;Post-quantum secure (future-proof)&quot;</em> as a design property, and — notably — the client&#39;s own request that generated this audit describes the target as a &quot;Post-quantum Dilithium signature attestor / verifier,&quot; repeating the same misrepresentation. On the live deployment, the STARK layer anyone might associate with &quot;post-quantum&quot; is confirmed permanently disabled (<code>zkEnabled=false</code>). Every bit of trust in <code>attestedBeliefs</code> reduces to a single secp256k1 keypair (<code>origin</code>) — precisely the cryptographic primitive quantum computers are expected to break. There is no fund-loss vector in this contract, but any user or integrator who selects this specific deployment because of its name or documented &quot;post-quantum&quot;/&quot;Dilithium&quot; claims is relying on a guarantee that flatly does not exist.</p>
+<p><strong>Recommendation:</strong> Rename the contract to reflect actual behavior (e.g., <code>ECDSABeliefAttestor</code>), strip &quot;post-quantum&quot;/&quot;Dilithium&quot; language from all NatSpec and client-facing material describing this address, and expose a machine-readable <code>securityModel()</code> view so integrators querying the contract programmatically — not just reading buried NatSpec — get the correct signal.</p>
+<hr>
+<h3 id="h-2-origin-signature-is-not-bound-to-msgsender-any-observer-of-a">[H-2] Origin signature is not bound to <code>msg.sender</code> — any observer of a valid signature can steal or front-run &quot;prover&quot; attribution</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (signatures agent, general agent — 2/4 agents, both with full exploit traces) · Phase 2 (12/12 agents, unanimous — the single strongest cross-agent corroboration observed across all audits run today)<br><strong>Location:</strong> <code>attestBelief</code> (94-123)</p>
+<pre><code class="language-solidity">bytes32 messageHash = keccak256(abi.encodePacked(beliefHash, block.chainid, address(this)));
+bytes32 ethSigned = messageHash.toEthSignedMessageHash();
+require(ECDSA.recover(ethSigned, originSignature) == origin, &quot;Origin sig mismatch&quot;);
+...
+emit BeliefAttested(beliefHash, msg.sender, zkVerified);
+</code></pre>
+<p>The signed payload never includes <code>msg.sender</code> or any nonce. <code>require(ECDSA.recover(...) == origin)</code> is therefore a pure function of <code>(beliefHash, chainid, address(this), signature)</code> — completely independent of who calls the function. <code>msg.sender</code> is used only as the <code>prover</code> value recorded in the emitted event.</p>
+<p><strong>Proof:</strong> A legitimate submitter is handed a valid <code>(beliefHash, originSignature)</code> bundle and broadcasts <code>attestBelief</code>. The instant that transaction is pending (or, more simply, once it&#39;s mined — calldata is permanently public thereafter), anyone can copy the exact bundle and call <code>attestBelief</code> themselves. The signature check passes identically for the copier, since it never referenced the original submitter&#39;s address. The copier&#39;s call succeeds and emits <code>BeliefAttested(beliefHash, copier, false)</code> — recording the copier, not the legitimate submitter, as the &quot;prover.&quot; This is unconditional in the contract&#39;s own documented default launch configuration (<code>zkEnabled=false</code>, confirmed live). Given this is explicitly a reputation/loyalty-attestation system (per the contract&#39;s own NatSpec — &quot;loyalty proof,&quot; &quot;Vaultfire-approved paths,&quot; reputation language throughout), attribution is the entire value of the event, making this a directly exploitable credit-theft vector, not a cosmetic one.</p>
+<p><strong>Note on the ZK path:</strong> the STARK verification branch (dead on this deployment) does bind <code>proverAddress = msg.sender</code> into its public inputs, which would incidentally block this specific attack <em>if</em> <code>zkEnabled=true</code> <em>and</em> the external verifier genuinely constrains that input (unconfirmed — see M-1). The signature-only path — the contract&#39;s actual, documented, live production configuration — has no equivalent protection at all.</p>
+<p><strong>Recommendation:</strong> Bind <code>msg.sender</code> into the signed hash (e.g. <code>keccak256(abi.encodePacked(beliefHash, msg.sender, block.chainid, address(this)))</code>), forcing <code>origin</code> to co-sign the intended submitter.</p>
+<hr>
+<h3 id="h-3-origin-signing-key-has-no-rotation-pause-or-revocation-path-">[H-3] <code>origin</code> signing key has no rotation, pause, or revocation path — and the live signer is a plain EOA, not the multisig the contract&#39;s own documentation recommends</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (access-control agent, general agent — with independent on-chain verification) · Phase 2 (invariant agent, corroborating)<br><strong>Location:</strong> contract-wide; <code>origin</code> immutable (35), constructor (56-73)</p>
+<p><code>origin</code> is <code>immutable</code>, set once at construction. There is no <code>setOrigin</code>, no <code>pause()</code>, no owner, no timelock, no emergency stop anywhere in the contract (confirmed by exhaustive grep — only 4 functions exist total). If the <code>origin</code> private key is ever compromised, an attacker can forge arbitrary valid <code>attestBelief</code> calls permanently, with no possible remedy on this contract instance.</p>
+<p><strong>Independently confirmed on-chain</strong> that the live <code>origin</code> (<code>0xA054f831B562e729F8D268291EBde1B2EDcFb84F</code>) is a plain, actively-used EOA (239 transactions, holds unrelated ERC-20s/NFTs, funded from Coinbase) — not the multisig the contract&#39;s own NatSpec explicitly recommends (&quot;governance multi-sig recommended&quot;). For comparison, the sibling Vaultfire contract <code>ProductionBeliefAttestationVerifier</code> protects an arguably less-critical parameter with an owner + 48-hour timelock, proving the team is capable of building recovery paths when it chooses to — this contract&#39;s sole root of trust received none.</p>
+<p><strong>Recommendation:</strong> Add a timelocked <code>origin</code>-rotation mechanism controlled by a genuine multisig, or a one-way emergency <code>disable()</code> circuit breaker a designated guardian can trip. At minimum, ensure <code>_origin</code> is actually deployed as a multisig/threshold signer, consistent with the contract&#39;s own documented recommendation.</p>
+<hr>
+<h2 id="medium-severity">Medium Severity</h2>
+<h3 id="m-1-unverified-assumption-that-the-zk-paths-proveraddress-bindin">[M-1] Unverified assumption that the ZK path&#39;s <code>proverAddress</code> binding is actually enforced by the external verifier (out of scope, unconfirmed)</h3>
+<p><strong>Origin:</strong> <code>[phase2 only]</code> — 8/12 agents raised this as a lead<br><strong>Location:</strong> <code>verifyZKProof</code> (149-167)</p>
+<p><code>verifyZKProof</code> passes <code>proverAddress = msg.sender</code> as a public input to the external, out-of-scope <code>IStarkVerifier</code>. Whether the underlying STARK circuit cryptographically constrains that public input, or merely carries it as inert, unconstrained metadata, cannot be determined from the interface alone. If the real deployed verifier does not hard-constrain it, the exact same front-running/credit-theft attack from H-2 would also apply were <code>zkEnabled</code> ever set to <code>true</code>. Not independently exploitable against the live deployment, since <code>zkEnabled=false</code> there.</p>
+<p><strong>Recommendation:</strong> Confirm with the guest-circuit/verifier team that <code>proverAddress</code> is a hard constraint, not an advisory public input, before ever enabling <code>zkEnabled=true</code> in production.</p>
+<hr>
+<h3 id="m-2-no-guard-against-re-attesting-an-already-attested-beliefhash">[M-2] No guard against re-attesting an already-attested <code>beliefHash</code> — a signature can be replayed indefinitely, independent of the sender-binding issue</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general, signatures agents) · Phase 2 (invariant agent as a distinct second finding; implicit in all 12 agents&#39; exploit chains)<br><strong>Location:</strong> <code>attestBelief</code> (121-122)</p>
+<p><code>attestedBeliefs[beliefHash] = true</code> and the subsequent event emission execute unconditionally — there is no <code>require(!attestedBeliefs[beliefHash])</code> check anywhere. This is a distinct exploitation window from H-2: even ignoring front-running, the same valid signature can be resubmitted by the same or different callers an unlimited number of times, at any point in the future, each producing a fresh <code>BeliefAttested</code> event.</p>
+<p><strong>Recommendation:</strong> Add <code>require(!attestedBeliefs[beliefHash], &quot;Already attested&quot;);</code> before the state write. This closes the &quot;replay after success&quot; window; fixing H-2 separately closes the &quot;front-run/steal before success&quot; window — both fixes are needed, neither alone fully closes the exploit surface.</p>
+<hr>
+<h2 id="low-severity">Low Severity</h2>
+<h3 id="l-1-dead-zkstark-code-path-has-several-latent-design-gaps-releva">[L-1] Dead ZK/STARK code path has several latent design gaps, relevant only to a hypothetical future <code>zkEnabled=true</code> deployment</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general, precision-math, access-control agents, 3/4 as leads) · Phase 2 (4 agents: CEI-ordering, unchecked public-input count, missing domain separation)<br><strong>Location:</strong> <code>verifyZKProof</code> (149-167), constructor (56-73)</p>
+<p>Not exploitable on the live contract (<code>zkEnabled=false</code>, <code>verifierAddress=0x0</code>), but flagged for completeness since the source is presumably reused across deployments:</p>
+<ul>
+<li>The origin signature never binds <code>proofData</code>, so the two authorization layers (signature and ZK proof) are cryptographically independent rather than linked.</li>
+<li>The external verifier call happens before the state write (<code>attestedBeliefs[beliefHash] = true</code>), a checks-effects-interactions ordering violation — no concrete exploit was constructed, since the state affected is a simple, already-replay-exposed boolean (see M-2), but it&#39;s worth fixing as defense-in-depth.</li>
+<li>The constructor&#39;s <code>extcodesize(_verifierAddress) &gt; 0</code> check is shallow — it would accept any contract with any bytecode (including one that always returns <code>true</code>), rather than validating it actually implements <code>IStarkVerifier</code> correctly via the interface&#39;s own <code>getProofSystemId()</code>/<code>getPublicInputsCount()</code> sanity functions, which exist but are unused.</li>
+<li>The ZK public inputs (<code>[beliefHash, proverAddress, 0, 0]</code>) lack the same chain-ID/contract-address domain separation the signature path deliberately added — <code>epoch</code>/<code>moduleID</code> are hardcoded to 0 rather than genuine per-deployment values.</li>
+</ul>
+<p><strong>Recommendation:</strong> If a full-ZK deployment is ever made: bind <code>proofData</code> into the signed message; move the state write before the external call (or add a reentrancy guard); add real sanity-check calls to the verifier at construction time; bind <code>block.chainid</code>/<code>address(this)</code> into the ZK public inputs.</p>
+<hr>
+<h3 id="l-2-the-audit-c4-fix-code-comment-implies-complete-replay-protec">[L-2] The &quot;AUDIT-C4 FIX&quot; code comment implies complete replay protection but only covers the chain/contract axis, not the caller axis</h3>
+<p><strong>Origin:</strong> <code>[phase2 only]</code> — 1 agent (asymmetry), narrative/documentation observation<br><strong>Location:</strong> <code>attestBelief</code>, comment at lines 104-106</p>
+<p>The inline comment reads as a full replay-protection guarantee (&quot;A signature valid on one chain is NOT valid on another chain or against a different contract deployment&quot;) but says nothing about the caller-binding gap that is H-2&#39;s root cause — plausibly why this specific gap survived a prior audit pass that clearly did examine replay protection in general.</p>
+<p><strong>Recommendation:</strong> Update the comment to accurately scope what it protects against, so future reviewers don&#39;t assume replay protection is comprehensive.</p>
+<hr>
+<h3 id="l-3-constructors-verifier-validation-is-a-shallow-bytecode-prese">[L-3] Constructor&#39;s verifier validation is a shallow bytecode-presence check, not a correctness check (subsumed detail of L-1, listed separately per phase-1 access-control agent&#39;s framing)</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control agent)<br><strong>Location:</strong> constructor (59-68)</p>
+<p>Already covered in L-1&#39;s third bullet; listed separately here because the phase-1 access-control agent treated it as its own numbered finding with a distinct recommendation (adding <code>getProofSystemId()</code>/<code>getPublicInputsCount()</code> sanity calls at construction time rather than only at first use).</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong>Cross-chain / cross-deployment replay protection: confirmed effective.</strong> <code>block.chainid</code> and <code>address(this)</code> are both included in the signed hash preimage, correctly blocking replay across chains and across multiple same-chain deployments sharing the same <code>origin</code>. No action needed. <code>[both phases]</code></li>
+<li><strong>Signature malleability and <code>abi.encodePacked</code> hash construction: confirmed safe.</strong> OpenZeppelin v5.1.0&#39;s <code>ECDSA.recover</code> correctly rejects malleable signatures via revert; the packed encoding of fixed-width types (<code>bytes32</code>, <code>uint256</code>, <code>address</code>) has no collision ambiguity. No action needed. <code>[both phases]</code></li>
+<li><strong><code>attestBelief</code> being fully permissionless is correct, intentional design</strong> — authorization comes entirely from the origin signature, not from <code>msg.sender</code> identity, which is the standard meta-transaction/relayer-friendly pattern. Not a missing-modifier bug. <code>[both phases]</code></li>
+</ul>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<ul>
+<li>Both phases audited the same two in-scope files independently; Phase 2 was run with no visibility into Phase 1&#39;s findings to avoid anchoring.</li>
+<li>This is the smallest and most tightly-scoped of the three Vaultfire contracts audited in this batch (176 lines total, with the live deployment&#39;s active code path reducible to roughly 30 lines of real logic given <code>zkEnabled=false</code>), which explains the unusually high (12/12) unanimous phase-2 agent convergence on the primary finding — there was simply one dominant, unambiguous defect for every reasoning lens to independently discover.</li>
+<li>Out of scope: <code>IStarkVerifier</code>&#39;s concrete implementation (the external STARK verifier contract) was not available for review; M-1 and parts of L-1 are explicitly conditioned on assumptions about that out-of-scope code.</li>
+<li>The headline finding (H-1) is not a traditional code-level vulnerability but a direct, source-verified contradiction between the contract&#39;s documented/marketed security model and its actual implementation — reported because it directly answers the client&#39;s own framing of this audit request (&quot;post-quantum Dilithium signature attestor&quot;).</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicwzyqlw27ai4pctgjmtcvd4xnkin2ja6jzylwka47fkp5y7eb4hi.ipfs.community.bgipfs.com/"><code>https://bafkreicwzyqlw27ai4pctgjmtcvd4xnkin2ja6jzylwka47fkp5y7eb4hi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/346">#346</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

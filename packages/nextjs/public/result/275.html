@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — Final Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #275">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — Final Report</h1>
+    <p class="job-sub">Job #275 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/275"><b>Job page</b> #275</a>
+      <a class="chip" href="https://bafkreifga46lpqlcduwhhwnn7m7fwvlgrsrfhiq36hqesrcx56d4odqv6q.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">4</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#leftclaw-job-275">Leftclaw Job #275</a></li>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#detailed-findings">Detailed Findings</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#architecture-notes">Architecture Notes</a></li>
+      <li><a href="#recommendations-priority">Recommendations Priority</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — Final Report</h1>
+<h2 id="leftclaw-job-275">Leftclaw Job #275</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Contract</td>
+<td><code>0xcC3E1C18b58eE8Ec6550C60b75d820E4b45e2D2F</code></td>
+</tr>
+<tr>
+<td>Chain</td>
+<td>Base (Chain ID 8453)</td>
+</tr>
+<tr>
+<td>Client</td>
+<td><code>0x61068abfb8349f90bd0bab12347ec10e0c55c20f</code></td>
+</tr>
+<tr>
+<td>Audit date</td>
+<td>2026-06-20</td>
+</tr>
+<tr>
+<td>Auditor</td>
+<td>Leftclaw Automated Audit System</td>
+</tr>
+<tr>
+<td>Source availability</td>
+<td>None (bytecode-only analysis)</td>
+</tr>
+<tr>
+<td>Methodology</td>
+<td>Ethskills EVM Audit + Pashov 12-dimension security analysis</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>The contract at <code>0xcC3E1C18b58eE8Ec6550C60b75d820E4b45e2D2F</code> is a <strong>curated P2P token marketplace</strong> on Base. Sellers list custom ERC20-compatible &quot;tokenA&quot; contracts for sale; buyers pay USDC. All sale parameters (price, amount, deadline) are defined by the tokenA contract itself at listing time. The marketplace acts as a coordinator, enforcing access controls via an external registry contract.</p>
+<p>The audit was conducted entirely through bytecode disassembly, on-chain state queries, and event log analysis — no verified source code was available on Sourcify or Etherscan.</p>
+<p><strong>The most critical finding is a permanent fund-lock vulnerability:</strong> all close paths (cancel, expire, and final-fill) depend on a mandatory external callback (<code>onSaleClosed</code>) to the tokenA contract. If this callback reverts for any reason — including bugs in tokenA, intentional freezing by the tokenA developer, or self-destructed tokenA contracts — the seller cannot recover their tokens. This is a systemic architectural risk.</p>
+<p><strong>Overall risk rating: HIGH</strong> — the fund-lock vulnerability must be addressed before production use at scale.</p>
+<hr>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+<th>First Found</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="#high-1">HIGH-1</a></td>
+<td><strong>High</strong></td>
+<td>Permanent fund lock via mandatory <code>onSaleClosed</code> callback</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#medium-1">MEDIUM-1</a></td>
+<td><span class="pill medium">Medium</span></td>
+<td>Registry centralization — admin can halt marketplace</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#medium-2">MEDIUM-2</a></td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>closeExpired()</code> permissionless — no access control</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#medium-3">MEDIUM-3</a></td>
+<td><span class="pill medium">Medium</span></td>
+<td>Registry address immutable with no migration path</td>
+<td>Pass 2</td>
+</tr>
+<tr>
+<td><a href="#medium-4">MEDIUM-4</a></td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>closeExpired()</code> enables economic manipulation via callback timing</td>
+<td>Pass 2</td>
+</tr>
+<tr>
+<td><a href="#medium-5">MEDIUM-5</a></td>
+<td><span class="pill medium">Medium</span></td>
+<td>Seller asymmetrically depends on tokenA callback for fund recovery</td>
+<td>Pass 2</td>
+</tr>
+<tr>
+<td><a href="#low-1">LOW-1</a></td>
+<td><span class="pill low">Low</span></td>
+<td>Protocol fee rounds to zero for dust purchases</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#low-2">LOW-2</a></td>
+<td><span class="pill low">Low</span></td>
+<td>tokenA controls all sale parameters; malicious tokenA exploits possible</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#low-3">LOW-3</a></td>
+<td><span class="pill low">Low</span></td>
+<td>No visible fee withdrawal function; USDC fees may be unrecoverable</td>
+<td>Pass 2</td>
+</tr>
+<tr>
+<td><a href="#low-4">LOW-4</a></td>
+<td><span class="pill low">Low</span></td>
+<td>Zero <code>pricePerUnit</code> allows free token extraction</td>
+<td>Pass 2</td>
+</tr>
+<tr>
+<td><a href="#lead-1">LEAD-1</a></td>
+<td>Lead</td>
+<td>Fee-on-transfer tokenA creates accounting mismatch</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#info-1">INFO-1</a></td>
+<td><span class="pill info">Info</span></td>
+<td>PUSH0 (EIP-3855) used — requires Shanghai EVM (Base: OK)</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#info-2">INFO-2</a></td>
+<td><span class="pill info">Info</span></td>
+<td>Reentrancy guard correctly implemented</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#info-3">INFO-3</a></td>
+<td><span class="pill info">Info</span></td>
+<td>Safe ERC20 wrapper handles missing return values</td>
+<td>Pass 1</td>
+</tr>
+<tr>
+<td><a href="#info-4">INFO-4</a></td>
+<td><span class="pill info">Info</span></td>
+<td>CEI pattern correctly followed in <code>buy()</code></td>
+<td>Pass 1</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="detailed-findings">Detailed Findings</h2>
+<h3 id="high-1">HIGH-1</h3>
+<p><strong>Permanent fund lock if <code>onSaleClosed</code> callback reverts</strong></p>
+<p><strong>Contract:</strong> <code>0xcC3E1C18b58eE8Ec6550C60b75d820E4b45e2D2F</code><br><strong>Location:</strong> Close helper at bytecode offset <code>0x12d5</code>; external CALL at <code>0x132b</code>; revert-if-failed at <code>0x132c–0x132e</code></p>
+<p><strong>Description:</strong></p>
+<p>The close helper at <code>0x12d5</code> is the single code path called by all three close operations:</p>
+<ul>
+<li><code>cancel()</code> — seller cancels active sale</li>
+<li><code>closeExpired()</code> — anyone closes an expired sale</li>
+<li><code>buy()</code> — final-fill completion of fully-purchased sale</li>
+</ul>
+<p>In each case, the close helper makes an external CALL to <code>tokenA.onSaleClosed(...)</code> (selector <code>0x1568e7e9</code>). After the call, it checks <code>RETURNDATASIZE / ISZERO</code> and reverts with error <code>0x3cfa1313</code> if the call failed or returned empty data.</p>
+<p>If the tokenA <code>onSaleClosed</code> function reverts (for any reason — bug, intentional freeze, tokenA self-destructed), the entire transaction reverts. The marketplace offers <strong>no alternative close path</strong>.</p>
+<p>Consequences:</p>
+<ul>
+<li>Seller cannot call <code>cancel()</code>. Their deposited tokenA tokens remain locked in the marketplace contract.</li>
+<li><code>closeExpired()</code> also reverts. The sale cannot be expired externally.</li>
+<li>The last buyer attempting to fully exhaust the lot cannot complete their purchase. Partial fills succeed; the final fill always fails.</li>
+<li>No on-chain recovery mechanism exists.</li>
+</ul>
+<p><strong>Attack scenario (malicious tokenA developer):</strong></p>
+<ol>
+<li>Deploy tokenA with a time-delayed <code>onSaleClosed</code> revert (e.g., reverts after block X).</li>
+<li>Get tokenA approved by the registry.</li>
+<li>Create a sale. The marketplace locks seller tokens.</li>
+<li>After block X, trigger the revert condition in tokenA.</li>
+<li>All close attempts for this sale now permanently fail. Seller tokens locked.</li>
+</ol>
+<p><strong>Severity:</strong> HIGH<br><strong>Likelihood:</strong> Medium (requires registry to approve a buggy or malicious tokenA)<br><strong>Impact:</strong> Critical (permanent, irrecoverable loss of seller funds)</p>
+<p><strong>Fix:</strong></p>
+<p>Use a try/catch or low-level call pattern for the callback. Do not revert the close operation if the callback fails. Instead, emit an event so the tokenA team can investigate:</p>
+<pre><code class="language-solidity">// In close helper:
+bool callbackSuccess;
+(callbackSuccess,) = address(tokenA).call(
+    abi.encodeWithSelector(0x1568e7e9, saleId)
+);
+emit SaleClosed(saleId, tokenA, callbackSuccess);
+// Do NOT revert if callbackSuccess == false
+</code></pre>
+<p>Alternatively, add a protocol admin emergency-close that skips the callback.</p>
+<hr>
+<h3 id="medium-1">MEDIUM-1</h3>
+<p><strong>Registry centralization — admin can halt marketplace</strong></p>
+<p><strong>Location:</strong> <code>sell()</code> at offset <code>0x0276</code>; registry call to <code>0x652b9b41(address)</code> on <code>0xb2458426...</code></p>
+<p><strong>Description:</strong></p>
+<p>All new sale listings are gated through the registry contract at <code>0xb2458426...</code>. The registry admin can:</p>
+<ul>
+<li>Remove any tokenA from the approved set, blocking new listings for that token.</li>
+<li>Pause or brick the registry entirely, blocking all new sales.</li>
+</ul>
+<p>Existing sales are unaffected (registry is not re-checked during <code>buy()</code> or <code>cancel()</code>), but the marketplace&#39;s ability to accept new listings depends entirely on the registry admin key remaining honest and uncompromised.</p>
+<p><strong>Severity:</strong> Medium<br><strong>Fix:</strong> Document registry admin key management. Use a timelock (≥48h) for de-listing decisions. Consider a DAO or multisig governance structure.</p>
+<hr>
+<h3 id="medium-2">MEDIUM-2</h3>
+<p><strong><code>closeExpired()</code> permissionless — anyone can trigger close of expired sales</strong></p>
+<p><strong>Location:</strong> <code>closeExpired()</code> at offset <code>0x0378</code></p>
+<p><strong>Description:</strong></p>
+<p><code>closeExpired()</code> verifies only that <code>block.timestamp &gt;= sale.deadline</code> and <code>!sale.isClosed</code>. No <code>msg.sender</code> check is present. Any EOA or contract can close any expired sale.</p>
+<p>Consequences:</p>
+<ul>
+<li>Sellers lose control of <em>when</em> closure happens. A seller who expires a sale intentionally and wants to quickly re-list cannot prevent bot-triggered closure at an adversarial time.</li>
+<li>The <code>onSaleClosed</code> callback fires from the marketplace, triggered by an arbitrary external actor. tokenA callbacks that behave differently based on closure timing (e.g., redistributing accrued value at closure) can be exploited.</li>
+</ul>
+<p><strong>Severity:</strong> Medium<br><strong>Fix:</strong> Restrict <code>closeExpired()</code> to the seller, or add a documented keeper incentive system with explicit permissionless intent.</p>
+<hr>
+<h3 id="medium-3">MEDIUM-3</h3>
+<p><strong>Registry address immutable with no migration path</strong></p>
+<p><strong>Location:</strong> <code>factory()</code> / <code>registry()</code> view at offset <code>0x017c</code>; returns immutable <code>0xb2458426...</code></p>
+<p><strong>Description:</strong></p>
+<p>The registry address is stored as a bytecode immutable. No setter function appears in the dispatcher. If the registry is compromised, exploited, or needs upgrading, the marketplace has no mechanism to switch to a new registry. The entire marketplace must be redeployed, stranding all active sales on the old contract.</p>
+<p>This is a double-edged property: the admin cannot maliciously change the registry, but there is also no legitimate upgrade path.</p>
+<p><strong>Severity:</strong> Medium<br><strong>Fix:</strong> Add a <code>setRegistry(address)</code> function with a 2-step confirmation and timelock, or document that the immutability is intentional and explain how registry upgrades are handled operationally.</p>
+<hr>
+<h3 id="medium-4">MEDIUM-4</h3>
+<p><strong><code>closeExpired()</code> timing enables economic manipulation via callback</strong></p>
+<p><strong>Location:</strong> <code>closeExpired()</code> at <code>0x0378</code>; <code>onSaleClosed</code> callback CALL at <code>0x132b</code></p>
+<p><strong>Description:</strong></p>
+<p>A combination of MEDIUM-2 (permissionless closeExpired) and the fact that the <code>onSaleClosed</code> callback can perform arbitrary economic logic creates a timing manipulation surface.</p>
+<p>If a tokenA&#39;s <code>onSaleClosed</code> callback performs price-sensitive actions (e.g., redistribute USDC proceeds to tokenA holders, trigger a liquidity event, update an on-chain price oracle), an MEV bot can:</p>
+<ol>
+<li>Monitor for sale expiration.</li>
+<li>Call <code>closeExpired()</code> in a block where the callback&#39;s economic outcome is most profitable (e.g., when token price is high, when target pool is in a specific state).</li>
+</ol>
+<p>The marketplace cannot prevent tokenA callbacks from performing complex logic. The registry is the only defence, but cannot detect timing-sensitive callback behavior at registration time.</p>
+<p><strong>Severity:</strong> Medium (conditional on tokenA callback design)<br><strong>Fix:</strong> Document standards for <code>onSaleClosed</code> callback implementations. Restrict <code>closeExpired()</code> to seller or a permissioned keeper. Discourage time-sensitive or price-oracle-interacting logic in callbacks.</p>
+<hr>
+<h3 id="medium-5">MEDIUM-5</h3>
+<p><strong>Seller asymmetrically depends on tokenA callback for fund recovery</strong></p>
+<p><strong>Description:</strong></p>
+<p>From a first-principles perspective, a seller who deposits tokenA tokens into the marketplace should have unilateral ability to retrieve them via <code>cancel()</code>. However, the <code>cancel()</code> path mandates the <code>onSaleClosed</code> callback, creating an asymmetric dependency: the seller&#39;s access to their own funds requires a third party&#39;s cooperation (the tokenA contract).</p>
+<p>This violates the principle of least surprise. Sellers may not realize that a tokenA contract bug (outside their control) can permanently trap their deposit.</p>
+<p><strong>Severity:</strong> Medium (architectural design risk)<br><strong>Fix:</strong> Two-phase close: unconditionally update sale state and release tokens to seller in phase 1; fire the callback in phase 2 (non-reverts, emit event on failure). The seller&#39;s access to their tokens should not depend on the callback&#39;s success.</p>
+<hr>
+<h3 id="low-1">LOW-1</h3>
+<p><strong>Protocol fee rounds to zero for dust purchases</strong></p>
+<p><strong>Location:</strong> Fee calculation in <code>buy()</code> at approximately offset <code>0x0d25–0x0d35</code></p>
+<p><strong>Description:</strong></p>
+<p>Fee = <code>amountUSDC * 10 / 10000</code> (integer division). For <code>amountUSDC &lt; 1000</code> (&lt; $0.001 in USDC 6-decimal representation), fee = 0. Buyers can split large purchases into sub-$0.001 transactions to pay zero fees.</p>
+<p><strong>Severity:</strong> Low<br><strong>Fix:</strong> Use ceiling division: <code>fee = (amountUSDC * 10 + 9999) / 10000</code>. Or enforce <code>minPurchaseAmount &gt;= 10000</code> USDC units.</p>
+<hr>
+<h3 id="low-2">LOW-2</h3>
+<p><strong>tokenA controls all sale parameters; malicious or buggy tokenA exploits possible</strong></p>
+<p><strong>Location:</strong> <code>sell()</code> at offset <code>0x0276</code>; staticcalls to <code>0x7df1f1b9</code>, <code>0xc276f44d</code>, <code>0xc9aabdaf</code>, <code>0x796b23bb</code> on tokenA</p>
+<p><strong>Description:</strong></p>
+<p>The marketplace reads all sale parameters (price, amount, deadline, min-fill) from the tokenA contract at listing time. A tokenA that passes registry validation but returns:</p>
+<ul>
+<li><code>deadline = 0</code> → sale immediately expired, closeable by anyone</li>
+<li><code>pricePerUnit = 0</code> → tokens sold for free (see also LOW-4)</li>
+<li><code>minAmountPerBuy = amountA</code> → only a single all-or-nothing purchase possible</li>
+</ul>
+<p>could trap the seller&#39;s tokens or allow exploitation. Registry is the only guard, but cannot detect adversarially-chosen parameter values at registration time.</p>
+<p><strong>Severity:</strong> Low<br><strong>Fix:</strong> Add on-chain validation in <code>sell()</code>: <code>require(pricePerUnit &gt; 0)</code>, <code>require(deadline &gt; block.timestamp)</code>, <code>require(amountA &gt; 0)</code>, <code>require(minAmountPerBuy &lt;= amountA)</code>.</p>
+<hr>
+<h3 id="low-3">LOW-3</h3>
+<p><strong>No visible fee withdrawal function; USDC fees may be unrecoverable</strong></p>
+<p><strong>Location:</strong> USDC balance management in <code>buy()</code></p>
+<p><strong>Description:</strong></p>
+<p>In <code>buy()</code>, the buyer pays <code>amountUSDC + fee</code>. The seller receives <code>amountUSDC</code>. The contract retains <code>fee</code> as USDC. No function with a recognizable fee-withdrawal selector appears in the contract&#39;s dispatcher. If no withdrawal mechanism exists, protocol fees accumulate in the contract permanently with no way to extract them.</p>
+<p><strong>Severity:</strong> Low (protocol revenue loss, not user fund loss)<br><strong>Fix:</strong> Verify a fee withdrawal function exists. If not, add <code>withdrawFees(address recipient)</code> with appropriate access control.</p>
+<hr>
+<h3 id="low-4">LOW-4</h3>
+<p><strong>Zero <code>pricePerUnit</code> allows free token extraction</strong></p>
+<p><strong>Location:</strong> <code>sell()</code> parameter reading from tokenA getters; <code>buy()</code> USDC calculation</p>
+<p><strong>Description:</strong></p>
+<p>If a tokenA approved by the registry returns <code>pricePerUnit = 0</code> from its getter, any buyer can purchase the entire sale lot for 0 USDC. The seller receives nothing. No on-chain check prevents <code>pricePerUnit = 0</code> in <code>sell()</code>.</p>
+<p><strong>Severity:</strong> Low (requires registry to approve malicious tokenA)<br><strong>Fix:</strong> <code>require(pricePerUnit &gt; 0)</code> in <code>sell()</code>.</p>
+<hr>
+<h3 id="lead-1">LEAD-1</h3>
+<p><strong>Fee-on-transfer tokenA creates accounting mismatch</strong></p>
+<p><strong>Description:</strong></p>
+<p>During <code>sell()</code>, the marketplace calls <code>transferFrom(seller, marketplace, amountA)</code> and records <code>amountA</code> in the struct. If tokenA has a transfer fee, the marketplace receives <code>amountA * (1 - fee)</code> but records <code>amountA</code>. Subsequent buyers could face a shortfall on the last fill.</p>
+<p>This is unverified without source code. The <code>0x2116da5b</code> call in <code>buy()</code> performs before/after balance checks for the buyer&#39;s receipt of tokenA. It&#39;s unclear whether a similar check exists in <code>sell()</code>.</p>
+<p><strong>Recommendation:</strong> Perform a before/after balance check in <code>sell()</code> and store the actually-received amount, not the getter-stated amount, in <code>amountA</code>.</p>
+<hr>
+<h3 id="info-1">INFO-1</h3>
+<p><strong>PUSH0 opcode used — requires Shanghai EVM</strong></p>
+<p>EIP-3855 PUSH0 is used throughout the bytecode. Base mainnet supports Shanghai. No issue for the target network.</p>
+<hr>
+<h3 id="info-2">INFO-2</h3>
+<p><strong>Reentrancy guard correctly implemented</strong></p>
+<p>Global mutex at storage slot 0. Set to 2 (locked) on entry to all state-modifying functions; reset to 1 (unlocked) on exit. Pattern correctly implemented. No reentrancy vulnerability found.</p>
+<hr>
+<h3 id="info-3">INFO-3</h3>
+<p><strong>Safe ERC20 wrapper handles missing return values</strong></p>
+<p><code>_safeTransfer</code> at offset <code>0x1683</code> handles ERC20 tokens that return no value from <code>transfer()</code>. Correctly handles non-standard tokens. No issue.</p>
+<hr>
+<h3 id="info-4">INFO-4</h3>
+<p><strong>CEI pattern correctly followed in <code>buy()</code></strong></p>
+<p>State updates (<code>amountARemaining</code>, <code>isClosed</code>) precede all external calls. Combined with the reentrancy guard, defence-in-depth against reentrancy is present. No reentrancy vulnerability found.</p>
+<hr>
+<h2 id="architecture-notes">Architecture Notes</h2>
+<p><strong>Registry-gated curation model:</strong> Only tokenA contracts approved by <code>0xb2458426...</code> can be listed. This is the primary safety mechanism for the entire marketplace. Its integrity is critical.</p>
+<p><strong>Callback-dependent architecture:</strong> The mandatory <code>onSaleClosed</code> callback is the most significant architectural risk. The pattern of requiring external contract cooperation for internal state transitions is unusual and fragile.</p>
+<p><strong>Hardcoded USDC payment token:</strong> The payment token is immutable. No mechanism for additional payment tokens or token swaps exists. This limits flexibility but reduces attack surface.</p>
+<p><strong>No upgradeability:</strong> No proxy pattern observed. The contract is not upgradeable. Bug fixes require redeployment.</p>
+<hr>
+<h2 id="recommendations-priority">Recommendations Priority</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Critical</strong></td>
+<td>Make <code>onSaleClosed</code> callback non-reverting. Use low-level call + event on failure.</td>
+</tr>
+<tr>
+<td><strong>High</strong></td>
+<td>Add emergency-close function (admin, skips callback) for stuck sales.</td>
+</tr>
+<tr>
+<td><strong>High</strong></td>
+<td>Add on-chain param validation in <code>sell()</code>: pricePerUnit &gt; 0, deadline &gt; now, amountA &gt; 0.</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>Add access control to <code>closeExpired()</code> or publish explicit permissionless intent with risk disclosure.</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>Document registry admin key management and governance.</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>Add before/after balance check in <code>sell()</code> for fee-on-transfer handling.</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>Use ceiling division for fee calculation.</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>Verify and publish fee withdrawal function selector.</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>Document tokenA contract standards (callback implementation requirements).</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="conclusion">Conclusion</h2>
+<p>The marketplace demonstrates solid foundational security: the reentrancy guard is correctly implemented, CEI pattern is followed, Safe ERC20 is used, and arithmetic is checked throughout. The access control on <code>cancel()</code> correctly restricts to the seller.</p>
+<p>However, the architectural decision to make all close paths depend on a mandatory external callback (<code>onSaleClosed</code>) creates a systemic fund-lock risk that is not mitigated at the protocol level. The registry is the only guard, and it cannot prevent post-registration tokenA behaviour changes.</p>
+<p>The highest-priority recommendation — making the callback non-reverting — would eliminate the HIGH finding and materially reduce the MEDIUM-2, MEDIUM-4, and MEDIUM-5 risks simultaneously.</p>
+<hr>
+<p><em>Report generated by Leftclaw Automated Audit System | Job #275 | 2026-06-20</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifga46lpqlcduwhhwnn7m7fwvlgrsrfhiq36hqesrcx56d4odqv6q.ipfs.community.bgipfs.com/"><code>https://bafkreifga46lpqlcduwhhwnn7m7fwvlgrsrfhiq36hqesrcx56d4odqv6q.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/275">#275</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

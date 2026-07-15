@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire StreetCred — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #365">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire StreetCred</h1>
+    <p class="job-sub">Job #365 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/365"><b>Job page</b> #365</a>
+      <a class="chip" href="https://bafkreiadzl5f2js6jjkrxnxbum6u2zt75kfvddewpfl6qmrrj74lhxmzzy.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+    </div>
+  </header>
+
+  
+
+  <main class="report">
+<h1>Security Audit Report — Vaultfire StreetCred</h1>
+<p><strong>Target:</strong> <code>VaultfireStreetCred</code>, <code>0x5CfAB4B12718549e156D3642f9C63476aC4c2f99</code> on Base (chain 8453)<br><strong>Source:</strong> Verified on Sourcify (exact match), single file, 448 lines<br><strong>Client-requested focus:</strong> badge-issuance authorization, badge-revocation, any minting privileges<br><strong>Methodology:</strong> Two-phase audit — Phase 1 breadth (5 ethskills checklists: general, precision-math, erc721, dos, access-control) → Phase 2 depth (12 pashov attack agents, run blind to Phase 1) → hybrid reconciliation</p>
+<p><strong>Reconciliation summary:</strong> Overlap: 4 finding-areas corroborated in both phases · Phase-1-only: 1 · Phase-2-only: 1 · Leads re-examined and kept/promoted: 2 · Leads demoted/ruled out: 1 (base64 encoder, tested and disproven)</p>
+<p><strong>Completeness:</strong> 8 unique (Contract, function/area) items surfaced across both phases; 8 covered in the unified findings below (2 of the original 9 phase-1 Info items — &quot;immutable registries as SPOF&quot; and part of the ordering-assumption note — folded into the merged findings they support, per the wide-description merge rule; nothing dropped).</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-unbounded-external-state-dependency-causes-permanent-per-agent">[1] Unbounded external state dependency causes permanent per-agent denial-of-service</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-dos (DOS-1, DOS-2), evm-audit-general (I-2), evm-audit-erc721 (L-3) · phase2: pashov agents 4,5,6,7,9,10,11,12 (finding + leads), agent 7 promoted with a Foundry-measured gas proof<br><strong>Location</strong>: <code>computeScore()</code> L156-191, and every caller: <code>mintFor()</code> L209-225, <code>refresh()</code> L230-238, <code>tokenURI()</code> L258-294, <code>scoreOf()</code> L194-197, <code>tierOf()</code> L200-203</p>
+<p><strong>Description</strong>: Two distinct, coexisting mechanisms both cause the same failure mode — <code>computeScore</code> becoming permanently unusable for a given agent, with no recovery path since <code>identityRegistry</code>/<code>partnershipBonds</code> are <code>immutable</code> and there is no owner/admin/pause anywhere in the contract:</p>
+<ul>
+<li><strong>Mechanism A — unguarded reverts.</strong> <code>identityRegistry.getAgent()</code> and the three <code>partnershipBonds</code> calls have no <code>try/catch</code>. If either external contract ever reverts for some/all inputs (paused, upgraded with an access gate, self-destructs), <code>computeScore()</code> reverts unconditionally.</li>
+<li><strong>Mechanism B — unbounded array copy.</strong> <code>partnershipBonds.getBondsByParticipant(agent)</code> (L164) copies an agent&#39;s <em>entire</em> bond-ID array into memory even though only <code>ids[0]</code> is ever read (L167-169). Since <code>IPartnershipBondsV2</code> exposes no pagination/cap and bond count is monotonically non-decreasing, gas cost scales linearly and unboundedly with an agent&#39;s historical bond count.</li>
+</ul>
+<p><strong>Proof of Concept</strong>:</p>
+<ul>
+<li>Mechanism A: <code>identityRegistry</code> is later paused or upgraded to add an access gate on <code>getAgent</code>. Any call into <code>computeScore(agent)</code> for the affected agent(s) now reverts; <code>tokenURI</code> for every existing token depending on that path breaks in every wallet/marketplace; no further mints/refreshes are possible; nothing in this contract can route around it.</li>
+<li>Mechanism B: a Foundry harness reproducing <code>computeScore</code>&#39;s exact logic against a mock registry measured: <code>bondCount=1</code> → 22,899 gas; <code>bondCount=1,000</code> → 938,720 gas; <code>bondCount=5,000</code> → 4,943,314 gas; <code>bondCount=20,000</code> → <strong>24,413,664 gas</strong> (already exceeds a typical 30M-gas block on its own); <code>bondCount=150,000</code> → 487,694,462 gas (impossible on any current EVM chain). An agent&#39;s own legitimate activity — the exact behavior this reputation system is designed to reward — is the one most likely to trigger its own permanent DoS; a third party can also grief a victim this way if bond creation against an unwilling target is possible on the <code>PartnershipBondsV2</code> side (unverified, out of scope).</li>
+</ul>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">  function computeScore(address agent) public view returns (...) {
+-     (, bool active, , uint256 registeredAt) = identityRegistry.getAgent(agent);
+-     registered = (registeredAt &gt; 0 &amp;&amp; active);
++     try identityRegistry.getAgent(agent) returns (string memory, bool active, string memory, uint256 registeredAt) {
++         registered = (registeredAt &gt; 0 &amp;&amp; active);
++     } catch {
++         registered = false; // degrade instead of reverting
++     }
+
+-     bondCount = partnershipBonds.getBondsByParticipantCount(agent);
+-     if (bondCount &gt; 0) {
+-         uint256[] memory ids = partnershipBonds.getBondsByParticipant(agent);
+-         if (ids.length &gt; 0) {
+-             IPartnershipBondsV2.Bond memory b = partnershipBonds.getBond(ids[0]);
++     // Request a bounded/O(1) accessor from IPartnershipBondsV2 instead of
++     // copying the full array to read a single element:
++     // function getBondsByParticipantAt(address participant, uint256 index) external view returns (uint256);
++     bondCount = partnershipBonds.getBondsByParticipantCount(agent);
++     if (bondCount &gt; 0) {
++         uint256 firstId = partnershipBonds.getBondsByParticipantAt(agent, 0);
++         IPartnershipBondsV2.Bond memory b = partnershipBonds.getBond(firstId);
+</code></pre>
+<p>At minimum, document the immutable-dependency trust assumption explicitly for integrators given the deliberate &quot;no admin&quot; design.</p>
+<hr>
+<h3 id="2-refresh-can-never-report-a-real-tier-transition-oldtier-always">[2] <code>refresh()</code> can never report a real tier transition — <code>oldTier</code> always equals <code>newTier</code></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-erc721 (L-1) · phase2: <strong>6 of 12 agents independently promoted this to a FINDING</strong> (agents 5, 8, 9, 12, plus 2 more as leads), confidence 95 — the single most-corroborated issue in the entire run<br><strong>Location</strong>: <code>refresh()</code> L230-238, <code>_liveTier()</code> L345-348</p>
+<p><strong>Description</strong>: <code>oldTier</code> (via <code>_liveTier(agent)</code> → <code>computeScore(agent)</code>, L233) and <code>newTier</code> (a second <code>computeScore(agent)</code> call, L234) both read the same immutable external <code>view</code>-typed state — compiled to <code>STATICCALL</code>, so no state mutation can occur between the two calls within one transaction. <code>oldTier</code> and <code>newTier</code> are therefore mathematically guaranteed identical on every single invocation, contradicting the function&#39;s own NatSpec (&quot;Emits StreetCredRefreshed even if the tier didn&#39;t change&quot; implies it can also fire when it did). Any indexer/dashboard trusting this event to detect a real tier transition (e.g. alerting on a Platinum→Bronze collapse) will never observe one — the bug silently conceals every real transition automatically, on every call, forever.</p>
+<p><strong>Proof of Concept</strong>: Mint a badge for <code>agent</code> at Bronze. The agent&#39;s bond later becomes Platinum-eligible (or, conversely, their registration lapses and tier collapses to None). Call <code>refresh(tokenId)</code> — the event fires with <code>oldTier == newTier</code> in both directions, every time, regardless of what actually changed since the last refresh.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">+ mapping(uint256 =&gt; uint8) private _lastTier;
+
+  function mintFor(address agent) external returns (uint256 tokenId) {
+      ...
+      (uint16 score, uint8 tier,,,,,) = computeScore(agent);
+      if (tier == TIER_NONE) revert NotEligible();
++     _lastTier[tokenId] = tier;
+      ...
+  }
+
+  function refresh(uint256 tokenId) external returns (uint8 newTier, uint16 newScore) {
+      if (!_exists[tokenId]) revert TokenDoesNotExist();
+      address agent = address(uint160(tokenId));
+-     uint8 oldTier = _liveTier(agent);
++     uint8 oldTier = _lastTier[tokenId];
+      (uint16 s, uint8 t,,,,,) = computeScore(agent);
++     _lastTier[tokenId] = t;
+      _refreshedAt[tokenId] = block.timestamp;
+      emit StreetCredRefreshed(agent, tokenId, oldTier, t, s);
+      return (t, s);
+  }
+</code></pre>
+<hr>
+<h3 id="3-bondcount-1-bonus-is-decoupled-from-bond-quality-lets-a-score-">[3] <code>bondCount &gt; 1</code> bonus is decoupled from bond quality — lets a score cross a tier boundary via a worthless second bond</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase2 only]</code> — pashov agents 3 and 10 independently promoted this to a FINDING (confidence 85), 5 further agents flagged it as a lead. Re-examined against source directly by this auditor and confirmed.<br><strong>Location</strong>: <code>computeScore()</code> L162-189</p>
+<p><strong>Description</strong>: The &quot;+5 Multiple Bonds&quot; bonus (L189, <code>if (bondCount &gt; 1) s += 5;</code>) is driven purely by <code>getBondsByParticipantCount</code>, entirely independent of <code>hasBond</code>/<code>bondActive</code>/tier-bonus, which are derived only from a single bond, <code>getBond(ids[0])</code> (L166-172). Verified against the contract&#39;s own documented tier bands (L360-366, <code>s&lt;=30</code>→Bronze, <code>s&lt;=55</code>→Silver, <code>s&lt;=75</code>→Gold, else Platinum): an agent at score 75 (registered 30 + hasBond 25 + bondActive 15 + bronze tier-bonus 5, from one 0.02 ETH active bond — sitting at the exact top of the Gold band) crosses into Platinum at score 80 by opening any second bond, regardless of that second bond&#39;s stake or active status, since nothing beyond <code>bondCount</code> ever inspects it. This is provable purely from <code>VaultfireStreetCred</code>&#39;s own logic — it only requires that a second bond can be opened with lower quality than the first, which nothing in the <code>IPartnershipBondsV2</code> interface forbids. The same decoupling can also, in the reverse case, grant the +5 bonus while <code>hasBond == false</code> (if <code>ids[0]</code> happens to be the zero-stake/inactive bond).</p>
+<p><strong>Proof of Concept</strong>: Agent has 1 active bond, <code>stakeAmount = 0.02 ether</code> (bronze band, <code>&gt;= 0.01 ether</code>). <code>score = 30 (registered) + 25 (hasBond) + 15 (bondActive) + 5 (bronze bonus) = 75</code> → <code>_scoreToTier(75) = TIER_GOLD</code> (L363, <code>s &lt;= 75</code>). Agent opens a second bond with 0 stake, inactive. <code>bondCount = partnershipBonds.getBondsByParticipantCount(agent)</code> now returns 2 → <code>s += 5</code> (L189) → <code>score = 80</code> → <code>_scoreToTier(80) = TIER_PLATINUM</code> (L365, <code>else</code>). No increase in real collateral occurred; the Gold→Platinum boundary was crossed purely by bond <em>count</em>.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">- if (bondCount &gt; 1) s += 5;
++ // Only credit the &quot;multiple bonds&quot; bonus for bonds that actually carry
++ // stake and are active — requires either iterating all bond IDs, or a
++ // dedicated aggregate accessor on IPartnershipBondsV2:
++ uint256 qualifyingBonds = _countActiveStakedBonds(agent); // sums stakeAmount&gt;0 &amp;&amp; active across all ids
++ if (qualifyingBonds &gt; 1) s += 5;
+</code></pre>
+<hr>
+<h3 id="4-no-revocation-path-hasbadgebalanceofowneroflocked-stay-permane">[4] No revocation path — <code>hasBadge</code>/<code>balanceOf</code>/<code>ownerOf</code>/<code>locked</code> stay permanently true after live eligibility drops to zero</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — evm-audit-access-control (AC-1), evm-audit-general (M-1), corroborated independently by both checklist agents. Re-examined against source directly by this auditor and confirmed. This is the item most directly responsive to the client&#39;s stated audit focus (&quot;badge-revocation&quot;).<br><strong>Location</strong>: <code>mintFor()</code> L209-225, <code>_exists</code> mapping L113 (set <code>true</code> once, never cleared anywhere in the contract), <code>hasBadge()</code> L241-243, <code>balanceOf()</code> L247-250, <code>ownerOf()</code> L252-255, <code>locked()</code> L298-301 — contrast with the genuinely &quot;live&quot; <code>computeScore()</code>/<code>tokenURI()</code></p>
+<p><strong>Description</strong>: <code>_exists[tokenId]</code> is set once in <code>mintFor()</code> and never cleared — there is no burn, revoke, or expiry function anywhere in the contract; <code>refresh()</code> explicitly documents &quot;Does NOT burn or transfer&quot; (L229). <code>tokenURI()</code>, <code>scoreOf()</code>, <code>tierOf()</code> correctly recompute live and will show <code>TIER_NONE</code>/&quot;Unverified&quot; once an agent&#39;s identity is deactivated or bond closes — but <code>hasBadge()</code>, <code>balanceOf()</code>, <code>ownerOf()</code>, <code>getApproved()</code> only check <code>_exists</code> and will keep affirming the badge exists forever. Any integrator using the standard ERC-721 idiom (<code>balanceOf(agent) &gt; 0</code>) as a &quot;currently reputable&quot; signal — the natural way to consume a reputation-badge contract — is misled indefinitely once an agent&#39;s real standing has lapsed, directly undermining the contract&#39;s own &quot;live reputation&quot; framing.</p>
+<p><strong>Proof of Concept</strong>: Agent A registers and opens a 0.5 ETH bond → <code>computeScore(A)</code> returns Platinum. Anyone calls <code>mintFor(A)</code> → <code>hasBadge(A) == true</code>, <code>balanceOf(A) == 1</code>. A&#39;s registration is later deactivated and bond closed → <code>computeScore(A)</code> now returns <code>TIER_NONE</code>/score 0, and <code>tokenURI</code> correctly shows &quot;Unverified&quot; — but <code>hasBadge(A)</code>/<code>balanceOf(A)</code>/<code>ownerOf(tokenId)</code> still report the badge as valid and held, permanently, since nothing clears <code>_exists</code>.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">+ event StreetCredRevoked(address indexed agent, uint256 indexed tokenId);
++ error StillEligible();
++
++ function revoke(uint256 tokenId) external {
++     if (!_exists[tokenId]) revert TokenDoesNotExist();
++     address agent = address(uint160(tokenId));
++     (, uint8 tier,,,,,) = computeScore(agent);
++     if (tier != TIER_NONE) revert StillEligible();
++     delete _exists[tokenId];
++     emit Transfer(agent, address(0), tokenId);
++     emit StreetCredRevoked(agent, tokenId);
++ }
+</code></pre>
+<p>If permanent record-keeping (a provenance record rather than a live-standing check) is the intended design instead, document prominently that <code>hasBadge</code>/<code>balanceOf</code>/<code>ownerOf</code> are NOT eligibility signals and integrators must call <code>tierOf()</code>/<code>computeScore()</code>.</p>
+<hr>
+<h3 id="5-permissionless-non-consensual-minting-freezes-a-momentarymanip">[5] Permissionless, non-consensual minting freezes a momentary/manipulable score into an immutable event, with no self-burn/opt-out</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-access-control (AC-2), evm-audit-erc721 (L-2) — no-burn/consent framing · phase2: pashov agent 11 (confidence 75) — immutable-event-divergence framing, a genuinely new mechanism not surfaced in phase 1<br><strong>Location</strong>: <code>mintFor()</code> L209-225 — no <code>burn()</code>/opt-out function exists anywhere</p>
+<p><strong>Description</strong>: Two related but distinct mechanisms both stem from <code>mintFor</code> being fully permissionless with no cooldown or consent gate:</p>
+<ul>
+<li><strong>Consent/sovereignty</strong>: any third party can permanently mint a soulbound badge onto an eligible agent&#39;s address without that agent&#39;s consent, and the agent can never remove it (no burn function; transfer/approve always revert).</li>
+<li><strong>Immutable-event divergence</strong>: <code>mintFor</code> requires only that <code>computeScore(agent)</code> is non-zero <em>at the calling block</em>; the resulting <code>tier</code>/<code>score</code> are baked into a permanent <code>StreetCredMinted</code> event. An attacker can call <code>mintFor(victim)</code> the instant a victim becomes minimally eligible (before any bond exists) to permanently record a low Bronze score for a victim who may reach Platinum minutes later — the live <code>tokenURI</code> self-corrects, but off-chain consumers treating the mint event as historical truth (leaderboards, snapshot-based eligibility checks) do not. <code>refresh()</code> offers no remedy since its own before/after diff is dead (Finding 2).</li>
+</ul>
+<p><strong>Proof of Concept</strong>: Agent A is merely <code>registered</code> in <code>IdentityRegistry</code> (unrelated to wanting a public badge, score 30, Bronze). A third party calls <code>mintFor(A)</code> the instant this becomes true; <code>StreetCredMinted(A, tokenId, tier=Bronze, score=30)</code> is now permanent on-chain history, even though A opens a 0.5 ETH bond five minutes later that would have scored Platinum. A has no recourse — no burn, no transfer.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">+ function burn(uint256 tokenId) external {
++     address agent = address(uint160(tokenId));
++     if (msg.sender != agent) revert Soulbound();
++     if (!_exists[tokenId]) revert TokenDoesNotExist();
++     delete _exists[tokenId];
++     emit Transfer(agent, address(0), tokenId);
++ }
+</code></pre>
+<p>Separately, consider whether <code>StreetCredMinted</code>/<code>StreetCredRefreshed</code> should carry <code>tier</code>/<code>score</code> at all, given they are point-in-time snapshots of a value the contract itself treats as continuously live elsewhere — or require a minimum time-since-registration before <code>mintFor</code> is callable, to reduce the value of adversarial mint-timing.</p>
+<hr>
+<h3 id="6-unverified-assumption-that-getbondsbyparticipant0-is-the-agent">[6] Unverified assumption that <code>getBondsByParticipant(...)[0]</code> is the agent&#39;s most recent bond</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: evm-audit-general (I-1), evm-audit-erc721 (I-3) · phase2: <strong>11 of 12 agents independently flagged this as a lead</strong> — the most repeated observation across the entire 12-agent panel — promoted per the multi-agent-convergence rule (2+ agents, consistently demoted not rejected → promote at confidence 75)<br><strong>Location</strong>: <code>computeScore()</code> L162-172</p>
+<p><strong>Description</strong>: The code comments &quot;Use first (most recent) bond, matching API behaviour&quot; (L168) and unconditionally trusts <code>ids[0]</code> from <code>partnershipBonds.getBondsByParticipant(agent)</code> for <code>hasBond</code>, <code>bondActive</code>, and the entire stake-tier bonus (up to 60 of 95 possible points). <code>IPartnershipBondsV2</code> is declared only as an interface in this repository — its implementation is not present anywhere on disk (confirmed via filesystem search by multiple agents) — so the ordering guarantee cannot be verified from source. Standard append-only array patterns (the conventional Solidity implementation for a &quot;bonds by participant&quot; list) return index 0 as the <em>oldest</em> entry, not the newest, which would make the code&#39;s own comment backwards. If so, an agent&#39;s score is permanently pinned to whatever their very first bond looked like — including a since-closed or trivial one — regardless of larger, more active bonds opened later.</p>
+<p><strong>Proof of Concept</strong>: Not fully provable from this repository alone (the counterpart contract is out of scope), which is why this is presented at Medium/promoted-lead confidence rather than High — but the near-unanimous 11/12 independent agent convergence, combined with the code&#39;s own comment asserting an ordering property it does not enforce, makes this a high-priority item for the client to verify against the deployed <code>PartnershipBondsV2</code> before relying on this score for any consequential decision.</p>
+<p><strong>Recommendation</strong>: Confirm the ordering guarantee of <code>getBondsByParticipant</code> against the actual <code>PartnershipBondsV2</code> deployment and document it explicitly here; if unguaranteed (or reverse of what&#39;s assumed), select deterministically — e.g. iterate and pick by highest <code>stakeAmount</code> or most recent <code>createdAt</code> — instead of trusting array position.</p>
+<hr>
+<h2 id="informational-ruled-out">Informational / Ruled Out</h2>
+<ul>
+<li><strong><code>onERC721Received</code> not checked on mint</strong> <code>[phase1: evm-audit-erc721]</code> — confirmed non-issue: since the token can never subsequently be transferred (<code>Soulbound</code>), the classic &quot;stuck NFT&quot; risk the hook prevents cannot occur here.</li>
+<li><strong><code>totalMinted</code> may mislead integrators into assuming enumerable/sequential token IDs</strong> <code>[phase1: evm-audit-erc721]</code> — token IDs are <code>uint256(uint160(agent))</code>, sparse and unrelated to <code>totalMinted</code>; contract correctly doesn&#39;t advertise <code>IERC721Enumerable</code>. Recommend a NatSpec clarification.</li>
+<li><strong>Base64 encoder (<code>_b64</code>) heap over-read</strong> <code>[phase2: ruled out]</code> — initially flagged as a plausible smell (missing the canonical implementation&#39;s scratch buffer); one pashov agent built a Foundry test harness against lengths 1, 2, 4, 5, 29, 31, 32 (including the zero-slack <code>length==32</code> boundary) and confirmed byte-for-byte correct output in every case against a reference implementation. Documented here as a tested false positive so it isn&#39;t re-flagged without re-verification in a future audit.</li>
+<li><strong><code>bondCount</code>/<code>ids.length</code> cross-call desync</strong> <code>[phase2 lead, both mentioned]</code> — <code>bondCount</code> (<code>getBondsByParticipantCount</code>) and <code>ids.length</code> (<code>getBondsByParticipant</code>) are independent external calls never cross-checked; folded into Finding 3&#39;s quality-decoupling analysis above since it&#39;s the same underlying root cause (the +5 bonus trusting an unverified count).</li>
+<li><strong>Stale collateral — <code>stakeAmount</code> possibly not zeroed on bond closure</strong> <code>[phase2 lead]</code> — if <code>Bond.stakeAmount</code> is a historical field not zeroed on withdrawal, an agent could retain a permanent high-tier score from a one-time, since-withdrawn stake. Unverifiable without <code>PartnershipBondsV2</code> source; flagged for the client&#39;s follow-up alongside Finding 6.</li>
+<li><strong>evm-audit-precision-math</strong>: no findings — all score/tier boundary math (<code>_bondTierBonusTier</code>, <code>_scoreToTier</code>) was traced exhaustively by two independent passes (one ethskills checklist agent, one pashov math-precision agent) and is gap-free/overlap-free; max achievable score is exactly 95, well within <code>uint16</code> headroom.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI auditor agents. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. On-chain monitoring and a follow-up manual review focused on verifying <code>IPartnershipBondsV2</code>&#39;s actual bond-ordering and stake-lifecycle semantics (Finding 6 and the related leads above) are strongly recommended before this contract&#39;s score is relied upon for high-stakes decisions.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiadzl5f2js6jjkrxnxbum6u2zt75kfvddewpfl6qmrrj74lhxmzzy.ipfs.community.bgipfs.com/"><code>https://bafkreiadzl5f2js6jjkrxnxbum6u2zt75kfvddewpfl6qmrrj74lhxmzzy.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/365">#365</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

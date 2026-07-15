@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire BeliefAttestationVerifier (dev/placeholder version) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #338">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire BeliefAttestationVerifier (dev/placeholder version)</h1>
+    <p class="job-sub">Job #338 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/338"><b>Job page</b> #338</a>
+      <a class="chip" href="https://bafkreidyygea5jypxthbvpt2j3gmgrrm2eferxmr6dmcnez736pt22y6pq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">4</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#methodology">Methodology</a></li>
+      <li><a href="#key-context-established-identically-by-every-one-of-the-17-total">Key context (established identically by every one of the 17 total sub-agents across both phases)</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — Vaultfire BeliefAttestationVerifier (dev/placeholder version)</h1>
+<p><strong>Target</strong>: <code>BeliefAttestationVerifier.sol</code> (contract <code>BeliefAttestationVerifier</code>) + <code>IStarkVerifier.sol</code> (interface)<br><strong>Address</strong>: <a href="https://basescan.org/address/0x32211773C8266774A704aeD471f8eF073f34bA79"><code>0x32211773C8266774A704aeD471f8eF073f34bA79</code></a> on Base (chain 8453)<br><strong>Source verification</strong>: Sourcify <code>match</code> (creation + runtime), compiled with solc <code>0.8.25+commit.b61c2a91</code>, <code>viaIR: true</code>, <code>evmVersion: cancun</code>, verified 2026-06-27<br><strong>Lines of code</strong>: 189 (main contract) + 26 (interface)<br><strong>Client brief</strong>: &quot;Earlier belief attestation verifier. Focus on: any missing timelock on parameter updates that the production version added, replay of proofs, and access control on admin functions.&quot;</p>
+<hr>
+<h2 id="methodology">Methodology</h2>
+<p>Two independent audit passes, run blind to each other, then reconciled:</p>
+<ul>
+<li><strong>Phase 1 — breadth</strong> (ethskills checklists): 5 domain checklists applied by parallel sonnet sub-agents — <code>evm-audit-general</code>, <code>evm-audit-precision-math</code>, <code>evm-audit-access-control</code>, <code>evm-audit-governance</code>, <code>evm-audit-signatures</code> (chosen for relevance: proof/replay concerns route to signatures; timelock concerns route to governance; the client explicitly asked about access control and timelocks).</li>
+<li><strong>Phase 2 — depth</strong> (pashov attacker-mindset methodology): 12 parallel sonnet attack agents (9 single-specialty + 3 cross-lens gap-hunters), each reading only the raw source with no visibility into phase 1&#39;s findings.</li>
+<li><strong>Phase 3 — reconciliation</strong>: cross-phase dedup, hybrid re-read of phase-unique items against source.</li>
+</ul>
+<p><strong>Reconciliation summary</strong>: 11 unique (function, bug-class) items raised across both phases, 11 covered in this unified report. 6 items corroborated by both phases (<code>[both]</code>) — including the top finding, independently surfaced by all 5 phase-1 agents in some form and by <strong>12 of 12</strong> phase-2 attack agents, the strongest possible convergence signal available from this methodology. 3 items phase-1-only (informational &quot;not applicable&quot; observations answering the client&#39;s explicit questions). 2 items phase-2-only (new, both speculative/out-of-scope-contingent, confirmed via hybrid re-read as reasonable but unverifiable without sibling contracts not included in this job&#39;s scope).</p>
+<hr>
+<h2 id="key-context-established-identically-by-every-one-of-the-17-total">Key context (established identically by every one of the 17 total sub-agents across both phases)</h2>
+<p>This contract is a <strong>self-documented, non-functional placeholder</strong>. Its own NatSpec header states in a bordered warning box: <em>&quot;DEVELOPMENT-MODE VERIFIER — DO NOT DEPLOY TO PRODUCTION.&quot;</em> It has:</p>
+<ul>
+<li><strong>Zero mutable state.</strong> <code>PROOF_SYSTEM_ID</code>, <code>PUBLIC_INPUTS_COUNT</code>, <code>MIN_BELIEF_THRESHOLD</code>, <code>MAX_EPOCH</code> are all Solidity <code>constant</code>s baked into bytecode — there is no constructor, no setter, and no owner/admin of any kind.</li>
+<li><strong>A core verification function that unconditionally reverts.</strong> <code>_verifyStarkProof()</code> (lines 153-170) discards all five of its parameters and executes <code>revert(&quot;ZK verification not implemented - use ProductionBeliefAttestationVerifier&quot;)</code> on every call, regardless of input. <code>verifyProof()</code> can therefore never return <code>true</code> or <code>false</code> — every call either reverts on an early <code>require</code> or reverts here.</li>
+</ul>
+<p>Because of this, the client&#39;s two specific questions — &quot;missing timelock on parameter updates&quot; and &quot;access control on admin functions&quot; — <strong>do not apply to this contract</strong>: there are no parameters to update and no admin functions to protect (see I-1, I-2 below). The client&#39;s third question — &quot;replay of proofs&quot; — is also currently moot, since nothing can ever be successfully verified once, so nothing can be replayed (see I-3). This is a materially different risk profile than the separate, out-of-scope <code>ProductionBeliefAttestationVerifier</code>, which is presumably where these three questions become load-bearing.</p>
+<p>The substantive risk in this contract is not what it does today (nothing) but what its own documentation claims about itself, which does not match the code — see H-1.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>4</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="h-1-natspec-header-claims-a-chain-id-deployment-guard-and-accept">[H-1] NatSpec header claims a chain-ID deployment guard and &quot;accept-any-proof&quot; placeholder behavior that do not exist anywhere in the code</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (general, access-control, governance — 3 of 5 agents) + phase 2 (<strong>12 of 12</strong> attack agents, unanimous)<br><strong>Location</strong>: Header NatSpec (lines 9-19) vs. <code>_verifyStarkProof()</code> (lines 153-170)</p>
+<p><strong>Description</strong>: The header box explicitly claims: <em>&quot;This contract contains a PLACEHOLDER proof verifier that accepts ANY non-empty proof ≥ 32 bytes. It is restricted to Hardhat/local chains (ID 31337 / 1337) via multiple guards.&quot;</em> Neither claim is implemented. A full-text search of the contract for <code>block.chainid</code>, <code>31337</code>, or <code>1337</code> (outside the comment itself) returns zero matches — and <code>_verifyStarkProof</code> is declared <code>pure</code>, which is structural proof no such check can exist without a signature change (a <code>pure</code> function cannot read <code>block.chainid</code>). There is also no &quot;accept any proof ≥32 bytes&quot; logic anywhere — the function never inspects <code>proofBytes.length</code> at all before its unconditional revert. The documented safety model is entirely fictional; the contract is currently safe only by the accident of failing closed, not because of any implemented guard.</p>
+<p><strong>Proof of Concept</strong>: Confirmed independently by all 17 sub-agents across both audit phases via direct source inspection. Failure mode: a future maintainer reads the header, reasonably believes chain-ID guards already protect this contract, and &quot;fixes&quot; <code>_verifyStarkProof</code> to match its own documented behavior (accept any proof ≥32 bytes) — believing it&#39;s already gated to devnets. Deploying that change to the current mainnet address would let any caller submit a fabricated belief attestation for any <code>beliefHash</code>/<code>proverAddress</code> with zero real proof checking and no chain restriction to stop it.</p>
+<p><strong>Recommendation</strong>: Either implement the guard the comment claims:</p>
+<pre><code class="language-diff">-    function _verifyStarkProof(
++    function _verifyStarkProof(
+         bytes calldata proofBytes,
+         bytes32 beliefHash,
+         address proverAddress,
+         uint256 epoch,
+         uint256 moduleID
+-    ) internal pure returns (bool) {
++    ) internal view returns (bool) {
++        require(
++            block.chainid == 31337 || block.chainid == 1337,
++            &quot;BeliefAttestationVerifier: dev-only, wrong chain&quot;
++        );
+         ...
+</code></pre>
+<p>or — since this contract is explicitly a throwaway placeholder — strip the misleading claims from the NatSpec entirely and state plainly that the only current protection is the unconditional revert.</p>
+<hr>
+<h3 id="m-1-devverifierused-event-the-one-detectivemonitoring-control-th">[M-1] <code>DevVerifierUsed</code> event — the one detective/monitoring control the docs describe — is declared but never emitted</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (general, governance) + phase 2 (4+ of 12 agents)<br><strong>Location</strong>: Event declaration (lines 74-82); no <code>emit</code> site anywhere in the contract</p>
+<p><strong>Description</strong>: NatSpec states this event should fire &quot;every time the dev verifier is invoked&quot; and that &quot;monitoring tools SHOULD alert&quot; on its presence on any non-devnet chain as &quot;a critical misconfiguration.&quot; Confirmed by full-text search across both audit phases: the event name appears only in its declaration and NatSpec, never in an <code>emit</code> statement. Combined with H-1 (no chain-ID guard), the one described safety net for detecting &quot;wrong verifier deployed to production&quot; does not function at all — it exists only in comments.</p>
+<p><strong>Recommendation</strong>: Either wire up the event (emit at function entry, before any revert-prone logic, since reverts roll back logs) or remove the misleading NatSpec claim.</p>
+<hr>
+<h3 id="m-2-deployed-verifier-unconditionally-reverts-on-every-call-full">[M-2] Deployed verifier unconditionally reverts on every call — full, permanent failure of the belief-attestation flow at this live mainnet address</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (general) explicit finding; phase 2 implicitly corroborated by all 12 agents&#39; independent confirmation that every execution path terminates in this revert<br><strong>Location</strong>: <code>_verifyStarkProof()</code> (153-170), reached via <code>verifyProof()</code> (102-139)</p>
+<p><strong>Description</strong>: <code>_verifyStarkProof</code> discards all five parameters and unconditionally <code>revert()</code>s. <code>verifyProof()</code> can therefore never return <code>true</code> (nor <code>false</code> — see L-3), and the <code>ProofVerified</code> event (67-72) is unreachable dead code. Flagged at Medium rather than High because this is self-documented, known, and intentional given the &quot;DO NOT DEPLOY TO PRODUCTION&quot; labeling and the client&#39;s own framing of this as the &quot;earlier&quot; verifier — but still worth recording precisely, since any live integration currently pointed at this address on Base mainnet gets a hard revert on every attempt.</p>
+<p><strong>Recommendation</strong>: Confirm no production-facing caller (e.g. the NatSpec-referenced <code>DilithiumAttestor</code>) is currently configured to point at this address; if any are, redirect them to <code>ProductionBeliefAttestationVerifier</code>.</p>
+<hr>
+<h3 id="l-1-downstream-caller-could-turn-a-revert-only-failure-mode-into">[L-1] Downstream caller could turn a revert-only failure mode into a silent authorization bypass</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase2]</code> — 2 of 12 attack agents (trust-gap, flow-gap specialties) independently converged; new finding not surfaced by phase 1<br><strong>Location</strong>: <code>verifyProof()</code> — interaction with its (out-of-scope) caller</p>
+<p><strong>Description</strong>: The NatSpec (line 87) names <code>DilithiumAttestor</code> as &quot;the main verification function called by DilithiumAttestor&quot; — but that contract&#39;s source is not included in this job&#39;s scope, so this is necessarily speculative. If that caller wraps <code>verifyProof()</code> in a low-level <code>.call()</code> or a <code>try/catch</code> and treats a failed/reverted call as &quot;unverified, fall through to a permissive default path&quot; rather than a hard stop, a permanently-reverting verifier at this address would produce a silent authorization bypass rather than a pure availability/DoS problem — the opposite of the fail-closed behavior this contract otherwise exhibits in isolation.</p>
+<p><strong>Proof of Concept</strong>: Not verifiable from this contract&#39;s source alone — the risk is entirely in how the caller handles a revert. Flagged for a future engagement that includes <code>DilithiumAttestor</code> in scope.</p>
+<p><strong>Recommendation</strong>: When auditing <code>DilithiumAttestor</code> (or any caller of this interface), specifically verify it treats every <code>verifyProof()</code> outcome other than a clean <code>true</code> return as a hard failure, with no low-level-call/try-catch path that silently defaults to a permissive branch.</p>
+<hr>
+<h3 id="l-2-verifystarkproof-comment-references-a-testmode-variable-that">[L-2] <code>_verifyStarkProof</code> comment references a <code>testMode</code> variable that does not exist anywhere in the contract</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (general, access-control) + phase 2 (several agents&#39; doc-mismatch leads specifically cite this)<br><strong>Location</strong>: line 168</p>
+<p><strong>Description</strong>: Comment reads <em>&quot;To enable for testing, deploy with testMode = true&quot;</em> — no such state variable, constructor parameter, or immutable exists anywhere in the file, and the function is <code>pure</code> (cannot read state regardless, same structural point as H-1). Dangling reference to unimplemented functionality; a future maintainer might add an unguarded <code>testMode</code> toggle to satisfy this comment, which — if not access-controlled and chain-gated — would itself become a Critical bypass.</p>
+<p><strong>Recommendation</strong>: Remove the stale comment, or implement a genuine <code>immutable testMode</code> set only in the constructor, combined with the chain-ID guard from H-1.</p>
+<hr>
+<h3 id="l-3-verifyproof-can-never-return-false-only-revert-diverging-fro">[L-3] <code>verifyProof()</code> can never return <code>false</code> — only revert — diverging from the <code>IStarkVerifier</code> interface&#39;s documented boolean contract</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (signatures) + phase 2 (3+ of 12 agents)<br><strong>Location</strong>: <code>verifyProof()</code> (132-138), <code>_verifyStarkProof()</code> (153-170)</p>
+<p><strong>Description</strong>: <code>IStarkVerifier</code>&#39;s NatSpec implies validity is reported via boolean return (<code>@return True if proof is valid...</code>), suggesting callers might branch on a <code>false</code> return for &quot;invalid proof&quot; handling. That path is unreachable here — <code>_verifyStarkProof</code>&#39;s only exit is an unconditional revert, so <code>verifyProof</code> always either reverts on an early <code>require</code> or reverts inside <code>_verifyStarkProof</code>; it never returns a value at all. Compounds L-1: an integrator expecting &quot;invalid proof → <code>false</code>&quot; rather than &quot;invalid proof → revert&quot; would be surprised by the actual behavior, and any error-handling logic built around the boolean contract needs re-examination.</p>
+<p><strong>Recommendation</strong>: Advisory for the production replacement — ensure genuine <code>true</code>/<code>false</code> branches exist for &quot;proof rejected&quot; vs. reverting only on malformed/out-of-gas conditions.</p>
+<hr>
+<h3 id="l-4-unchecked-uint256-uint160-downcast-when-deriving-proveraddre">[L-4] Unchecked <code>uint256 → uint160</code> downcast when deriving <code>proverAddress</code> from public inputs</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (general, precision-math) + phase 2 (5+ of 12 agents, one with a fully worked truncation proof)<br><strong>Location</strong>: <code>verifyProof()</code> line 111 — <code>address proverAddress = address(uint160(publicInputs[1]));</code></p>
+<p><strong>Description</strong>: <code>publicInputs[1]</code> is a caller-supplied <code>uint256</code>; casting to <code>address</code> via <code>uint160(...)</code> truncates silently for values ≥ 2^160 (explicit downcasts don&#39;t revert in Solidity). No preceding range check exists — the only downstream guard, <code>require(proverAddress != address(0))</code> (line 117), only rejects the exact case where the truncated result is zero; it does not detect the general truncation case. Concretely: <code>publicInputs[1] = k·2^160 + realAddress</code> truncates to <code>realAddress</code> and passes validation with no indication the raw public input didn&#39;t match what a real STARK proof would have committed to. Currently unreachable/inert since <code>_verifyStarkProof</code> always reverts before this value is used for anything security-relevant (M-2) — but a latent bug if the same extraction pattern is copied into <code>ProductionBeliefAttestationVerifier</code> without a range check, where two distinct oversized field elements differing only in bits above 160 would silently alias to the same on-chain address.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">+        require(publicInputs[1] &lt;= type(uint160).max, &quot;proverAddress overflow&quot;);
+         address proverAddress = address(uint160(publicInputs[1]));
+</code></pre>
+<p>or use <code>SafeCast.toUint160</code>. Carry the fix into the production verifier.</p>
+<hr>
+<h3 id="i-1-no-missing-timelock-finding-contract-has-zero-mutable-parame">[I-1] No missing-timelock finding — contract has zero mutable parameters</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: general, governance]</code><br><strong>Location</strong>: whole contract</p>
+<p><strong>Description</strong>: Directly answering the client&#39;s first question: this contract has no parameters that can be updated at all. <code>PROOF_SYSTEM_ID</code>, <code>PUBLIC_INPUTS_COUNT</code>, <code>MIN_BELIEF_THRESHOLD</code>, and <code>MAX_EPOCH</code> are all compile-time <code>constant</code>s with no setter, no constructor argument, and no owner/admin role capable of changing anything post-deployment. &quot;Missing timelock on parameter updates&quot; does not apply here because there is nothing to timelock.</p>
+<p><strong>Recommendation</strong>: Re-check this question when auditing <code>ProductionBeliefAttestationVerifier</code> if it introduces mutable parameters (a configurable threshold, a verifying key, etc.) — that contract, not this one, is where a timelock analysis is load-bearing.</p>
+<hr>
+<h3 id="i-2-no-access-control-finding-no-admin-or-privileged-functions-e">[I-2] No access-control finding — no admin or privileged functions exist to protect</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: general, access-control]</code><br><strong>Location</strong>: whole contract</p>
+<p><strong>Description</strong>: Directly answering the client&#39;s second question: this contract has no admin functions. <code>verifyProof()</code> and the three view getters are intentionally unrestricted — correct design for a public proof-verification entry point, since anyone should be able to submit a proof for verification. There is no <code>owner</code>, no <code>Ownable</code>/<code>AccessControl</code> inheritance, and no function that mutates any state (there is no mutable state to mutate).</p>
+<p><strong>Recommendation</strong>: No action needed for this contract. If the production version introduces admin-gated functions (e.g. to rotate a verifying key), access control on those functions should be reviewed in that engagement.</p>
+<hr>
+<h3 id="i-3-no-on-chain-replay-protection-for-proof-submissions-currentl">[I-3] No on-chain replay protection for proof submissions — currently moot, worth tracking for the production version</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: general, signatures]</code><br><strong>Location</strong>: <code>verifyProof()</code> (102-139)</p>
+<p><strong>Description</strong>: Directly answering the client&#39;s third question: no nonce or used-proof/used-beliefHash registry exists. This is currently moot since nothing can ever verify successfully (M-2), and the conceptual &quot;circuit logic&quot; described in NatSpec comments says nothing about proof <em>uniqueness</em> either. Flag for the production verifier to add explicit replay protection (e.g. <code>mapping(bytes32 =&gt; bool) usedBeliefHash</code>) independent of the ZK circuit&#39;s own soundness guarantees, since replay protection is not part of even the conceptual design as documented here.</p>
+<p><strong>Recommendation</strong>: When auditing <code>ProductionBeliefAttestationVerifier</code>, confirm replay protection exists either in that verifier or, if by design, in the calling <code>DilithiumAttestor</code> — this dev placeholder provides none, which should not be mistaken for an oversight specific to production.</p>
+<hr>
+<h3 id="i-4-cross-domain-width-mismatch-between-the-on-chain-uint32-epoc">[I-4] Cross-domain width mismatch between the on-chain <code>uint32</code> epoch bound and an unspecified off-chain circuit field width</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase2]</code> — 1 of 12 attack agents (flow-gap); highly speculative<br><strong>Location</strong>: <code>verifyProof()</code>, <code>MAX_EPOCH = type(uint32).max</code></p>
+<p><strong>Description</strong>: NatSpec asserts that the on-chain <code>epoch &lt;= MAX_EPOCH</code> check (bounding <code>epoch</code> to 32 bits) constitutes the &quot;epoch validity&quot; check the off-chain RISC0 guest program relies on (referenced only as <code>/risc0-guest/src/main.rs</code>, not present in this repository or job scope). Whether the guest program&#39;s own field-width assumptions for <code>epoch</code> actually match this 32-bit bound cannot be verified without that source. Included for completeness only — this is unverifiable from the files in scope and should not be treated as a confirmed defect.</p>
+<p><strong>Recommendation</strong>: When the off-chain guest program and <code>ProductionBeliefAttestationVerifier</code> are both in scope for a future engagement, confirm the on-chain epoch bound matches whatever width the circuit actually constrains.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI audit agents (two independent methodologies, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Given this contract is explicitly a non-production placeholder, the primary actionable outcome of this audit is: (1) correct or remove the misleading NatSpec claims (H-1, L-2), (2) confirm no live integration is currently pointed at this address instead of the production verifier (M-2, L-1), and (3) carry the two latent code-pattern issues (L-3, L-4) forward into the review of <code>ProductionBeliefAttestationVerifier</code>, which was out of scope for this engagement.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidyygea5jypxthbvpt2j3gmgrrm2eferxmr6dmcnez736pt22y6pq.ipfs.community.bgipfs.com/"><code>https://bafkreidyygea5jypxthbvpt2j3gmgrrm2eferxmr6dmcnez736pt22y6pq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/338">#338</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

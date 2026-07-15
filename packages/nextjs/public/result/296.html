@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiquidityVestingFactory &amp; LiquidityVesting — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #296">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">LiquidityVestingFactory &amp; LiquidityVesting</h1>
+    <p class="job-sub">Job #296 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/296"><b>Job page</b> #296</a>
+      <a class="chip" href="https://bafkreiewpuoj7hr53sqmfeq5hhb5pmr7tqin32t25jo3xg3ngnzielzy7y.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">8</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">6</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#what-this-system-does">What this system does</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#summary">Summary</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Audit — LiquidityVestingFactory &amp; LiquidityVesting</h1>
+<p><strong>Target</strong>: <code>LiquidityVestingFactory</code> — <code>0xEE3B3c6DF763340356F8783F67d4b64E48b3A018</code> (Base mainnet), and the <code>LiquidityVesting</code> implementation it deploys (7 live instances as of this audit).<br><strong>Method</strong>: Two-phase audit — Phase 1 breadth (7 ethskills domain checklists) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → hybrid cross-phase reconciliation.<br><strong>Files reviewed</strong>: <code>contracts/LiquidityVesting.sol</code> (326 lines) · <code>contracts/LiquidityVestingFactory.sol</code> (37 lines)<br><strong>Source verification</strong>: Full match on Sourcify (chain 8453) against the deployed bytecode.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>default (both in-scope files, excluding <code>lib/</code>)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>LiquidityVesting.sol</code> · <code>LiquidityVestingFactory.sol</code></td>
+</tr>
+<tr>
+<td><strong>Model</strong></td>
+<td>opus (14 agents total: 7 phase-1 + 12 phase-2 — scope classified &quot;large&quot;: 2 contracts / 363 in-scope LOC)</td>
+</tr>
+</tbody></table></div>
+<h2 id="what-this-system-does">What this system does</h2>
+<p><code>LiquidityVestingFactory.deploy(owner)</code> (permissionless) creates a <code>LiquidityVesting</code> instance for <code>owner</code>. The owner calls <code>lockUp()</code> to deposit WETH + CLAWD into a Uniswap V3 concentrated-liquidity position (minted via the real <code>INonfungiblePositionManager</code>), which the contract holds as an NFT. Liquidity then vests linearly to <code>owner</code> over <code>vestDuration</code>: <code>vest()</code>/<code>claimAndVest()</code> decrease the position by the currently-vested slice and forward the proceeds (plus accrued trading fees) to <code>owner</code>; <code>claim()</code> collects only fees. On full vesting, the position is burned and the contract becomes re-lockable.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p><strong>Completeness</strong>: 18 unique (Contract, function, bug-class) findings across both phases, 18 covered in this unified report.<br><strong>Overlap</strong>: 12 findings corroborated by both phases · <strong>Phase-1-only</strong>: 3 · <strong>Phase-2-only</strong>: 3 (including the headline High-severity finding below, which Phase 1&#39;s checklist-driven approach did not surface). <strong>Re-examined leads kept</strong>: 6, <strong>demoted</strong>: 0.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-permissionless-increaseliquidity-on-the-position-nft-permanent">[1] <strong>Permissionless <code>increaseLiquidity()</code> on the position NFT permanently bricks the final vest, freezing the owner&#39;s locked principal</strong></h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[phase2: agent 12 — flow-gap]</code>, independently re-verified by source re-read in synthesis<br><strong>Location</strong>: <code>_vest()</code> — <code>LiquidityVesting.sol:258-262</code></p>
+<p><strong>Description</strong>: Uniswap V3&#39;s <code>NonfungiblePositionManager.increaseLiquidity(tokenId, ...)</code> carries no ownership/authorization check — unlike <code>decreaseLiquidity</code>, <code>collect</code>, and <code>burn</code>, which all require <code>isAuthorizedForToken</code>. Anyone can therefore add liquidity directly to this contract&#39;s position NFT at any time, for the cost of a small amount of WETH/CLAWD plus gas. <code>_vest()</code>&#39;s completion branch calls <code>positionManager.burn(tokenId)</code> <strong>unconditionally</strong> once its own internal bookkeeping (<code>vestedLiquidity &gt;= initialLiquidity</code>) believes the position is empty:</p>
+<pre><code class="language-solidity">// LiquidityVesting.sol:247-262
+positionManager.decreaseLiquidity(INonfungiblePositionManager.DecreaseLiquidityParams({
+    tokenId: tokenId, liquidity: toLiquidate,
+    amount0Min: amount0Min, amount1Min: amount1Min, deadline: block.timestamp
+}));
+
+(amount0, amount1) = positionManager.collect(INonfungiblePositionManager.CollectParams({
+    tokenId: tokenId, recipient: owner(),
+    amount0Max: type(uint128).max, amount1Max: type(uint128).max
+}));
+
+if (isFinal) {
+    positionManager.burn(tokenId);   // &lt;-- no check that on-chain liquidity is actually 0
+    isLocked = false;
+    tokenId = 0;
+}
+</code></pre>
+<p>Uniswap&#39;s <code>burn()</code> reverts with <code>&quot;Not cleared&quot;</code> unless <code>position.liquidity == 0 &amp;&amp; tokensOwed0 == 0 &amp;&amp; tokensOwed1 == 0</code>. <code>decreaseLiquidity</code> above only removes the contract&#39;s own internally-tracked <code>toLiquidate</code> amount — any liquidity an attacker externally added via <code>increaseLiquidity</code> is untouched and remains on the position. The unconditional <code>burn()</code> call then reverts every single time the final vest tranche is attempted, for the rest of time — there is no other code path to remove liquidity, transfer the NFT, or otherwise recover.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Owner <code>lockUp()</code>s, minting a position with <code>initialLiquidity = L</code>.</li>
+<li>At any point before the final vest, an attacker calls <code>positionManager.increaseLiquidity({tokenId, amount0Desired: &lt;small&gt;, amount1Desired: &lt;small&gt;, amount0Min: 0, amount1Min: 0, deadline: block.timestamp})</code> directly on the Uniswap <code>NonfungiblePositionManager</code> — this succeeds because <code>increaseLiquidity</code> has no authorization gate. The position&#39;s on-chain liquidity is now <code>L + Δ</code> (<code>Δ ≥ 1</code>), while the contract&#39;s own <code>initialLiquidity</code> variable stays <code>L</code>.</li>
+<li>Once <code>elapsed &gt;= vestDuration</code>, the owner calls <code>vest()</code>/<code>claimAndVest()</code>. <code>totalVestedLiq = initialLiquidity = L</code>, <code>toLiquidate = L - vestedLiquidity</code>, and this final call sets <code>isFinal = true</code>.</li>
+<li><code>decreaseLiquidity(toLiquidate)</code> removes exactly <code>L</code> (the amount the contract believes is the whole position), leaving <code>Δ</code> liquidity on the position. <code>collect(max)</code> zeroes <code>tokensOwed</code>.</li>
+<li><code>positionManager.burn(tokenId)</code> executes with <code>position.liquidity == Δ ≠ 0</code> → <strong>reverts with <code>&quot;Not cleared&quot;</code></strong> → the entire <code>_vest()</code> transaction reverts.</li>
+<li><code>elapsed</code> only grows from here, so every future attempt recomputes the identical final tranche and hits the identical revert. The position (and up to 100% of the owner&#39;s remaining locked principal, depending on when the attack lands) is permanently frozen inside Uniswap with no path to recovery.</li>
+</ol>
+<p>Cost to the attacker is bounded by gas plus a token amount small enough to register as ≥1 unit of liquidity in the position&#39;s tick range — a few cents at most. This is a genuine third-party griefing vector, not owner self-harm: the attacker gains nothing but permanently damages the victim (the vesting contract&#39;s owner).</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">  if (isFinal) {
+-     positionManager.burn(tokenId);
+-     isLocked = false;
+-     tokenId = 0;
++     (,,,,,,, uint128 remainingLiquidity,,, uint128 owed0, uint128 owed1) = positionManager.positions(tokenId);
++     if (remainingLiquidity == 0 &amp;&amp; owed0 == 0 &amp;&amp; owed1 == 0) {
++         positionManager.burn(tokenId);
++         isLocked = false;
++         tokenId = 0;
++     }
++     // else: leave the position open; expose an owner-only function to decreaseLiquidity
++     // any externally-added dust and retry burn, instead of being permanently stuck.
+  }
+</code></pre>
+<hr>
+<h3 id="2-vestedliquidity-is-never-reset-across-lock-cycles-a-second-loc">[2] <strong><code>vestedLiquidity</code> is never reset across lock cycles — a second <code>lockUp()</code> after a full vest permanently locks the new deposit</strong></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>General-1</code>) and Phase 2 (6 of 12 blind agents: access-control, first-principles, invariant, periphery, execution-trace, trust-gap — independently converged with matching numeric traces)<br><strong>Location</strong>: <code>lockUp()</code> / <code>_mintPosition()</code> (<code>LiquidityVesting.sol:171-207</code>) vs <code>_vest()</code> (<code>LiquidityVesting.sol:237-268</code>); state variable <code>vestedLiquidity</code> (line 148)</p>
+<p><strong>Description</strong>: <code>_vest()</code>&#39;s completion branch sets <code>isLocked = false</code> and <code>tokenId = 0</code>, which — combined with <code>lockUp()</code>&#39;s guard of only <code>require(!isLocked)</code> — makes the contract explicitly re-lockable. On a second <code>lockUp()</code>, <code>initialLiquidity</code>, <code>lockStart</code>, and <code>vestDuration</code> are all refreshed, but <strong><code>vestedLiquidity</code> is never reset</strong> to 0.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Owner locks with liquidity <code>L_old</code>, fully vests. End state: <code>vestedLiquidity == L_old</code>, <code>isLocked == false</code>.</li>
+<li>Owner re-locks, minting a new position with liquidity <code>L_new</code>. <code>initialLiquidity == L_new</code>, but <code>vestedLiquidity</code> is still <code>L_old</code>.</li>
+<li>In <code>_vest()</code>: <code>totalVestedLiq = pct * L_new / 1e18</code>, <code>toLiquidate = totalVestedLiq - vestedLiquidity(=L_old)</code>.<ul>
+<li>If <code>L_new &lt;= L_old</code>: <code>totalVestedLiq</code> never exceeds <code>L_new &lt;= L_old</code>, so <code>toLiquidate</code> <strong>underflows on every call</strong> (checked <code>uint128</code> arithmetic reverts) — <code>vest()</code>/<code>claimAndVest()</code> are permanently DoS&#39;d for the entire new cycle.</li>
+<li>If <code>L_new &gt; L_old</code>: vesting only ever accounts for <code>L_new - L_old</code>; when <code>isFinal</code> triggers, only that difference has been decreased, leaving <code>L_old</code> worth of liquidity still on the position, so the final <code>burn(tokenId)</code> reverts (non-empty position) — the excess <code>L_old</code> liquidity is permanently stranded.</li>
+</ul>
+</li>
+</ol>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">  function lockUp(uint256 amount0Desired, uint256 amount1Desired, uint256 _vestDuration, int24 _tickLower, int24 _tickUpper, uint256 amount0Min, uint256 amount1Min) external onlyOwner {
+      require(!isLocked, &quot;Already locked&quot;);
+      require(_vestDuration &gt; 0, &quot;Duration must be &gt; 0&quot;);
++     vestedLiquidity = 0;
+      isLocked = true;
+      vestDuration = _vestDuration;
+      ...
+</code></pre>
+<hr>
+<h3 id="3-fee-on-transfer-clawd-would-permanently-dos-lockup">[3] <strong>Fee-on-transfer CLAWD would permanently DoS <code>lockUp()</code></strong></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>ERC20-1</code>), Phase 2 lead (agents 3, 8, 12)<br><strong>Location</strong>: <code>lockUp()</code> / <code>_mintPosition()</code> — <code>LiquidityVesting.sol:177-204</code></p>
+<p><strong>Description</strong>: <code>lockUp()</code> pulls <code>amount1Desired</code> of CLAWD via <code>safeTransferFrom</code>, then approves and passes the same <code>amountDesired</code> value into <code>positionManager.mint(...)</code>. Uniswap V3 requires the pool to receive exactly the amount it&#39;s told to expect; if CLAWD ever deducts a transfer fee, the contract holds less than it approved, and the pool&#39;s mint callback reverts. Uniswap V3 positions are fundamentally incompatible with fee-on-transfer tokens. CLAWD&#39;s source is <strong>unverified</strong> on Sourcify/explorers, so this cannot be ruled out from on-chain data.</p>
+<p><strong>Proof of Concept</strong>: Not a fund-loss path — <code>lockUp()</code> reverts atomically, no tokens are stranded. Flagged as a <strong>total, permanent DoS</strong> of the contract&#39;s sole purpose if CLAWD has (or later gains, e.g. via upgradeable/admin-controlled logic) a transfer fee.</p>
+<p><strong>Recommendation</strong>: Confirm CLAWD cannot become fee-on-transfer. If robustness is desired regardless, measure <code>balanceOf(address(this))</code> before/after <code>safeTransferFrom</code> and feed the actually-received amount into <code>mint</code>.</p>
+<hr>
+<h3 id="4-pausableblocklistable-clawd-or-weth-can-freeze-vestclaim-stran">[4] <strong>Pausable/blocklistable CLAWD (or WETH) can freeze <code>vest()</code>/<code>claim()</code>, stranding vested liquidity</strong></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>ERC20-2</code>), Phase 2 lead (agent 3: &quot;dependency-permanent-lock&quot;)<br><strong>Location</strong>: <code>_vest()</code> / <code>claim()</code> — <code>LiquidityVesting.sol:213-268</code></p>
+<p><strong>Description</strong>: <code>claim()</code>, <code>vest()</code>, and <code>claimAndVest()</code> all terminate in <code>positionManager.collect(...recipient: owner()...)</code>. If CLAWD implements transfer pausing, or blocklists <code>owner()</code>, <code>collect</code> reverts and no liquidity or fees can be withdrawn. The recipient is hardcoded to <code>owner()</code> with no alternate address, so a blocklisted owner has no way to redirect funds elsewhere.</p>
+<p><strong>Proof of Concept</strong>: Token admin pauses CLAWD transfers or blocklists <code>owner()</code>. Every subsequent <code>vest()</code>/<code>claim()</code>/<code>claimAndVest()</code> reverts. Liquidity is not lost outright (it remains in the Uniswap position) but is frozen until the token-side condition is lifted — indefinitely, if never lifted.</p>
+<p><strong>Recommendation</strong>: Document as an accepted trust assumption on CLAWD&#39;s admin, or change <code>collect</code>&#39;s recipient to <code>address(this)</code> and let the owner withdraw to an arbitrary address afterward, so a blocklisted <code>owner()</code> still has a route to funds.</p>
+<hr>
+<h3 id="5-single-step-transferownership-risks-permanently-misdirecting-a">[5] <strong>Single-step <code>transferOwnership</code> risks permanently misdirecting all future proceeds</strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: Access-1]</code> — re-examined in synthesis: confirmed real, no phase-2 contradiction (phase-2&#39;s access-control agent independently verified the <code>onlyOwner</code> gating is tight but did not evaluate the ownership-transfer mechanism itself)<br><strong>Location</strong>: <code>LiquidityVesting</code> (inherits OZ <code>Ownable</code>)</p>
+<p><strong>Description</strong>: <code>claim()</code>, <code>_vest()</code>, and <code>sweep()</code> all route proceeds to <code>owner()</code>, and only <code>owner</code> may call any fund-moving function. OZ&#39;s single-step <code>transferOwnership</code> means a mistyped or unreachable target address permanently redirects all future vesting/fees/sweeps with no recovery. <code>renounceOwnership()</code> is disabled but does not protect against a bad <em>transfer</em>.</p>
+<p><strong>Recommendation</strong>: Use <code>Ownable2Step</code> instead of <code>Ownable</code> so a transfer requires the new address to <code>acceptOwnership()</code>.</p>
+<hr>
+<h3 id="6-permissionless-deployowner-enables-fake-instance-indexer-poiso">[6] <strong>Permissionless <code>deploy(owner)</code> enables fake-instance / indexer-poisoning and unbounded registry growth</strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>Access-2</code>, <code>Access-5</code>), Phase 2 lead (agents 2, 4, 9, 12)<br><strong>Location</strong>: <code>LiquidityVestingFactory.deploy()</code> (lines 18-24), <code>getDeployments()</code> (26-28)</p>
+<p><strong>Description</strong>: <code>deploy(address owner)</code> has no access control; <code>owner</code> is caller-supplied. Anyone can create instances attributed to an arbitrary victim address, which get recorded in <code>deploymentsByOwner[victim]</code>/<code>allDeployments</code> and emitted via <code>ContractDeployed</code>. A UI/indexer trusting <code>getDeploymentsByOwner(victim)</code> could display attacker-created decoy contracts as &quot;victim&#39;s vaults&quot; — a phishing/confusion vector (the attacker cannot operate the fake instance since <code>owner</code> is fixed at construction and all fund-moving functions are <code>onlyOwner</code>, so this is not direct theft). Separately, since <code>deploy()</code> is unbounded and permissionless, <code>allDeployments</code> can be inflated arbitrarily, and <code>getDeployments()</code> returning the full array could eventually exceed practical <code>eth_call</code> limits for off-chain consumers.</p>
+<p><strong>Recommendation</strong>: Set <code>owner = msg.sender</code> (deployers create only their own instances) or add an allowlist; also index by deployer so consumers can distinguish self- vs third-party-deployed instances. Consider a paginated getter and rely on the <code>ContractDeployed</code> event for enumeration instead of the full-array view.</p>
+<hr>
+<h3 id="7-no-minimum-bound-on-vestduration-a-locked-liquidity-position-c">[7] <strong>No minimum bound on <code>_vestDuration</code> — a &quot;locked liquidity&quot; position can be trivially unlockable</strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase2 only: agents 1, 9]</code> — re-examined: confirmed real by direct read of <code>lockUp()</code>, line 173: <code>require(_vestDuration &gt; 0, &quot;Duration must be &gt; 0&quot;)</code> is the only bound<br><strong>Location</strong>: <code>lockUp()</code> — <code>LiquidityVesting.sol:173</code></p>
+<p><strong>Description</strong>: The owner may set <code>_vestDuration = 1</code> (one second), making a position that is publicly presented as &quot;locked liquidity vesting to owner&quot; fully withdrawable almost immediately. <code>vestDuration</code> is public and on-chain, so this is transparent rather than hidden, but nothing in the contract enforces any minimum lock horizon — any community relying on this contract as a liquidity-lock guarantee must manually inspect the parameter per-instance.</p>
+<p><strong>Recommendation</strong>: Consider an owner-configurable but factory-enforced minimum <code>vestDuration</code> if the product&#39;s intent is to offer a credible locked-liquidity guarantee.</p>
+<hr>
+<h3 id="8-ineffective-deadline-blocktimestamp-on-mintdecreaseliquidity">[8] <strong>Ineffective <code>deadline: block.timestamp</code> on <code>mint()</code>/<code>decreaseLiquidity()</code></strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>General-2</code>/<code>AMM-2</code>), Phase 2 lead (agents 3, 5, 7, 8)<br><strong>Location</strong>: <code>_mintPosition()</code> (line 192), <code>_vest()</code> (line 249)</p>
+<p><strong>Description</strong>: Both position-manager calls pass <code>deadline: block.timestamp</code>, which can never expire — a transaction sitting in the mempool executes whenever finally mined, however late. Slippage is still bounded by caller-supplied <code>amount0Min</code>/<code>amount1Min</code>, so this is not an independent fund-loss vector, but becomes material if a caller ever passes zero minimums (see Finding 9).</p>
+<p><strong>Recommendation</strong>: Accept a caller-supplied <code>deadline</code> parameter on <code>lockUp</code>, <code>vest</code>, <code>claimAndVest</code> and forward it instead of hardcoding <code>block.timestamp</code>.</p>
+<hr>
+<h3 id="9-owner-controlled-zero-slippage-minimums-expose-lockupvest-to-s">[9] <strong>Owner-controlled zero slippage minimums expose <code>lockUp</code>/<code>vest</code> to sandwiching — self-harm only</strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — implicit in Phase 1&#39;s AMM review, explicit Phase 2 lead (agents 3, 8)<br><strong>Location</strong>: <code>lockUp()</code>, <code>vest()</code>, <code>claimAndVest()</code></p>
+<p><strong>Description</strong>: <code>amount0Min</code>/<code>amount1Min</code> are documented as &quot;0 to skip.&quot; If the owner passes 0, <code>mint</code>/<code>decreaseLiquidity</code> are fully exposed to ordinary sandwiching (compounded by Finding 8&#39;s ineffective deadline). All recipients are the owner themselves, so this is self-exposure, not third-party theft — kept at Low/informational rather than elevated.</p>
+<p><strong>Recommendation</strong>: None required beyond existing owner-supplied parameters; document the risk of passing 0.</p>
+<hr>
+<h3 id="10-ticklowertickupper-unvalidated-in-lockup">[10] <strong><code>_tickLower</code>/<code>_tickUpper</code> unvalidated in <code>lockUp()</code></strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: AMM-3]</code> — re-examined: confirmed, no phase-2 contradiction; low materiality since <code>lockUp</code> is <code>onlyOwner</code> and an invalid range simply reverts inside the pool&#39;s <code>mint</code><br><strong>Location</strong>: <code>lockUp()</code> / <code>_mintPosition()</code> — <code>LiquidityVesting.sol:171-194</code></p>
+<p><strong>Description</strong>: No check that <code>_tickLower &lt; _tickUpper</code>, that both fall within <code>MIN_TICK</code>/<code>MAX_TICK</code>, or that they align to the fee tier&#39;s tick spacing (200, for the 1% tier). Purely a UX/robustness gap — invalid input reverts safely with no fund risk.</p>
+<p><strong>Recommendation</strong>: Optionally validate ordering/bounds/spacing for a clearer revert reason.</p>
+<hr>
+<h3 id="11-previewvest-uses-manipulable-spot-price-with-no-twap-diverges">[11] <strong><code>previewVest()</code> uses manipulable spot price with no TWAP; diverges from what <code>vest()</code> actually returns</strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>Oracle-1</code>/<code>AMM-1</code>), Phase 2 lead (agents 1, 6, 7, 10 — agent 10 additionally found <code>previewClaim</code> reads stale, un-poked <code>tokensOwed</code>)<br><strong>Location</strong>: <code>previewVest()</code> — <code>LiquidityVesting.sol:309-318</code>; <code>previewClaim()</code> — lines 289-294</p>
+<p><strong>Description</strong>: <code>previewVest()</code> reads the instantaneous spot price via <code>slot0()</code> (no TWAP, no staleness check, no Base-sequencer-uptime check) and excludes fees; the real <code>vest()</code> never touches spot price at all (amounts come from <code>decreaseLiquidity</code>/<code>collect</code> returns) and always includes fees. <code>previewClaim()</code> similarly reads <code>tokensOwed</code> fields that are only realized on a position &quot;poke,&quot; so it can understate real claimable fees versus what <code>claim()</code> actually collects. Confirmed by full call-graph trace: no state-changing function consumes <code>previewVest</code>&#39;s or <code>previewClaim</code>&#39;s output — both are <code>view</code>-only, so there is no on-chain fund-loss path. The hardcoded Uniswap V3 factory address (<code>0x33128a8fC17869897dcE68Ed026d694621f6FDfD</code>) was independently confirmed correct for Base mainnet by three separate agents.</p>
+<p><strong>Recommendation</strong>: Document that these preview functions are estimates only and must never be used to derive <code>amount0Min</code>/<code>amount1Min</code> for the real <code>vest()</code>/<code>claim()</code> calls. If a trustworthy preview matters, price via TWAP (<code>pool.observe()</code>) and include the same fee-collection logic <code>_vest()</code> uses.</p>
+<hr>
+<h3 id="12-vest-always-collects-trading-fees-regardless-of-the-includefe">[12] <strong><code>vest()</code> always collects trading fees regardless of the <code>includeFees</code> flag — event/NatSpec mismatch</strong></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>General-3</code>/<code>AMM-5</code>), Phase 2 lead (8 of 12 agents — the single strongest convergence in the whole audit)<br><strong>Location</strong>: <code>_vest()</code> — <code>LiquidityVesting.sol:252-266</code></p>
+<p><strong>Description</strong>: <code>collect</code> inside <code>_vest()</code> always uses <code>type(uint128).max</code> for both maxes, so plain <code>vest()</code> (<code>includeFees = false</code>) also sweeps all accrued fees to the owner. <code>includeFees</code> only toggles whether the <code>Claimed</code> event fires — it does not change any token movement, so <code>vest()</code> and <code>claimAndVest()</code> are behaviorally identical on-chain. No fund-loss impact (funds still go to the rightful owner either way), but off-chain accounting or indexers keyed on <code>Vested</code> vs <code>Claimed</code> will misattribute fee income as vested principal or vice versa.</p>
+<p><strong>Recommendation</strong>: Clarify NatSpec, or emit <code>Claimed</code> unconditionally so events reflect actual token flow.</p>
+<hr>
+<h3 id="13-trading-fees-are-not-subject-to-the-vesting-schedule-only-pri">[13] <strong>Trading fees are not subject to the vesting schedule — only principal liquidity is locked</strong></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase2 only: agent 9]</code> — design observation, not a bug<br><strong>Location</strong>: <code>claim()</code> — <code>LiquidityVesting.sol:213-220</code></p>
+<p><strong>Description</strong>: <code>claim()</code> lets the owner pull 100% of accrued trading fees at any time during the lock, entirely unrestricted by <code>vestDuration</code>. If the product&#39;s intended guarantee to a token community is &quot;liquidity AND its earnings are locked,&quot; this deviates from that; if the intent is only to lock principal (fees are a separate reward stream), this is expected behavior. Flagged for completeness — design intent could not be confirmed from source alone.</p>
+<hr>
+<h3 id="14-constructor-performs-no-token0-token1-ordering-validation">[14] <strong>Constructor performs no <code>token0 &lt; token1</code> ordering validation</strong></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>General-4</code>), Phase 2 lead (agent 8)<br><strong>Location</strong>: <code>LiquidityVesting</code> constructor — line 157; <code>LiquidityVestingFactory.sol:19</code></p>
+<p><strong>Description</strong>: The factory always supplies <code>token0 = WETH (0x4200...0006) &lt; token1 = CLAWD (0x9f86...6b07)</code>, the correct Uniswap ordering, so all 7 live-deployed instances are unaffected. <code>LiquidityVesting</code>&#39;s own constructor performs no ordering check, so a hypothetical direct (non-factory) deployment with reversed tokens would construct successfully and only fail later, at <code>lockUp()</code>&#39;s <code>mint</code>.</p>
+<p><strong>Recommendation</strong>: Optionally add <code>require(_token0 &lt; _token1)</code> for direct-deployment safety.</p>
+<hr>
+<h3 id="15-owner-is-a-single-point-of-control-over-all-fund-moving-funct">[15] <strong>Owner is a single point of control over all fund-moving functions — inherent, not a defect</strong></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>Access-4</code>), Phase 2 general agreement (boundary, access-control agents)<br><strong>Location</strong>: <code>sweep()</code>, <code>lockUp()</code>, <code>claim()</code>, <code>vest()</code></p>
+<p><strong>Description</strong>: The owner is also the sole beneficiary/depositor — there is no third-party user whose funds this contract custodies on their behalf. <code>sweep()</code> correctly cannot pull <code>token0</code>/<code>token1</code> while locked or touch the position manager address; <code>renounceOwnership</code> is disabled so the contract cannot be bricked into an unowned state. Compromised-owner risk (a stolen owner key could <code>sweep</code> non-locked balances and redirect future vests) is the standard single-key exposure inherent to this design — mitigable via a multisig <code>owner</code>, no code change required.</p>
+<hr>
+<h3 id="16-erc777callback-hook-reentrancy-surface-exists-but-is-not-expl">[16] <strong>ERC777/callback-hook reentrancy surface exists but is not exploitable</strong></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>ERC20-4</code>), Phase 2 (near-universal CEI confirmation across agents)<br><strong>Location</strong>: <code>_vest()</code> — <code>LiquidityVesting.sol:237-268</code></p>
+<p><strong>Description</strong>: If CLAWD has transfer hooks, the final <code>collect()</code> to <code>owner()</code> mid-<code>_vest()</code> execution is a reentrancy surface. Not exploitable: all mutating functions are <code>onlyOwner</code> (any reentrancy only affects the beneficiary&#39;s own funds), and checks-effects-interactions holds (<code>vestedLiquidity += toLiquidate</code> is committed before the external calls), so a reentrant <code>vest()</code> recomputes <code>toLiquidate == 0</code> and reverts with <code>&quot;Nothing to vest&quot;</code>.</p>
+<hr>
+<h3 id="17-inlined-fullmathmuldivtickmath-libraries-are-faithful-correct">[17] <strong>Inlined <code>FullMath.mulDiv</code>/<code>TickMath</code> libraries are faithful, correct copies of canonical Uniswap V3</strong></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: Asm-1/Asm-2]</code> — dedicated assembly-focused review; no phase-2 contradiction (phase-2&#39;s math-precision agent independently verified the surrounding vesting arithmetic is sound but did not do a line-by-line canonical diff of these libraries)<br><strong>Location</strong>: <code>FullMath.mulDiv()</code> (lines 82-108), <code>TickMath.getSqrtRatioAtTick()</code> (lines 48-77)</p>
+<p><strong>Description</strong>: The overflow guard (<code>require(denominator &gt; prod1)</code>) is present and correct, all 20 <code>TickMath</code> magic constants match canonical Uniswap V3 exactly, and both libraries are memory-safe. They are reachable only from the <code>view</code> function <code>previewVest()</code>, so even a hypothetical defect here could not affect locked funds.</p>
+<hr>
+<h3 id="18-division-before-multiplication-in-vesting-percentage-computat">[18] <strong>Division-before-multiplication in vesting percentage computation — self-correcting, not exploitable</strong></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (<code>Math-1</code>), Phase 2 independent numeric verification (agent 1: math-precision) confirming no drift/underflow risk<br><strong>Location</strong>: <code>_vest()</code> (lines 239-240), <code>vestedPercent()</code> (285), <code>previewVest()</code> (305)</p>
+<p><strong>Description</strong>: <code>vestedPct = elapsed * 1e18 / vestDuration</code> then <code>totalVestedLiq = uint128(vestedPct * initialLiquidity / 1e18)</code> truncates the ratio before rescaling, rather than computing <code>elapsed * initialLiquidity / vestDuration</code> directly. The <code>1e18</code> scaling bounds relative error to ~1e-18; the terminal branch (<code>elapsed &gt;= vestDuration ⇒ vestedPct = 1e18</code>) recomputes <code>totalVestedLiq = initialLiquidity</code> exactly, so any rounding fully reconciles at completion — independently confirmed via numeric trace by both phases, no drift or underflow occurs.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">uint128 totalVestedLiq = elapsed &gt;= vestDuration
+    ? initialLiquidity
+    : uint128(uint256(initialLiquidity) * elapsed / vestDuration);
+</code></pre>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill high">High</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>7</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>7</td>
+</tr>
+</tbody></table></div>
+<p>The standout result of running both phases is <strong>Finding 1</strong> — a real, low-cost, third-party griefing attack (permissionless <code>increaseLiquidity()</code> bricking the unconditional final <code>burn()</code>) that the checklist-driven Phase 1 pass did not surface, but which a single blind Phase 2 attacker agent (flow-gap specialty) found and which this synthesis independently re-verified against the deployed source. <strong>Finding 2</strong> (the <code>vestedLiquidity</code> re-lock bug) was independently rediscovered by 6 of the 12 blind Phase 2 agents in addition to Phase 1 — the strongest corroboration in this audit. Both deserve prompt remediation before any instance is re-locked or left exposed to griefing.</p>
+<p>No Critical-severity, unconditional third-party fund-theft path was found. The core linear-vesting arithmetic (within a single lock lifecycle) is sound, and the owner-gated design correctly prevents early extraction of locked principal.</p>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiewpuoj7hr53sqmfeq5hhb5pmr7tqin32t25jo3xg3ngnzielzy7y.ipfs.community.bgipfs.com/"><code>https://bafkreiewpuoj7hr53sqmfeq5hhb5pmr7tqin32t25jo3xg3ngnzielzy7y.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/296">#296</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

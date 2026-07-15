@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMFIOpLendingV22 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #277">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">PMFIOpLendingV22</h1>
+    <p class="job-sub">Job #277 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/277"><b>Job page</b> #277</a>
+      <a class="chip" href="https://bafkreichk22bgmlvrttkagzmcoba75dq44la6p4bn7dcteyahkm4oodz7q.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — PMFIOpLendingV22</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Job</strong></td>
+<td>Leftclaw #277 — PMFI OpLend V2.2</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Single flat file (all contracts)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>src_PMFIOpLendingV22.sol</code> (1054 lines)</td>
+</tr>
+<tr>
+<td><strong>Contracts</strong></td>
+<td><code>PMFILegTokenV22</code> · <code>PMFIPositionVaultV22</code><br><code>PMFIPositionFactoryV22</code> · <code>PMFIPrimaryMarketplaceV22</code></td>
+</tr>
+<tr>
+<td><strong>Chain</strong></td>
+<td>Base (8453)</td>
+</tr>
+<tr>
+<td><strong>Methodologies</strong></td>
+<td>Pashov 12-agent parallel · Ethskills 8-skill</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>75</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[90] <strong>1. Borrower USDC-Blacklist Forces Default — Permanent Repayment DoS</strong></p>
+<p><code>PMFIPositionVaultV22.repayInFull</code> · Confidence: 90</p>
+<p><strong>Description</strong><br><code>repayInFull()</code> pulls USDC directly from <code>borrower</code> via <code>_safeTransferRepaymentUsdcFromExact(borrower, required)</code> and hard-checks that <code>msg.sender == borrower</code>; if Circle&#39;s blocklist is applied to the borrower address at any point after funding closes, the transfer reverts on every call, the repayment deadline passes, and default settlement fires — transferring all collateral to P holders instead of USDC repayment.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- _safeTransferRepaymentUsdcFromExact(borrower, required);
++ _safeTransferRepaymentUsdcFromExact(msg.sender, required);
+</code></pre>
+<p><em>With <code>msg.sender == borrower</code> already enforced above, the behavior is identical for the normal path; but a proxy/agent contract that the borrower controls and is not blocklisted could satisfy the payment.</em></p>
+<hr>
+<p>[80] <strong>2. Inline USDC Push to Seller Permanently DoS&#39;s All Buys If Seller Is Blocklisted</strong></p>
+<p><code>PMFIPrimaryMarketplaceV22.buy</code> · Confidence: 80</p>
+<p><strong>Description</strong><br><code>buy()</code> forwards <code>sellerPrice</code> USDC directly to <code>s.seller</code> (the borrower) inline before P tokens are delivered and before <code>closeFunding</code> is called; if the seller&#39;s address is on USDC&#39;s blocklist (applied by Circle at any time after position creation), every call to <code>buy()</code> reverts, permanently blocking primary-market purchases for that vault for the remainder of the funding window and forcing eventual <code>closeExpired</code> with no funding.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- _safeTransferUsdcExact(s.seller, sellerPrice);
++ pendingProceeds[s.seller] += sellerPrice;
+</code></pre>
+<p><em>Replace the push with a pull-payment mapping; add a <code>withdrawProceeds()</code> function so the seller claims accumulated USDC independently of buyer transactions.</em></p>
+<hr>
+<p>[75] <strong>3. <code>_redeemP</code> Burns P Tokens for Zero Output When USDC Pool Is Tiny Relative to Supply</strong></p>
+<p><code>PMFIPositionVaultV22._redeemP</code> · Confidence: 75 · [agents: 1, 3, 6, 12]</p>
+<p><strong>Description</strong><br><code>previewRedeemP</code> uses <code>Math.mulDiv(usdcPoolRemaining, amount, P.totalSupply())</code> with floor division; in early (USDC) settlement with high-decimal collateral (e.g., 18-decimal ETH-like token with 1e18 supply) and a USDC target that is orders of magnitude smaller, <code>usdcOut</code> rounds to zero for any redemption below <code>ceil(P.totalSupply() / usdcPaid)</code> tokens — and <code>_redeemP</code> burns the caller&#39;s P tokens and transfers nothing, silently destroying the position.</p>
+<hr>
+<p>[75] <strong>4. Implicit Minimum Purchase Lot: <code>quoteUsdc</code> Returns Zero for Small Buys When <code>usdcTotal ≪ amountInitial</code></strong></p>
+<p><code>PMFIPrimaryMarketplaceV22.buy / quoteUsdc</code> · Confidence: 75 · [agent: 10]</p>
+<p><strong>Description</strong><br><code>quoteUsdc</code> computes <code>Math.mulDiv(s.usdcTotal, amountSoldAfter, s.amountInitial)</code>; when <code>s.usdcTotal</code> (USDC 6-decimal) is far smaller than <code>s.amountInitial</code> (collateral in native decimals, up to 30), any <code>pAmount</code> below <code>ceil(amountInitial / usdcTotal)</code> produces <code>sellerPrice = 0</code> and the <code>ZeroUsdcCost</code> revert fires; in the extreme case (<code>amountInitial = 1e30</code>, <code>usdcTotal = 1</code>), the sale is purchasable only in one atomic all-or-nothing transaction since no partial fill can yield non-zero price.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[90]</td>
+<td>Borrower USDC-Blacklist Forces Default — Permanent Repayment DoS</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[80]</td>
+<td>Inline USDC Push to Seller Permanently DoS&#39;s All Buys If Seller Is Blocklisted</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[75]</td>
+<td><code>_redeemP</code> Burns P Tokens for Zero Output When USDC Pool Is Tiny Relative to Supply</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[75]</td>
+<td>Implicit Minimum Purchase Lot: <code>quoteUsdc</code> Returns Zero for Small Buys</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. These are not false positives — they are high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><p><strong><code>repayInFull</code> Guard Is a Tautology</strong> — <code>PMFIPositionVaultV22.repayInFull</code> — Code smells: <code>N.balanceOf(borrower) != nAmount</code> is always false since N is non-transferable (all N lives at <code>borrower</code>); <code>exercisedN != 0</code> and <code>usdcPaid != 0</code> are also always false on first valid call. The <code>AccountingInvariantBroken</code> revert path is permanently unreachable — [agents: 4, 5, 7, 9]</p>
+</li>
+<li><p><strong><code>closedWithoutOutstandingP</code> Is a Dead Write</strong> — <code>PMFIPositionVaultV22.closeFunding / redeemPair</code> — Code smells: flag is set in two places (lines 274, 329) but never read by any function; <code>_settle()</code> already checks <code>P.totalSupply() &gt; 0</code> independently. An intended alternate settlement path for the all-P-paired case was never implemented, leaving a permanently stuck vault state (N.supply=0, P.supply=0, settle reverts NoPSupply) with no on-chain recovery — [agents: 5, 10, 11, 12]</p>
+</li>
+<li><p><strong>Borrower Exclusive <code>redeemPair</code> + Repayment Credit Creates One-Sided Option</strong> — <code>PMFIPositionVaultV22.redeemPair / repaymentRequiredUsdc</code> — Code smells: because N tokens are non-transferable and held exclusively by the borrower, only the borrower can call <code>redeemPair()</code>; each call increments <code>pairedN</code>, reducing <code>repaymentRequiredUsdc = totalRepaymentUsdc * (1 - pairedN/initialCollateralAmount)</code>; a borrower who buys P at secondary-market discount and pairs can reduce their repayment obligation to near-zero while capturing any collateral appreciation — remaining P holders receive proportionally lower USDC payout and cannot prevent the strategy — [agent: 11]</p>
+</li>
+<li><p><strong><code>redeemPair</code> Missing Explicit <code>onlyBorrower</code> Guard</strong> — <code>PMFIPositionVaultV22.redeemPair</code> — Code smells: access is implicitly enforced by N non-transferability; if N tokens in any future version or derived contract allow transfers, any N holder could pair and extract collateral without the borrower&#39;s consent — [agents: 5, ethskills A-2]</p>
+</li>
+<li><p><strong>Vault Settlement Has Liveness Dependency on Permissionless <code>closeExpired</code> Call</strong> — <code>PMFIPositionVaultV22.settle</code> / <code>PMFIPrimaryMarketplaceV22.closeExpired</code> — Code smells: <code>settle()</code> requires <code>fundingClosed == true</code>, set only via <code>onlyMarketplace closeFunding()</code>; if <code>closeExpired</code> is never called after funding deadline (marketplace deprecated, griefed, or forgotten), all vault exits (<code>settle</code>, <code>repayInFull</code>, <code>redeemPair</code>, <code>claimCollateralRefund</code>) are permanently blocked; rescue is always available but is an implicit external dependency with no on-chain incentive — [agents: 5, 12]</p>
+</li>
+<li><p><strong><code>buy()</code> + <code>cancel()</code> Seller-Fill Optionality Asymmetry</strong> — <code>PMFIPrimaryMarketplaceV22.buy / cancel</code> — Code smells: USDC paid per fill goes directly to the seller immediately (no minimum fill commitment); seller can call <code>cancel()</code> at any time to stop the sale and recover unsold-P-backed collateral; borrower can observe demand and cancel at exactly their desired raise amount, creating a risk-free option; buyers cannot predict or prevent early termination — [agents: 9, 11]</p>
+</li>
+<li><p><strong><code>pSupplyAtSettle</code> / <code>collateralPoolAtSettle</code> Snapshots Diverge Immediately After First Redemption</strong> — <code>PMFIPositionVaultV22.previewRedeemP / _settle</code> — Code smells: <code>_settle()</code> stores public <code>collateralPoolAtSettle</code> and <code>pSupplyAtSettle</code> but <code>previewRedeemP</code> uses live <code>accountedCollateral</code> and <code>P.totalSupply()</code>; after the first redemption the snapshots are stale; off-chain integrators computing <code>collateralPoolAtSettle * userBalance / pSupplyAtSettle</code> will see inflated redemption rates that grow increasingly stale — [agents: 6, 10]</p>
+</li>
+<li><p><strong><code>sale.usdcRemaining</code> Is Dead State Tracking</strong> — <code>PMFIPrimaryMarketplaceV22.buy</code> — Code smells: <code>s.usdcRemaining</code> is decremented in every <code>buy()</code> call but is never read by any function in the contract; it is set to zero in <code>_closeSale()</code> but has zero effect on any settlement path; wasted SSTORE on every purchase — [agents: 4, 9]</p>
+</li>
+<li><p><strong><code>feeRecipient</code> ETH Trap</strong> — <code>PMFIPositionFactoryV22.withdrawCreationFees</code> — Code smells: <code>feeRecipient</code> is immutable; <code>withdrawCreationFees()</code> pushes ETH via low-level call with no fallback path; if <code>feeRecipient</code> is a contract without <code>payable receive()</code> the entire accumulated creation fee balance is permanently locked with no owner rescue — [ethskills A-1]</p>
+</li>
+<li><p><strong>P Token Donation to Marketplace Permanently Locks Settlement Pool Fraction</strong> — <code>PMFIPrimaryMarketplaceV22 / PMFIPositionVaultV22._redeemP</code> — Code smells: <code>closeFunding(unsoldP)</code> burns exactly the tracked <code>s.amountRemaining</code> from the marketplace but not excess P donated directly via ERC20 transfer; extra P counts in <code>P.totalSupply()</code> denominator during settlement but the marketplace has no <code>redeemP()</code> function to claim its share; that fraction of the collateral pool is permanently locked — pure griefing, attacker loses their investment — [agents: 3, 12, ethskills A-5]</p>
+</li>
+<li><p><strong>Rebasing Collateral Yield Permanently Locked</strong> — <code>PMFIPositionVaultV22</code> — Code smells: all collateral exit paths use <code>accountedCollateral</code> (not <code>collateral.balanceOf(vault)</code>); for rebasing tokens (stETH, aTokens) the vault&#39;s actual balance grows above <code>accountedCollateral</code> over time and no exit path can sweep the surplus — [ethskills L-2]</p>
+</li>
+<li><p><strong>Zero-Decimal Collateral Allowed With No Guardrail</strong> — <code>PMFIPositionFactoryV22.createPosition</code> — Code smells: factory checks <code>decimals() &gt; 30</code> but allows <code>decimals() == 0</code>; 0-decimal collateral means 1 unit = 1 P token = smallest possible position granularity; unusual and likely unintended — [ethskills L-3]</p>
+</li>
+</ul>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<p>This review combined two independent parallel methodologies:</p>
+<p><strong>Pashov 12-agent</strong>: Math-precision · Access-control · Economic-security · Execution-trace · Invariant · Periphery · First-principles · Asymmetry · Boundary · Numerical-gap · Trust-gap · Flow-gap</p>
+<p><strong>Ethskills 8-skill</strong>: General · Precision-math · ERC20-weird-tokens · DeFi-lending · Chain-specific · DoS · Access-control · Flash-loans</p>
+<p>Key protocol-level design that was verified as sound:</p>
+<ul>
+<li>Accounting invariant <code>pairedN + exercisedN + N.totalSupply() == initialCollateralAmount</code> holds across all code paths</li>
+<li>Binary settlement (USDC XOR collateral, never both) correctly enforced</li>
+<li>CEI pattern correctly applied throughout</li>
+<li><code>ReentrancyGuard</code> correctly placed on all state-modifying vault and marketplace functions</li>
+<li><code>_safeTransferCollateralFromExact</code> fee-on-transfer protection correctly applied</li>
+<li><code>repaymentRequiredUsdc()</code> intentional rounding UP (borrower credit for <code>pairedN</code>) is design-correct</li>
+<li>Flash-loan circular self-funding path is non-profitable (attacker pays protocol fee, recovers nothing extra)</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended. For a consultation regarding your projects&#39; security, visit <a href="https://www.pashov.com">https://www.pashov.com</a></p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreichk22bgmlvrttkagzmcoba75dq44la6p4bn7dcteyahkm4oodz7q.ipfs.community.bgipfs.com/"><code>https://bafkreichk22bgmlvrttkagzmcoba75dq44la6p4bn7dcteyahkm4oodz7q.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/277">#277</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultID System — Smart Contract Security Audit — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #209">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultID System — Smart Contract Security Audit</h1>
+    <p class="job-sub">Job #209 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/209"><b>Job page</b> #209</a>
+      <a class="chip" href="https://bafkreibkohsxomstmwysmsci2o7qpo6itvrjewmfugshhsvaqxepdidmxm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#medium-findings">Medium Findings</a></li>
+      <li><a href="#low-findings">Low Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#informational-findings">Informational Findings</a></li>
+      <li><a href="#positive-security-observations">Positive Security Observations</a></li>
+      <li><a href="#appendix-cross-methodology-agreement">Appendix: Cross-Methodology Agreement</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>VaultID System — Smart Contract Security Audit</h1>
+<p><strong>Engagement:</strong> leftclaw.services Job #209<br><strong>Contracts Audited:</strong></p>
+<ul>
+<li>VaultIDRegistry — <code>0x0f3C1F7968c3e5a6393B6dB819817fe8CE8beaE2</code> on Base</li>
+<li>VaultID — <code>0xbE338bDed0c01Ad17C9EA64e54D1d581D3bBf413</code> on Base</li>
+<li>VaultIDMarketplace — <code>0x1C2d3bA5D857543438D64Ef5F76A0C1b2Ae7054D</code> on Base</li>
+</ul>
+<p><strong>Source:</strong> Sourcify full-match (chain 8453)<br><strong>Audit Date:</strong> 2026-05-19<br><strong>Methodologies Applied:</strong> ethskills (7 domain checklists) + Pashov 8-agent methodology with 4-gate validation</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>The VaultID system implements a soulbound credential NFT ecosystem with three contracts: a subscription/profile registry, a core ERC721 credential token, and a marketplace for issuer storefronts. The codebase is well-structured, applies OpenZeppelin standards correctly, and includes several positive security controls: Ownable2Step for ownership transfers, nonReentrant on all value-moving functions, a 48-hour timelock on VaultID registry updates, and a three-actor revocation model with clean separation of revocation flags.</p>
+<p><strong>No critical or high severity vulnerabilities were identified.</strong> The following findings are presented in priority order.</p>
+<h3 id="finding-counts">Finding Counts</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>6</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>3</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="medium-findings">Medium Findings</h2>
+<hr>
+<h3 id="m-1-setbasicmintquota0-permanently-doses-basic-subscription-mint">[M-1] <code>setBasicMintQuota(0)</code> Permanently DoSes BASIC Subscription Minting</h3>
+<p><strong>Severity:</strong> Medium<br><strong>Confidence:</strong> High (confirmed by both methodologies)<br><strong>Location:</strong> <code>VaultIDRegistry.setBasicMintQuota()</code> (line 302), <code>VaultIDRegistry.consumeBasicMint()</code> (line 160)</p>
+<p><strong>Description:</strong><br><code>setBasicMintQuota</code> only rejects <code>type(uint32).max</code>, allowing the owner to set the quota to 0. When <code>basicMintQuota == 0</code>, <code>consumeBasicMint</code> evaluates <code>sub.mintsUsedInPeriod &gt;= basicMintQuota</code> as <code>0 &gt;= 0 = true</code> and always reverts with <code>QuotaExceeded</code>. All BASIC subscription holders are unable to mint despite having a valid, paid, active subscription.</p>
+<p><strong>Proof of Concept:</strong></p>
+<pre><code>1. owner.call: registry.setBasicMintQuota(0)
+2. alice.call: vault.mintWithSubscription(params)  [alice has active BASIC sub]
+3. VaultID calls: registry.consumeBasicMint(alice)
+   → sub.mintsUsedInPeriod = 0, basicMintQuota = 0
+   → 0 &gt;= 0 == true → revert QuotaExceeded()
+4. All BASIC subscribers&#39; mintWithSubscription calls revert until quota is restored.
+</code></pre>
+<p><strong>Recommendation:</strong><br>Enforce a minimum quota of 1:</p>
+<pre><code class="language-solidity">function setBasicMintQuota(uint32 _basicMintQuota) external onlyOwner {
+    if (_basicMintQuota &lt; 1 || _basicMintQuota == type(uint32).max) revert InvalidQuota();
+    basicMintQuota = _basicMintQuota;
+    emit BasicMintQuotaUpdated(_basicMintQuota);
+}
+</code></pre>
+<hr>
+<h3 id="m-2-vaultidmarketplace-setvaultsetregistry-lack-timelock-inconsi">[M-2] VaultIDMarketplace <code>setVault</code>/<code>setRegistry</code> Lack Timelock — Inconsistent With VaultID Core</h3>
+<p><strong>Severity:</strong> Medium<br><strong>Confidence:</strong> High (confirmed by both methodologies)<br><strong>Location:</strong> <code>VaultIDMarketplace.setVault()</code> (line 184), <code>VaultIDMarketplace.setRegistry()</code> (line 178)</p>
+<p><strong>Description:</strong><br>VaultID&#39;s registry pointer is protected by a 48-hour timelock (<code>REGISTRY_UPDATE_DELAY</code>) implemented via <code>proposeRegistry</code>/<code>applyRegistryProposal</code>. The VaultIDMarketplace has no equivalent delay for its <code>vault</code> and <code>registry</code> pointers, which can be changed in a single transaction. A compromised owner key can instantly redirect all marketplace purchases to a malicious vault contract, stealing buyer funds and minting fake credentials to buyers.</p>
+<p><strong>Proof of Concept:</strong></p>
+<pre><code>1. Attacker compromises owner private key.
+2. Attacker deploys MaliciousVault that:
+   - In marketplaceMint: calls safeTransferFrom(buyer, attacker, …) via front-loaded calldata
+   - Returns a fake tokenId
+3. Attacker calls: marketplace.setVault(maliciousVault)  — single transaction, immediate
+4. Next buyer calls: purchaseProduct(...)
+   - _collectPayment sends buyer tokens to platformFeeRecipient and issuer (legitimate)
+   - _mintPurchasedVault calls maliciousVault.marketplaceMint — attacker can drain any
+     residual approvals or execute arbitrary logic
+5. Attacker also calls setRegistry(maliciousRegistry) to manipulate isIssuerActive checks.
+</code></pre>
+<p><strong>Recommendation:</strong><br>Implement the same timelocked proposal pattern as VaultID:</p>
+<pre><code class="language-solidity">struct VaultProposal { address proposedVault; uint64 executableAt; }
+VaultProposal public vaultProposal;
+uint64 public constant VAULT_UPDATE_DELAY = 48 hours;
+
+function proposeVault(address newVault) external onlyOwner {
+    if (newVault == address(0)) revert ZeroAddress();
+    vaultProposal = VaultProposal({proposedVault: newVault, executableAt: uint64(block.timestamp + VAULT_UPDATE_DELAY)});
+    emit VaultUpdateProposed(newVault, vaultProposal.executableAt);
+}
+
+function applyVaultProposal() external onlyOwner {
+    if (vaultProposal.proposedVault == address(0)) revert ProposalMissing();
+    if (block.timestamp &lt; vaultProposal.executableAt) revert DelayNotElapsed();
+    vault = IVaultIDForMarketplace(vaultProposal.proposedVault);
+    delete vaultProposal;
+}
+</code></pre>
+<hr>
+<h3 id="m-3-usdcerc20-blocklist-causes-permanent-per-issuer-product-dos-">[M-3] USDC/ERC20 Blocklist Causes Permanent Per-Issuer Product DoS in Marketplace</h3>
+<p><strong>Severity:</strong> Medium<br><strong>Confidence:</strong> High (confirmed by both methodologies; USDC blocklist is a well-documented plausible risk)<br><strong>Location:</strong> <code>VaultIDMarketplace._collectPayment()</code> (lines 221–235)</p>
+<p><strong>Description:</strong><br><code>_collectPayment</code> executes two sequential <code>safeTransferFrom</code> calls: one to <code>platformFeeRecipient</code> and one directly to <code>p.issuer</code>. USDC and USDT maintain operator-controlled address blocklists. If <code>platformFeeRecipient</code> is blocklisted, all products using USDC fail. If an issuer&#39;s address is blocklisted, all of that issuer&#39;s USDC-denominated products fail permanently — there is no mechanism to change <code>p.issuer</code> after product creation.</p>
+<p><strong>Proof of Concept:</strong></p>
+<pre><code>State: product.paymentToken = USDC, product.issuer = IssuerAddr
+Event: Circle blocklists IssuerAddr
+Result: Any buyer&#39;s purchaseProduct call:
+  safeTransferFrom(buyer, platformFeeRecipient, fee)  → succeeds
+  safeTransferFrom(buyer, IssuerAddr, issuerAmount)   → REVERTS (blocklisted)
+Consequence: All of IssuerAddr&#39;s USDC products are permanently un-purchasable.
+             IssuerAddr cannot self-rescue (cannot change p.issuer).
+             Owner cannot rescue (no function to update product.issuer).
+</code></pre>
+<p><strong>Recommendation:</strong><br>Adopt a pull-payment model for issuer proceeds. This eliminates the blocklist DoS attack surface and provides resilience against any token-level transfer restriction:</p>
+<pre><code class="language-solidity">mapping(address =&gt; mapping(address =&gt; uint256)) public claimable; // token → issuer → amount
+
+function _collectPayment(Product storage p) internal {
+    if (p.price == 0) return;
+    uint256 fee = (p.price * p.platformFeeBps) / MAX_BPS;
+    uint256 issuerAmount = p.price - fee;
+    IERC20 token = IERC20(p.paymentToken);
+    if (fee &gt; 0) token.safeTransferFrom(msg.sender, platformFeeRecipient, fee);
+    if (issuerAmount &gt; 0) {
+        token.safeTransferFrom(msg.sender, address(this), issuerAmount);
+        claimable[p.paymentToken][p.issuer] += issuerAmount;
+    }
+}
+
+function claimProceeds(address token) external {
+    uint256 amount = claimable[token][msg.sender];
+    if (amount == 0) revert NothingToClaim();
+    claimable[token][msg.sender] = 0;
+    IERC20(token).safeTransfer(msg.sender, amount);
+}
+</code></pre>
+<hr>
+<h2 id="low-findings">Low Findings</h2>
+<hr>
+<h3 id="l-1-mint-instead-of-safemint-soulbound-credentials-can-be-perman">[L-1] <code>_mint</code> Instead of <code>_safeMint</code> — Soulbound Credentials Can Be Permanently Locked in Incompatible Contracts</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> Medium<br><strong>Location:</strong> <code>VaultID._mintVault()</code> (line 527)</p>
+<p><strong>Description:</strong><br><code>_mintVault</code> uses <code>_mint(to, tokenId)</code> without calling <code>onERC721Received</code> on the recipient. Because tokens are soulbound (transfers blocked), a credential minted to a smart contract that does not implement <code>IERC721Receiver</code> is permanently unrecoverable unless a recovery wallet was set and that wallet&#39;s contract can call <code>recoverVault</code>.</p>
+<p><strong>Proof of Concept:</strong><br>An issuer calls <code>issuerMint(multisigContract, params)</code> where the multisig does not implement <code>IERC721Receiver</code> and <code>params.recoveryWallet == address(0)</code>. The credential is permanently locked.</p>
+<p><strong>Recommendation:</strong><br>Use <code>_safeMint</code> for issuer and marketplace mints where the recipient is unknown:</p>
+<pre><code class="language-solidity">// In _mintVault, for non-self-mints:
+if (params.issuer != address(0)) {
+    _safeMint(to, tokenId);  // enforces onERC721Received
+} else {
+    _mint(to, tokenId);       // user self-mints — safe
+}
+</code></pre>
+<p>Alternatively, require <code>params.recoveryWallet != address(0)</code> for issuer/marketplace mints to contract addresses.</p>
+<hr>
+<h3 id="l-2-subscriptionperiod-changes-retroactively-affect-all-existing">[L-2] <code>subscriptionPeriod</code> Changes Retroactively Affect All Existing Subscribers</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> Medium<br><strong>Location:</strong> <code>VaultIDRegistry.setSubscriptionPeriod()</code> (line 296), <code>VaultIDRegistry.consumeBasicMint()</code> (line 155)</p>
+<p><strong>Description:</strong><br><code>subscriptionPeriod</code> is a global variable used to determine when each subscriber&#39;s mint quota resets. A decrease in <code>subscriptionPeriod</code> can cause existing subscribers&#39; periods to appear already-expired relative to the new shorter period, granting them an immediate quota reset on their next mint. An increase delays quota resets for existing subscribers without their knowledge.</p>
+<p><strong>Proof of Concept:</strong></p>
+<pre><code>Alice: BASIC sub, periodStart = T₀, used 8/10 mints, subscriptionPeriod = 30 days
+Admin reduces subscriptionPeriod to 15 days at T₀ + 20 days.
+Alice&#39;s next consumeBasicMint:
+  block.timestamp (T₀+20d) &gt;= periodStart (T₀) + subscriptionPeriod (15d) → true
+  → period reset → mintsUsedInPeriod = 0 (unexpected fresh quota for Alice)
+</code></pre>
+<p><strong>Recommendation:</strong><br>Store <code>periodDuration</code> per-subscription at purchase time and use the subscriber&#39;s own recorded duration for quota reset calculations. Only apply new global periods to future subscriptions.</p>
+<hr>
+<h3 id="l-3-no-max-price-parameter-in-purchaseproduct-issuer-front-run-p">[L-3] No Max-Price Parameter in <code>purchaseProduct</code> — Issuer Front-Run Possible</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> Medium<br><strong>Location:</strong> <code>VaultIDMarketplace.purchaseProduct()</code> (line 165), <code>VaultIDMarketplace.updateProduct()</code> (line 144)</p>
+<p><strong>Description:</strong><br>An issuer can call <code>updateProduct</code> to raise the price of a product after a buyer has submitted a <code>purchaseProduct</code> transaction. Buyers who approved <code>type(uint256).max</code> (a common wallet pattern) will pay the higher price without consent.</p>
+<p><strong>Proof of Concept:</strong></p>
+<pre><code>Buyer sees product price: 100 USDC. Approves max USDC to Marketplace.
+Issuer frontruns: updateProduct(productId, {price: 10_000e6, ...})
+Buyer&#39;s purchaseProduct executes at 10,000 USDC.
+Issuer profit: 9,900 USDC above the advertised price.
+</code></pre>
+<p><strong>Recommendation:</strong><br>Add a <code>maxPrice</code> guard to <code>PurchaseParams</code>:</p>
+<pre><code class="language-solidity">struct PurchaseParams {
+    uint256 productId;
+    address recipient;
+    uint256 maxPrice;  // 0 = no limit
+    string encryptedPayloadRef;
+    string metadataURI;
+    string membershipIdentifier;
+    address recoveryWallet;
+}
+
+// in purchaseProduct:
+if (params.maxPrice &gt; 0 &amp;&amp; p.price &gt; params.maxPrice) revert PriceExceeded();
+</code></pre>
+<hr>
+<h3 id="l-4-extendexpiry-permitted-on-revoked-credentials-state-inconsis">[L-4] <code>extendExpiry</code> Permitted on Revoked Credentials — State Inconsistency</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> High<br><strong>Location:</strong> <code>VaultID.extendExpiry()</code> (lines 299–316)</p>
+<p><strong>Description:</strong><br><code>extendExpiry</code> does not check <code>isRevoked</code>. An issuer, token owner, or admin can modify <code>v.expiry</code> on a revoked credential. Although <code>_isValidOwned</code> evaluates revocation flags before the expiry condition (so a revoked credential cannot be made &quot;valid&quot; by extending its expiry), the state inconsistency creates confusion for off-chain systems that may inspect <code>v.expiry</code> directly without also checking revocation status.</p>
+<p><strong>Recommendation:</strong><br>Add a revocation check to <code>extendExpiry</code>:</p>
+<pre><code class="language-solidity">function extendExpiry(uint256 tokenId, uint64 newExpiry) external {
+    address tokOwner = _requireOwned(tokenId);
+    if (isRevoked(tokenId)) revert RevokedCredential();
+    ...
+}
+</code></pre>
+<hr>
+<h3 id="l-5-tier-switch-in-purchasesubscription-stacks-extension-from-pr">[L-5] Tier Switch in <code>purchaseSubscription</code> Stacks Extension From Previous Tier&#39;s <code>paidThrough</code></h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> Medium<br><strong>Location:</strong> <code>VaultIDRegistry.purchaseSubscription()</code> (lines 127–135)</p>
+<p><strong>Description:</strong><br>When a subscriber switches from ISSUER to BASIC (or vice versa), the extension is calculated from <code>baseTime = sub.paidThrough</code> (their existing paid-through time under the previous tier). This means:</p>
+<ul>
+<li>An ISSUER subscriber with 12 months remaining who switches to BASIC pays for BASIC periods starting 12 months from now — they do not get immediate BASIC access.</li>
+<li>The user paid correctly in tokens (the BASIC price was charged), but the effective start of their BASIC subscription is deferred until their ISSUER sub expires.</li>
+</ul>
+<p>This is a UX/documentation concern rather than a fund loss, but could lead to confused subscribers who believe they have an active BASIC subscription starting immediately.</p>
+<p><strong>Proof of Concept:</strong></p>
+<pre><code>Alice: ISSUER sub, paidThrough = now + 365 days
+Alice buys 1 BASIC period (30 days):
+  baseTime = now + 365 days
+  sub.paidThrough = now + 395 days, sub.tier = BASIC
+  sub.periodStart = now (reset due to tier change)
+Alice cannot use canIssuerMint (now has BASIC tier)
+Alice cannot use consumeBasicMint until paidThrough &gt; now (365 days from now)
+Alice&#39;s BASIC quota kicks in only in 365 days, but she thinks she just bought BASIC
+</code></pre>
+<p><strong>Recommendation:</strong><br>Document clearly in UX that tier switches take effect at the current <code>paidThrough</code> date. Consider adding an optional flag to forfeit remaining pre-paid time and switch tiers immediately.</p>
+<hr>
+<h3 id="l-6-calculateexpiry-can-silently-produce-past-timestamps-for-ext">[L-6] <code>_calculateExpiry</code> Can Silently Produce Past Timestamps for Extreme Duration Values</h3>
+<p><strong>Severity:</strong> Low<br><strong>Confidence:</strong> Medium<br><strong>Location:</strong> <code>VaultIDMarketplace._calculateExpiry()</code> (line 253), <code>_validateProduct()</code> (line 258)</p>
+<p><strong>Description:</strong><br><code>_calculateExpiry</code> computes <code>uint64(block.timestamp + duration)</code>. <code>_validateProduct</code> does not bound <code>duration</code>. If <code>duration</code> is set to a value such that <code>block.timestamp + duration</code> overflows <code>uint64</code>, the silent truncation produces a timestamp in the past, causing the minted credential to be immediately expired.</p>
+<p><strong>Proof of Concept:</strong></p>
+<pre><code>block.timestamp ≈ 1,716,000,000 (May 2024)
+duration = type(uint64).max - 1,716,000,000 + 1 ≈ 1.844e19 - 1.716e9 + 1
+
+block.timestamp + duration ≈ type(uint64).max + 1 overflows uint64
+uint64(type(uint64).max + 1) = 0
+
+Credential expiry = 0 (no-expiry) OR near-zero (past timestamp)
+Depending on exact value, credential is either non-expiring or immediately expired.
+</code></pre>
+<p><strong>Recommendation:</strong><br>Add a maximum duration bound in <code>_validateProduct</code>:</p>
+<pre><code class="language-solidity">uint64 public constant MAX_PRODUCT_DURATION = 36500 days; // ~100 years
+
+function _validateProduct(ProductParams calldata params) internal view {
+    ...
+    if (params.duration &gt; MAX_PRODUCT_DURATION) revert InvalidDuration();
+    ...
+}
+</code></pre>
+<hr>
+<h2 id="informational-findings">Informational Findings</h2>
+<hr>
+<h3 id="i-1-isrevokedtokenid-returns-false-for-burnednon-existent-tokens">[I-1] <code>isRevoked(tokenId)</code> Returns <code>false</code> for Burned/Non-Existent Tokens</h3>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> <code>VaultID.isRevoked()</code> (line 392)</p>
+<p><strong>Description:</strong> <code>isRevoked</code> returns <code>false</code> when <code>_ownerOf(tokenId) == address(0)</code>, which covers both burned and never-issued tokens. External integrators that rely solely on <code>isRevoked() == false</code> as a validity signal will incorrectly treat burned credentials as &quot;not revoked.&quot; Use <code>credentialStatus()</code> for complete state information.</p>
+<p><strong>Recommendation:</strong> Document that <code>isRevoked(id) == false</code> does NOT imply the credential is valid. Add <code>isValid()</code> or direct integrators to <code>credentialStatus()</code> in NatSpec.</p>
+<hr>
+<h3 id="i-2-inline-audit-fix-comment-in-production-code">[I-2] Inline &quot;Audit Fix&quot; Comment in Production Code</h3>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> <code>VaultIDRegistry.registerOrUpdateIssuerProfile()</code> (line 234)</p>
+<p><strong>Description:</strong> The production code contains <code>// Audit fix: only first registration activates profile.</code> Historical audit-remediation notes should be removed before deployment; they reveal past vulnerability history and suggest incomplete cleanup.</p>
+<p><strong>Recommendation:</strong> Remove the <code>// Audit fix:</code> prefix from the comment.</p>
+<hr>
+<h3 id="i-3-purchaseproduct-permits-minting-to-the-marketplace-contract-">[I-3] <code>purchaseProduct</code> Permits Minting to the Marketplace Contract Itself</h3>
+<p><strong>Severity:</strong> Info<br><strong>Location:</strong> <code>VaultIDMarketplace.purchaseProduct()</code> (line 166)</p>
+<p><strong>Description:</strong> The only recipient validation is <code>!= address(0)</code>. A buyer can specify <code>params.recipient = address(marketplace)</code>. Since VaultID uses <code>_mint</code> (not <code>_safeMint</code>), this succeeds and a soulbound credential is permanently locked in the marketplace contract with no rescue mechanism.</p>
+<p><strong>Recommendation:</strong> Add <code>if (params.recipient == address(vault) || params.recipient == address(this)) revert ZeroAddress()</code>.</p>
+<hr>
+<h2 id="positive-security-observations">Positive Security Observations</h2>
+<p>The following practices are well-implemented and worth acknowledging:</p>
+<ul>
+<li><strong>Ownable2Step</strong> prevents ownership transfer to a wrong address in all three contracts.</li>
+<li><strong>48-hour timelock</strong> on registry updates in VaultID provides protection against compromised key rapid attacks.</li>
+<li><strong>Three-actor revocation</strong> (owner/issuer/admin with no cross-clearing) correctly models the trust model described in the NatSpec.</li>
+<li><strong>SafeERC20</strong> used throughout for all ERC20 transfers.</li>
+<li><strong>nonReentrant</strong> applied to all value-moving functions.</li>
+<li><strong>Deactivated issuer self-reactivation blocked</strong> — the &quot;audit fix&quot; at line 234 correctly prevents a deactivated issuer from re-activating by editing their profile.</li>
+<li><strong>_userParams</strong> correctly forces <code>issuer: address(0)</code> for user self-mints, preventing unauthorized issuer impersonation in the issuer field.</li>
+<li><strong>Soulbound implementation</strong> via <code>_update</code> override is correct; <code>approve</code> and <code>setApprovalForAll</code> are properly disabled.</li>
+</ul>
+<hr>
+<h2 id="appendix-cross-methodology-agreement">Appendix: Cross-Methodology Agreement</h2>
+<p>Findings confirmed by both ethskills and pashov methodologies receive a confidence boost:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Ethskills ID</th>
+<th>Pashov ID</th>
+<th>Confidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>basicMintQuota(0) DoS</td>
+<td>E-1</td>
+<td>P-2</td>
+<td><strong>High</strong></td>
+</tr>
+<tr>
+<td>Marketplace no-timelock</td>
+<td>E-2</td>
+<td>P-4</td>
+<td><strong>High</strong></td>
+</tr>
+<tr>
+<td>USDC blocklist DoS</td>
+<td>E-3</td>
+<td>P-1</td>
+<td><strong>High</strong></td>
+</tr>
+<tr>
+<td>Max-price front-run</td>
+<td>E-6</td>
+<td>P-5</td>
+<td><span class="pill medium">Medium</span></td>
+</tr>
+<tr>
+<td>isRevoked false for burned</td>
+<td>E-7</td>
+<td>P-7</td>
+<td><span class="pill medium">Medium</span></td>
+</tr>
+</tbody></table></div>
+<hr>
+<p><em>Audit conducted by leftclaw.services automated audit worker</em><br><em>Methodologies: ethskills v1 (7 domains) + Pashov solidity-auditor (8 agents)</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibkohsxomstmwysmsci2o7qpo6itvrjewmfugshhsvaqxepdidmxm.ipfs.community.bgipfs.com/"><code>https://bafkreibkohsxomstmwysmsci2o7qpo6itvrjewmfugshhsvaqxepdidmxm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/209">#209</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

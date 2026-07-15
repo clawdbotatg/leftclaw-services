@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PublicMintRescueV5 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #311">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">PublicMintRescueV5</h1>
+    <p class="job-sub">Job #311 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/311"><b>Job page</b> #311</a>
+      <a class="chip" href="https://bafkreidlpd6gd7lj4wfhg52pkjgv27wflaoul2y2wajltj4x4qsgt36fzq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#what-this-contract-does">What this contract does</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads-not-promoted-to-findings-no-identifiable-third-party-victi">Leads (not promoted to findings — no identifiable third-party victim, or impact bounded to self)</a></li>
+      <li><a href="#notes-on-what-was-reviewed-and-cleared-no-finding">Notes on what was reviewed and cleared (no finding)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — PublicMintRescueV5</h1>
+<p><strong>Target:</strong> <code>0x4738086538893cBbadC431EC8FEF8f426496d52C</code><br><strong>Chain:</strong> Base (chain id 8453) — verified source pulled from BaseScan. Identical bytecode observed at the same address on Ethereum mainnet (unverified there).<br><strong>Scope:</strong> Single contract, <code>PublicMintRescueV5.sol</code>, 502 lines, no external imports/inheritance.<br><strong>Methodology:</strong> Two-phase audit — Phase 1 checklist breadth (8 domain checklists: general, precision-math, signatures, assembly, access-control, erc721/erc1155, erc20, dos) run in parallel, followed by Phase 2 attacker-mindset depth (12 independent agents: 9 specialty + 3 gap-hunter), run <strong>blind</strong> to Phase 1&#39;s findings. A final reconciliation pass cross-checked both phases against each other and against the source.</p>
+<h2 id="what-this-contract-does">What this contract does</h2>
+<p><code>PublicMintRescueV5</code> is designed to be the target of an <strong>EIP-7702 delegation</strong> from a compromised EOA. Once delegated, <code>address(this)</code> in the contract&#39;s code <em>is</em> the compromised wallet. A relayer (&quot;sponsor&quot;) submits <code>executeBatch()</code> carrying an EIP-712 signature from the EOA&#39;s own key, authorizing: a short batch of arbitrary calls (typically claiming/minting an asset), and a sweep of the EOA&#39;s ERC20/ERC721/ERC1155/native balances to a signer-chosen <code>safeRecipient</code>. A &quot;capture-and-sweep&quot; mechanism uses the token receiver hooks (<code>onERC721Received</code> etc.) to record exactly which asset IDs arrive during the batch, so they can be swept atomically without needing to predict mint-generated token IDs off-chain (the race condition this replaces from V4).</p>
+<p>The overall signature/replay/reentrancy scaffolding is well-built: EIP-712 domain binds <code>block.chainid</code> + <code>address(this)</code> (the EOA itself), nonce is strictly sequential, the sponsor is bound as the live <code>msg.sender</code> inside the digest (blocking front-running/relay-substitution), signature malleability is correctly guarded, and <code>nonReentrant</code> closes off reentrancy. Both audit phases independently confirmed all of this is sound. The real issues live in the newer &quot;capture-and-sweep&quot; mechanism and its interaction with <code>strictMode</code>.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p><strong>Overlap:</strong> 3 findings independently discovered by both phases (all 3 of the Medium/High-rated issues below) · <strong>Phase-1-only:</strong> 8 (all Low/Info) · <strong>Phase-2-only:</strong> re-verified leads, none promoted past Gate 4 (see Leads section) · <strong>Re-examined leads kept:</strong> all phase-unique findings confirmed against source; <strong>demoted:</strong> 0.</p>
+<p><strong>Completeness:</strong> 16 unique (contract, function, bug-class) tuples identified across both phases&#39; raw agent output, 16 covered in this unified report.</p>
+<p>Every finding below was walked end-to-end against the actual source (line numbers quoted) before assigning severity, per the engagement&#39;s verification standard.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-capture-buffer-overflow-silently-strands-assets-defeating-stri">[1] Capture-buffer overflow silently strands assets, defeating <code>strictMode</code>&#39;s all-or-nothing guarantee</h3>
+<p><strong>Severity: High</strong><br><strong>Origin: [both]</strong> — phase1: general/erc721/access-control checklists; phase2: independently raised as a full FINDING by <strong>8 of 12</strong> attacker-mindset agents (execution-trace, invariant, periphery, asymmetry, boundary, both numerical- and flow-gap-hunters, trust-gap-hunter), the strongest convergence of the entire audit.</p>
+<p><strong>Location:</strong> <code>_record()</code> L358-366, <code>onERC721Received</code>/<code>onERC1155Received</code>/<code>onERC1155BatchReceived</code> L189-215, <code>executeBatch()</code> L157-182, <code>_sweepCaptured()</code> L329-343.</p>
+<p><strong>Description:</strong> During <code>executeBatch</code>, <code>capturing</code> is set to <code>1</code> for the duration of the batch-call loop (L162, L177). Every inbound ERC721/1155 transfer during that window fires a receiver hook, which calls <code>_record</code>. Once <code>capturedCount</code> reaches <code>MAX_CAPTURED = 50</code> (L82), <code>_record</code> takes this branch:</p>
+<pre><code class="language-solidity">if (c &gt;= MAX_CAPTURED) {
+    emit CaptureBufferOverflow(token, tokenId);
+    return;                                    // &lt;-- no revert, ever
+}
+</code></pre>
+<p>This function has <strong>no visibility into <code>request.strictMode</code></strong> at all — it is called from the receiver hooks, which never receive or check the flag. Contrast this with every other failure path in the contract, which honors <code>strictMode</code> explicitly:</p>
+<pre><code class="language-solidity">// _sweep, L304/309/314, and _sweepCaptured, L340 — all do this:
+if (!ok &amp;&amp; request.strictMode) revert StrictSweepFailed();
+</code></pre>
+<p>The result: a batch call that mints/delivers more than 50 tokens (a single bulk-mint call, or an <code>onERC1155BatchReceived</code> with &gt;50 ids in one shot, L201-215) silently drops everything past the 50th into the void — never recorded, never attempted, never even <em>failing</em> in a way <code>strictMode</code> can catch. <code>_sweepCaptured</code> only ever iterates <code>store.capturedCount</code> (≤50, L332), so it has nothing to fail on. <code>executeBatch</code> completes normally and emits <code>MintRescueExecuted</code> (L181) as if the rescue fully succeeded, even under <code>strictMode=true</code>.</p>
+<p><strong>Proof of Concept:</strong></p>
+<ol>
+<li>Victim&#39;s EOA delegates to this contract via EIP-7702; victim signs a <code>strictMode=true</code> batch whose one signed call claims/mints 60 NFTs from a bulk-mint contract in a single call (well within <code>MAX_CALL_GAS_LIMIT=1_000_000</code>/<code>MAX_TOTAL_CALL_GAS_LIMIT=5_000_000</code>).</li>
+<li>Sponsor submits <code>executeBatch</code>. Each of the 60 <code>_safeMint</code>s fires <code>onERC721Received</code> → <code>_record</code>. Slots 0-49 fill normally; for tokens 51-60, <code>c &gt;= MAX_CAPTURED</code> is true, so each just emits <code>CaptureBufferOverflow</code> and returns.</li>
+<li><code>capturing</code> resets to 0; <code>_sweepCaptured</code> sweeps only the 50 recorded tokens to <code>safeRecipient</code>. <code>executeBatch</code> finishes and emits <code>MintRescueExecuted</code> — no revert, despite <code>strictMode=true</code>.</li>
+<li>The remaining 10 NFTs sit in the still-key-compromised EOA. The attacker who originally compromised the key (the entire reason this rescue is happening) can take them at any time afterward — the exact race condition this contract&#39;s &quot;atomic capture-and-sweep&quot; design was built to eliminate is silently reopened for anything past the 50th asset.</li>
+</ol>
+<p>Gate walk: no guard interrupts this (Gate 1 clears — explicitly no <code>strictMode</code> check exists in the overflow branch); reachable through completely normal usage of a single bulk-mint call, no privileged action required (Gate 2/3 clear); results in material, identifiable loss — assets the rescue was specifically trying to save remain exposed to the known-compromised key (Gate 4 clears). Rated <strong>High</strong> rather than Critical because it requires a specific batch shape (&gt;50 items delivered in one rescue), not an unconditional drain.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-diff"> struct MintRescueStorage {
+     uint256 rescueNonce;
+     uint256 reentrancyLock;
+     uint256 capturing;
+     uint256 capturedCount;
++    uint256 overflowed;
+     CapturedItem[MAX_CAPTURED] captured;
+ }
+@@
+ function _record(MintRescueStorage storage store, address token, uint256 tokenId, bool isERC1155) internal {
+     uint256 c = store.capturedCount;
+     if (c &gt;= MAX_CAPTURED) {
+         emit CaptureBufferOverflow(token, tokenId);
++        store.overflowed = 1;
+         return;
+     }
+     store.captured[c] = CapturedItem({token: token, isERC1155: isERC1155, tokenId: tokenId});
+     store.capturedCount = c + 1;
+ }
+@@
+ function _sweepCaptured(address safeRecipient, bool strictMode) internal {
+     MintRescueStorage storage store = _mintRescueStorage();
++    if (strictMode &amp;&amp; store.overflowed == 1) revert StrictSweepFailed();
+     uint256 n = store.capturedCount;
+     ...
+     store.capturedCount = 0;
++    store.overflowed = 0;
+ }
+</code></pre>
+<p>This makes an incomplete strict-mode capture fail loudly instead of silently succeeding. Also consider raising/removing the fixed 50-slot cap, since the loop is already gas-bounded by the batch&#39;s own limits.</p>
+<hr>
+<h3 id="2-untrusted-batch-call-target-can-deliberately-force-a-strictmod">[2] Untrusted batch-call target can deliberately force a <code>strictMode</code> rescue to revert (unauthenticated capture-hook injection)</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [both]</strong> — phase1: access-control checklist agent (flagged this exact mechanism independently); phase2: full FINDING from the periphery agent, corroborated as a lead by 3 more agents (invariant, first-principles, trust-gap-hunter).</p>
+<p><strong>Location:</strong> <code>onERC721Received()</code> L189-193, <code>onERC1155Received()</code> L195-199, <code>_sweepCaptured()</code> L329-343, <code>_sweepERC721()</code> L391-413.</p>
+<p><strong>Description:</strong> The receiver hooks record <code>(msg.sender, tokenId)</code> unconditionally whenever <code>store.capturing == 1</code>, with <strong>no verification that a real transfer actually happened</strong>:</p>
+<pre><code class="language-solidity">function onERC721Received(address, address, uint256 tokenId, bytes calldata) external returns (bytes4) {
+    MintRescueStorage storage store = _mintRescueStorage();
+    if (store.capturing == 1) _record(store, msg.sender, tokenId, false);
+    return ERC721_RECEIVED;
+}
+</code></pre>
+<p>Because <code>capturing</code> stays <code>1</code> for the whole batch-call loop, <strong>any contract invoked as one of the signed batch calls can call this hook directly</strong>, mid-execution, with any <code>tokenId</code> it likes. If it supplies an id it doesn&#39;t actually own, <code>_sweepCaptured</code>&#39;s later <code>_erc721OwnerOf</code> check (L397-401) fails (&quot;not owner&quot;), and under <code>strictMode</code> this reverts the <em>entire</em> batch via <code>StrictSweepFailed</code> (L340) — not just the poisoned entry, but every other asset the batch would otherwise have successfully rescued (other ERC20/native sweeps included, since a revert unwinds the whole transaction).</p>
+<p>This is directly relevant to this contract&#39;s threat model: its entire purpose (<code>PublicMintRescue</code>) is interacting with third-party &quot;public mint&quot; contracts, which are inherently less trusted than the rest of the signed batch — exactly the kind of target that could behave adversarially (whether maliciously or just buggy).</p>
+<p><strong>Proof of Concept:</strong> Victim signs a <code>strictMode=true</code> batch that (a) sweeps an existing ERC20 balance and native ETH, and (b) calls a &quot;mint&quot; contract M. M, when invoked, first calls <code>address(this).onERC721Received(0, 0, 999, &quot;&quot;)</code> directly (an id M does not own as <code>address(this)</code>), then does whatever else it does (or nothing). <code>_sweepCaptured</code> later calls <code>_sweepERC721(M, 999, safeRecipient)</code>, finds <code>ownerOf(999) != address(this)</code>, returns false, and <code>strictMode</code> reverts the <em>entire</em> transaction — including the ERC20 and native sweeps that had nothing to do with M.</p>
+<p><strong>Recommendation:</strong> Verify real ownership/balance before recording, not just that a call arrived:</p>
+<pre><code class="language-diff"> function onERC721Received(address, address, uint256 tokenId, bytes calldata) external returns (bytes4) {
+     MintRescueStorage storage store = _mintRescueStorage();
+-    if (store.capturing == 1) _record(store, msg.sender, tokenId, false);
++    if (store.capturing == 1) {
++        (bool ok, address owner) = _erc721OwnerOf(msg.sender, tokenId);
++        if (ok &amp;&amp; owner == address(this)) _record(store, msg.sender, tokenId, false);
++    }
+     return ERC721_RECEIVED;
+ }
+</code></pre>
+<p>Apply the analogous balance check to the ERC1155 hooks.</p>
+<hr>
+<h3 id="3-redundant-capture-explicit-listing-of-the-same-asset-reverts-a">[3] Redundant capture + explicit listing of the same asset reverts an otherwise-successful <code>strictMode</code> rescue</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [both]</strong> — phase1: general + erc721 checklist agents; phase2: full FINDING from 3 of 12 agents (first-principles, numerical-gap-hunter, flow-gap-hunter), corroborated as a lead by 6 more (near-unanimous across the panel).</p>
+<p><strong>Location:</strong> <code>executeBatch()</code> L179-180 (<code>_sweepCaptured</code> runs before <code>_sweep</code>), <code>_sweep()</code> L301-315, <code>_sweepERC721()</code> L391-413, <code>_sweepCapturedERC1155()</code> L348-356.</p>
+<p><strong>Description:</strong> <code>_sweepCaptured</code> always runs before <code>_sweep</code> (L179-180). If a signer lists an asset in <code>erc721Items</code>/<code>erc1155Items</code> that also happens to arrive via capture during the same batch (e.g., a cautious signer redundantly listing the tokenId they expect to mint, or simply not realizing capture already covers it), the capture pass moves it first. The subsequent explicit sweep for the same asset then fails its precondition check:</p>
+<pre><code class="language-solidity">// _sweepERC721, L397-401
+(bool ownerOk, address owner) = _erc721OwnerOf(token, tokenId);
+if (!ownerOk || owner != address(this)) {          // now owned by safeRecipient, not this
+    emit SweepERC721Failed(token, tokenId, &quot;not owner&quot;);
+    return false;
+}
+</code></pre>
+<pre><code class="language-solidity">// _sweep, L308-309
+bool ok = _sweepERC721(item.token, item.tokenId, request.safeRecipient);
+if (!ok &amp;&amp; request.strictMode) revert StrictSweepFailed();
+</code></pre>
+<p>Under <code>strictMode</code>, this reverts the <em>entire</em> transaction — including the already-successful capture sweep, since a Solidity revert unwinds every state change made earlier in the same call. The net effect: a rescue that actually succeeded end-to-end reports total failure and must be retried, costing time during an active key-compromise race. (The ERC1155 captured path already handles the analogous re-visit gracefully — <code>_sweepCapturedERC1155</code> at L354 treats a zero remaining balance as success — but no equivalent idiom exists on the ERC721 path or the reverse direction: captured-then-explicit.)</p>
+<p><strong>Proof of Concept:</strong> Sign a <code>strictMode=true</code> batch that mints ERC721 <code>(C, 7)</code> and also lists <code>erc721Items = [{C, 7}]</code> as a defensive redundancy. Trace: capture records <code>(C,7)</code> → <code>_sweepCaptured</code> transfers it to <code>safeRecipient</code> successfully → <code>_sweep</code>&#39;s explicit pass calls <code>_sweepERC721(C, 7, safeRecipient)</code> → <code>ownerOf(7) == safeRecipient != address(this)</code> → returns false → <code>revert StrictSweepFailed()</code>. Nothing is rescued (the tx fully reverts), <code>rescueNonce</code> is not consumed, and the signer must diagnose and re-sign without the duplicate.</p>
+<p><strong>Recommendation:</strong> Treat &quot;asset already at <code>safeRecipient</code>&quot; as success rather than failure:</p>
+<pre><code class="language-diff"> function _sweepERC721(address token, uint256 tokenId, address safeRecipient) internal returns (bool) {
+     if (token == address(0) || token.code.length == 0) {
+         emit SweepERC721Failed(token, tokenId, &quot;not contract&quot;);
+         return false;
+     }
+
+     (bool ownerOk, address owner) = _erc721OwnerOf(token, tokenId);
++    if (ownerOk &amp;&amp; owner == safeRecipient) return true;   // already delivered (e.g. by capture pass)
+     if (!ownerOk || owner != address(this)) {
+         emit SweepERC721Failed(token, tokenId, &quot;not owner&quot;);
+         return false;
+     }
+     ...
+</code></pre>
+<p>Apply the same idiom to <code>_sweepERC1155</code>, mirroring the existing <code>bal==0 → return true</code> pattern already used in <code>_sweepCapturedERC1155</code>.</p>
+<hr>
+<h3 id="4-eip-712-struct-hides-callsasset-lists-behind-opaque-bytes32-ha">[4] EIP-712 struct hides calls/asset lists behind opaque <code>bytes32</code> hashes — blind-signing / non-conformance</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: general + signatures checklist agents; phase2: access-control agent flagged the same non-standard encoding as Info.</p>
+<p><strong>Location:</strong> <code>MINT_RESCUE_TYPEHASH</code> L67-69, <code>_digest()</code> L251-269, <code>_hashCalls()</code> L271-288.</p>
+<p><strong>Description:</strong> The signed <code>MintRescueAuth</code> type declares <code>callsHash</code>/<code>erc20Hash</code>/<code>erc721Hash</code>/<code>erc1155Hash</code> as flat <code>bytes32</code> rather than true nested EIP-712 array/struct members. <code>callsHash</code> at least uses a proper per-item <code>CALL_ITEM_TYPEHASH</code> struct hash; the three asset-list hashes use plain <code>keccak256(abi.encode(array))</code> (L258-260) with no item typehash at all. A standards-compliant wallet&#39;s typed-data UI can therefore render only opaque 32-byte values for the calls and every asset being swept — not the actual call targets/calldata or token/amount lists — which is a meaningful transparency gap for a tool whose safety model depends on the signer (often under stress, having just discovered their key is compromised) reviewing exactly what they&#39;re authorizing.</p>
+<p><strong>Recommendation:</strong> Declare the true nested struct types (<code>CallItem[]</code>, <code>ERC721Item[]</code>, <code>ERC1155Item[]</code>) in the EIP-712 type string and encode arrays per spec (keccak of concatenated per-item struct hashes) so compliant wallets can decode and display the content being authorized.</p>
+<hr>
+<h3 id="5-non-canonical-booladdress-abi-decode-can-turn-a-graceful-sweep">[5] Non-canonical <code>bool</code>/<code>address</code> ABI-decode can turn a graceful sweep failure into a whole-batch revert</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — erc20 checklist agent. Re-verified against source during reconciliation (no phase-2 agent independently raised this).</p>
+<p><strong>Location:</strong> <code>_erc20Transfer()</code> L455-461, <code>_erc721OwnerOf()</code> L463-467.</p>
+<pre><code class="language-solidity">function _erc20Transfer(address token, address to, uint256 amount) internal returns (bool) {
+    (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20_TRANSFER_SELECTOR, to, amount));
+    if (!success) return false;
+    if (data.length == 0) return true;
+    if (data.length == 32) return abi.decode(data, (bool));   // reverts on non-canonical word
+    return false;
+}
+</code></pre>
+<p><strong>Description:</strong> The sweep helpers are designed to tolerate weird tokens gracefully (the <code>beforeBal</code>/<code>afterBal</code> delta is the real source of truth downstream). But <code>abi.decode(data, (bool))</code> reverts if the 32-byte word isn&#39;t canonically <code>0</code>/<code>1</code>; <code>abi.decode(data, (address))</code> similarly reverts on a dirty upper-12-bytes word. Neither call is wrapped in try/catch, so a token/collection returning a non-canonical value reverts the <em>whole</em> <code>executeBatch</code> — defeating the documented non-strict-mode &quot;keep going on a bad asset&quot; behavior, since the balance-delta check downstream would otherwise have handled a merely-lying-but-canonical token correctly.</p>
+<p><strong>Recommendation:</strong> Decode defensively without reverting — e.g. treat any non-zero 32-byte word as <code>true</code>, or mask the address word instead of <code>abi.decode</code> — so a malformed return degrades to a per-token failure rather than aborting the batch.</p>
+<hr>
+<h3 id="6-swepterc20-amountsuccess-can-misrepresent-what-the-recipient-a">[6] <code>SweptERC20</code> amount/success can misrepresent what the recipient actually received</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — erc20 checklist agent. Re-verified: <code>_sweepERC20</code>&#39;s success/amount derive from the sender-side delta, not a recipient-side read.</p>
+<p><strong>Location:</strong> <code>_sweepERC20()</code> — success/amount derived from <code>beforeBal - afterBal</code>.</p>
+<p><strong>Description:</strong> For a fee-on-transfer token, <code>beforeBal - afterBal == beforeBal</code> (sender drained to 0) but the recipient receives less; the <code>SweptERC20</code> event overstates the delivered amount by the fee. No fund misdirection occurs (destination is always the signed <code>safeRecipient</code>) and residual dust is re-sweepable in a later signed batch — this is an event-accuracy issue, not a theft path.</p>
+<p><strong>Recommendation:</strong> Document that <code>SweptERC20.amount</code> is a sender-side delta, not a guaranteed-delivered amount, or measure the recipient-side balance delta instead.</p>
+<hr>
+<h3 id="7-sweep-arrays-erc20tokenserc721itemserc1155items-have-no-length">[7] Sweep arrays (<code>erc20Tokens</code>/<code>erc721Items</code>/<code>erc1155Items</code>) have no length cap — OOG can revert the whole rescue</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — dos checklist agent. Re-verified: <code>_validateBatch()</code> (L225-236) only bounds <code>request.calls.length</code>; the three sweep arrays are unbounded.</p>
+<p><strong>Description:</strong> A sufficiently long signed array exhausts the outer transaction&#39;s gas mid-sweep, hard-reverting the whole <code>executeBatch</code> (including the already-executed batch calls and captured sweep) rather than gracefully degrading. Since the arrays are part of the signed digest, only the signer can construct this — self-inflicted risk or a way to grief a voluntary sponsor&#39;s gas on a guaranteed-revert transaction (the nonce is not consumed on revert, so retry is possible).</p>
+<p><strong>Recommendation:</strong> Add explicit length caps on the three sweep arrays in <code>_validateBatch</code>, reverting with a named error before attempting the sweep.</p>
+<hr>
+<h3 id="8-batch-call-return-data-is-copied-unbounded-gas-amplification-o">[8] Batch-call return data is copied unbounded — gas amplification outside <code>item.gasLimit</code></h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: dos checklist agent; phase2: economic-security agent independently raised the identical mechanism as a lead.</p>
+<p><strong>Location:</strong> <code>executeBatch()</code> L169: <code>(bool ok, bytes memory ret) = item.target.call{value, gas: item.gasLimit}(item.callData);</code></p>
+<p><strong>Description:</strong> Solidity auto-copies all returndata into memory; the callee&#39;s execution gas is capped by <code>item.gasLimit</code> (≤1M), but the caller-side <code>RETURNDATACOPY</code> + memory-expansion cost is paid from the outer transaction&#39;s gas, uncounted against <code>item.gasLimit</code>/<code>MAX_TOTAL_CALL_GAS_LIMIT</code>. Across up to 10 calls this can add meaningfully to outer-tx gas cost. Since call targets are part of the signed digest, this is signer-authorized (self-inflicted or sponsor-griefing), not third-party exploitable.</p>
+<p><strong>Recommendation:</strong> Use an assembly call wrapper that discards or caps captured returndata (e.g., to 256 bytes) for the failure-event hash/length.</p>
+<hr>
+<h3 id="9-missing-assembly-memory-safe-annotations">[9] Missing <code>assembly (&quot;memory-safe&quot;)</code> annotations</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [phase1 only]</strong> — assembly checklist agent, which independently recomputed the ERC-7201 storage slot and confirmed both assembly blocks are memory-safe in practice but unannotated.</p>
+<p><strong>Location:</strong> <code>_hashCalls()</code> L283, <code>_mintRescueStorage()</code> L296. Gas/best-practice only — no correctness issue.</p>
+<hr>
+<h3 id="10-deadunused-error-codes-suggest-dropped-validation">[10] Dead/unused error codes suggest dropped validation</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [both, two distinct instances]</strong></p>
+<ul>
+<li><strong><code>BadChain</code></strong> (phase1: general checklist agent) — <code>MintRescueAuth.chainId</code> (L48) is signed but <code>_digest</code> always substitutes live <code>block.chainid</code> (L262) rather than validating the signed field against it; <code>error BadChain()</code> (L147) is never thrown. Not a vulnerability (replay-across-chains is already fully closed via <code>block.chainid</code> in both the struct and the domain separator) — just dead/misleading code.</li>
+<li><strong><code>CallValueTooHigh</code></strong> (phase2: asymmetry agent) — declared but never thrown; per-call value is bounded only in aggregate (<code>valueTotal &gt; msg.value</code>, L167), unlike per-call gas which has both a per-call and aggregate cap. Informational only — the aggregate cap already fully bounds total spend.</li>
+</ul>
+<p><strong>Recommendation:</strong> Remove both unused errors, or wire up the validation they imply, to avoid misleading future readers into thinking explicit checks exist.</p>
+<hr>
+<h3 id="11-eip-712-domain-not-bound-to-the-specific-7702-delegate-implem">[11] EIP-712 domain not bound to the specific 7702 delegate implementation</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [phase1 only]</strong> — signatures checklist agent.</p>
+<p><strong>Location:</strong> <code>_domainSeparator()</code> L290-292 — uses only <code>NAME_HASH</code>, <code>VERSION_HASH</code>, <code>block.chainid</code>, <code>address(this)</code>; nothing binds it to the specific implementation code currently delegated-to. Requires an unlikely re-delegation scenario to matter; not practically exploitable today. Recommendation: ensure any future rescue implementation bumps <code>VERSION_HASH</code>.</p>
+<hr>
+<h3 id="12-checked-add-revert-on-a-lying-erc1155-balanceof-benign-signer">[12] Checked-add revert on a lying ERC1155 <code>balanceOf</code> (benign, signer-only path)</h3>
+<p><strong>Severity: Info</strong><br><strong>Origin: [both]</strong> — phase1: precision-math agent; phase2: math-precision agent, independently, with identical reasoning.</p>
+<p><strong>Location:</strong> <code>_sweepERC1155()</code> L441: <code>afterBal + amount &lt;= beforeBal</code>. A hostile token could return an <code>afterBal</code> near <code>type(uint256).max</code>, causing the checked addition to overflow and revert rather than fail gracefully. Only reachable via a token the signer themselves chose to list; no third-party impact. Optional hardening: compare via <code>beforeBal - afterBal &gt;= amount</code> instead.</p>
+<hr>
+<h2 id="leads-not-promoted-to-findings-no-identifiable-third-party-victi">Leads (not promoted to findings — no identifiable third-party victim, or impact bounded to self)</h2>
+<ul>
+<li><strong>Full-balance ERC1155 capture over-sweep</strong> — <code>_sweepCapturedERC1155</code> sweeps the account&#39;s <em>entire</em> balance of a captured id (by design, per the code comment), not just the amount delivered during the batch — so a pre-existing (unsigned) holding of the same id gets swept too. Reviewed and <strong>not escalated</strong>: the destination is always the signer&#39;s own <code>safeRecipient</code>, so this is over-inclusive rescue, not third-party theft. [phase2: 6 of 12 agents]</li>
+<li><strong>ERC721 captured-duplicate asymmetry</strong> — the ERC1155 captured path treats a re-visited (already-zero) balance as success, but no equivalent idiom exists on the ERC721 path, so a duplicate ERC721 capture record can independently trigger the same class of strict-revert as Finding 3. [phase2: numerical-gap-hunter]</li>
+<li><strong>Capture attribution breaks for routed/proxied mints</strong> — capture attributes the token to the hook&#39;s <code>msg.sender</code>; a mint routed through an intermediary/wrapper contract makes that intermediary — not the real NFT contract — the recorded &quot;token,&quot; silently leaving the real asset unswept. Unverified against real-world mint-router patterns. [phase2: boundary agent]</li>
+<li><strong>Sponsor&#39;s unspent attached ETH is swept to <code>safeRecipient</code>, not refunded</strong> — considered and explicitly rejected as a finding: <code>msg.value</code> becomes part of the compromised EOA&#39;s own balance the moment the sponsor calls, so any unspent portion legitimately belongs to the account being rescued and correctly routes to the signer&#39;s own <code>safeRecipient</code>. This is standard payable-function behavior, not a redirection bug. [phase2: trust-gap-hunter, reviewed and demoted during reconciliation]</li>
+</ul>
+<hr>
+<h2 id="notes-on-what-was-reviewed-and-cleared-no-finding">Notes on what was reviewed and cleared (no finding)</h2>
+<ul>
+<li><strong>Signature scheme</strong>: domain separator correctly binds <code>block.chainid</code> + <code>address(this)</code> (the EOA itself), closing cross-chain and cross-account replay on two independent axes; sponsor is bound as live <code>msg.sender</code> inside the digest, correctly preventing relay/front-running substitution; nonce is strictly sequential and consumed before any external call; signature malleability guard (<code>s ≤ secp256k1n/2</code>, verified digit-for-digit against OpenZeppelin&#39;s constant) and <code>v</code> normalization are correct; <code>_recover</code> safely returns <code>address(0)</code> on any malformed input.</li>
+<li><strong>ERC-7201 namespaced storage</strong>: the storage slot constant was independently recomputed by three separate agents across both phases and matches exactly; no non-namespaced storage variables exist; no collision risk.</li>
+<li><strong>Reentrancy</strong>: <code>nonReentrant</code> guards the sole state-mutating entrypoint; any revert rolls back the lock along with everything else, so it cannot get stuck.</li>
+<li><strong>Weird-token handling</strong>: fee-on-transfer, no-return-value (USDT-style), and rebasing ERC20s are handled via before/after balance-diff accounting (aside from Finding 5/6&#39;s edge cases above).</li>
+<li><strong>The &quot;attacker also holds the compromised key&quot; race</strong>: this is an inherent, accepted property of the rescue-race design (the entire threat model is racing an already-compromised key), not a contract defect, and was correctly not flagged as a bug by any of the 20 agents across both phases.</li>
+</ul>
+<hr>
+<blockquote>
+<p>This review was performed by AI audit agents (ethskills breadth pass + pashov-methodology depth pass, reconciled). AI analysis cannot verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, and ideally a bug bounty, is recommended before this contract is used to protect meaningful value — the strictMode findings above (1–3) in particular should be fixed before broad production use.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidlpd6gd7lj4wfhg52pkjgv27wflaoul2y2wajltj4x4qsgt36fzq.ipfs.community.bgipfs.com/"><code>https://bafkreidlpd6gd7lj4wfhg52pkjgv27wflaoul2y2wajltj4x4qsgt36fzq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/311">#311</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

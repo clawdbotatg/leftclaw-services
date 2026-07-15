@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ComplianceRegistry — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #361">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ComplianceRegistry</h1>
+    <p class="job-sub">Job #361 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/361"><b>Job page</b> #361</a>
+      <a class="chip" href="https://bafkreibrqmggqjhenu2bkqakwyt5r2nwmxdatwxsspjuv6smtgzjm42qrq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#methodology-note-source-unavailable-bytecode-only-audit">Methodology Note — source unavailable, bytecode-only audit</a></li>
+      <li><a href="#important-scope-note-the-on-chain-flag-semantics-do-not-match-th">IMPORTANT SCOPE NOTE — the on-chain flag semantics do not match the job&#39;s description</a></li>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#finding-1-iscompliant-returns-a-stale-cache-that-ignores-expiry-">Finding 1 — isCompliant() returns a stale cache that ignores expiry; diverges from checkCompliance()</a></li>
+      <li><a href="#finding-2-attestationsuint256-returns-the-raw-stored-status-byte">Finding 2 — attestations(uint256) returns the raw stored status byte without live expiry evaluation</a></li>
+      <li><a href="#finding-3-compliant-address-counter-inherits-the-same-staleness-">Finding 3 — Compliant-address counter inherits the same staleness as Finding 1</a></li>
+    </ol>
+    <ol start="7">
+      <li><a href="#finding-4-identity-registry-address-is-an-immutable-with-no-sett">Finding 4 — Identity registry address is an immutable with no setter (single point of failure)</a></li>
+      <li><a href="#finding-5-ownership-transfer-is-single-step-with-no-acceptowners">Finding 5 — Ownership transfer is single-step with no acceptOwnership handshake</a></li>
+      <li><a href="#finding-6-revoked-auditors-rolemetadata-string-is-not-cleared-in">Finding 6 — Revoked auditor&#39;s role/metadata string is not cleared (informational)</a></li>
+      <li><a href="#finding-7-single-owner-key-is-the-root-of-trust-for-the-entire-a">Finding 7 — Single owner key is the root of trust for the entire auditor allowlist (centralization, by design)</a></li>
+      <li><a href="#reviewed-no-defect-found">Reviewed, no defect found</a></li>
+      <li><a href="#contract-facts-for-reference">Contract facts (for reference)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — ComplianceRegistry</h1>
+<p><strong>Contract:</strong> <code>0xB4e13EF703f71B2465E58c27fa47B0663ae5f699</code> (Base mainnet, chain 8453)<br><strong>Job:</strong> leftclaw.services #361<br><strong>Date:</strong> 2026-07-09<br><strong>Methodology:</strong> Bytecode-level security review (see Methodology Note below)</p>
+<hr>
+<h2 id="methodology-note-source-unavailable-bytecode-only-audit">Methodology Note — source unavailable, bytecode-only audit</h2>
+<p>No verified source exists for this contract:</p>
+<ul>
+<li><strong>Sourcify</strong> (chain 8453, this address): <code>full_match</code> and <code>partial_match</code> both return <code>null</code> — no match found.</li>
+<li><strong>BaseScan</strong>: contract page confirms <strong>not verified</strong> (&quot;Verify and Publish your contract&quot; prompt present, no source tab).</li>
+<li><strong>Etherscan V2 unified API / Blockscout</strong>: also return no source / no verification metadata.</li>
+</ul>
+<p>Per audit operating procedure, this triggered a <strong>bytecode-level fallback audit</strong> rather than the standard two-phase (ethskills breadth + pashov depth) Solidity-source pipeline, since that pipeline assumes readable source text. Instead:</p>
+<ol>
+<li>Fetched runtime bytecode live via RPC (<code>cast code</code>), disassembled it (<code>cast disassemble</code>), and cross-validated with <code>evmole</code> (automated function-selector/argument/storage-layout inference from bytecode).</li>
+<li>Resolved function selectors against the public 4byte.directory signature database plus targeted guessing based on the job&#39;s stated scope, then hand-verified the true semantics of every function directly from opcodes (4byte names are frequently coincidental collisions and were not trusted blindly).</li>
+<li>Reverse-engineered the full storage layout (8 slots, including a multi-word packed struct for attestations) and manually decoded the constructor, all 5 state-mutating functions, and all 15 view/pure functions from raw opcodes — quoting hex offsets and opcode sequences in place of source line citations.</li>
+<li>Ran 4 independent parallel review agents (opus), each assigned a distinct lens (access control / auditor allowlist, storage layout / flag-forgery, consumer-view correctness, issuance flow / general EVM patterns), each working blind from a shared reverse-engineering bundle, then reconciled all four into this single report — cross-checking every claim against the others&#39; opcode-level proofs before inclusion.</li>
+</ol>
+<p><strong>Confidence caveat:</strong> this is materially harder and slower to fully verify than a source-code review. Every finding below is backed by quoted opcode sequences with hex offsets, cross-checked by at least one other independent agent&#39;s reading of the same bytecode. Where agents disagreed or a detail could not be fully pinned down, it is marked as a <strong>LEAD</strong> rather than a finding, or explicitly marked <strong>RESOLVED/REFUTED</strong> with the reconciling evidence.</p>
+<p><strong>Completeness:</strong> 12 unique function/area threads were raised across the 4 agents (isCompliant/checkCompliance divergence, attestations() staleness, compliant-count statistic, ownership/transferOwnership, revokeAuditor, identityRegistry()/issuance external dependency, issueAttestation flag semantics, revokeAttestation access control, addAuditor, pruneExpired, per-address attestation-array getters, auditors() getter) — all 12 are represented in the findings or the &quot;reviewed, no defect found&quot; section below.</p>
+<hr>
+<h2 id="important-scope-note-the-on-chain-flag-semantics-do-not-match-th">IMPORTANT SCOPE NOTE — the on-chain flag semantics do not match the job&#39;s description</h2>
+<p>The client&#39;s job description states this registry issues <strong>&quot;KYA (Know-Your-Agent), AML, sanctions, and jurisdiction-match flags.&quot;</strong> Full bytecode decoding of the issuance function (<code>issueAttestation</code>, selector <code>0x853c79cd</code>) shows the four boolean parameters and their associated revert strings are actually:</p>
+<pre><code>&quot;...requires incident reporting&quot;
+&quot;...requires post-market monitoring&quot;
+&quot;...requires technical documentation&quot;
+&quot;...requires human oversight&quot;
+</code></pre>
+<p>— these are <strong>EU AI Act high-risk-system obligations</strong>, gated by a separate <code>uint256 riskTier</code> parameter (0=minimal, 1=limited, 2=high — requires all 4 bools true, 3=unacceptable — always reverts), <strong>not</strong> KYA/AML/sanctions/jurisdiction flags. This is an AI-agent risk-tier attestation registry, not a KYC/AML compliance registry, despite the name &quot;ComplianceRegistry.&quot;</p>
+<p>This does not invalidate the audit (the underlying mechanisms — auditor allowlist, storage integrity, consumer-view correctness — are the same regardless of what the flags represent, and were reviewed as such), but the client should confirm this is in fact the intended target contract before acting on severity/impact framing that assumes KYC/AML semantics.</p>
+<hr>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><code>isCompliant()</code> returns a stale cache that ignores expiry; diverges from <code>checkCompliance()</code></td>
+<td><strong>High</strong></td>
+<td>Confirmed — corroborated by 3/4 independent agents</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>attestations(uint256)</code> returns the raw stored status byte without live expiry evaluation</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Confirmed</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Compliant-address counter (<code>c20404fd</code>/<code>a2ff542e</code> slot 3) inherits the same staleness as Finding 1</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Confirmed (derivative of #1)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Identity registry address is an immutable with no setter — single point of failure for all future issuance</td>
+<td><span class="pill low">Low</span></td>
+<td>Confirmed</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Ownership transfer is single-step with no <code>acceptOwnership</code> handshake</td>
+<td><span class="pill low">Low</span></td>
+<td>Confirmed</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Revoked auditor&#39;s role/metadata string is not cleared, only the active flag</td>
+<td><span class="pill info">Info</span></td>
+<td>Confirmed, no security impact</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Single owner key is the root of trust for the entire auditor allowlist</td>
+<td><span class="pill info">Info</span></td>
+<td>Confirmed, by-design centralization note</td>
+</tr>
+</tbody></table></div>
+<p><strong>No Critical findings.</strong> The client&#39;s primary stated fears — &quot;auditor allowlist manipulation&quot; and &quot;flag-forgery via storage collisions&quot; — were both <strong>specifically hunted for and not found exploitable</strong>; see &quot;Reviewed, no defect found&quot; below for the full proof trail.</p>
+<hr>
+<h2 id="finding-1-iscompliant-returns-a-stale-cache-that-ignores-expiry-">Finding 1 — <code>isCompliant()</code> returns a stale cache that ignores expiry; diverges from <code>checkCompliance()</code></h2>
+<p><strong>Severity:</strong> High<br><strong>Functions:</strong> <code>isCompliant(address)</code> (selector <code>0xa200e5d0</code>, entry <code>0x044d</code>) vs. <code>checkCompliance(address)</code> (selector <code>0x2c289dcf</code>, entry <code>0x1368</code>)<br><strong>Corroboration:</strong> Independently found and proven by 3 of 4 review agents (consumer-view-correctness, storage-layout, issuance-flow), all reaching the same root cause via different code paths.</p>
+<h3 id="root-cause">Root cause</h3>
+<p>The contract exposes <strong>two</strong> compliance-gating views that disagree. <code>checkCompliance</code> live-recomputes compliance by iterating the caller&#39;s full attestation list (storage slot 5) and, for each id, checking <code>status == 1 (Active) AND block.timestamp &lt; expiry</code>. <code>isCompliant</code> instead returns a cached boolean (<code>slot7[address]</code>) with <strong>no timestamp comparison at all</strong>. That cache is only refreshed inside a helper subroutine reachable exclusively from the <em>explicit, manually-invoked</em> <code>pruneExpired(uint256 id)</code> (<code>0xd1a9b879</code>) or <code>revokeAttestation</code> (<code>0x1ea1f074</code>) — never automatically. So an attestation whose <code>expiry</code> has passed, but which nobody has bothered to prune, leaves <code>slot7[address] == true</code> and <code>isCompliant()</code> keeps reporting compliant.</p>
+<h3 id="proof">Proof</h3>
+<p><code>isCompliant</code> (0x044d) — cache read only, no <code>TIMESTAMP</code> opcode anywhere in the function body:</p>
+<pre><code>00000470: MSTORE                     ; mem[0]  = address
+00000473: PUSH1 0x07; PUSH1 0x20; MSTORE  ; mem[0x20] = 7
+00000480: KECCAK256                  ; key = keccak256(address, 7)  -&gt; slot7[address]
+00000481: SLOAD                      ; load cached byte
+00000482: AND (0xff)
+00000487: ISZERO; ISZERO             ; normalize to bool
+0000048b: RETURN
+</code></pre>
+<p><code>checkCompliance</code> (0x1368) — live recompute, does check <code>TIMESTAMP</code>:</p>
+<pre><code>00001390: PUSH1 0x05; PUSH1 0x20; MSTORE   ; base = keccak256(address, 5)   (slot5[] array)
+00001398: KECCAK256
+0000139a: SLOAD                            ; array length
+       ... loop over i &lt; length, fetch id = slot5[address][i] ...
+000013d5: KECCAK256                        ; base4 = keccak256(id, 4)  (slot4[id] struct)
+000013dc: SLOAD; SHR 0xa8; AND 0xff        ; status byte (byte offset 21 of base4+1)
+000013e4: PUSH1 0x05; LT; ISZERO; JUMPI 0x0301  ; status&gt;=5 -&gt; Panic(0x21)
+000013ec: PUSH1 0x01; EQ                   ; status == 1 (Active)?
+00001418: PUSH1 0x03; ADD; SLOAD           ; base4+3 = expiry
+0000141f: TIMESTAMP; LT                    ; block.timestamp &lt; expiry  (must be not-yet-expired)
+</code></pre>
+<p>Confirmed by the storage-layout agent&#39;s independent trace of the same two functions, and by the issuance-flow agent tracing that <code>slot7</code> is only ever set <code>true</code> inside <code>issueAttestation</code> and only ever cleared inside the prune/revoke recompute subroutine (<code>0x1b67</code>) — nothing clears it on natural expiry.</p>
+<h3 id="impact">Impact</h3>
+<p>A downstream consumer contract that gates a privileged action (transfer, mint, trade, etc.) on a <code>staticcall</code> to this registry — exactly the client&#39;s stated use case, &quot;consumer-facing views used by other contracts to gate calls&quot; — will treat an address as compliant for an unbounded period after its attestation has genuinely expired, as long as nobody calls the permissionless prune function. Critically, <strong>the affected address itself has every incentive to never call prune on its own expired attestation</strong>, since doing so would correctly flip its own compliance to <code>false</code>. This is a self-serve, no-cooperation-required way for an expired agent to keep passing compliance gates that use <code>isCompliant()</code>. <code>checkCompliance()</code> on the same contract returns the correct answer for the same address at the same time — the two views silently disagree, which is itself a correctness defect independent of which one any given integrator picks.</p>
+<h3 id="recommendation">Recommendation</h3>
+<p>Make <code>isCompliant()</code> expiry-aware — either have it delegate to the same live-recompute logic as <code>checkCompliance()</code> (accept the higher gas cost), or maintain an additional per-address <code>validUntil</code> timestamp alongside the cached bool and require <code>block.timestamp &lt; validUntil[address]</code> in addition to the cached flag. At minimum, the two views must never return different answers for the same state; consider removing the cheaper cached view entirely if the live-recompute cost is acceptable to callers, since a cheap-but-wrong view is worse than no view.</p>
+<hr>
+<h2 id="finding-2-attestationsuint256-returns-the-raw-stored-status-byte">Finding 2 — <code>attestations(uint256)</code> returns the raw stored status byte without live expiry evaluation</h2>
+<p><strong>Severity:</strong> Medium<br><strong>Function:</strong> <code>attestations(uint256 id)</code> (selector <code>0x01daf26b</code>, entry <code>0x169e</code>)</p>
+<h3 id="root-cause-2">Root cause</h3>
+<p>This getter unpacks and returns the stored struct fields verbatim, including the <code>status</code> byte (<code>(slot4[id] word1 &gt;&gt; 0xa8) &amp; 0xff</code>), without comparing the also-returned <code>expiry</code> field against <code>block.timestamp</code>. A caller reading <code>.status == 1 (Active)</code> sees &quot;Active&quot; for an attestation whose <code>expiry</code> has already passed but which has not yet been pruned — the same underlying staleness as Finding 1, surfaced through a different getter.</p>
+<h3 id="proof-2">Proof</h3>
+<pre><code>000016bf: KECCAK256                        ; base = keccak256(id, 4)
+000016c7: SLOAD; AND (1&lt;&lt;160)-1            ; field: subject address (base, low 160 bits)
+000016ce: PUSH1 0x01; ADD; SLOAD
+000016d3: PUSH1 0xa8; SHR; AND (0xff)      ; field: status byte -- RETURNED RAW, no TIMESTAMP check
+000016df: PUSH1 0x03; ADD; SLOAD           ; field: expiry (uint256) -- present in return tuple
+</code></pre>
+<p>No <code>TIMESTAMP</code> opcode appears anywhere in the function body (0x169e–0x172f).</p>
+<h3 id="impact-2">Impact</h3>
+<p>Lower severity than Finding 1 because the raw <code>expiry</code> field IS included in the return tuple, so a careful integrator can compute <code>block.timestamp &lt; expiry</code> themselves. The defect is that the <code>status</code> field alone is not self-consistent with a live check, which is an easy trap for an integrator who reasonably assumes an enum field reflects current truth.</p>
+<h3 id="recommendation-2">Recommendation</h3>
+<p>Either compute and return an effective status (return <code>Expired</code> when <code>block.timestamp &gt;= expiry</code> regardless of the stored byte), or add an explicit derived <code>bool isExpired</code> to the return tuple so integrators are not required to independently know to cross-check <code>expiry</code> themselves.</p>
+<hr>
+<h2 id="finding-3-compliant-address-counter-inherits-the-same-staleness-">Finding 3 — Compliant-address counter inherits the same staleness as Finding 1</h2>
+<p><strong>Severity:</strong> Medium<br><strong>Functions:</strong> <code>0xc20404fd</code> (entry <code>0x0317</code>, returns slot 3 alone) and <code>0xa2ff542e</code> (entry <code>0x041e</code>, returns <code>(slot1, slot2, slot3)</code> tuple)</p>
+<h3 id="root-cause-3">Root cause</h3>
+<p>Storage slot 3 is a running count of <strong>&quot;addresses currently marked compliant&quot;</strong> (i.e., <code>#{a : slot7[a] == true}</code>) — it is incremented inside <code>issueAttestation</code> exactly when <code>slot7[subject]</code> transitions false→true, and decremented inside the prune/revoke recompute path exactly when it transitions true→false. The accounting logic itself is internally consistent and correctly guarded against under/overflow (verified — see &quot;Reviewed, no defect found&quot; below), but because it is driven by the <strong>same stale <code>slot7</code> cache</strong> as Finding 1, it necessarily overstates the true number of currently-valid, non-expired attestations by however many have expired-but-not-pruned at query time.</p>
+<h3 id="proof-3">Proof</h3>
+<pre><code>00000432: PUSH1 0x01; SLOAD        ; slot1 (attestation id counter)
+00000435: PUSH1 0x02; SLOAD        ; slot2 (auditor count)
+00000438: PUSH1 0x03; SLOAD        ; slot3 (compliant-address count)
+...RETURN (slot1, slot2, slot3) tuple
+</code></pre>
+<p>Increment site (issue, false→true transition only): <code>0x0988–0x0996</code>. Decrement site (prune/revoke recompute, true→false transition only, underflow-guarded via helper <code>0x1b5a</code>): <code>0x1bc9–0x1bd3</code>.</p>
+<h3 id="impact-3">Impact</h3>
+<p>An integrator using this counter as &quot;how many agents are currently compliant&quot; will see an inflated number for the same reason <code>isCompliant()</code> is wrong — expired-but-unpruned attestations are still counted. This is a secondary symptom, not an independent bug in the counting logic itself.</p>
+<h3 id="recommendation-3">Recommendation</h3>
+<p>Fixed automatically once Finding 1&#39;s root cause (the eventual-consistency of <code>slot7</code>) is addressed — no separate counter fix is needed if <code>isCompliant()</code>/<code>slot7</code> becomes live-accurate (e.g., via a keeper that reliably prunes on schedule, or a redesign that removes the cache).</p>
+<hr>
+<h2 id="finding-4-identity-registry-address-is-an-immutable-with-no-sett">Finding 4 — Identity registry address is an immutable with no setter (single point of failure)</h2>
+<p><strong>Severity:</strong> Low<br><strong>Functions:</strong> <code>identityRegistry()</code> (selector <code>0x134e18f4</code>, entry <code>0x1659</code>); consumed inside <code>issueAttestation</code> (<code>0x853c79cd</code>)</p>
+<h3 id="root-cause-4">Root cause</h3>
+<p>The constructor takes one address parameter (an external identity-registry contract), zero-address-checked (<code>&quot;ComplianceRegistry: zero identity address&quot;</code>), and bakes it into the runtime bytecode as a compile-time immutable (<code>PUSH32</code> at offsets <code>0x0598</code>/<code>0x166e</code>). No function in the contract writes this value — there is no setter. Every <code>issueAttestation</code> call performs a <code>STATICCALL</code> to this fixed address (selector <code>0xfb3551ff</code>, subject as argument) and reverts (&quot;agent not registered&quot;) if it returns false or malformed data.</p>
+<h3 id="proof-4">Proof</h3>
+<pre><code>00001659: JUMPDEST                          ; identityRegistry() body
+0000166e: PUSH32 0xa7bd20bf5de63df949ca5be2f20835978ecba81a...
+                                             ; hardcoded address, masked to 160 bits, RETURN
+</code></pre>
+<p>Full grep of all 42 <code>SSTORE</code> sites in the contract confirms none target this value — it is exclusively a <code>PUSH32</code> constant, never a storage slot.</p>
+<h3 id="impact-4">Impact</h3>
+<p>If the external identity-registry contract is ever destroyed, redeployed at a different address, or begins reverting/returning malformed data, <strong>all future <code>issueAttestation</code> calls are permanently bricked</strong> with no on-chain recovery path (existing attestations and all view functions are unaffected, since only issuance calls out to it). This is an availability risk, not a fund-loss or forgery risk.</p>
+<h3 id="recommendation-4">Recommendation</h3>
+<p>Consider an owner-gated setter (with an event) for the identity registry address, or explicitly document and off-chain-verify that the target address (<code>0xa7bd20bf5de63df949ca5be2f20835978ecba81a</code>) is a non-destructible, permanent registry before relying on this contract for production issuance.</p>
+<hr>
+<h2 id="finding-5-ownership-transfer-is-single-step-with-no-acceptowners">Finding 5 — Ownership transfer is single-step with no <code>acceptOwnership</code> handshake</h2>
+<p><strong>Severity:</strong> Low<br><strong>Function:</strong> <code>transferOwnership(address)</code> (selector <code>0xf2fde38b</code>, entry <code>0x00f8</code>)</p>
+<h3 id="root-cause-5">Root cause</h3>
+<p><code>transferOwnership</code> is owner-gated and zero-address-checked (<code>&quot;ComplianceRegistry: zero owner&quot;</code>), but directly overwrites storage slot 0 with the supplied address in one step — there is no <code>pendingOwner</code>/<code>acceptOwnership</code> two-phase handshake.</p>
+<h3 id="proof-5">Proof</h3>
+<pre><code>00000119: CALLER; EQ; JUMP 0x1a67    ; require(msg.sender == owner)
+00000135: ISZERO; JUMPI 0x0149       ; require(newOwner != 0)
+00000147: SSTORE                     ; slot0 = newOwner  (only owner-slot write in the whole contract)
+</code></pre>
+<h3 id="impact-5">Impact</h3>
+<p>A mistyped-but-valid non-zero address permanently and irrecoverably transfers away the ability to manage the auditor allowlist (add/revoke auditors) and to transfer ownership again. Zero-address is already guarded, limiting this to a fat-finger/wrong-address risk rather than a bricking-to-nobody risk.</p>
+<h3 id="recommendation-5">Recommendation</h3>
+<p>Adopt the standard 2-step ownership transfer pattern (OpenZeppelin <code>Ownable2Step</code>): store the proposed owner, require them to explicitly <code>acceptOwnership()</code> before the transfer takes effect.</p>
+<hr>
+<h2 id="finding-6-revoked-auditors-rolemetadata-string-is-not-cleared-in">Finding 6 — Revoked auditor&#39;s role/metadata string is not cleared (informational)</h2>
+<p><strong>Severity:</strong> Info — no security impact<br><strong>Function:</strong> <code>revokeAuditor(address)</code> (selector <code>0xb402980b</code>, entry <code>0x0335</code>)</p>
+<h3 id="root-cause-6">Root cause</h3>
+<p>Revocation clears only the low byte (the <code>active</code> flag) of the auditor&#39;s packed struct at storage slot 6: <code>slot6[addr] = current &amp; ~0xff</code>. The role/metadata string and other packed fields remain in storage.</p>
+<h3 id="proof-6">Proof</h3>
+<pre><code>00000394: PUSH1 0xff; NOT           ; mask = ~0xff
+00000395: DUP2; SLOAD; AND; SSTORE  ; clear only the active-flag byte
+</code></pre>
+<p>Every access-control check that matters (<code>issueAttestation</code>&#39;s and <code>revokeAttestation</code>&#39;s auditor gate) reads the same low byte (<code>slot6[caller] &amp; 0xff</code>), so a revoked auditor cannot issue or revoke attestations regardless of the leftover string — this has no security impact.</p>
+<h3 id="recommendation-6">Recommendation</h3>
+<p>None required for security. Optionally zero the full struct on revoke for data hygiene if any off-chain indexer reads the role string without also checking the <code>active</code> byte.</p>
+<hr>
+<h2 id="finding-7-single-owner-key-is-the-root-of-trust-for-the-entire-a">Finding 7 — Single owner key is the root of trust for the entire auditor allowlist (centralization, by design)</h2>
+<p><strong>Severity:</strong> Info — by-design trust-model note<br><strong>Functions:</strong> <code>addAuditor</code>, <code>revokeAuditor</code>, <code>transferOwnership</code>, and transitively <code>issueAttestation</code></p>
+<h3 id="description">Description</h3>
+<p><code>addAuditor(address,bytes)</code> and <code>revokeAuditor(address)</code> are both strictly <code>require(msg.sender == owner)</code> (single EOA/contract in storage slot 0). Because auditor status is a prerequisite to issuing any attestation, compromise of the owner key would let an attacker add themselves as an auditor and issue arbitrary attestations. This is a standard centralization/trust-anchor property, not a contract defect — flagged because it is the mechanism underlying the client&#39;s stated &quot;auditor allowlist manipulation&quot; concern, and is the only way that concern could ever materialize (see next section for proof that no non-owner bypass exists).</p>
+<h3 id="recommendation-7">Recommendation</h3>
+<p>Consider a multisig or timelock as the owner address rather than a single EOA, given the sensitivity of the auditor allowlist.</p>
+<hr>
+<h2 id="reviewed-no-defect-found">Reviewed, no defect found</h2>
+<p>The following areas were specifically hunted for exploitable bugs per the client&#39;s stated concerns and the standard bytecode-audit checklist. Each was proven safe from opcodes, with the proof trail summarized:</p>
+<ul>
+<li><strong>Auditor-allowlist bypass on issuance (client&#39;s primary stated concern).</strong> <code>issueAttestation</code> (<code>0x853c79cd</code>) unconditionally checks <code>slot6[msg.sender] &amp; 0xff != 0</code> (revert &quot;caller is not an authorized auditor&quot;) before any state write — confirmed at offset <code>0x556</code>, with no code path that skips this check. <code>revokeAttestation</code> (<code>0x1ea1f074</code>) has the same gate plus an additional <code>(issuer == caller) OR (owner == caller)</code> check. Neither <code>addAuditor</code> nor <code>revokeAuditor</code> can be called by a non-owner (<code>require(msg.sender == owner)</code> at <code>0x10ab</code>/<code>0x35d</code>). <strong>No non-owner path to become or forge an auditor exists.</strong></li>
+<li><strong>Ownership hijack.</strong> Storage slot 0 (owner) is written by exactly one instruction in the entire contract (<code>0x147 SSTORE</code>), inside owner-gated <code>transferOwnership</code>. <code>evmole</code>&#39;s initial heuristic flagged <code>revokeAttestation</code> as also writing slot 0; manual decoding showed this is a <strong>read</strong> (an owner-fallback comparison for the revoke-authorization check), not a write — no hijack path exists.</li>
+<li><strong>Flag-forgery via storage collision (client&#39;s second stated concern).</strong> All 42 <code>SSTORE</code> sites were enumerated; every one targets either a hardcoded scalar slot (0–3) or <code>keccak256(key, C)</code> with a hardcoded mapping-base constant (4, 5, 6, or 7). No slot number is derived from user calldata without a keccak256 step, no two mappings share a base constant, and grinding an <code>id</code>/<code>address</code> collision between two distinct mapping regions is a ~2^128 birthday-bound search — infeasible. <strong>No arbitrary-storage-write or cross-mapping-collision primitive exists.</strong></li>
+<li><strong><code>slot7</code> (cached compliance bool) forgery via crafted calldata.</strong> Every write path derives the target address either from the auditor-gated <code>issueAttestation</code>&#39;s own <code>subject</code> parameter (authorized by design) or from the <strong>stored struct&#39;s</strong> subject field inside the prune/revoke recompute subroutine (<code>0x1b67</code>) — never from unvalidated calldata passed to that subroutine. The recompute subroutine also correctly re-scans an address&#39;s <strong>entire</strong> attestation list before flipping the cached bool, so pruning/revoking one expired attestation does not incorrectly clear compliance for an address that still holds another valid one.</li>
+<li><strong>Packed-array bounds / off-by-one.</strong> The per-address attestation-id array (<code>slot5[address]</code>, a plain <code>uint256[]</code>, confirmed one full storage word per element — the <code>SHL/SHR</code>-by-zero pattern initially flagged as possible sub-slot packing resolved to a genuine no-op) has a correctly-enforced bounds check (<code>Panic(0x32)</code> on out-of-range index) on every read path, and a length cap (<code>Panic(0x41)</code> beyond 2^64) on the write path.</li>
+<li><strong>Reentrancy / unsafe external calls.</strong> The entire contract contains exactly <strong>one</strong> external call in total — a single <code>STATICCALL</code> to the immutable identity registry inside <code>issueAttestation</code>. <code>STATICCALL</code> cannot mutate state, so no callback-based reentrancy is possible; the return value&#39;s success flag, size, and decoded boolean are all explicitly validated before use. No <code>CALL</code>, <code>DELEGATECALL</code>, <code>CALLCODE</code>, <code>CREATE</code>/<code>CREATE2</code>, or <code>SELFDESTRUCT</code> exists anywhere in the bytecode.</li>
+<li><strong>Integer overflow/underflow.</strong> Every counter increment (attestation-id counter, auditor count, compliant-address count, array length) and decrement routes through shared checked-arithmetic helpers that revert with <code>Panic(0x11)</code> on overflow/underflow. Expiry computation (<code>block.timestamp + duration</code>) is explicitly guarded against wraparound, and <code>duration</code> is independently bounded to <code>[30 days, 730 days]</code> by the issuance function, so expiry can never land in the past or overflow.</li>
+<li><strong>Constructor validation.</strong> The single constructor parameter (identity registry address) is zero-address-checked and reverts with a descriptive message if omitted; <code>owner</code> is set to <code>msg.sender</code> with no gap.</li>
+</ul>
+<hr>
+<h2 id="contract-facts-for-reference">Contract facts (for reference)</h2>
+<ul>
+<li>Owner (live, at time of audit): <code>0xfA15Ee28939B222B0448261A22156070f0A7813C</code></li>
+<li>Identity registry dependency (immutable, hardcoded): <code>0xa7bd20bf5de63df949ca5be2f20835978ecba81a</code> (out of scope — not itself audited)</li>
+<li>Live state at audit time: 0 attestations issued, 1 auditor entry in slot 2&#39;s counter, no attestations on-chain to test end-to-end against (all findings verified via static bytecode analysis and code-path tracing, not live transaction reproduction).</li>
+<li>Runtime bytecode size: 7,364 bytes; 20 external function selectors.</li>
+</ul>
+<hr>
+<p><em>This report was produced by an autonomous bytecode-level audit due to the absence of verified source code for the target contract on Sourcify and BaseScan at the time of review.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibrqmggqjhenu2bkqakwyt5r2nwmxdatwxsspjuv6smtgzjm42qrq.ipfs.community.bgipfs.com/"><code>https://bafkreibrqmggqjhenu2bkqakwyt5r2nwmxdatwxsspjuv6smtgzjm42qrq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/361">#361</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

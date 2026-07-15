@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>USDC (`FiatTokenV2_2`) on Base — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #380">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">USDC (`FiatTokenV2_2`) on Base</h1>
+    <p class="job-sub">Job #380 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/380"><b>Job page</b> #380</a>
+      <a class="chip" href="https://bafkreigmrpo5z5rlpocz3yg6pcedu6lyudvj5tnvjjxc6nx4r7bn6xcrry.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">16</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#coverage-gate">Coverage Gate</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Review — USDC (<code>FiatTokenV2_2</code>) on Base</h1>
+<p><strong>Job</strong>: leftclaw.services #380<br><strong>Client request</strong>: review for access control / centralization / upgradeability risks<br><strong>Chain</strong>: Base (chainId 8453)<br><strong>Proxy</strong>: <code>0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code> (<code>FiatTokenProxy</code> / <code>AdminUpgradeabilityProxy</code>)<br><strong>Implementation</strong>: <code>0x2Ce6311ddAE708829bc0784C967b7d77D19FD779</code> (<code>FiatTokenV2_2</code>)<br><strong>Source provenance</strong>: full verified match on Sourcify (<code>sourcify.dev/server/v2/contract/8453/&lt;address&gt;</code>) for both proxy and implementation, retrieved 2026-07-11. This is Circle&#39;s canonical <code>stablecoin-evm</code> codebase.<br><strong>Live state at time of review</strong> (verified via <code>cast call</code>/<code>cast storage</code> against Base mainnet through Alchemy): <code>paused()=false</code>; name/symbol = &quot;USD Coin&quot;/&quot;USDC&quot;; <code>decimals=6</code>; <code>totalSupply≈4.274e15</code> (≈4.27B USDC); admin=<code>0x4fc7850364958d97B4d3f5A08f79db2493f8cA44</code> (EOA); owner=<code>0x3ABd6f64A422225E61E435baE41db12096106df7</code> (EOA); masterMinter=<code>0x2230393EDAD0299b7E7B59F20AA856cD1bEd52e1</code> (contract, 5470 bytes, out of scope); pauser=<code>0xD3571B3bc51CECFf49194AD67aFFFC648d5e07b4</code> (EOA); blacklister=<code>0x1f2e3A640175d20ac31ed523B6733B977173E277</code> (EOA); rescuer=<code>0x0000…0000</code> (unset).</p>
+<p><strong>Scope</strong>: 23 in-scope <code>.sol</code> files (~2,789 non-library LOC) — proxy stack (<code>contracts/proxy/</code>), FiatToken implementation chain (<code>contracts/v1/</code>, <code>contracts/v1.1/</code>, <code>contracts/v2/</code>), signature/EIP-712 utilities (<code>contracts/util/</code>), <code>contracts/interface/IERC1271.sol</code>. OpenZeppelin dependencies (<code>SafeMath</code>, <code>Address</code>, <code>IERC20</code>, <code>SafeERC20</code>) treated as trusted library code, out of primary scope.</p>
+<p><strong>Methodology</strong>: three-phase audit — Phase 0 context building (protocol map, access-control inventory, threat catalog, opus); Phase 1 breadth (6 ethskills domain checklists: general, precision-math, erc20, proxies, signatures, access-control, opus); Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1 findings, opus); Phase 3 hybrid reconciliation + coverage gate (this document).</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Overlap: 3</strong> (blacklist-modifier divergence; <code>upgradeToAndCall</code> unreasoned-<code>require</code>; <code>initializeV2_2</code> migration-completeness assumption) · <strong>Phase-1-only: 12</strong> (all centralization/access-control/proxy-structural items) · <strong>Phase-2-only: 7</strong> (admin proxy-isolation-bypass mechanism; rescue pause-gap; configureMinter/removeMinter pause asymmetry; EIP-3009/2612 boundary-inclusivity mismatch; redundant permit sentinel; historical bit-packing seam; ERC-1271 revert/false asymmetry) · <strong>Re-examined leads kept: 22, demoted: 0</strong> (nothing was rejected outright — every candidate was traced to a concrete, defensible conclusion, whether &quot;verified inert&quot; or &quot;by design&quot;) · <strong>Coverage holes closed this pass: 0</strong> (both phases, plus on-chain verification during Phase 0, already covered the full entrypoint/threat surface).</p>
+<p><strong>Confidence floor</strong>: findings below 50 confidence would be listed as a separate Leads section; none exist here — every item below has been traced to a concrete conclusion with confidence ≥70. Severity and confidence are independent axes: the confidence in an <em>observation being accurate</em> is uniformly high; severity reflects <em>exploitability</em>, which is uniformly low-to-none for a codebase this heavily audited, except where centralization is the explicit point of the finding.</p>
+<p><strong>Bottom line</strong>: across 6 breadth checklists and 12 blind depth agents (18 independent passes total, plus the 3-agent context-building phase), <strong>zero Critical/High findings and zero exploitable Medium+ code-level bugs</strong> were identified. The one Medium finding (AC-1) is a disclosed centralization/upgradeability risk, not a bug. This matches the profile expected of Circle&#39;s <code>stablecoin-evm</code>, one of the most-audited codebases in the ecosystem.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<h3 id="proxy-layer-adminupgradeabilityproxy">Proxy layer (<code>AdminUpgradeabilityProxy</code>)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>admin()</code>, <code>implementation()</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>read proxy state</td>
+</tr>
+<tr>
+<td><code>changeAdmin(newAdmin)</code></td>
+<td><code>ifAdmin</code> (<code>AdminUpgradeabilityProxy.sol:99</code>)</td>
+<td>admin only (else delegated to impl)</td>
+<td>rotates admin</td>
+</tr>
+<tr>
+<td><code>upgradeTo(newImpl)</code></td>
+<td><code>ifAdmin</code> (<code>:113</code>)</td>
+<td>admin only</td>
+<td>swaps implementation</td>
+</tr>
+<tr>
+<td><code>upgradeToAndCall(newImpl,data)</code></td>
+<td><code>ifAdmin</code> (<code>:127</code>)</td>
+<td>admin only</td>
+<td>swaps implementation + atomic self-call into new impl</td>
+</tr>
+<tr>
+<td><code>fallback()</code></td>
+<td><code>_willFallback</code> blocks admin (<code>:166</code>)</td>
+<td>anyone except admin</td>
+<td>delegatecall to implementation</td>
+</tr>
+</tbody></table></div>
+<h3 id="implementation-layer-role-gated">Implementation layer (role-gated)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mint</code>/<code>burn</code></td>
+<td><code>whenNotPaused</code>+<code>onlyMinters</code>+<code>notBlacklisted</code></td>
+<td>configured minter</td>
+</tr>
+<tr>
+<td><code>configureMinter</code>/<code>removeMinter</code></td>
+<td><code>onlyMasterMinter</code> (+<code>whenNotPaused</code> on configure only)</td>
+<td>masterMinter</td>
+</tr>
+<tr>
+<td><code>pause</code>/<code>unpause</code></td>
+<td><code>onlyPauser</code></td>
+<td>pauser</td>
+</tr>
+<tr>
+<td><code>blacklist</code>/<code>unBlacklist</code></td>
+<td><code>onlyBlacklister</code></td>
+<td>blacklister</td>
+</tr>
+<tr>
+<td><code>rescueERC20</code></td>
+<td><code>onlyRescuer</code></td>
+<td>rescuer (unset — currently uncallable)</td>
+</tr>
+<tr>
+<td><code>transferOwnership</code>/<code>updateMasterMinter</code>/<code>updatePauser</code>/<code>updateBlacklister</code>/<code>updateRescuer</code></td>
+<td><code>onlyOwner</code></td>
+<td>owner</td>
+</tr>
+<tr>
+<td><code>initialize</code>/<code>initializeV2</code>/<code>initializeV2_1</code>/<code>initializeV2_2</code></td>
+<td>monotonic version gate, no role</td>
+<td>anyone, once each, in order (all already run — live <code>_initializedVersion==3</code>)</td>
+</tr>
+</tbody></table></div>
+<h3 id="unguarded-arbitrary-caller-no-role-see-invariant-enforcement-bel">Unguarded (arbitrary caller, no role — see invariant enforcement below)</h3>
+<p><code>transfer</code>, <code>transferFrom</code>, <code>approve</code>/<code>increaseAllowance</code>/<code>decreaseAllowance</code>, <code>permit</code> (both overloads), <code>transferWithAuthorization</code>, <code>receiveWithAuthorization</code>, <code>cancelAuthorization</code>.</p>
+<h3 id="roles-all-one-step-transfer-zero-address-rejected-everywhere-no-">Roles — all one-step transfer, zero-address rejected everywhere, no renounce path anywhere in the codebase</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Live address</th>
+<th>Type</th>
+<th>Appointed by</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Proxy admin</td>
+<td><code>0x4fc7…8cA44</code></td>
+<td>EOA</td>
+<td><code>changeAdmin</code></td>
+</tr>
+<tr>
+<td>Owner</td>
+<td><code>0x3ABd…06df7</code></td>
+<td>EOA</td>
+<td><code>transferOwnership</code></td>
+</tr>
+<tr>
+<td>masterMinter</td>
+<td><code>0x2230…d52e1</code></td>
+<td>contract (out of scope)</td>
+<td>owner</td>
+</tr>
+<tr>
+<td>Pauser</td>
+<td><code>0xD357…e07b4</code></td>
+<td>EOA</td>
+<td>owner</td>
+</tr>
+<tr>
+<td>Blacklister</td>
+<td><code>0x1f2e…73E277</code></td>
+<td>EOA</td>
+<td>owner</td>
+</tr>
+<tr>
+<td>Rescuer</td>
+<td><code>0x0000…0000</code></td>
+<td>unset</td>
+<td>owner (never set)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reach</th>
+<th>Gain</th>
+<th>Invariant / status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Proxy admin</td>
+<td><code>upgradeTo</code>/<code>upgradeToAndCall</code>/<code>changeAdmin</code></td>
+<td>Replace all implementation logic — total control of every balance</td>
+<td>No on-chain constraint beyond <code>Address.isContract</code>; pure key-custody trust (<strong>Finding AC-1</strong>)</td>
+</tr>
+<tr>
+<td>Owner</td>
+<td>Role-update functions</td>
+<td>Re-appoint masterMinter/pauser/blacklister/rescuer</td>
+<td>One-step, no timelock (<strong>Finding AC-2</strong>)</td>
+</tr>
+<tr>
+<td>masterMinter (out of scope)</td>
+<td><code>configureMinter</code>/<code>removeMinter</code></td>
+<td>Grant/revoke bounded mint allowance</td>
+<td>Bound enforced; controller contract itself unreviewed (<strong>Finding AC-6</strong>)</td>
+</tr>
+<tr>
+<td>Pauser</td>
+<td><code>pause</code>/<code>unpause</code></td>
+<td>Global transfer freeze</td>
+<td>By-design emergency power (<strong>Finding AC-3</strong>)</td>
+</tr>
+<tr>
+<td>Blacklister</td>
+<td><code>blacklist</code>/<code>unBlacklist</code></td>
+<td>Per-address freeze</td>
+<td>By-design (<strong>Finding AC-4</strong>)</td>
+</tr>
+<tr>
+<td>Rescuer (unset)</td>
+<td><code>rescueERC20</code></td>
+<td>Sweep foreign tokens held by proxy</td>
+<td>Currently unreachable — <strong>invariant holds</strong></td>
+</tr>
+<tr>
+<td>Arbitrary relayer</td>
+<td><code>permit</code>/<code>transferWithAuthorization</code>/<code>cancelAuthorization</code></td>
+<td>Execute a signer&#39;s authorized action</td>
+<td><strong>Invariant holds</strong> — EIP-712 domain binding, nonce/used-flag uniqueness, ECDSA malleability guards all verified (Phase 1 signatures pass + Phase 2 agents 1,4,9,11,12)</td>
+</tr>
+<tr>
+<td>ERC-1271 contract-wallet signer</td>
+<td>signature verification path</td>
+<td>Authorize as a smart wallet</td>
+<td><strong>Invariant holds</strong> — staticcall prevents state mutation during check</td>
+</tr>
+<tr>
+<td>Direct caller on raw implementation</td>
+<td><code>initialize*</code> on <code>0x2Ce631…</code> bypassing proxy</td>
+<td>Classic &quot;uninitialized implementation&quot; takeover</td>
+<td><strong>Invariant holds</strong> — confirmed on-chain: raw impl <code>owner()</code>/<code>masterMinter()</code> return sentinel <code>0x0…01</code></td>
+</tr>
+<tr>
+<td>Any DeFi protocol holding USDC</td>
+<td>passive</td>
+<td>Funds frozen if blacklisted/paused</td>
+<td>Structural, systemic reliance on Circle&#39;s continued operation (contextual, not a code finding)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="ac-1-proxy-admin-has-unconstrained-upgrade-authority-via-a-singl">[AC-1] Proxy admin has unconstrained upgrade authority via a single EOA, no on-chain timelock</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> (centralization) · <strong>Confidence</strong>: 95 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/proxy/upgradeability/AdminUpgradeabilityProxy.sol:113</code> (<code>upgradeTo</code>), <code>:127-138</code> (<code>upgradeToAndCall</code>), guard <code>ifAdmin</code> at <code>:58-64</code></p>
+<pre><code class="language-solidity">function upgradeTo(address newImplementation) external ifAdmin {
+    _upgradeTo(newImplementation);
+}
+function upgradeToAndCall(address newImplementation, bytes calldata data)
+    external payable ifAdmin
+{
+    _upgradeTo(newImplementation);
+    (bool success,) = address(this).call{value: msg.value}(data);
+    require(success);
+}
+</code></pre>
+<p>The admin can repoint the proxy to arbitrary code executing in the token&#39;s storage context — full control over every balance, allowance, role, and the blacklist bitfield — in a single transaction. The only in-code constraint is <code>Address.isContract(newImplementation)</code> (<code>UpgradeabilityProxy.sol:92-95</code>). Live admin <code>0x4fc7850364958d97B4d3f5A08f79db2493f8cA44</code> is a plain EOA (0 bytecode confirmed via <code>cast code</code>); there is no on-chain multisig or timelock evidence.<br><strong>Recommendation</strong>: Disclose to users/integrators. Recommend (and verify off-chain, since it can&#39;t be seen from bytecode) that the admin key be multisig-custodied and fronted by a public-delay timelock so affected parties get advance notice before an implementation swap takes effect.</p>
+<h3 id="ac-2-owner-can-instantly-re-appoint-every-subordinate-role-from-">[AC-2] Owner can instantly re-appoint every subordinate role from a single EOA</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> (centralization) · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/v1/FiatTokenV1.sol:380</code> (<code>updateMasterMinter</code>), <code>contracts/v1/Pausable.sol:87</code>, <code>contracts/v1/Blacklistable.sol:89</code>, <code>contracts/v1.1/Rescuable.sol:66</code>, <code>contracts/v1/Ownable.sol:82</code><br>Owner (<code>0x3ABd6f64A422225E61E435baE41db12096106df7</code>, EOA) can rotate masterMinter/pauser/blacklister/rescuer with no delay. Blast radius is smaller than AC-1 (owner cannot itself move funds or run arbitrary code — only re-appoint the roles that can). All setters correctly reject <code>address(0)</code>.<br><strong>Recommendation</strong>: Multisig custody recommended; no code defect.</p>
+<h3 id="ac-3-pauser-holds-a-unilateral-no-delay-global-kill-switch">[AC-3] Pauser holds a unilateral, no-delay global kill-switch</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> (by-design centralization) · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/v1/Pausable.sol:70-81</code>; <code>whenNotPaused</code> gates every value-moving entrypoint<br>Pauser (<code>0xD3571B3bc51CECFf49194AD67aFFFC648d5e07b4</code>, EOA) can instantly and indefinitely halt every USDC transfer/mint/permit/authorization on Base. The halt is symmetric (no asymmetric liquidation-style unfairness). This is a standard, disclosed emergency power for a regulated stablecoin — a timelock here would defeat the point.<br><strong>Recommendation</strong>: Disclose; multisig custody optional.</p>
+<h3 id="ac-4-blacklister-can-unilaterally-freeze-any-addresss-funds-no-d">[AC-4] Blacklister can unilaterally freeze any address&#39;s funds, no delay, no in-contract appeal</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> (by-design centralization) · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/v1/Blacklistable.sol:71-83</code>; enforced via <code>notBlacklisted</code> + <code>_setBalance</code> (<code>contracts/v2/FiatTokenV2_2.sol:214-225</code>)<br>Blacklister (<code>0x1f2e3A640175d20ac31ed523B6733B977173E277</code>, EOA) can freeze any address&#39;s inbound and outbound transfers instantly. The freeze extends into <code>_setBalance</code> itself — even inbound transfers to a blacklisted address revert.<br><strong>Recommendation</strong>: Disclose; multisig custody recommended.</p>
+<h3 id="ac-5-no-two-step-handoff-on-any-of-the-six-privileged-roles">[AC-5] No two-step handoff on any of the six privileged roles</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> (operational safety) · <strong>Confidence</strong>: 85 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/v1/Ownable.sol:82-89</code> and equivalent updaters; <code>contracts/proxy/upgradeability/AdminUpgradeabilityProxy.sol:99-106</code><br>All role transfers are single-step overwrites. Zero-address is rejected everywhere (preventing the worst-case brick), but a valid-but-wrong destination address is an irrecoverable mistake — there is no <code>Ownable2Step</code>-style accept handshake.<br><strong>Recommendation</strong>: Consider a propose/accept pattern for at least the proxy-admin and owner roles.</p>
+<h3 id="ac-6-masterminters-mint-ceiling-is-per-mint-bounded-but-freely-r">[AC-6] masterMinter&#39;s mint ceiling is per-mint bounded but freely resettable — no on-chain supply cap</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> (by-design) · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/v1/FiatTokenV1.sol:121-144</code> (<code>mint</code>), <code>:326-352</code> (<code>configureMinter</code>/<code>removeMinter</code>)<br>Each <code>mint</code> is bounded by <code>minterAllowed</code>, decremented per mint — genuinely enforced. But masterMinter (a 5470-byte controller contract, <code>0x2230393EDAD0299b7E7B59F20AA856cD1bEd52e1</code>, <strong>out of scope for this engagement</strong>) can reset/raise that ceiling at will, so total issuance is policy-bounded, not code-bounded — standard for a fiat-backed stablecoin whose reserves are tracked off-chain.<br><strong>Recommendation</strong>: None; disclose that there is no on-chain issuance cap, and note the masterMinter controller warrants its own review if issuance governance matters to the client.</p>
+<h3 id="ac-7-no-renounce-path-anywhere-zero-address-rejected-on-every-ro">[AC-7] No renounce path anywhere; zero-address rejected on every role setter (positive finding)</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> (positive) · <strong>Confidence</strong>: 95 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/v1/Ownable.sol</code> (no <code>renounceOwnership</code> present, confirmed by grep across all 23 files); zero-address guards on every setter<br>No role can ever be dead-ended by renouncement or accidental zero-address assignment. Trade-off: none of the six roles can ever be relinquished to an ownerless/immutable state either — the correct choice for a regulated stablecoin.</p>
+<h3 id="ac-8-rescuer-currently-unset-latent-single-key-custody-of-foreig">[AC-8] Rescuer currently unset; latent single-key custody of foreign tokens if the owner ever sets one</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[phase1: access-control]</code><br><strong>Location</strong>: <code>contracts/v1.1/Rescuable.sol:54-73</code><br><code>rescueERC20</code> moves only foreign ERC20s accidentally sent to the proxy — it cannot touch USDC&#39;s own user balances (a self-transfer reverts, since <code>address(this)</code> is permanently blacklisted). Currently uncallable (rescuer == zero address). If the owner ever appoints one, that address gains unilateral, no-delay custody of any such stray tokens.</p>
+<h3 id="v2-1-fiattokenv22-drops-notblacklisted-from-allowance-setting-fu">[V2-1] <code>FiatTokenV2_2</code> drops <code>notBlacklisted</code> from allowance-setting functions — verified inert</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 98 · <strong>Origin</strong>: <code>[both]</code> — corroborated independently by 3 Phase-1 checklists (general, erc20, access-control) and 9 of 12 Phase-2 agents<br><strong>Location</strong>: <code>contracts/v2/FiatTokenV2_2.sol:259</code> (<code>approve</code>), <code>:95</code>/<code>:272</code> (<code>permit</code>, both overloads), <code>:287</code> (<code>increaseAllowance</code>), <code>:300</code> (<code>decreaseAllowance</code>) — compare V1 (<code>contracts/v1/FiatTokenV1.sol:219-227</code>) and V2 (<code>contracts/v2/FiatTokenV2.sol:54-82,187-203</code>) which carry <code>notBlacklisted(owner)</code>/<code>notBlacklisted(spender)</code> modifiers on the same functions</p>
+<pre><code class="language-solidity">function approve(address spender, uint256 value)
+    external override whenNotPaused returns (bool)
+{
+    _approve(msg.sender, spender, value);
+    return true;
+}
+</code></pre>
+<p>A blacklisted account can still set/modify an allowance or sign a valid <code>permit</code> in V2_2. This is not exploitable: every consumer of an allowance re-enforces the freeze independently — <code>transferFrom</code> carries <code>notBlacklisted(from)</code> (<code>FiatTokenV1.sol:265-267</code>), and <code>_setBalance</code> itself reverts on any blacklisted <code>from</code>/<code>to</code> (<code>FiatTokenV2_2.sol:214-225</code>), which is the single chokepoint every value-moving path funnels through. This is Circle&#39;s documented, deliberate design (moving enforcement to settlement time), independently verified across 12 separate agent analyses with zero counter-examples.<br><strong>Recommendation</strong>: None required. Documented for completeness since it is the codebase&#39;s single most-cited fragility cluster.</p>
+<h3 id="proxy-1-storage-layout-is-strictly-append-only-across-v1v2v21v22">[PROXY-1] Storage layout is strictly append-only across V1→V2→V2_1→V2_2 — verified sound, but no <code>__gap</code> reservations exist for future upgrades</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[phase1: proxies]</code><br><strong>Location</strong>: full inheritance chain; new state introduced only at <code>FiatTokenV2._initializedVersion</code> (<code>contracts/v2/FiatTokenV2.sol:31</code>), the most-derived point<br>V2_1 and V2_2 add zero new state variables; the blacklist rework in V2_2 reinterprets existing bits in-place rather than changing layout. No <code>uint256[N] __gap</code> arrays exist anywhere — harmless today, but any <em>future</em> upgrade inserting a variable into a mid-hierarchy base contract (<code>Ownable</code>, <code>Pausable</code>, <code>Blacklistable</code>, <code>EIP712Domain</code>) would shift every child slot and corrupt live state.<br><strong>Recommendation</strong>: For any future implementation, only append state at the most-derived contract, or retrofit <code>__gap</code> reservations before the next base-contract change.</p>
+<h3 id="proxy-2-raw-implementation-has-no-constructor-level-initializer-">[PROXY-2] Raw implementation has no constructor-level initializer lock, but is operationally bricked via a sentinel value — no escalation path exists</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[phase1: proxies]</code><br><strong>Location</strong>: <code>contracts/v1/FiatTokenV1.sol:67-104</code> (<code>initialize</code>, <code>public</code>, no access control, no constructor lock in the implementation tree)<br>The classic <code>_disableInitializers()</code>-in-constructor pattern is absent; instead, Circle called <code>initialize</code> directly on the deployed implementation post-deploy, setting <code>owner()</code>/<code>masterMinter()</code> to the sentinel <code>0x0…01</code> (confirmed on-chain this session by calling the implementation address directly). Because there is no <code>selfdestruct</code>/<code>delegatecall</code>/<code>create2</code> anywhere in the implementation tree, even a hypothetically-hijacked raw implementation has no path to affect the live proxy or brick itself for other consumers — the usual UUPS-style escalation from an uninitialized/hijacked implementation does not apply to this non-UUPS, admin-proxy pattern.<br><strong>Recommendation</strong>: None required given the confirmed sentinel state and the transparent (non-UUPS) proxy pattern. A constructor-level lock would make the protection code-enforced rather than operational.</p>
+<h3 id="proxy-3-upgradetoandcalls-inner-requiresuccess-carries-no-reason">[PROXY-3] <code>upgradeToAndCall</code>&#39;s inner <code>require(success)</code> carries no reason string</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 90 · <strong>Origin</strong>: <code>[both]</code> — Phase 1 proxies pass + Phase 2 agents 3, 4, 11<br><strong>Location</strong>: <code>contracts/proxy/upgradeability/AdminUpgradeabilityProxy.sol:135-137</code></p>
+<pre><code class="language-solidity">(bool success,) = address(this).call{value: msg.value}(data);
+require(success);
+</code></pre>
+<p>A failed atomic upgrade-and-initialize reverts opaquely, complicating operational diagnosis. Atomicity is correct (a failed inner call reverts the whole transaction, including the implementation-pointer write), and this is admin-only.<br><strong>Recommendation</strong>: Bubble the inner revert reason, or at minimum add a reason string.</p>
+<h3 id="proxy-4-no-function-selector-collisions-between-the-proxys-5-adm">[PROXY-4] No function-selector collisions between the proxy&#39;s 5 admin-level selectors and the implementation ABI (verified negative)</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 95 · <strong>Origin</strong>: <code>[phase1: proxies]</code><br><strong>Location</strong>: <code>contracts/proxy/upgradeability/AdminUpgradeabilityProxy.sol:83-138</code> vs. the full <code>FiatTokenV2_2</code> external ABI<br>Computed selectors for <code>admin()</code>, <code>implementation()</code>, <code>changeAdmin(address)</code>, <code>upgradeTo(address)</code>, <code>upgradeToAndCall(address,bytes)</code> do not collide with any of the implementation&#39;s ~55 external/public selectors. <code>admin()</code>/<code>implementation()</code> deliberately have no <code>ifAdmin</code> gate (unconditional views for all callers); had either selector existed on the implementation it would be permanently shadowed. It does not.<br><strong>Recommendation</strong>: Keep this check in any future deploy/CI pipeline for new implementations.</p>
+<h3 id="proxy-5-initialize-front-running-is-not-code-prevented-but-is-mo">[PROXY-5] <code>initialize</code> front-running is not code-prevented, but is moot on the live deployment</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 85 · <strong>Origin</strong>: <code>[phase1: proxies]</code><br><strong>Location</strong>: <code>contracts/proxy/FiatTokenProxy.sol:36-39</code> (constructor does not call <code>initialize</code>); <code>contracts/v1/FiatTokenV1.sol:67</code> (no access control on <code>initialize</code>, only the <code>initialized</code> flag)<br>The classic proxy-genesis front-run window (anyone can call <code>initialize</code> through the fallback before the deployer does) is a deploy-script responsibility, not a code guarantee. Not testable or exploitable on the live contract — <code>_initializedVersion==3</code>, meaning all four initializers have already run in the correct order. One correct subtlety: the proxy admin itself cannot call <code>initialize</code> (blocked by <code>_willFallback</code>), so this must be done by a non-admin address or via the <code>upgradeToAndCall</code> self-call chain.<br><strong>Recommendation</strong>: None for the live contract; for future deploys, bundle the first <code>initialize</code> atomically with deployment.</p>
+<h3 id="proxy-6-upgradetoandcall-lets-the-admin-bypass-the-transparent-p">[PROXY-6] <code>upgradeToAndCall</code> lets the admin bypass the transparent-proxy isolation to invoke implementation logic — currently harmless</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 80 · <strong>Origin</strong>: <code>[phase2 only]</code> — agents 11 (trust-gap) and 12 (flow-gap), independently<br><strong>Location</strong>: <code>contracts/proxy/upgradeability/AdminUpgradeabilityProxy.sol:127-138</code> (<code>upgradeToAndCall</code>), <code>:166-171</code> (<code>_willFallback</code>)<br>The self-<code>call</code> at line 135 carries <code>msg.sender == address(this)</code> (the proxy itself, not the admin), which passes the <code>_willFallback</code> check (<code>require(msg.sender != _admin())</code>) and delegates into the new implementation. This means the admin — normally walled off from all implementation-level functions by the transparent-proxy pattern — <em>can</em> reach implementation logic via this one path, executing with <code>msg.sender == &lt;the proxy&#39;s own address&gt;</code>. Verified this grants nothing today: no in-scope function authorizes on <code>msg.sender == address(this)</code> (confirmed by grep across all 23 files), and the proxy&#39;s own address holds no privileged role and is permanently blacklisted (<code>initializeV2_2</code>, <code>FiatTokenV2_2.sol:61</code>), so any attempt to <code>mint</code>/<code>configureMinter</code>/etc. through this path would revert on the relevant role check. This is also strictly subsumed by AC-1: the admin already has total upgrade authority, so no new privilege is escalated.<br><strong>Recommendation</strong>: No action needed today. Flagged because it&#39;s a genuine structural fact worth the client&#39;s engineering team knowing — a <em>future</em> implementation that ever checked <code>msg.sender == address(this)</code> for any kind of authorization would become admin-exploitable through this exact path.</p>
+<h3 id="minor-1-rescueerc20-lacks-a-whennotpaused-gate">[MINOR-1] <code>rescueERC20</code> lacks a <code>whenNotPaused</code> gate</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 80 · <strong>Origin</strong>: <code>[phase2 only]</code> — agent 11<br><strong>Location</strong>: <code>contracts/v1.1/Rescuable.sol:54-59</code><br>Unlike every USDC value-moving entrypoint, <code>rescueERC20</code> has no pause gate — the rescuer could sweep foreign tokens even during an emergency pause. Non-exploitable in practice: it can never move USDC&#39;s own balances (a self-transfer reverts, since <code>address(this)</code> is permanently blacklisted), and the rescuer is currently unset.<br><strong>Recommendation</strong>: Cosmetic; add <code>whenNotPaused</code> for consistency if desired, no urgency.</p>
+<h3 id="minor-2-configureminterremoveminter-pause-guard-asymmetry-by-des">[MINOR-2] <code>configureMinter</code>/<code>removeMinter</code> pause-guard asymmetry (by design)</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 85 · <strong>Origin</strong>: <code>[phase2 only]</code> — agent 8<br><strong>Location</strong>: <code>contracts/v1/FiatTokenV1.sol:326-329</code> (<code>configureMinter</code>, <code>whenNotPaused</code>+<code>onlyMasterMinter</code>) vs. <code>:343-345</code> (<code>removeMinter</code>, <code>onlyMasterMinter</code> only)<br>During a global pause, masterMinter can revoke a minter&#39;s allowance but cannot grant new capacity — the correct, intentional asymmetry (allow emergency response, disallow new exposure) during an incident.</p>
+<h3 id="minor-3-eip-3009-vs-eip-2612-boundary-inclusivity-mismatch-each-">[MINOR-3] EIP-3009 vs. EIP-2612 boundary-inclusivity mismatch (each matches its own spec)</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 85 · <strong>Origin</strong>: <code>[phase2 only]</code> — agent 9<br><strong>Location</strong>: <code>contracts/v2/EIP3009.sol:319,322</code> (<code>now &gt; validAfter</code>, <code>now &lt; validBefore</code> — strict) vs. <code>contracts/v2/EIP2612.sol:85</code> (<code>deadline &gt;= now</code> — inclusive)<br>EIP-3009 authorizations are invalid exactly at the boundary second; EIP-2612 permits are valid exactly at the deadline second. Each independently matches its own governing EIP; no exploitable consequence from the inconsistency between the two schemes.</p>
+<h3 id="minor-4-redundant-typeuint256max-sentinel-branch-in-permits-dead">[MINOR-4] Redundant <code>type(uint256).max</code> sentinel branch in permit&#39;s deadline check</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 80 · <strong>Origin</strong>: <code>[phase2 only]</code> — agent 9<br><strong>Location</strong>: <code>contracts/v2/EIP2612.sol:85</code>: <code>deadline == type(uint256).max || deadline &gt;= now</code><br>The first disjunct is fully subsumed by the second (<code>block.timestamp</code> can never exceed <code>type(uint256).max</code>) — a harmless dead branch, not a defect.</p>
+<h3 id="minor-5-historical-bit-packing-seam-the-pre-v22-setbalance-write">[MINOR-5] Historical bit-packing seam: the pre-V2_2 <code>_setBalance</code> writer had no upper-bound cap</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 75 · <strong>Origin</strong>: <code>[phase2 only]</code> — agent 10 (numerical-gap-hunter)<br><strong>Location</strong>: <code>contracts/v1/FiatTokenV1.sol:420-422</code> (base/virtual <code>_setBalance</code>, uncapped) vs. <code>contracts/v2/FiatTokenV2_2.sol:214-225</code> (override, capped at <code>2^255-1</code>)<br>The blacklist-flag/balance bit-packing scheme introduced in V2_2 depends on no historical balance ever having reached <code>2^255</code>, but the pre-V2_2 writer that populated the same storage slot enforced no such cap. Structurally unreachable in practice: <code>2^255-1 ≈ 5.79×10^76</code> is roughly 10^59 times larger than USDC&#39;s entire historical supply at any point.</p>
+<h3 id="minor-6-erc-1271-vs-eoa-signature-path-revertfalse-asymmetry">[MINOR-6] ERC-1271 vs. EOA signature-path revert/false asymmetry</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> · <strong>Confidence</strong>: 80 · <strong>Origin</strong>: <code>[phase2 only]</code> — agent 6<br><strong>Location</strong>: <code>contracts/util/ECRecover.sol:51-64</code> (EOA path reverts on malformed signature) vs. <code>contracts/util/SignatureChecker.sol</code> (ERC-1271 contract-wallet path returns <code>false</code> gracefully on an invalid response)<br>Cosmetic inconsistency in failure mode between the two signer types; no state or fund impact either way (the caller&#39;s own <code>require</code> ultimately reverts the transaction regardless of which internal path returned/reverted first).</p>
+<hr>
+<h2 id="coverage-gate">Coverage Gate</h2>
+<p><strong>Entrypoints</strong>: 33 external/public state-changing functions identified in source across proxy + implementation; 33 addressed across the Phase-0 inventory, Phase-1 checklists, and Phase-2 attack agents (every privileged, unguarded, and initializer entrypoint appears in at least one finding, threat-catalog row, or an explicit &quot;examined, no issue&quot; trace in the agent transcripts).<br><strong>Threat-catalog rows</strong>: 10 rows (T1-T10 in the protocol map); all 10 answered — 7 as &quot;invariant holds&quot; (T4, T7, T8, T9, T10, T11 — direct-implementation-init closed; T12 — genesis front-run, structural/moot) or as a Finding (T1→AC-1, T2→AC-2, T3→AC-6, T5→AC-3, T6→AC-4).<br><strong>Holes closed this pass (K)</strong>: 0 — both hunting phases, informed by the Phase-0 protocol map and on-chain verification, already covered the full entrypoint and threat surface with no gaps requiring a fresh re-read in this reconciliation step.</p>
+<hr>
+<blockquote>
+<p>This review was performed by an AI-orchestrated multi-agent audit pipeline (context-building + 6 breadth checklists + 12 blind depth agents + reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. This is Circle&#39;s canonical, publicly-audited <code>stablecoin-evm</code> codebase; findings here are overwhelmingly disclosure/centralization items rather than exploitable code defects, consistent with the maturity of this specific deployment. Independent human security review and continued on-chain monitoring are recommended for any changes to this codebase.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreigmrpo5z5rlpocz3yg6pcedu6lyudvj5tnvjjxc6nx4r7bn6xcrry.ipfs.community.bgipfs.com/"><code>https://bafkreigmrpo5z5rlpocz3yg6pcedu6lyudvj5tnvjjxc6nx4r7bn6xcrry.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/380">#380</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeftClawServicesV2 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #381">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">LeftClawServicesV2</h1>
+    <p class="job-sub">Job #381 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/381"><b>Job page</b> #381</a>
+      <a class="chip" href="https://bafkreiapnopzcoi77s6lfvdrs7tb7prweb5qtgaapfsb5xqzyegoh7vm5y.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — LeftClawServicesV2</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>packages/foundry/contracts/LeftClawServicesV2.sol</code></td>
+</tr>
+<tr>
+<td><strong>Repo</strong></td>
+<td><code>github.com/clawdbotatg/leftclaw-services</code></td>
+</tr>
+<tr>
+<td><strong>Commit</strong></td>
+<td><code>216e7fe9c4282ef99a217930171a22d92fc47803</code></td>
+</tr>
+<tr>
+<td><strong>Chain</strong></td>
+<td>Base mainnet</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Single file (named in job description)</td>
+</tr>
+<tr>
+<td><strong>Lines</strong></td>
+<td>596</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context map (opus) → ethskills breadth, 7 domains (sonnet) → pashov depth, 12 attack agents blind (sonnet) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>50</td>
+</tr>
+</tbody></table></div>
+<p>This contract is a job-marketplace escrow: clients post jobs paying in CLAWD (direct), USDC (swapped to CLAWD via Uniswap V3), ETH (wrapped + swapped), or off-chain &quot;CV&quot; credit; an owner-managed worker allowlist accepts and completes jobs; on acceptance, escrowed CLAWD is forwarded once to a <code>treasury</code> address.</p>
+<p><strong>Reconciliation summary</strong>: Overlap (found independently by both ethskills and pashov phases): 5 · Phase-1-only: 1 escalated finding + long LEAD tail · Phase-2-only: 1 novel finding + 2 leads · Re-examined leads kept: 2, demoted: 0 · Coverage holes closed this pass: 0 (both phases already covered all 23 state-changing entrypoints and all 8 threat-catalog rows).</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[95] <strong>1. Consultation jobs paid on-chain permanently strand their escrow — no code path ever releases it</strong></p>
+<p><code>_createJob / completeConsultation / acceptJob</code> · Confidence: 95 · <code>[both]</code> — found independently by ethskills (general-1, Critical; precision-2, High) and 8 of 12 pashov agents.</p>
+<p><strong>Description</strong><br><code>_isConsultation(serviceTypeId)</code> (L540-542) hardcodes IDs 1 and 2. <code>_createJob</code> (L544-578) routes these jobs straight to <code>JobStatus.IN_PROGRESS</code> (L565-567), skipping <code>OPEN</code> entirely. <code>acceptJob</code> (L286-304) is the <strong>only</strong> function in the contract that ever transfers <code>paymentClawd</code> to <code>treasury</code> (L297-301), gated by <code>require(job.status == JobStatus.OPEN || job.status == JobStatus.REASSIGNED)</code> (L289) — a status a consultation job can never legitimately hold. <code>completeConsultation</code> (L351-364), the client&#39;s own completion path, only writes <code>status</code>/<code>resultCID</code>/<code>completedAt</code> — zero token calls, zero <code>paymentClaimed</code>/<code>totalLockedClawd</code> writes. Nothing in <code>_validateService</code> (L518-524) or any of <code>postJob</code>/<code>postJobFor</code>/<code>postJobWithUsdc</code>/<code>postJobWithETH</code> restricts consultation service-type IDs to CV-only (off-chain) payment.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Owner adds service type 1 as a &quot;consultation&quot; (<code>_isConsultation</code> matches IDs 1/2), <code>priceUsd &gt; 0</code>, status <code>&quot;active&quot;</code>.</li>
+<li>Client calls <code>postJob(1, 100e18, &quot;please review&quot;)</code> — <code>clawdToken.safeTransferFrom</code> pulls 100e18 CLAWD (L205), <code>totalLockedClawd += 100e18</code> (L554), job created directly <code>IN_PROGRESS</code> (<code>isConsult</code> true at L556).</li>
+<li>Client calls <code>completeConsultation(jobId, &quot;ipfs://result&quot;)</code> (L351-364) — passes <code>job.client == msg.sender</code> (L354), <code>status == IN_PROGRESS</code> (L355), <code>_isConsultation</code> (L356) — job → <code>COMPLETED</code>. No <code>clawdToken</code> call anywhere in this function.</li>
+<li>Every fund-moving function is now unreachable for this job: <code>acceptJob</code> requires <code>OPEN</code>/<code>REASSIGNED</code> (fails, job is <code>COMPLETED</code>); <code>declineJob</code>/<code>cancelJob</code>/<code>adminCancelJob</code> all require <code>OPEN</code> (fail). The 100e18 CLAWD is permanently stuck — <code>totalLockedClawd</code> still counts it (so <code>withdrawStuckTokens</code> can never sweep it as surplus either), but no client- or worker-facing function ever forwards it anywhere. The only escape is an undocumented owner workaround: <code>adminResetJob</code> (valid on <code>COMPLETED</code>, L402-413) forces the job to <code>REASSIGNED</code>, then an <em>unrelated</em> worker calls <code>acceptJob</code> to trigger the transfer — to <code>treasury</code>, never back to the client, and it corrupts a job the client already marked delivered.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function completeConsultation(uint256 jobId, string calldata resultCID) external nonReentrant {
+     Job storage job = jobs[jobId];
+     require(job.id != 0, &quot;!job&quot;);
+     require(job.client == msg.sender, &quot;!client&quot;);
+     require(job.status == JobStatus.IN_PROGRESS, &quot;!active&quot;);
+     require(_isConsultation(job.serviceTypeId), &quot;!consult&quot;);
+     require(bytes(resultCID).length &gt; 0, &quot;!result&quot;);
+
+     job.status = JobStatus.COMPLETED;
+     job.resultCID = resultCID;
+     job.completedAt = block.timestamp;
+
++    if (job.paymentClawd &gt; 0 &amp;&amp; !job.paymentClaimed) {
++        totalLockedClawd -= job.paymentClawd;
++        job.paymentClaimed = true;
++        clawdToken.safeTransfer(treasury, job.paymentClawd);
++    }
+
+     emit JobCompleted(jobId, msg.sender, resultCID);
+ }
+</code></pre>
+<p>Alternative: reject non-CV <code>PaymentMethod</code> for consultation service-type IDs at posting time instead.</p>
+<hr>
+<p>[90] <strong>2. <code>adminCancelJob</code> decrements escrow accounting without refunding the client — chainable into <code>withdrawStuckTokens</code> fund extraction</strong></p>
+<p><code>adminCancelJob / withdrawStuckTokens</code> · Confidence: 90 · <code>[both]</code> — found independently by all 12 of 12 pashov agents and by ethskills general-2/precision-1/access-1.</p>
+<p><strong>Description</strong><br><code>cancelJob</code> (L321-335) and <code>declineJob</code> (L306-319) both pair their <code>totalLockedClawd</code> decrement with <code>clawdToken.safeTransfer(...)</code> back to the client. <code>adminCancelJob</code> (L416-427) is the sole exception: it decrements <code>totalLockedClawd -= job.paymentClawd</code> (L422) with <strong>no transfer call anywhere in the function</strong>. This fires under the function&#39;s own documented intended use (&quot;for cleanup of stuck jobs,&quot; L415) — no owner malice required, just two ordinary admin calls performed in sequence.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Client posts a job via <code>postJob</code>, escrowing 1,000e18 CLAWD (<code>totalLockedClawd = 1000e18</code>, contract CLAWD balance = 1000e18), job <code>OPEN</code>.</li>
+<li>Owner calls <code>adminCancelJob(jobId)</code>: <code>require(status == OPEN)</code> passes (L419) → <code>totalLockedClawd -= 1000e18</code> → 0; <code>status = CANCELLED</code> (L425). No <code>safeTransfer</code>. Contract balance still holds the 1000e18. Client cannot recover it — <code>cancelJob</code>/<code>declineJob</code> both require <code>OPEN</code> (now <code>CANCELLED</code>, revert).</li>
+<li>Owner calls <code>withdrawStuckTokens(address(clawdToken), to)</code> (L446-457): <code>require(balance &gt; totalLockedClawd)</code> → <code>1000e18 &gt; 0</code> → passes; transfers <code>balance - totalLockedClawd = 1000e18</code> to <code>to</code> (L452-453) — the client&#39;s full un-refunded escrow, indistinguishable on-chain from genuine surplus dust.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function adminCancelJob(uint256 jobId) external onlyOwner nonReentrant {
+     Job storage job = jobs[jobId];
+     require(job.id != 0, &quot;!job&quot;);
+     require(job.status == JobStatus.OPEN, &quot;!open&quot;);
+
+     if (job.paymentClawd &gt; 0) {
+         totalLockedClawd -= job.paymentClawd;
++        clawdToken.safeTransfer(job.client, job.paymentClawd);
+     }
+
+     job.status = JobStatus.CANCELLED;
+     emit JobCancelled(jobId, address(0));
+ }
+</code></pre>
+<hr>
+<p>[80] <strong>3. Malicious/compromised owner can drain real CLAWD by pointing <code>swapPath</code>/<code>ethSwapPath</code> at a self-controlled pool</strong></p>
+<p><code>setSwapPath / postJobFor / postJobWithUsdc / _swapETHToClawd / acceptJob</code> · Confidence: 80 · <code>[phase1-only, re-examined and confirmed]</code></p>
+<p><strong>Description</strong><br><code>setSwapPath</code> (L435-439) and <code>setEthSwapPath</code> (L441-444) validate only a minimum byte length (<code>&gt;= 43</code> / <code>&gt;= 23</code>) — never that the path&#39;s leading token matches <code>usdcToken</code>/<code>weth</code>, nor that the trailing token is <code>clawdToken</code>. All three swap-bearing posters trust the router&#39;s returned <code>amountOut</code> directly as <code>clawdReceived</code> (L222-231, L242-251, L530-537), with no <code>clawdToken.balanceOf</code> check before/after. <code>job.paymentClawd = clawdReceived</code> (L562) feeds <code>totalLockedClawd</code> (L554) and, on <code>acceptJob</code>, is paid out of the contract&#39;s <strong>real</strong> <code>clawdToken</code> balance (L300) — a balance made up of <em>other clients&#39;</em> legitimately escrowed CLAWD, entirely independent of whatever token the manipulated path actually delivered.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Owner deploys a throwaway ERC20 and seeds a shallow Uniswap V3 pool (owner controls both sides) such that a small USDC input yields a huge reported output of that token.</li>
+<li>Owner calls <code>setSwapPath(usdcToken ++ fee ++ fakeToken)</code> — passes the <code>&gt;= 43</code> length check; no endpoint-token check exists.</li>
+<li>Owner (or an accomplice) calls <code>postJobWithUsdc(serviceTypeId, &quot;x&quot;, 0)</code> (<code>minClawdOut=0</code> permitted, see Finding 4) paying only the cheapest service&#39;s <code>priceUsd</code>. The swap executes against the owner&#39;s own pool and returns a huge <code>amountOut</code>, accepted unconditionally as <code>clawdReceived</code>.</li>
+<li><code>job.paymentClawd</code> and <code>totalLockedClawd</code> are inflated by this bogus figure. Owner (if not already a worker) calls <code>addWorker(self)</code> then <code>acceptJob(jobId)</code> — <code>clawdToken.safeTransfer(treasury, job.paymentClawd)</code> (L300) executes against the contract&#39;s <strong>real</strong> CLAWD balance, draining CLAWD escrowed by other, unrelated jobs to <code>treasury</code> (itself owner-controlled via <code>setTreasury</code>, L429).</li>
+<li>Bounded only by the contract&#39;s actual CLAWD balance at the time — i.e., the entire pool of currently-escrowed client funds, not merely protocol-owned surplus.</li>
+</ol>
+<p><strong>Fix</strong>: validate that <code>newPath</code>&#39;s leading 20 bytes match the expected input token and its trailing 20 bytes match <code>address(clawdToken)</code> in both setters; additionally measure <code>clawdToken.balanceOf(address(this))</code> before/after each swap and use the observed delta (not the router&#39;s return value) as <code>clawdReceived</code>.</p>
+<hr>
+<p>[70] <strong>4. <code>postJobFor</code>/<code>postJobWithUsdc</code> allow <code>minClawdOut = 0</code>, enabling swap-sandwich value extraction</strong></p>
+<p><code>postJobFor / postJobWithUsdc</code> · Confidence: 85 · <code>[both]</code> — found by 8 of 12 pashov agents and by ethskills general-5/precision-3/amm-2.</p>
+<p><strong>Description</strong><br><code>postJobWithETH</code> requires <code>minClawdOut &gt; 0</code> (L260); <code>postJobFor</code> (L214-232) and <code>postJobWithUsdc</code> (L235-252) accept <code>minClawdOut = 0</code>, passed straight to <code>exactInput</code>&#39;s <code>amountOutMinimum</code> (L227, L247). A sandwiched swap can drive <code>clawdReceived</code> toward zero while the client still pays the full <code>priceUsd</code> in USDC. <code>declineJob</code>/<code>cancelJob</code> always refund in CLAWD, not the original USDC, so value lost to a sandwich is permanently unrecoverable to the client.</p>
+<p><strong>Proof of Concept</strong>: Caller invokes <code>postJobWithUsdc(serviceTypeId, &quot;desc&quot;, 0)</code>. An MEV searcher sandwiches the <code>exactInput</code> call against the USDC→WETH→CLAWD pool (0.05%/1% tiers per constructor L145-148), minimizing <code>clawdReceived</code>; the swap still succeeds since <code>0</code> always satisfies the floor. The resulting job shows the full <code>priceUsd</code> but escrows near-zero CLAWD.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function postJobWithUsdc(uint256 serviceTypeId, string calldata description, uint256 minClawdOut) external nonReentrant {
+     (uint256 priceUsd, ) = _validateService(serviceTypeId);
+     require(bytes(description).length &gt; 0, &quot;!desc&quot;);
++    require(minClawdOut &gt; 0, &quot;!minOut&quot;);
+</code></pre>
+<p>Same change in <code>postJobFor</code>.</p>
+<hr>
+<p>[75] <strong>5. <code>completeJob</code>/<code>logWork</code> don&#39;t verify the caller is the job&#39;s assigned worker</strong></p>
+<p><code>completeJob / logWork</code> · Confidence: 88 · <code>[both]</code> — found independently by ethskills general-3 and 7 of 12 pashov agents.</p>
+<p><strong>Description</strong><br><code>acceptJob</code> (L292) is the only place <code>job.worker</code> is bound to a specific address. <code>completeJob</code> (L337-348) and <code>logWork</code> (L366-377) are gated only by generic <code>onlyWorker</code> allowlist membership (L111-118) plus <code>status == IN_PROGRESS</code> — neither checks <code>job.worker == msg.sender</code>.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Worker A calls <code>acceptJob(jobId)</code> — <code>job.worker = A</code>, escrow already released to treasury.</li>
+<li>Worker B (any other allowlisted, unrelated address) calls <code>completeJob(jobId, &quot;ipfs://garbage&quot;)</code> — <code>require(job.id != 0)</code> and <code>require(status == IN_PROGRESS)</code> both pass; no check against <code>job.worker</code>. Job forced to <code>COMPLETED</code> with B&#39;s arbitrary <code>resultCID</code>; A&#39;s subsequent legitimate <code>completeJob</code> call reverts (<code>!active</code>).</li>
+<li>Identical gap in <code>logWork</code> lets B inject fabricated progress notes into A&#39;s active job. Given the contract&#39;s own &quot;no disputes&quot; design, this is unrecoverable except via owner&#39;s <code>adminResetJob</code>.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function completeJob(uint256 jobId, string calldata resultCID) external nonReentrant onlyWorker {
+     Job storage job = jobs[jobId];
+     require(job.id != 0, &quot;!job&quot;);
++    require(job.worker == msg.sender, &quot;!assigned&quot;);
+     require(job.status == JobStatus.IN_PROGRESS, &quot;!active&quot;);
+</code></pre>
+<p>Same addition in <code>logWork</code>.</p>
+<hr>
+<p>[65] <strong>6. <code>postJobFor</code> lets any caller assign an arbitrary <code>client</code>, with concrete fund-recoverability loss for consultation jobs</strong></p>
+<p><code>postJobFor</code> · Confidence: 70 · <code>[both]</code> — ethskills escalated to Medium (access-2/general-6); pashov agents raised it as a corroborated LEAD across nearly all 12 without finding a third-party fund-extraction path.</p>
+<p><strong>Description</strong><br><code>postJobFor(address client, ...)</code> (L214-232) only checks <code>client != address(0)</code> (L215) — any caller can name an arbitrary <code>client</code> while paying the USDC themselves. That address becomes <code>job.client</code>, gaining exclusive <code>cancelJob</code>/<code>completeConsultation</code> rights. The NatSpec (L209-213) states this is meant to be called only by a trusted x402 relayer server, but nothing on-chain enforces it. Combined with Finding 1: if the caller targets a consultation service-type ID, the named &quot;client&quot; is now the only address that can ever call <code>completeConsultation</code> — and doing so still permanently strands the escrow per Finding 1, with the payer (not the named client) having no recourse at all.</p>
+<p><strong>Proof of Concept</strong>: Any EOA calls <code>postJobFor(victim, serviceTypeId, &quot;desc&quot;, 0)</code>, paying USDC from its own wallet. <code>jobs[jobId].client == victim</code> is created without victim&#39;s involvement or consent — usable for job-history spam/griefing (visible via <code>getJobsByClient(victim)</code>), and for consultation-type IDs, strands the caller&#39;s own payment with the victim as the only address that could ever (uselessly, per Finding 1) call <code>completeConsultation</code>.</p>
+<p><strong>Fix</strong>: gate <code>postJobFor</code> to an explicit <code>onlyRelayer</code>/allowlisted-caller check rather than relying on an undocumented off-chain trust assumption, or require <code>client == msg.sender</code> absent such a role.</p>
+<hr>
+<p>[55] <strong>7. <code>postJob</code>/<code>postJobCustom</code> never validate <code>clawdAmount</code> against the service&#39;s <code>priceUsd</code></strong></p>
+<p><code>postJob / postJobCustom</code> · Confidence: 60 · <code>[phase2-only, re-examined and confirmed]</code></p>
+<p><strong>Description</strong><br><code>postJob</code> (L200-207) only enforces <code>clawdAmount &gt;= 1e18</code> (L203), with no check against <code>_validateService</code>&#39;s returned <code>priceUsd</code>. <code>postJobCustom</code> (L276-282) doesn&#39;t call <code>_validateService</code> at all and accepts a fully caller-chosen <code>customPriceUsd</code> independent of <code>clawdAmount</code>. Contrast with <code>postJobFor</code>/<code>postJobWithUsdc</code>, which pull exactly <code>priceUsd</code> in USDC. Not a theft vector — <code>declineJob</code>/<code>cancelJob</code> refund exactly what was paid — but a business-logic gap: a direct-contract caller (bypassing the frontend, which the NatSpec at L199 says computes <code>clawdAmount</code> off-chain &quot;from USD price at market rate&quot;) can post a job for an expensive service while escrowing only the 1-token floor, relying entirely on a worker manually noticing and declining.</p>
+<p><strong>Proof of Concept</strong>: <code>postJob(expensiveServiceId, 1e18, &quot;desc&quot;)</code> succeeds regardless of <code>serviceTypes[expensiveServiceId].priceUsd</code>, creating a job whose displayed <code>priceUsd</code> is unrelated to its actual <code>paymentClawd</code>.</p>
+<p><strong>Fix</strong>: enforce an on-chain price relationship in <code>postJob</code> (e.g., a stored CLAWD/USD rate with a tolerance band), or compute <code>clawdAmount</code> on-chain from <code>priceUsd</code> the way the USDC/ETH paths do.</p>
+<hr>
+<p>[60] <strong>8. Escrow is released irrevocably on <code>acceptJob</code> (a worker action), with no client-recovery path once a job is <code>IN_PROGRESS</code></strong></p>
+<p><code>acceptJob / cancelJob / adminCancelJob / adminResetJob</code> · Confidence: 65 · <code>[phase1-only, re-examined and confirmed]</code></p>
+<p><strong>Description</strong><br>Any allowlisted worker can call <code>acceptJob</code>, which unconditionally forwards the full escrowed CLAWD to <code>treasury</code> (L300) the moment the job transitions to <code>IN_PROGRESS</code> — before any work is delivered or verified. Once <code>IN_PROGRESS</code>, no path refunds the client: <code>cancelJob</code>/<code>adminCancelJob</code> both require <code>OPEN</code> (L325, L419); <code>adminResetJob</code> (the only owner tool for <code>IN_PROGRESS</code> jobs, L402-413) reassigns the job but never touches funds. A worker who accepts and simply never calls <code>completeJob</code> grieves the client indefinitely with only owner-mediated <code>adminResetJob</code> as (partial, non-refunding) recourse.</p>
+<p><strong>Proof of Concept</strong>: Client posts a job, escrow held. A worker calls <code>acceptJob</code> — full escrow instantly forwarded to <code>treasury</code>. Worker never calls <code>completeJob</code>. Client has no <code>cancelJob</code> (status no longer <code>OPEN</code>). Only remedy is owner&#39;s <code>adminResetJob</code>, which reassigns for free rework rather than refunding the client.</p>
+<p><strong>Fix</strong>: consider releasing escrow on <code>completeJob</code> rather than <code>acceptJob</code>, or add a client/timeout-triggered reclaim path for jobs stuck <code>IN_PROGRESS</code> beyond a reasonable window.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Corroborated code smells with partial paths; plausible but not independently confirmed as standalone exploitable findings. Confidence &lt; 50 or contingent on unverified external facts.</em></p>
+<ul>
+<li><strong><code>setEthSwapPath</code> validates only <code>&gt;= 23</code> bytes vs. the true minimum valid single-hop path of 43 bytes</strong> (<code>swapPath</code>&#39;s check correctly uses <code>&gt;=43</code>) — <code>[both]</code>. An owner-set malformed <code>ethSwapPath</code> between 23-42 bytes would brick <code>postJobWithETH</code>/<code>_swapETHToClawd</code> (self-inflicted DoS on the ETH payment path). Fix: align to <code>&gt;= 43</code>.</li>
+<li><strong>No <code>deadline</code> parameter on any <code>exactInput</code> call</strong> — <code>[phase1-only]</code> (amm-3). <code>ISwapRouter02.ExactInputParams</code> as declared here has no deadline field; combined with two-of-three paths permitting <code>minClawdOut=0</code> (Finding 4), a delayed/held transaction has no on-chain expiry protection.</li>
+<li><strong>Fee-on-transfer/rebasing CLAWD assumption</strong> — <code>[both]</code>. Nominal transfer amounts (<code>clawdAmount</code>, <code>priceUsd</code>) are trusted without balance-delta checks throughout; contingent on CLAWD&#39;s actual token implementation, which is out of this file&#39;s scope. The contract&#39;s own header comment claims &quot;no fees,&quot; reducing likelihood.</li>
+<li><strong>Blacklist-token DoS on refund paths</strong> — <code>[both]</code>. <code>declineJob</code>/<code>cancelJob</code>&#39;s unconditional <code>safeTransfer</code> to <code>job.client</code>/<code>msg.sender</code> would revert and strand that one job if CLAWD ever supported blocklisting a specific address. Not verifiable against CLAWD&#39;s actual implementation.</li>
+<li><strong>Price front-run against infinite-approval clients</strong> — <code>[phase2-only]</code>. Owner could front-run a pending <code>postJobFor</code>/<code>postJobWithUsdc</code> tx with <code>updateServiceType</code> to spike <code>priceUsd</code>, pulling more USDC than a client (who granted a large/unlimited allowance) expected. Standard admin-key trust risk; not independently verified against actual frontend approval patterns.</li>
+<li><strong>Unbounded <code>jobs</code> growth via free <code>postJobWithCV</code></strong> — <code>[both]</code>. <code>postJobWithCV</code> requires no on-chain payment; combined with unbounded linear scans in <code>getJobsByClient</code>/<code>getJobsByStatus</code>/<code>getOpenJobs</code> (no pagination), cheap spam could eventually make these views revert for all callers.</li>
+<li><strong><code>cvDivisor</code> validated/stored but never used in on-chain computation; <code>postJobWithCV</code>&#39;s <code>cvAmount</code> is unrelated caller input</strong> — <code>[both]</code>. No on-chain funds move for CV jobs, so this is informational.</li>
+<li><strong>Zero job-id sentinel collision</strong> — <code>[phase2-only]</code>. <code>nextJobId = _startJobId</code> (L143) has no <code>require(_startJobId &gt; 0)</code>; every existence check uses <code>id != 0</code> as the &quot;doesn&#39;t exist&quot; sentinel. Mitigated in the current deployment — <code>DeployLeftClawServicesV2.s.sol</code> hardcodes a non-zero <code>currentNextJobId</code>. Deploy-time footgun, not attacker-triggerable.</li>
+<li><strong><code>totalLockedClawd</code> never reconciled against actual <code>balanceOf</code></strong> — <code>[phase1-only]</code>. A static counter with no periodic re-sync; would drift permanently if CLAWD were ever rebasing.</li>
+<li><strong><code>IWETH9.approve</code> return value unchecked in <code>_swapETHToClawd</code></strong> — <code>[both]</code>. Deviates from the <code>SafeERC20</code>/<code>forceApprove</code> discipline used everywhere else; low risk in practice since canonical WETH9 always returns <code>true</code>.</li>
+<li><strong>Unbounded O(n) scans over <code>workers[]</code></strong> — <code>[both]</code>. <code>onlyWorker</code>, <code>addWorker</code>&#39;s dup-check, <code>removeWorker</code>, <code>isWorker</code> are all linear; owner-only mutation bounds the practical risk.</li>
+<li><strong>Single-step <code>Ownable</code> (not <code>Ownable2Step</code>)</strong> — <code>[phase1-only]</code>. A mistaken <code>transferOwnership</code> call permanently locks out all admin functions, including worker onboarding and fund rescue.</li>
+<li><strong>No timelock on <code>treasury</code>/<code>setSwapPath</code>/<code>setEthSwapPath</code></strong> — <code>[phase1-only]</code>. All take effect immediately with no user reaction window.</li>
+<li><strong><code>postJobCustom</code> bypasses all service-type pause gating</strong> — <code>[phase1-only]</code>. It skips <code>_validateService</code> entirely (hardcodes <code>serviceTypeId = 0</code>), so it remains callable even if every registered service type is paused — no contract-wide circuit breaker exists.</li>
+<li><strong><code>renounceOwnership</code> not overridden/disabled</strong> — <code>[phase1-only]</code>. Standard OZ <code>Ownable</code> footgun; would permanently disable all admin functions if ever called.</li>
+<li><strong><code>withdrawETH</code>&#39;s raw <code>.call</code> has no return-data-bomb protection</strong> — <code>[phase1-only]</code>. Owner-only trigger; self-inflicted at worst.</li>
+<li><strong><code>nonReentrant</code> not the first modifier on 4 owner-only functions</strong> — <code>[phase1-only]</code>. Non-exploitable — <code>onlyOwner</code> has no external-call surface.</li>
+</ul>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[95]</td>
+<td>Consultation jobs paid on-chain permanently strand their escrow</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[90]</td>
+<td><code>adminCancelJob</code> decrements escrow accounting without refunding the client</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[80]</td>
+<td>Malicious/compromised owner can drain real CLAWD via manipulated <code>swapPath</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>[85]</td>
+<td><code>postJobFor</code>/<code>postJobWithUsdc</code> allow <code>minClawdOut = 0</code> (missing slippage floor)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[88]</td>
+<td><code>completeJob</code>/<code>logWork</code> don&#39;t verify caller is the assigned worker</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[70]</td>
+<td><code>postJobFor</code> lets any caller assign an arbitrary <code>client</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>[60]</td>
+<td><code>postJob</code>/<code>postJobCustom</code> never validate <code>clawdAmount</code> against <code>priceUsd</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>[65]</td>
+<td>Escrow released irrevocably on <code>acceptJob</code>, no client recovery path</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><code>Ownable</code> (L4, L28) — deployer is initial owner via <code>Ownable(msg.sender)</code> (L129), <strong>one-step</strong> transfer (no <code>Ownable2Step</code>), renounceable. <code>onlyWorker</code> (L111-118) — linear scan over <code>workers[]</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>addServiceType L163, updateServiceType L171</td>
+<td>onlyOwner</td>
+<td>Owner</td>
+<td>No</td>
+</tr>
+<tr>
+<td>postJob L200, postJobCustom L276</td>
+<td>none (nonReentrant)</td>
+<td>Anyone</td>
+<td>Yes — pulls CLAWD</td>
+</tr>
+<tr>
+<td>postJobFor L214</td>
+<td>none (nonReentrant)</td>
+<td>Anyone; caller sets arbitrary <code>client</code></td>
+<td>Yes — pulls USDC, swaps</td>
+</tr>
+<tr>
+<td>postJobWithUsdc L235</td>
+<td>none (nonReentrant)</td>
+<td>Anyone</td>
+<td>Yes — pulls USDC, swaps</td>
+</tr>
+<tr>
+<td>postJobWithETH L256</td>
+<td>none (payable, nonReentrant)</td>
+<td>Anyone</td>
+<td>Yes — wraps+swaps ETH</td>
+</tr>
+<tr>
+<td>postJobWithCV L267</td>
+<td>none (nonReentrant)</td>
+<td>Anyone</td>
+<td>No on-chain payment</td>
+</tr>
+<tr>
+<td>acceptJob L286, declineJob L306, completeJob L337, logWork L366</td>
+<td>onlyWorker (+nonReentrant)</td>
+<td>Any worker</td>
+<td>acceptJob/declineJob move CLAWD</td>
+</tr>
+<tr>
+<td>cancelJob L321</td>
+<td>require(job.client==msg.sender)</td>
+<td>Job&#39;s client</td>
+<td>Yes — refund</td>
+</tr>
+<tr>
+<td>completeConsultation L351</td>
+<td>require(job.client==msg.sender) + consultation check</td>
+<td>Job&#39;s client</td>
+<td>No (see Finding 1)</td>
+</tr>
+<tr>
+<td>addWorker L381, removeWorker L390</td>
+<td>onlyOwner</td>
+<td>Owner</td>
+<td>No</td>
+</tr>
+<tr>
+<td>adminResetJob L402, adminCancelJob L416</td>
+<td>onlyOwner (nonReentrant)</td>
+<td>Owner</td>
+<td>adminCancelJob: no transfer (Finding 2)</td>
+</tr>
+<tr>
+<td>setTreasury L429, setSwapPath L435, setEthSwapPath L441</td>
+<td>onlyOwner</td>
+<td>Owner</td>
+<td>No</td>
+</tr>
+<tr>
+<td>withdrawStuckTokens L446, withdrawETH L459</td>
+<td>onlyOwner (nonReentrant)</td>
+<td>Owner</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>receive() L595</td>
+<td>none, no nonReentrant</td>
+<td>Anyone</td>
+<td>Accepts ETH (no logic)</td>
+</tr>
+<tr>
+<td>9 view/getter functions</td>
+<td>none</td>
+<td>Anyone</td>
+<td>No</td>
+</tr>
+</tbody></table></div>
+<p><strong>Unguarded state-changing entrypoints</strong>: all 6 <code>postJob*</code> variants, <code>receive()</code>. <code>cancelJob</code>/<code>completeConsultation</code> are open-call but per-job client-gated.</p>
+<p><strong>Roles</strong>: Owner (full admin), Workers (allowlist via addWorker/removeWorker, both onlyOwner), Treasury (mutable destination address), per-job <code>client</code> (attacker-settable via <code>postJobFor</code>).</p>
+<p><strong>Entrypoints</strong>: 23 external/public state-changing functions in source, 23 addressed above.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary caller</td>
+<td><code>postJobFor</code> arbitrary <code>client</code></td>
+<td>Attribute unwanted jobs to a victim</td>
+<td><strong>Finding 6</strong></td>
+</tr>
+<tr>
+<td>MEV searcher</td>
+<td><code>postJobFor</code>/<code>postJobWithUsdc</code>, <code>minClawdOut=0</code></td>
+<td>Sandwich the swap, minimize escrow</td>
+<td><strong>Finding 4</strong></td>
+</tr>
+<tr>
+<td>Any address</td>
+<td><code>receive()</code></td>
+<td>Nothing directly — no logic</td>
+<td>Invariant holds, no issue</td>
+</tr>
+<tr>
+<td>Owner (compromised/malicious)</td>
+<td><code>setSwapPath</code>/<code>setEthSwapPath</code> → <code>acceptJob</code></td>
+<td>Drain real CLAWD via manipulated pool</td>
+<td><strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td>Owner (routine, no malice needed)</td>
+<td><code>adminCancelJob</code> → <code>withdrawStuckTokens</code></td>
+<td>Sweep un-refunded client escrow as &quot;surplus&quot;</td>
+<td><strong>Finding 2</strong></td>
+</tr>
+<tr>
+<td>Ordinary client (self-triggered, no adversary needed)</td>
+<td><code>postJob</code>/<code>postJobFor</code>/<code>postJobWithUsdc</code>/<code>postJobWithETH</code> on consultation IDs → <code>completeConsultation</code></td>
+<td>N/A — client loses own funds by design gap</td>
+<td><strong>Finding 1</strong></td>
+</tr>
+<tr>
+<td>Worker</td>
+<td><code>acceptJob</code> then abandon</td>
+<td>Griefs client, no self-service recovery</td>
+<td><strong>Finding 8</strong></td>
+</tr>
+<tr>
+<td>Any allowlisted worker</td>
+<td><code>completeJob</code>/<code>logWork</code> on another&#39;s job</td>
+<td>Hijack/pollute a peer&#39;s in-progress job</td>
+<td><strong>Finding 5</strong></td>
+</tr>
+<tr>
+<td>Any caller (unbounded growth)</td>
+<td><code>onlyWorker</code>/<code>addWorker</code> O(n) scans</td>
+<td>Gas-cost scaling; owner-only mutation</td>
+<td>Invariant holds — not attacker-controllable</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage</strong>: 23 entrypoints in inventory, 23 addressed. 9 threat-catalog rows, 9 answered. Coverage holes closed this pass: 0.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated three-phase audit (context mapping → ethskills breadth → pashov depth, blind, hybrid-reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, and monitoring for the deployed contract on Base, are strongly recommended before relying on this contract to hold significant value — in particular, Finding 1 (consultation-escrow-stuck) and Finding 2 (adminCancelJob) both represent concrete, immediately actionable fund-loss paths that should be fixed and the contract redeployed/migrated before further use of the consultation feature or the <code>adminCancelJob</code>/<code>withdrawStuckTokens</code> admin flow.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiapnopzcoi77s6lfvdrs7tb7prweb5qtgaapfsb5xqzyegoh7vm5y.ipfs.community.bgipfs.com/"><code>https://bafkreiapnopzcoi77s6lfvdrs7tb7prweb5qtgaapfsb5xqzyegoh7vm5y.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/381">#381</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

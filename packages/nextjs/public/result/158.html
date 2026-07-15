@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Contract Security Audit — Final Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #158">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Smart Contract Security Audit — Final Report</h1>
+    <p class="job-sub">Job #158 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/158"><b>Job page</b> #158</a>
+      <a class="chip" href="https://bafkreibhjmcwfaqynuw5fuepiaqviz42nsoqypuf32x6645c6fh6mbfdtm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">3</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">4</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#security-properties-verified-sound">Security Properties Verified Sound</a></li>
+      <li><a href="#summary">Summary</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Smart Contract Security Audit — Final Report</h1>
+<p><strong>Job ID</strong>: 158<br><strong>Client</strong>: 0x34aa3f359a9d614239015126635ce7732c18fdf3<br><strong>Target</strong>: <code>Multisig.sol</code>, <code>MultisigFactory.sol</code>, <code>Clones.sol</code><br><strong>Repository</strong>: <a href="https://github.com/clawdbotatg/slop-computer-wallet">https://github.com/clawdbotatg/slop-computer-wallet</a><br><strong>Auditor</strong>: leftclaw.services automated agent<br><strong>Date</strong>: 2026-05-11<br><strong>Methodology</strong>: EthSkills (8 domain sub-skills) + Pashov (8-agent parallel methodology)</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>The codebase implements an M-of-N multisig wallet supporting both EOA (ECDSA/secp256k1) and passkey (WebAuthn/secp256r1) signers. Clones are deployed via an EIP-1167 minimal proxy factory using CREATE2. The core signing and threshold logic is sound — no threshold bypass or signature forgery vulnerability was found. Two Medium findings were confirmed by both methodologies, both affecting correctness and compatibility rather than direct fund theft by external attackers.</p>
+<p><strong>Finding counts</strong>: 2 Medium · 3 Low · 4 Info</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="m-1-initialize-does-not-validate-passkey-coordinates-permanent-s">[M-1] <code>initialize()</code> Does Not Validate Passkey Coordinates — Permanent Signer DoS</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: EthSkills (evm-audit-access-control) + Pashov (access-control-agent, invariant-agent)<br><strong>Confidence</strong>: 80</p>
+<p><strong>Location</strong>: <code>Multisig.sol:initialize()</code> (lines 95–118) vs <code>Multisig.sol:addPasskeySigner()</code> (lines 161–165)</p>
+<p><strong>Description</strong>: <code>addPasskeySigner</code> guards against zero public-key coordinates:</p>
+<pre><code class="language-solidity">if (qx == bytes32(0) || qy == bytes32(0)) revert InvalidSigner();
+</code></pre>
+<p>The <code>initialize</code> function has no equivalent check. Passing <code>passkeyQxs[i] = bytes32(0), passkeyQys[i] = bytes32(0)</code> calls <code>_addSigner</code> with a signer at <code>getPasskeyAddress(0, 0)</code> — a deterministic address controlled by no one — and stores <code>SignerInfo.qx = 0</code>. In <code>_verifySignatures</code>, a signer with <code>qx == 0</code> requires <code>SignerType.EOA</code>, but no private key exists for that address. The signer slot is permanently frozen: it counts toward <code>total</code> in threshold validation but can never produce a valid signature.</p>
+<p><strong>Impact</strong>: If <code>threshold == eoaSigners.length + passkeyQxs.length</code> (all signers required) and any passkey has zero coordinates, the multisig is permanently inoperable. Funds locked in it cannot be recovered. Even with <code>threshold &lt; total</code>, the broken signer misleads users about effective quorum.</p>
+<p><strong>Exploit Path</strong>:</p>
+<pre><code>factory.createMultisig(
+    [],           // no EOA signers
+    [bytes32(0)], // passkey qx = 0 (invalid)
+    [bytes32(0)], // passkey qy = 0 (invalid)
+    [bytes32(0)],
+    1,            // threshold = 1
+    salt
+) → deploys multisig with one registered signer that can never sign → wallet permanently bricked
+</code></pre>
+<p><strong>Recommendation</strong>: Add coordinate validation inside <code>initialize</code>:</p>
+<pre><code class="language-solidity">for (uint256 i = 0; i &lt; passkeyQxs.length; i++) {
+    if (passkeyQxs[i] == bytes32(0) || passkeyQys[i] == bytes32(0)) revert InvalidSigner();
+    address pkAddr = getPasskeyAddress(passkeyQxs[i], passkeyQys[i]);
+    _addSigner(pkAddr, passkeyQxs[i], passkeyQys[i], credentialIdHashes[i]);
+}
+</code></pre>
+<hr>
+<h3 id="m-2-isvalidsignature-applies-toethsignedmessagehash-breaks-eip-7">[M-2] <code>isValidSignature</code> Applies <code>toEthSignedMessageHash</code> — Breaks EIP-712 Protocol Integrations</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confirmed by</strong>: EthSkills (evm-audit-signatures) + Pashov (economic-security-agent, periphery-agent)<br><strong>Confidence</strong>: 85</p>
+<p><strong>Location</strong>: <code>Multisig.sol:isValidSignature()</code> line 319:</p>
+<pre><code class="language-solidity">bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(hash);
+(address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecover(ethHash, sig.data);
+</code></pre>
+<p><strong>Description</strong>: <code>isValidSignature(bytes32 hash, bytes memory signatures)</code> wraps the incoming <code>hash</code> with <code>toEthSignedMessageHash</code> before ECDSA recovery. This requires EOA signers to have signed <code>keccak256(&quot;\x19Ethereum Signed Message:\n32&quot; || hash)</code> rather than <code>hash</code> itself.</p>
+<p>The ERC-1271 standard is intended for smart contract wallets acting as signers in DeFi protocols. When Seaport, Permit2, CoW Protocol, or similar protocols call <code>isValidSignature(protocolHash, sig)</code>, they expect the multisig&#39;s signers to have used <code>signTypedData_v4</code> (EIP-712) to sign the protocol&#39;s hash — producing a signature over <code>keccak256(&quot;\x19\x01&quot; || domainSep || structHash)</code>. This is entirely different from <code>toEthSignedMessageHash(protocolHash)</code>.</p>
+<p>The NatSpec comment explicitly says &quot;Supports ERC-1271 signature validation so the multisig itself can sign off-chain messages&quot; — but this implementation silently rejects all EIP-712-based protocol signatures, making that stated capability non-functional for the most common DeFi use case.</p>
+<p><strong>Exploit Path (protocol integration failure)</strong>:</p>
+<ol>
+<li>Users want the multisig to hold an NFT and make a Seaport listing.</li>
+<li>Signers sign the Seaport <code>orderHash</code> using MetaMask <code>signTypedData_v4</code>.</li>
+<li>Seaport calls <code>isValidSignature(orderHash, sigs)</code>.</li>
+<li>Multisig computes <code>toEthSignedMessageHash(orderHash)</code> and fails to recover the expected addresses.</li>
+<li>Returns <code>0xffffffff</code> → Seaport rejects the order → multisig cannot trade.</li>
+</ol>
+<p><strong>Note</strong>: <code>execTransaction</code>/<code>execBatchTransaction</code> are unaffected — signers correctly use <code>eth_sign</code> for those execution hashes. Only <code>isValidSignature</code> is broken for external protocol use.</p>
+<p><strong>Recommendation</strong>: Remove <code>toEthSignedMessageHash</code> from <code>isValidSignature</code>. Verify signatures against the raw <code>hash</code> parameter:</p>
+<pre><code class="language-solidity">// Replace lines 318–321:
+(address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecover(hash, sig.data);
+if (err != ECDSA.RecoverError.NoError || recovered != sig.signer) return 0xffffffff;
+</code></pre>
+<p>The <code>_verifySignatures</code> function used for <code>execTransaction</code> can retain the <code>toEthSignedMessageHash</code> wrapping unchanged.</p>
+<hr>
+<h3 id="l-1-removesigner-does-not-clear-credentialidtoaddress-stale-reve">[L-1] <code>removeSigner</code> Does Not Clear <code>credentialIdToAddress</code> — Stale Reverse Lookup</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: EthSkills (evm-audit-general) + Pashov (invariant-agent)</p>
+<p><strong>Location</strong>: <code>Multisig.sol:removeSigner()</code> lines 167–182</p>
+<p><strong>Description</strong>: <code>removeSigner</code> deletes <code>signerInfo[signer]</code> but does not clear the <code>credentialIdToAddress</code> reverse mapping. After removal, <code>getPasskeyByCredentialId(credId)</code> returns the removed signer&#39;s address with <code>qx = qy = 0</code> (from the deleted <code>signerInfo</code>). Off-chain login UIs relying on this lookup will present incorrect data. If a new passkey with the same credential ID hash is later registered, <code>_addSigner</code> overwrites the mapping correctly, but the stale window persists.</p>
+<p><strong>Authentication is not affected</strong>: <code>_verifySignatures</code> uses <code>signerInfo</code> (not <code>credentialIdToAddress</code>) for all security checks.</p>
+<p><strong>Recommendation</strong>: Store <code>credentialIdHash</code> inside <code>SignerInfo</code> and clear it on removal:</p>
+<pre><code class="language-solidity">struct SignerInfo {
+    bool exists;
+    bytes32 qx;
+    bytes32 qy;
+    bytes32 credentialIdHash; // added field
+}
+
+// In removeSigner, before deleting signerInfo:
+if (info.credentialIdHash != bytes32(0)) {
+    delete credentialIdToAddress[info.credentialIdHash];
+}
+delete signerInfo[signer];
+</code></pre>
+<hr>
+<h3 id="l-2-create2-salt-front-running-in-multisigfactorycreatemultisig">[L-2] CREATE2 Salt Front-Running in <code>MultisigFactory.createMultisig</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: EthSkills (evm-audit-proxies) + Pashov (access-control-agent)</p>
+<p><strong>Location</strong>: <code>MultisigFactory.sol:createMultisig()</code> lines 32–43</p>
+<p><strong>Description</strong>: <code>createMultisig</code> uses a caller-supplied <code>bytes32 salt</code> for CREATE2 deployment without binding the salt to <code>msg.sender</code>. A mempool watcher can front-run a pending <code>createMultisig</code> transaction with the same salt, deploying a clone at the victim&#39;s predicted address with attacker-controlled signers. The victim&#39;s transaction then reverts with <code>CloneCreationFailed</code> (CREATE2 address already occupied).</p>
+<p><strong>Amplified impact</strong>: If the victim pre-funded the predicted CREATE2 address before deployment (a pattern sometimes used for counterfactual wallets), those funds are now in an attacker-controlled multisig.</p>
+<p><strong>Recommendation</strong>: Incorporate <code>msg.sender</code> into the effective salt:</p>
+<pre><code class="language-solidity">bytes32 effectiveSalt = keccak256(abi.encodePacked(msg.sender, salt));
+multisig = Clones.cloneDeterministic(implementation, effectiveSalt);
+</code></pre>
+<p>Also update <code>getMultisigAddress</code> to accept <code>msg.sender</code> or a <code>deployer</code> parameter.</p>
+<hr>
+<h3 id="l-3-clonessol-assembly-does-not-update-free-memory-pointer">[L-3] <code>Clones.sol</code> Assembly Does Not Update Free Memory Pointer</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confirmed by</strong>: EthSkills (evm-audit-assembly) + Pashov (periphery-agent)</p>
+<p><strong>Location</strong>: <code>Clones.sol:cloneDeterministic()</code> lines 26–36; <code>Clones.sol:predictDeterministicAddress()</code> lines 55–60</p>
+<p><strong>Description</strong>: Both assembly blocks read the free memory pointer (<code>mload(0x40)</code>), write 55 bytes to that address, and use them for <code>create2</code> / <code>keccak256</code>, but never advance the pointer. This violates Solidity&#39;s memory management contract. While no exploitable corruption occurs in the current code (data is consumed before any subsequent Solidity allocations overwrite it), any future change adding Solidity memory operations between the assembly block and the use of <code>initCodeHash</code> in <code>predictDeterministicAddress</code> could silently corrupt the hash computation.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">assembly {
+    let ptr := mload(0x40)
+    mstore(ptr, ...)
+    mstore(add(ptr, 0x14), shl(0x60, implementation))
+    mstore(add(ptr, 0x28), ...)
+    mstore(0x40, add(ptr, 0x37))  // advance FMP
+    instance := create2(0, ptr, 0x37, salt)
+}
+</code></pre>
+<hr>
+<h3 id="i-1-custom-hash-scheme-instead-of-eip-712">[I-1] Custom Hash Scheme Instead of EIP-712</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>Multisig.sol:getExecHash()</code> line 209; <code>Multisig.sol:getBatchExecHash()</code> line 214</p>
+<p><strong>Description</strong>: Execution hashes use <code>keccak256(abi.encode(...))</code> rather than EIP-712 typed data. Hardware wallets and custody solutions that only support <code>signTypedData_v4</code> cannot sign execution transactions. Adopting EIP-712 would improve hardware wallet compatibility and provide clearer human-readable signing prompts.</p>
+<hr>
+<h3 id="i-2-duplicated-signature-verification-logic">[I-2] Duplicated Signature Verification Logic</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>Multisig.sol:_verifySignatures()</code> lines 271–298; <code>Multisig.sol:isValidSignature()</code> lines 304–333</p>
+<p><strong>Description</strong>: The signer-sort check, <code>signerInfo</code> lookup, and EOA/passkey dispatch logic are duplicated across two functions with different error handling (<code>revert</code> vs return <code>0xffffffff</code>). Divergence during future maintenance is a latent bug risk. Consider extracting a shared <code>_validateSigners</code> helper that returns a boolean rather than reverting.</p>
+<hr>
+<h3 id="i-3-empty-calls-array-burns-nonce-in-execbatchtransaction">[I-3] Empty <code>calls</code> Array Burns Nonce in <code>execBatchTransaction</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>Multisig.sol:execBatchTransaction()</code> line 243</p>
+<p><strong>Description</strong>: <code>execBatchTransaction</code> with an empty <code>calls</code> array succeeds, consuming a nonce and emitting <code>BatchExecuted(0)</code>. While not harmful (signers must authorize it), this behavior is undocumented and could confuse users or analytics.</p>
+<hr>
+<h3 id="i-4-removesigner-is-on-no-maximum-signer-count">[I-4] <code>removeSigner</code> Is O(n); No Maximum Signer Count</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>Multisig.sol:removeSigner()</code> line 174</p>
+<p><strong>Description</strong>: The linear scan of <code>_signers</code> in <code>removeSigner</code> and the unrestricted <code>_addSigner</code> calls mean gas cost grows with signer count. In practice, multisig signer sets are small (&lt; 20), making this a negligible concern, but a documented signer limit (e.g., <code>require(_signers.length &lt; 256)</code>) would make gas bounds explicit.</p>
+<hr>
+<h2 id="security-properties-verified-sound">Security Properties Verified Sound</h2>
+<p>The following core security properties were verified to hold through both audit methodologies:</p>
+<ol>
+<li><strong>No threshold bypass</strong>: The ascending-sort + unique signer check in <code>_verifySignatures</code> prevents the same signer from appearing twice; all submitted signatures must correspond to registered signers.</li>
+<li><strong>No signature replay</strong>: Execution hashes include <code>block.chainid</code>, <code>address(this)</code>, <code>nonce</code>, and <code>deadline</code>. Nonce is incremented before the external call (correct CEI).</li>
+<li><strong>No cross-chain replay</strong>: <code>block.chainid</code> is dynamically read, not cached.</li>
+<li><strong>Implementation protected</strong>: <code>_disableInitializers()</code> in <code>Multisig</code> constructor prevents the implementation from being initialized directly.</li>
+<li><strong>Atomic factory initialization</strong>: <code>MultisigFactory.createMultisig</code> deploys and initializes in a single transaction; no front-run of the initialization step is possible.</li>
+<li><strong>Signer type integrity</strong>: EOA and passkey slots are mutually exclusive via <code>SignerTypeMismatch</code> checks; an EOA signature cannot satisfy a passkey slot.</li>
+<li><strong>OZ ECDSA handles address(0)</strong>: Using <code>ECDSA.recover</code> (which reverts on invalid signatures) in <code>_verifySignatures</code>; <code>ECDSA.tryRecover</code> in <code>isValidSignature</code> (which returns an error code).</li>
+</ol>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Both Passes</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M-1</td>
+<td><span class="pill medium">Medium</span></td>
+<td>✓</td>
+<td>Zero passkey coordinates in <code>initialize</code> create permanently unusable signer slots</td>
+</tr>
+<tr>
+<td>M-2</td>
+<td><span class="pill medium">Medium</span></td>
+<td>✓</td>
+<td><code>isValidSignature</code> wraps hash with personal-sign prefix, breaking EIP-712 integrations</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td>✓</td>
+<td><code>removeSigner</code> leaves stale <code>credentialIdToAddress</code> entries</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td>✓</td>
+<td>CREATE2 salt front-running allows DoS and potential fund capture</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td>✓</td>
+<td><code>Clones.sol</code> assembly blocks do not update free memory pointer</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td>—</td>
+<td>Custom hash scheme instead of EIP-712 for execution hashes</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><span class="pill info">Info</span></td>
+<td>—</td>
+<td>Duplicated signature verification logic</td>
+</tr>
+<tr>
+<td>I-3</td>
+<td><span class="pill info">Info</span></td>
+<td>—</td>
+<td>Empty <code>calls</code> in <code>execBatchTransaction</code> silently burns a nonce</td>
+</tr>
+<tr>
+<td>I-4</td>
+<td><span class="pill info">Info</span></td>
+<td>—</td>
+<td><code>removeSigner</code> O(n) iteration; no signer count cap</td>
+</tr>
+</tbody></table></div>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibhjmcwfaqynuw5fuepiaqviz42nsoqypuf32x6645c6fh6mbfdtm.ipfs.community.bgipfs.com/"><code>https://bafkreibhjmcwfaqynuw5fuepiaqviz42nsoqypuf32x6645c6fh6mbfdtm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/158">#158</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

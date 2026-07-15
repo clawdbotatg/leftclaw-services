@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCP Core Staking System (OCPVault / OCPVaultFactory) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #377">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">OCP Core Staking System (OCPVault / OCPVaultFactory)</h1>
+    <p class="job-sub">Job #377 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/377"><b>Job page</b> #377</a>
+      <a class="chip" href="https://bafkreie2msgz2jedvreyqgz3xyjylrp2nu4njeo26sq27fxknhikj5eufq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — OCP Core Staking System (OCPVault / OCPVaultFactory)</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>OCPVault</code> + <code>OCPVaultFactory</code> on Base (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Factory</strong></td>
+<td><code>0xe343be8F1d8572937da49234882e6a1eF4FFEb26</code></td>
+</tr>
+<tr>
+<td><strong>Existing Vault</strong></td>
+<td><code>0xCCa702fe1aE3E15705DE4D79818Ab7b06415F8e6</code> (confirmed via BaseScan internal-tx trace to be a genuine Factory-created vault)</td>
+</tr>
+<tr>
+<td><strong>Repo / commit</strong></td>
+<td><code>https://github.com/Onchain-Consensus-Protocol/ocp</code> @ <code>55d755ef2defffc23bd8405c4ba71cab83666767</code></td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>contracts/src/core/OCPVault.sol</code> (184 lines) · <code>contracts/src/factory/OCPVaultFactory.sol</code> (140 lines)<br><code>contracts/src/interfaces/IOCPVault.sol</code> (38 lines)</td>
+</tr>
+<tr>
+<td><strong>Out of scope</strong></td>
+<td>OpenZeppelin libraries; sibling contracts <code>PredictionMarketFactory.sol</code>/<code>PredictionMarket.sol</code>/<code>IConsensusVaultView.sol</code>/<code>IPredictionMarket.sol</code> (unrelated, not requested)</td>
+</tr>
+<tr>
+<td><strong>On-chain state at audit time</strong></td>
+<td><code>officialStakeToken</code> = native Base USDC (<code>0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code>, confirmed via <code>cast call</code>); vault <code>resolved=false</code>, <code>totalPrincipal≈6.38 USDC</code>, <code>minStake=1 USDC</code></td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: Phase 0 context (protocol map, access-control inventory, threat catalog, opus) → Phase 1 breadth (5 ethskills domains: general, precision-math, erc20, access-control, dos, sonnet) → Phase 2 depth (12 blind pashov attack agents, sonnet, deliberately blind to the repo&#39;s whitepaper/tests) → hybrid reconciliation calibrated against the project&#39;s own whitepaper (<code>docs/whitepaper/POC_WHITEPAPER_EN.md</code>) and test suite</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p>Phase 1 (breadth) read the repo&#39;s whitepaper and test files as part of its normal process and found that several mechanisms flagged by a code-only reading are explicitly disclosed, intended design (&quot;Proof of Commitment&quot;) or explicitly tested behavior. Phase 2 (depth) was deliberately kept blind to those docs/tests to avoid anchoring, and — appropriately — flagged the same mechanisms as raw exploits with concrete numeric proofs. This report&#39;s job is to calibrate: <strong>disclosure changes severity, it does not erase a finding</strong>, especially where a disclosure&#39;s scope doesn&#39;t clearly cover the specific mechanism found.</p>
+<ul>
+<li><strong>Overlap</strong> (both phases, same root cause): 6 findings</li>
+<li><strong>Phase-2-only</strong> (novel, not surfaced by the 5 ethskills domains): 2 findings — most importantly the INVALID-side dilution attack (finding #1 below), the most severe confirmed issue in this audit</li>
+<li><strong>Downgraded on whitepaper/test evidence</strong>: 3 findings (last-mover majority capture: Critical/High → Medium; last-claimant live-balance sweep: Low → Info; fee-on-transfer accounting gap: &quot;Critical&quot; blind framing → Low, given the live token is confirmed genuine USDC)</li>
+<li><strong>Coverage</strong>: 8/8 entrypoints addressed (examined-with-finding or examined-no-issue). 6/6 threat-catalog rows answered. 4/4 open questions from Phase 0 resolved.</li>
+<li><strong>Confidence floor</strong>: findings below confidence 50 are listed as Leads, not findings.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="82-1-invalid-side-dilution-lets-a-losing-side-participant-conver">[82] 1. INVALID-side dilution lets a losing-side participant convert forfeiture into a risk-free refund, circumventing the protocol&#39;s own stated anti-free-option design</h3>
+<p><strong>Severity: High</strong> · <code>OCPVault._deriveOutcome / withdraw</code> · Confidence: 82 · <strong>[phase2 only — 2 findings + 1 corroborating lead, independent numeric proofs]</strong></p>
+<p><strong>Description</strong><br><code>_deriveOutcome()</code> (L169-173) declares YES or NO the winner only if its stake strictly exceeds the sum of the <em>other two sides combined</em> — meaning the INVALID bucket counts against both YES&#39;s and NO&#39;s majority check simultaneously. A participant already locked to a losing side (one-side lock, L101, prevents switching their own address) can instead stake a <em>second</em>, fresh address into <code>Side.INVALID</code> for just enough to push both YES and NO below strict majority, forcing <code>Outcome.INVALID</code>. Under INVALID, <code>withdraw()</code>&#39;s eligibility check (<code>outcome == Outcome.INVALID</code>, L147) makes <em>every</em> staker eligible for a pro-rata refund of their own principal (denominator = <code>_totalPrincipal</code>, L158-159) — including the manufacturer of the tie and the side that should have forfeited.</p>
+<p>This directly circumvents the project&#39;s own stated security philosophy. The whitepaper (<code>docs/whitepaper/POC_WHITEPAPER_EN.md</code> §3.2) states: <em>&quot;No withdrawal prevents costless exit; no switching prevents following the visible leader as a free option.&quot;</em> The INVALID-dilution mechanic <strong>is</strong> exactly that free option — escaping a losing position at minimal cost — delivered through a side-channel (a second address staking INVALID) that the one-side lock does not close. This is materially different from, and not covered by, the §3.3 disclosure of &quot;herding, whale influence, and late participation,&quot; which addresses who wins a binary side, not a documented cost-free escape hatch from a losing side.</p>
+<p><strong>Proof of Concept</strong><br>YES=1000, NO=900 (staker L holds 500 of the 900). Honest resolution: <code>_deriveOutcome()</code>: <code>1000 &gt; 1900-1000=900</code> → true → <code>Outcome.YES</code>; L (NO side) would forfeit their 500 to the YES majority. Attack: a fresh wallet stakes <code>Side.INVALID, 100</code> before <code>resolutionTime</code>. New totals: YES=1000, NO=900, INVALID=100, total=2000. <code>_deriveOutcome()</code>: <code>1000 &gt; 2000-1000=1000</code> → false; <code>900 &gt; 2000-900=1100</code> → false → <code>Outcome.INVALID</code> (L172). <code>withdraw()</code> for L: <code>eligible=true</code> (INVALID branch, L147), <code>denominator=_totalPrincipal=2000</code> (L159), <code>payout = Math.mulDiv(settlementPool, 500, 2000) ≈ 500</code> (L161) — L recovers the full 500 that honest resolution would have forfeited to YES. The dilution wallet also recovers its 100 in full. Net effect: the legitimate YES majority is stripped of the win the strict-majority rule exists to award them, at zero net cost to whoever manufactured the tie.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function _deriveOutcome() private view returns (Outcome) {
+         if (_totalStakeBySide[0] &gt; _totalPrincipal - _totalStakeBySide[0]) return Outcome.YES;
+         if (_totalStakeBySide[1] &gt; _totalPrincipal - _totalStakeBySide[1]) return Outcome.NO;
+         return Outcome.INVALID;
+     }
+</code></pre>
+<p>Requires a design decision, not a one-line patch: make the INVALID bucket bear symmetric risk with YES/NO — e.g., stakers who tip an otherwise-decisive majority into INVALID forfeit to the eventual majority the same as a losing side would, rather than receiving a full refund; or require INVALID-side staking to close on an earlier cutoff than YES/NO so a late dilution cannot retroactively erase an already-decided majority.</p>
+<hr>
+<h3 id="65-2-yesno-majority-capture-via-last-block-staking-disclosed-des">[65] 2. YES/NO majority capture via last-block staking — disclosed design risk, but deserves stronger in-app disclosure given the severity of impact</h3>
+<p><strong>Severity: Medium</strong> · <code>OCPVault.stake / _deriveOutcome</code> · Confidence: 65 · <strong>[both — 5/12 phase-2 agents independently + phase-1 general-1]</strong></p>
+<p><strong>Description</strong><br><code>stake()</code> (L94-114) has no time buffer before <code>resolutionTime</code>, and <code>_deriveOutcome()</code> (L169-173) is a pure function of instantaneous stake totals. Any address can observe the public running totals and stake into the trailing side in the final block before <code>resolutionTime</code>, deterministically flipping the outcome and capturing the losing side&#39;s entire forfeited principal.</p>
+<p><strong>This is explicitly disclosed, intended design.</strong> The whitepaper&#39;s core thesis (§1, §3.1) is <em>&quot;Proof of Commitment&quot;</em> — <em>&quot;the strongest form of credible commitment is the willingness to bear large, verifiable financial risk... capital itself forms consensus&quot;</em> — and §3.3 explicitly states: <em>&quot;Transparency makes the distribution auditable but can create herding, whale influence, and late participation. The protocol accepts these limits instead of hiding them behind extra phases or time-bucket rewards.&quot;</em> This is confirmed further by dedicated tests in <code>contracts/test/OCPVault.t.sol</code> asserting this exact behavior.</p>
+<p><strong>Why still reported</strong>: the disclosure lives in a whitepaper most end-users staking through a UI will never read, and the magnitude — deterministic, total loss of principal for the earlier-committed side — deserves front-and-center, in-app disclosure at the moment of staking, not a whitepaper footnote several sections deep.</p>
+<p><strong>Proof of Concept</strong><br>NO=100 (2 depositors), YES=0. Attacker stakes <code>Side.YES, 101</code> in the final block before <code>resolutionTime</code>. <code>_deriveOutcome()</code>: <code>101 &gt; 201-101=100</code> → true → <code>Outcome.YES</code>. <code>finalize()</code>: <code>settlementPool=201</code>, <code>remainingEligibleClaims = _participantCountBySide[0] = 1</code> (attacker only). <code>withdraw()</code>: <code>remainingEligibleClaims==1</code> branch → <code>payout = balanceOf(this) = 201</code> (L156). Attacker turns 101 into 201 (~99% ROI in one round-trip), and the two honest NO stakers receive <code>eligible=false</code>, <code>payout=0</code> (L147-149), forfeiting their 100 combined principal entirely.</p>
+<p><strong>Fix</strong>: No code change required if this is confirmed intended (it clearly is, per the design docs). Require the staking UI/frontend to prominently disclose, at the moment of every stake and again as <code>resolutionTime</code> approaches, that late/large opposing stakes can flip the outcome and forfeit the staker&#39;s entire principal. Consider an optional stake-freeze window as a non-breaking parameter for future vaults if the team wants to reduce (not eliminate) last-block sniping.</p>
+<hr>
+<h3 id="70-3-stuck-final-eligible-claimant-permanently-strands-their-own">[70] 3. Stuck final eligible claimant permanently strands their own share plus accumulated dust, with no recovery path</h3>
+<p><strong>Severity: High</strong> · <code>OCPVault.withdraw</code> · Confidence: 70 · <strong>[both — 5+ phase-2 agents + phase-1 erc20-1/dos-1]</strong></p>
+<p><strong>Description</strong><br><code>withdraw()</code>&#39;s <code>remainingEligibleClaims == 1</code> branch (L154-164) pays the sole remaining eligible claimant the live <code>stakeToken.balanceOf(address(this))</code> (L156). No function anywhere in either contract sweeps, redirects, or force-releases the vault&#39;s residual balance. If that specific address can never successfully call <code>withdraw()</code> — USDC blacklist (a real, disclosed Circle capability), a lost private key, or a contract incapable of initiating the call — the entire remaining balance (their fair share plus all prior <code>mulDiv</code> rounding dust) is permanently locked. Confirmed self-contained: other claimants&#39; independently-computed <code>mulDiv</code> shares (L161) are already paid before the counter reaches 1 and are unaffected by this claimant&#39;s status — this is not third-party fund theft, but it is a genuine, irrecoverable fund lock for the affected party.</p>
+<p><strong>Proof of Concept</strong><br>3 eligible winners A, B, C. A and C withdraw successfully via the <code>mulDiv</code> formula (L161), <code>remainingEligibleClaims</code> → 1 (only B remains). USDC blacklists B for unrelated reasons. B calls <code>withdraw()</code>: <code>payout = balanceOf(this)</code> (L156); <code>safeTransfer(B, payout)</code> (L165) reverts because B is blacklisted; the whole transaction — including the <code>_claimed</code>/counter writes — rolls back. B can never successfully call <code>withdraw()</code> again while blacklisted; the residual balance sits in the contract forever.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    uint256 private _totalDistributed;
+     ...
+     function withdraw() external override nonReentrant {
+         ...
+         if (eligible) {
+             require(remainingEligibleClaims &gt; 0, &quot;No eligible claims&quot;);
+-            if (remainingEligibleClaims == 1) {
+-                payout = stakeToken.balanceOf(address(this));
+-            } else {
+                 uint256 denominator = outcome == Outcome.INVALID
+                     ? _totalPrincipal
+                     : _totalStakeBySide[outcome == Outcome.YES ? 0 : 1];
+                 payout = Math.mulDiv(settlementPool, principal, denominator);
+-            }
+             remainingEligibleClaims -= 1;
+         }
+</code></pre>
+<p>Track cumulative amounts already distributed and compute every claimant&#39;s exact <code>mulDiv</code> share — including the last one — accepting that a few wei of rounding dust may remain permanently in the contract (a far smaller, far less severe version of the same underlying issue) rather than making the entire residual hinge on one address&#39;s transfer capability. Alternatively, add a claimant-specified alternate-recipient parameter to <code>withdraw()</code>.</p>
+<hr>
+<h3 id="60-4-vault-address-level-usdc-blacklist-or-seizure-would-freeze-">[60] 4. Vault-address-level USDC blacklist or seizure would freeze 100% of participants&#39; funds with no recovery path</h3>
+<p><strong>Severity: High</strong> · <code>OCPVault.withdraw</code> (whole-contract impact) · Confidence: 60 · <strong>[both — phase-2 lead + phase-1 erc20-2]</strong></p>
+<p><strong>Description</strong><br>All staked/donated USDC for a vault sits in a single contract address. If that address itself were ever blacklisted by Circle (false-positive compliance flagging, downstream tainted-funds screening, or sanctions/legal action), every future <code>stakeToken.safeTransfer(msg.sender, payout)</code> call in <code>withdraw()</code> (L165) reverts unconditionally for <strong>every</strong> participant, permanently — <code>finalize()</code> still succeeds (it only reads <code>balanceOf</code>, L132), so the vault correctly resolves and then strands 100% of principal. Neither contract has a pause, sweep, or migration mechanism.</p>
+<p><strong>Fix</strong>: There is no way to fully eliminate this risk while using a blacklist-capable centralized stablecoin as sole collateral. Document the risk clearly for users. Consider a long-timelocked, transparency-logged emergency escape hatch usable only after an extended dispute window, so a false-positive freeze is not unconditionally unrecoverable.</p>
+<hr>
+<h3 id="45-5-stakedonate-credit-the-nominal-amount-parameter-rather-than">[45] 5. <code>stake()</code>/<code>donate()</code> credit the nominal <code>amount</code> parameter rather than a measured balance delta — latent gap, not reachable against the live USDC-pinned deployment</h3>
+<p><strong>Severity: Low</strong> · <code>OCPVault.stake / donate</code> · Confidence: 45 · <strong>[phase2 only, calibrated down]</strong></p>
+<p><strong>Description</strong><br>Internal accounting (<code>_totalStakeBySide</code>, <code>_totalPrincipal</code>, <code>info.*</code>, L111-112, L122) is credited with the caller-supplied <code>amount</code> rather than a measured <code>stakeToken.balanceOf</code> delta around <code>safeTransferFrom</code>. For a hypothetical fee-on-transfer/deflationary token this could let a lower-effective-fee staker extract value from a higher-fee staker on the same side via the existing payout formula. <strong>Confirmed on-chain</strong> (<code>cast call officialStakeToken()</code>) that the live <code>officialStakeToken</code> is genuine Base-native USDC — a standard, non-fee-on-transfer, non-rebasing token — so this vector is <strong>not reachable against the audited Factory/Vault today</strong>. Retained at Low as defensive-coding advice, since nothing in <code>OCPVault</code>&#39;s own code enforces the assumption, and a future Factory-created vault pointed at a non-standard token would be exposed.</p>
+<p><strong>Fix</strong>: Measure <code>stakeToken.balanceOf(address(this))</code> before/after <code>safeTransferFrom</code> in both <code>stake()</code> and <code>donate()</code> and credit the actual delta, as defense-in-depth.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Not independently confirmed to Finding-confidence; recorded for completeness.</em></p>
+<ul>
+<li><strong><code>OCPVault</code>&#39;s public constructor doesn&#39;t validate <code>msg.sender == factory</code></strong> — <code>OCPVault</code> constructor (L45-55). Anyone can deploy a standalone vault passing the real Factory&#39;s address as <code>factory_</code> and any token as <code>stakeToken_</code>; the vault&#39;s <code>.factory()</code> getter would then return the trusted Factory address even though <code>isVault[...]</code> is false for it — a potential integration/phishing vector if a front-end authenticates by <code>vault.factory()</code> instead of <code>factory.isVault(vault)</code>. <strong>Verified not applicable to the audited instance</strong> — on-chain trace confirms Vault <code>0xCCa7...F8e6</code> was genuinely created via the Factory&#39;s <code>createMarket()</code>. Fix: add <code>require(msg.sender == factory_)</code> to the constructor, or document that <code>isVault()</code> is the only valid authenticity check.</li>
+<li><strong>Last-claimant live-balance sweep captures stray/direct transfers and rounding dust disproportionately</strong> — <code>withdraw()</code> L155-156 (live balance) vs L161 (frozen snapshot for all other claimants). <strong>Confirmed intended, tested behavior</strong> — the repo&#39;s own test suite (<code>test_directTransferAfterFinalizeGoesToLastEligibleClaimant</code>) explicitly asserts this. Recommend only that it be documented in NatSpec/user docs so it isn&#39;t later &quot;fixed&quot; in a way that reintroduces permanently-stranded dust.</li>
+<li><strong>USDC-level <code>pause()</code> causes a temporary, self-recovering DoS</strong> on <code>stake</code>/<code>donate</code>/<code>withdraw</code>. No permanent loss; <code>finalize()</code> is unaffected (view-only).</li>
+<li><strong><code>Side</code>/<code>Outcome</code> enums use mismatched ordinal numbering</strong> (<code>Side.YES=0/NO=1/INVALID=2</code> vs <code>Outcome.PENDING=0/YES=1/NO=2/INVALID=3</code>) — current code never casts between them, but is a latent footgun for a future refactor that does.</li>
+<li><strong><code>OCPVaultFactory.getMarkets()</code> always returns an empty array</strong> (dead stub — <code>getVaults()</code> is the real accessor); <code>createMarket()</code>&#39;s <code>initialLiquidity</code> parameter is accepted and silently discarded (no seeding occurs); <code>marketAddr</code> is always <code>address(0)</code>. Cosmetic/dead-code only.</li>
+<li><strong><code>stakeToken</code> (USDC) is itself an upgradeable proxy</strong> — its behavior is entirely outside the protocol&#39;s control; disclosed here as an inherent trust assumption of building on a centralized stablecoin, not independently actionable.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><em>(From Phase 0, cross-referenced against findings above.)</em></p>
+<p>8 external/public state-changing functions total (4 <code>OCPVault</code> + 4 <code>OCPVaultFactory</code>), source count matches inventory. <strong><code>OCPVault</code> has zero privileged roles</strong> — grep-confirmed no owner/admin/role check anywhere; <code>stake</code>, <code>donate</code>, <code>finalize</code>, <code>withdraw</code> are fully permissionless, gated only by state/timing checks. The <code>factory</code> immutable is stored (L20/50) but never used for access control (see the constructor-validation Lead above). <code>OCPVaultFactory.owner</code> (correctly-implemented 2-step transfer) gates only <code>createMarket</code> — no post-deployment authority over any deployed vault.</p>
+<h2 id="threat-model">Threat Model</h2>
+<p><em>(From Phase 0, each row marked with its resolution.)</em></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reach</th>
+<th>Potential gain</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Any capitalized staker</td>
+<td>Last-block <code>stake()</code> before <code>resolutionTime</code></td>
+<td>Flip <code>_deriveOutcome()</code>, capture losing side&#39;s principal</td>
+<td><strong>Addressed by finding #2 (Medium)</strong> — disclosed design, UX-disclosure gap</td>
+</tr>
+<tr>
+<td>Losing-side staker (2nd address)</td>
+<td>Late <code>stake(INVALID, ...)</code> to force a tie</td>
+<td>Convert forfeiture into full refund</td>
+<td><strong>Addressed by finding #1 (High)</strong> — not clearly disclosed, breaks stated anti-free-option design</td>
+</tr>
+<tr>
+<td>Blacklisted/incapable sole final claimant</td>
+<td><code>withdraw()</code></td>
+<td>N/A (self/other) but permanent lock of residual</td>
+<td><strong>Addressed by finding #3 (High)</strong></td>
+</tr>
+<tr>
+<td>Circle (USDC issuer), or false-positive screening</td>
+<td>Blacklist the vault address itself</td>
+<td>Freezes 100% of pool</td>
+<td><strong>Addressed by finding #4 (High)</strong></td>
+</tr>
+<tr>
+<td>Any address</td>
+<td>Raw ERC20 transfer to vault, bypassing stake/donate</td>
+<td>Captured by settlementPool (pre-finalize) or last claimant (post-finalize)</td>
+<td>Confirmed intended/tested — see Leads</td>
+</tr>
+<tr>
+<td>Factory owner</td>
+<td><code>createMarket</code></td>
+<td>Pinned to <code>officialStakeToken</code>, no power over existing vaults</td>
+<td>Invariant holds — no threat beyond normal deploy-time centralization</td>
+</tr>
+</tbody></table></div>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-building → breadth checklist review → blind depth attack-agent review → hybrid reconciliation against the project&#39;s own documentation and test suite). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human-led security review is strongly recommended before this contract is trusted with material value — particularly given finding #1&#39;s High severity and its interaction with the protocol&#39;s core &quot;loss borne by an incorrect side&quot; value proposition.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreie2msgz2jedvreyqgz3xyjylrp2nu4njeo26sq27fxknhikj5eufq.ipfs.community.bgipfs.com/"><code>https://bafkreie2msgz2jedvreyqgz3xyjylrp2nu4njeo26sq27fxknhikj5eufq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/377">#377</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interfold (FOLD) Protocol Contracts — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #299">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Interfold (FOLD) Protocol Contracts</h1>
+    <p class="job-sub">Job #299 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/299"><b>Job page</b> #299</a>
+      <a class="chip" href="https://bafkreidy5yw2cr7lhcnf6dgubgi24h3v7pub47gg5pqhftkqnowa2dvi6a.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#low-severity-findings">Low-severity findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#findings-list">Findings List</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — Interfold (FOLD) Protocol Contracts</h1>
+<p><em>Two-phase audit: Phase 1 breadth (ethskills, 9 domain checklists) → Phase 2 depth (pashov, 12 blind attacker agents) → hybrid reconciliation.</em></p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Repo</strong></td>
+<td><code>github.com/theinterfold/interfold</code> @ <code>packages/interfold-contracts/contracts</code></td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>All contracts in the target directory tree not marked as tests (client-specified scope — includes <code>lib/</code>, excludes <code>interfaces/</code>, <code>test/</code>, <code>*Mock*.sol</code>)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed (17, ~14.9k LOC)</strong></td>
+<td><code>Interfold.sol</code> · <code>E3RefundManager.sol</code> · <code>registry/BondingRegistry.sol</code><br><code>registry/CiphernodeRegistryOwnable.sol</code> · <code>slashing/SlashingManager.sol</code> · <code>token/InterfoldToken.sol</code><br><code>token/InterfoldTicketToken.sol</code> · <code>token/sale/InterfoldTokenSaleDeployer.sol</code> · <code>token/sale/PredicateValidationHook.sol</code><br><code>lib/ExitQueueLib.sol</code> · <code>lib/InterfoldPricing.sol</code> · <code>lib/CommitteeHashLib.sol</code><br><code>lib/DkgFoldAttestationLib.sol</code> · <code>verifiers/DkgFoldAttestationVerifier.sol</code> · <code>verifiers/bfv/BfvPkVerifier.sol</code><br><code>verifiers/bfv/BfvDecryptionVerifier.sol</code> · <code>verifiers/bfv/honk/{DecryptionAggregatorVerifier,DkgAggregatorVerifier}.sol</code> (auto-generated)</td>
+</tr>
+<tr>
+<td><strong>Protocol</strong></td>
+<td>Enclave-style encrypted execution (E3) network: ciphernode committee sortition (ERC20Votes-weighted), BFV homomorphic-encryption + Honk/DKG proof verifiers, bonding/staking registry with an exit queue, EIP-712 attestation-based slashing, a FOLD governance token + non-transferable tFOLD ticket token, and a token-sale deployer</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>70</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation summary</strong>: 30 unique (Contract, function, bug-class) groups identified across both phases · Overlap (found by both phases independently): 6 · Phase-1-only: 20 · Phase-2-only: 9 · Re-examined leads kept: 30 · demoted: 0 (two headline Phase-2-only findings and the one Phase-1-only Critical/High assembly finding were independently re-verified against source by the orchestrator; all others retain the confidence assigned by their originating phase, cross-checked for internal consistency of quoted line references).</p>
+<p>Every phase-1 and phase-2 raw finding is accounted for below (either as a numbered finding or listed under Leads); none were silently dropped.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[100] <strong>1. Unauthenticated <code>publishCommittee</code> lets anyone hijack the committee encryption key for non-aggregation E3s</strong> <code>[both: phase2 agents 2&amp;9 · orchestrator-verified against source]</code></p>
+<p><code>CiphernodeRegistryOwnable.publishCommittee</code> · Confidence: 100</p>
+<p><strong>Description</strong><br><code>publishCommittee</code> (external, no access modifier) sets <code>c.publicKey = pkCommitment</code> unconditionally, and only runs the cryptographic DKG-proof verification (<code>_verifyAndStoreDkgAnchors</code>) when <code>e3.proofAggregationEnabled == true</code> — a value the <em>requester</em> chooses per-E3 (<code>request()</code>, never forced true). When aggregation is disabled, any address can post an arbitrary <code>pkCommitment</code>; &quot;first caller wins&quot; via the <code>c.publicKey == bytes32(0)</code> guard, so an attacker who front-runs the honest aggregator permanently substitutes their own key. The requester&#39;s confidential inputs then encrypt to a key the attacker controls, or the E3 is permanently bricked (honest publish reverts <code>CommitteeAlreadyPublished</code>).</p>
+<p>Independently confirmed by the orchestrator reading <code>CiphernodeRegistryOwnable.sol:289-336</code>: line 307 (<code>c.publicKey = pkCommitment</code>) executes before the <code>if (e3.proofAggregationEnabled)</code> gate at line 311, and no caller check exists anywhere in the function.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function publishCommittee(
+      uint256 e3Id,
+      bytes calldata publicKey,
+      bytes32 pkCommitment,
+      bytes calldata proof,
+      bytes calldata dkgAttestationBundle
+  ) external {
+      Committee storage c = committees[e3Id];
+      require(c.stage == ICiphernodeRegistry.CommitteeStage.Finalized, CommitteeNotFinalized());
+      require(c.publicKey == bytes32(0), CommitteeAlreadyPublished());
+      require(pkCommitment != bytes32(0), PkCommitmentRequired());
+      ...
+      E3 memory e3 = interfold.getE3(e3Id);
+      if (e3.proofAggregationEnabled) {
+          _verifyAndStoreDkgAnchors(...);
++     } else {
++         // Non-aggregation mode still needs SOME authenticated poster —
++         // e.g. a signature from the committee/aggregator over (e3Id, pkCommitment),
++         // or restrict msg.sender to an active committee member / trusted relayer role.
++         require(_isAuthorizedPublisher(e3Id, msg.sender, pkCommitment), UnauthorizedPublisher());
+      }
+      ...
+  }
+</code></pre>
+<hr>
+<p>[90] <strong>2. <code>CommitteeHashLib.hash</code> double-shifts each address, corrupting the committee-hash domain binding used by every BFV/DKG proof verifier</strong> <code>[phase1: assembly · orchestrator-verified via first-principles bit arithmetic]</code></p>
+<p><code>lib/CommitteeHashLib.hash</code> · Confidence: 90</p>
+<p><strong>Description</strong><br><code>bytes20 a = bytes20(nodes[i])</code> is already left-aligned in the 256-bit EVM word (Solidity represents <code>bytesN</code> as <code>value &lt;&lt; (256-8N)</code>, so <code>a</code> already equals <code>addr &lt;&lt; 96</code>). The code then applies <code>shl(96, a)</code> — a <em>second</em> left-shift — discarding the top 96 bits and leaving only the address&#39;s low 64 bits (its last 8 bytes) in the high 8 bytes of the stored word, with the remaining 24 bytes zero. <code>keccak256(packed)</code> therefore never matches the canonical <code>keccak256(concat(raw 20-byte addresses))</code> the on-chain NOTE explicitly says it must match (to agree with the off-chain/circuit <code>e3_utils::committee_hash::hash_committee_addresses</code>), and — independent of the off-chain mismatch — the resulting hash retains only 8 bytes of address entropy per node, so distinct committees whose members share trailing address bytes collide.</p>
+<p>The orchestrator independently re-derived this via bit arithmetic: for a 256-bit word <code>a</code> with data in bits [255:96] (address left-aligned), <code>shl(96, a)</code> produces a word with data only in bits [192:255] — i.e., <code>addr</code>&#39;s bits [0:63] (last 8 bytes) — confirming the bug exactly as described, with a concrete forge-run example in the source pass (<code>0xa284dd...</code> expected vs. <code>0x3db399...</code> actual for a 2-address committee).</p>
+<p>Since <code>BfvPkVerifier</code>/<code>BfvDecryptionVerifier</code> gate <code>DomainBindingMismatch</code> on this hash matching the value the off-chain circuit computed over the true raw addresses, this bug either bricks 100% of proof-aggregation E3s in the currently-deployed state, or — if somehow tolerated — collapses the domain-separation the hash exists to enforce.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  assembly (&quot;memory-safe&quot;) {
+-     mstore(add(add(packed, 0x20), offset), shl(96, a))
++     mstore(add(add(packed, 0x20), offset), a)   // bytes20 `a` is already left-aligned; no shift needed
+  }
+</code></pre>
+<hr>
+<p>[85] <strong>3. Slashed collateral is routed and paid out in the per-E3 <code>feeToken</code>, which is never enforced to equal the ticket-collateral underlying — cross-E3 insolvency and fund drain</strong> <code>[both: phase1 erc20 · phase2 agents math-precision, economic-security, execution-trace, invariant, boundary, first-principles (6 of 12)]</code></p>
+<p><code>E3RefundManager.escrowSlashedFunds</code> / <code>_applySlashedFunds</code> / <code>distributeSlashedFundsOnSuccess</code> · Confidence: 85</p>
+<p><strong>Description</strong><br>Slashed collateral physically arrives at <code>E3RefundManager</code> as the ticket token&#39;s fixed underlying stablecoin (<code>BondingRegistry.redirectSlashedTicketFunds → InterfoldTicketToken.payout → safeTransfer(underlying(), ...)</code>), but is credited and paid out in the per-E3 <code>feeToken</code> — an independently rotatable, allow-listed value (<code>Interfold.setFeeToken</code>/<code>setFeeTokenAllowed</code>, snapshotted per-E3 in <code>_e3FeeTokens</code>). Nothing anywhere asserts <code>feeToken == ticketToken.underlying()</code>.</p>
+<p>Concrete numeric proof (from the &quot;invariant&quot; agent): E3 fee <code>payment = 100 DAI</code>, failed at <code>Requested</code> so <code>requesterAmount = 95</code>, <code>protocolAmount = 5</code>. A 50 USDC slash lands. <code>_applySlashedFunds</code> computes <code>requesterGap = 100 - 95 = 5</code>, credits <code>dist.requesterAmount = 100</code> (still DAI-denominated). The refund manager physically holds only 100 DAI (from this E3) + 50 USDC (from the slash). The requester&#39;s claim of 100 DAI draws 5 DAI that never entered this E3&#39;s pool — silently stolen from other E3s&#39; DAI balances held in the same contract — while the 50 USDC is never creditable to anyone in the DAI-denominated distribution and is permanently stranded.</p>
+<p>This requires an intended, documented governance action (fee-token rotation, &quot;survives global token rotation&quot; per code comments) as a precondition, but once that supported configuration exists, the drain is fully automatic and harms uninvolved third parties (other E3s&#39; requesters/honest nodes) — not self-harm.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- // amount received is always the ticket-token underlying, but credited as feeToken units
+- dist.requesterAmount += amount;
++ // Track slashed-fund credits in the ticket-collateral underlying, separately
++ // from the fee-token ledger, and pay those claims in that token.
++ address slashedToken = address(ticketToken.underlying());
++ _pendingSlashedInUnderlying[e3Id][recipient] += amount;
+</code></pre>
+<p>or, more simply, enforce at the config boundary:</p>
+<pre><code class="language-diff">  function setFeeTokenAllowed(IERC20 token, bool allowed) external onlyOwner {
++     if (allowed) {
++         require(address(token) == address(ticketToken.underlying()), FeeTokenMustMatchCollateral());
++     }
+      _feeTokenAllowed[token] = allowed;
+  }
+</code></pre>
+<hr>
+<p>[80] <strong>4. Proof-based (Lane A) deferred slash proposals do not block operator deregistration during the appeal window, letting the accused drain collateral before execution</strong> <code>[phase2: agents execution-trace &amp; asymmetry (2 of 12) · orchestrator-verified against source]</code></p>
+<p><code>SlashingManager._proposeSlash</code> / <code>executeSlash</code> · <code>BondingRegistry.deregisterOperator</code> · Confidence: 80</p>
+<p><strong>Description</strong><br><code>BondingRegistry.deregisterOperator</code> (lines 350-364) explicitly blocks deregistration while <code>hasOpenLaneBProposal</code> is true, and the developer&#39;s own comment states the intent precisely: <em>&quot;block deregistration while an unresolved Lane B slash proposal exists. An operator could otherwise drain ticket / license collateral during the appeal window and leave the slasher with nothing to slash.&quot;</em> However <code>hasOpenLaneBProposal</code> reads <code>_openLaneBCount</code>, which is incremented <strong>only</strong> inside <code>proposeSlashEvidence</code> (Lane B, <code>SlashingManager.sol:487</code>). <code>_proposeSlash</code> (Lane A, lines 370-438) never touches this counter — confirmed by direct read — even though <code>setSlashPolicy</code> permits proof-based (Lane A) policies with <code>appealWindow</code> up to <code>MAX_APPEAL_WINDOW</code> (30 days), and <code>fileAppeal</code>&#39;s own code explicitly supports appeals on Lane A proposals with a non-zero window.</p>
+<p><strong>Proof-of-concept trace</strong>: An operator is accused via a Lane A proof-based policy with <code>appealWindow = 30 days</code>. The proposal defers (not atomic, since <code>appealWindow != 0</code>). The operator immediately calls <code>deregisterOperator()</code> — not blocked, since <code>_openLaneBCount</code> is 0 for a Lane A accusation. After <code>exitDelay</code> (≥1 day) elapses, they call <code>claimExits()</code> and withdraw their entire ticket + license collateral. When <code>executeSlash</code> finally becomes callable (up to 30 days later), <code>slashTicketBalance</code>/<code>slashLicenseBond</code> compute <code>min(requested, available) = min(requested, 0) = 0</code> — the slash nets nothing. The exact protection the developers built for Lane B has a coverage gap for Lane A.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function _proposeSlash(...) internal returns (uint256 proposalId) {
+      ...
+      uint256 executableAt = block.timestamp + policy.appealWindow;
+      ...
++     if (policy.appealWindow &gt; 0) {
++         _openLaneBCount[operator] += 1;   // reuse the same exit-block counter for any deferred lane
++     }
+      if (policy.appealWindow == 0) {
+          _executeSlash(proposalId, Lane.LaneA);
+      }
+  }
+  function executeSlash(uint256 proposalId) external {
+      ...
++     if (p.appealWindow &gt; 0) {
++         _openLaneBCount[p.operator] -= 1;
++     }
+  }
+</code></pre>
+<p>(and decrement symmetrically wherever a deferred Lane A proposal resolves without executing, e.g. a Lane A equivalent of <code>resolveAppeal</code>.)</p>
+<hr>
+<p>[75] <strong>5. <code>ExitQueueLib</code> permanently locks an operator&#39;s ticket balance and license bond after 64 lifetime single-asset exit-queue operations</strong> <code>[phase2: agent periphery (1 of 12) · orchestrator-verified against source]</code></p>
+<p><code>lib/ExitQueueLib.queueAssetsForExit</code> / <code>_takeAssetsFromQueue</code> · Confidence: 75</p>
+<p><strong>Description</strong><br>The live-tranche cap is <code>require(len - min(headT, headL) &lt; MAX_ACTIVE_TRANCHES)</code> (64), but <code>_takeAssetsFromQueue</code> only advances the head for whichever asset type is actually processed — gated in <code>claimAssets</code> by <code>if (maxTicketAmount &gt; 0)</code> / <code>if (maxLicenseAmount &gt; 0)</code>. An operator who bonds a license once at registration and thereafter only adjusts their ticket balance (a completely ordinary usage pattern) never triggers the License branch, so <code>headL</code> stays 0 forever while <code>headT</code> advances with every ticket exit.</p>
+<p>Orchestrator-verified from source (<code>ExitQueueLib.sol:140-206, 449-524</code> and <code>BondingRegistry.sol:350-467</code>): after 64 ticket-only exit cycles, <code>len - min(headT, 0) = len = 64</code>, and any further <code>queueAssetsForExit</code> call reverts <code>TooManyTranches</code> — including <code>deregisterOperator</code> (line 391, combined ticket+license call) and <code>unbondLicense</code> (line 467, the <em>only</em> two calls that could ever push a license tranche and thus advance <code>headL</code>). This is a circular deadlock: the operator&#39;s remaining ticket balance and their entire license bond become permanently unwithdrawable, with no recovery path, purely through ordinary long-term operation.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- uint256 headT = state.queueHeadIndexTicket[operator];
+- uint256 headL = state.queueHeadIndexLicense[operator];
+- uint256 earliestHead = headT &lt; headL ? headT : headL;
+- require(len - earliestHead &lt; MAX_ACTIVE_TRANCHES, TooManyTranches());
++ // Cap on tranches that still hold a nonzero amount of EITHER asset, not on
++ // raw index distance from whichever head has advanced more slowly.
++ uint256 liveCount = _countLiveTranches(state, operator); // count tranches with ticketAmount&gt;0 || licenseAmount&gt;0
++ require(liveCount &lt; MAX_ACTIVE_TRANCHES, TooManyTranches());
+</code></pre>
+<hr>
+<p>[70] <strong>6. <code>E3RefundManager.escrowSlashedFunds</code> reads a frozen honest-committee snapshot never filtered against later expulsions — a slashed operator can reclaim up to 100% of their own penalty</strong> <code>[phase2: agent flow-gap (1 of 12)]</code></p>
+<p><code>E3RefundManager.escrowSlashedFunds</code> · Confidence: 70</p>
+<p><strong>Description</strong><br><code>_honestNodes[e3Id]</code> is snapshotted once at <code>processE3Failure</code> (<code>_getHonestNodes → getActiveCommitteeNodes</code>). <code>CiphernodeRegistryOwnable.expelCommitteeMember</code> only flips <code>memberStatus</code>, never touching this stored array. If node A is later slashed and expelled <em>for the same E3</em>, the latecomer branch of <code>escrowSlashedFunds</code> (<code>_claimCount&gt;0 &amp;&amp; honestNodeCount&gt;0</code>) still treats A as one of the &quot;honest nodes&quot; splitting the slashed pot. With a 1-member committee where A is the sole snapshotted honest node, A recovers 100% of their own seized stake via <code>claimSlashedFundsOnSuccess</code>. <code>_applySlashedFunds</code> (the <code>_claimCount==0</code> branch) shares the identical defect.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- address[] storage nodes = _honestNodes[e3Id];
++ address[] memory nodes = ciphernodeRegistry.getActiveCommitteeNodes(e3Id); // re-fetch current active set, excluding expelled members
+  for (uint256 i = 0; i &lt; nodes.length; i++) {
+      _pendingSlashedSuccess[e3Id][nodes[i]] += perNode;
+  }
+</code></pre>
+<hr>
+<p>[65] <strong>7. Late-arriving slashed funds skip the requester-first priority, permanently diverting requester compensation to honest nodes</strong> <code>[phase2: agent asymmetry (1 of 12)]</code></p>
+<p><code>E3RefundManager.escrowSlashedFunds</code> · Confidence: 65</p>
+<p><strong>Description</strong><br>The pre-first-claim branch (<code>_applySlashedFunds</code>) fills the requester&#39;s <code>originalPayment</code> gap before crediting honest nodes. The latecomer branch (triggered once any claim has been made, <code>_claimCount&gt;0</code>) instead routes 100% of a subsequently-arriving slash to honest nodes with no check of whether the requester was ever made whole — the code&#39;s implicit assumption that <code>_applySlashedFunds</code> already ran is false whenever the first slash post-dates the first claim. Concrete numbers: requester capped at 550/1000 after failure; an honest node claims first; a 300 slash then arrives and is split entirely among honest nodes (150/150) instead of first topping the requester up to 850.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  // latecomer branch in escrowSlashedFunds
++ uint256 requesterGap = originalPayment - dist.requesterAmount;
++ uint256 toRequester = amount &lt; requesterGap ? amount : requesterGap;
++ dist.requesterAmount += toRequester;
++ amount -= toRequester;
+  uint256 perNode = amount / honestNodeCount;
+</code></pre>
+<hr>
+<p>[60] <strong>8. <code>Interfold.registerE3Program</code> has no access control — anyone can allow-list an arbitrary E3 program contract</strong> <code>[both: phase1 general &amp; access-control · phase2 agents access-control, execution-trace, economic-security, boundary, first-principles (5 of 12) — 7 total independent flags across both phases]</code></p>
+<p><code>Interfold.registerE3Program</code> · Confidence: 60</p>
+<p><strong>Description</strong><br>Every sibling setter (<code>setDecryptionVerifier</code>, <code>setPkVerifier</code>, <code>setParamSet</code>, <code>disableEncryptionScheme</code>) is <code>onlyOwner</code>; <code>registerE3Program</code> is not. Anyone can permanently enable an arbitrary contract as an E3 program, whose <code>validate()</code>/<code>verify()</code> run as external calls mid-<code>request()</code> (before <code>e3s[e3Id]</code> is committed, before the fee transfer, before <code>requestCommittee</code>) and at <code>publishCiphertextOutput</code>. No single agent constructed a concrete cross-party fund-theft chain — the malicious program only executes within the flow of the requester who selects it and pays their own fee, and the reentrancy window each agent traced self-funds or reverts on incomplete state — but this is the single most cross-corroborated item in the entire audit (7 of 21 total agent-passes across both phases flagged it independently), which per the audit methodology&#39;s multi-agent-convergence rule promotes it from a widely-demoted lead to a scored finding.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- function registerE3Program(IE3Program e3Program) external {
++ function registerE3Program(IE3Program e3Program) external onlyOwner {
+      require(!e3Programs[e3Program], ModuleAlreadyEnabled(address(e3Program)));
+      e3Programs[e3Program] = true;
+      emit E3ProgramRegistered(e3Program);
+  }
++ function disableE3Program(IE3Program e3Program) external onlyOwner {
++     e3Programs[e3Program] = false;
++ }
+</code></pre>
+<hr>
+<p>[55] <strong>9. Owner can instantly halt all committee formation via unbounded, non-timelocked <code>ticketPrice</code>/<code>minTicketBalance</code></strong> <code>[both: phase1 governance · phase2 lead (economic-security)]</code></p>
+<p><code>BondingRegistry.setTicketPrice</code> / <code>setMinTicketBalance</code> · Confidence: 55</p>
+<p><strong>Description</strong><br>Sortition weight for every operator is <code>availableTickets = ticketBalance / ticketPrice</code>, gated by <code>require(availableTickets &gt; 0)</code>. <code>setTicketPrice</code> only enforces <code>!= 0</code> — no upper bound, no timelock (unlike <code>MIN/MAX_EXIT_DELAY</code>). <code>setMinTicketBalance</code> has no bounds at all. A malicious or compromised owner sets <code>ticketPrice</code> above every operator&#39;s balance in a single transaction; every <code>submitTicket</code> then reverts <code>NodeNotEligible</code>, no committee can ever form, and every pending/future E3 fails. Owner-only, no fund loss, but a full, instant, single-transaction DoS of the core sortition subsystem with no timelock to allow reaction.</p>
+<p><strong>Fix</strong>: Add <code>MIN_TICKET_PRICE</code>/<code>MAX_TICKET_PRICE</code> and <code>MAX_MIN_TICKET_BALANCE</code> bounds analogous to existing exit-delay guards, and route these changes through the same delayed/timelocked flow already used for the ticket-token registry pointer and the DKG verifier.</p>
+<hr>
+<p>[50] <strong>10. Non-aggregation E3s finalize with zero output verification, paying the committee for unverified plaintext</strong> <code>[phase2: agents trust-gap &amp; boundary (2 of 12)]</code></p>
+<p><code>Interfold.publishPlaintextOutput</code> · Confidence: 50</p>
+<p><strong>Description</strong><br>Sharing the same <code>proofAggregationEnabled</code> toggle as Finding #1, <code>publishPlaintextOutput</code> sets <code>success = true</code> with no <code>decryptionVerifier.verify()</code> call when aggregation is off, then distributes the full fee to the committee. Likely intended as an accepted trust-mode tradeoff since the requester opts into non-aggregation, but shares the identical unverified-boundary root cause as Finding #1.</p>
+<p><strong>Fix</strong>: Require aggregation-mode verification unconditionally, or explicitly document/gate non-aggregation E3s as a &quot;trusted mode&quot; with a clear interface-level warning.</p>
+<hr>
+<p>[50] <strong>11. Critical fund-routing pointers (<code>e3RefundManager</code>, <code>slashingManager</code>, <code>bondingRegistry</code>, <code>ciphernodeRegistry</code>) are swappable instantly with no timelock, unlike other critical pointers in the same codebase</strong> <code>[phase1: access-control]</code></p>
+<p><code>Interfold.setE3RefundManager</code> (and peer setters) · Confidence: 50</p>
+<p><strong>Description</strong><br>The team already recognized this exact &quot;compromised owner swaps a critical address&quot; risk for <code>dkgFoldAttestationVerifier</code> and protected it with a 2-day propose/commit timelock. The equally-powerful fund-routing pointer <code>e3RefundManager</code> has none: <code>setE3RefundManager</code> → <code>processE3Failure</code> (permissionless) sends the E3&#39;s escrowed payment to whatever address currently sits there, so a compromised owner can redirect all failed-E3 refunds/rewards to an attacker-controlled sink in one transaction.</p>
+<p><strong>Fix</strong>: Put critical wiring pointers behind the same propose/commit timelock already used for the DKG fold verifier, or route through governance.</p>
+<hr>
+<h2 id="low-severity-findings">Low-severity findings</h2>
+<p><em>(Origin tag, confidence, one-line description each; full text preserved in phase reports.)</em></p>
+<ul>
+<li><strong>[45] <code>InterfoldPricing.applyDefaultPricingConfig</code> writes hardcoded storage slots via linked-library DELEGATECALL with no layout guard</strong> <code>[both: phase1 proxies/general/assembly]</code> — <code>Interfold.initialize()</code> DELEGATECALLs a library that <code>sstore</code>s literal slot numbers 24-31; any future reordering of <code>Interfold</code>&#39;s storage silently corrupts pricing/treasury config with no revert. Add a runtime self-check or use a typed struct assignment instead.</li>
+<li><strong>[45] O(n²) storage bubble sort in <code>finalizeCommittee</code> can approach block gas limit at <code>MAX_COMMITTEE_SIZE = 256</code></strong> <code>[both: phase1 general/dos]</code> — sibling code comments itself admit the design &quot;will not scale to N &gt; ~50&quot;; sort in memory and write back once, or lower the effective cap.</li>
+<li><strong>[40] <code>request()</code> has no fee-slippage bound; a <code>quotedFee</code> parameter is retained but never checked</strong> <code>[both: phase1 general · phase2 leads x3]</code> — owner can raise <code>marginBps</code>/base fees between quote and execution with no <code>maxFee</code> guard on the requester side.</li>
+<li><strong>[40] <code>_getHonestNodes</code> try/catch is gas-griefable, letting a tuned-gas caller zero out the honest-node refund share</strong> <code>[phase1: general]</code> — <code>processE3Failure</code> is permissionless and one-shot; an attacker can force <code>getActiveCommitteeNodes</code> to OOG via the 63/64 rule, folding the honest-node share into requester/treasury.</li>
+<li><strong>[40] <code>SlashingManager._executeSlash</code>&#39;s try/catch escrow routing is gas-griefable, permanently stranding slashed funds in <code>BondingRegistry</code></strong> <code>[phase1: dos]</code> — same 63/64 mechanic applied to the post-execution fund-routing step; <code>p.executed=true</code> blocks retry.</li>
+<li><strong>[35] Fee-on-transfer / deflationary fee tokens are not delta-checked in <code>Interfold.request</code>, unlike every other inbound-token path in the repo</strong> <code>[both: phase1 erc20 · phase2 leads x2]</code> — nominal <code>e3Fee</code> is recorded before <code>safeTransferFrom</code>; gated by the owner&#39;s fee-token allow-list.</li>
+<li><strong>[35] tFOLD wrapper is not rebase-aware</strong> <code>[phase1: erc20]</code> — solvency invariant <code>underlying.balanceOf == totalSupply + payableBalance</code> breaks under a rebasing underlying; document non-rebasing-only support.</li>
+<li><strong>[35] Direct (push) requester refund in <code>_distributeRewards</code> can be blocked by a reverting/blacklisted requester</strong> <code>[phase1: erc20]</code> — temporary liveness stall of the success path, not fund loss (E3 can still fail-out and use the pull-based path).</li>
+<li><strong>[35] Owner can directly add/remove ciphernodes from the IMT, enabling unilateral censorship of a bonded, eligible operator</strong> <code>[phase1: access-control]</code> — <code>addCiphernode</code>/<code>removeCiphernode</code> accept an owner branch in addition to the bonding-registry path.</li>
+<li><strong>[30] <code>BondingRegistry.distributeRewards</code> push-pattern batch is bricked by one blacklisted/reverting recipient</strong> <code>[phase1: dos]</code> — the lone remaining push-payment surface in an otherwise pull-payment codebase.</li>
+<li><strong>[30] Ticket-token registry-swap timelock (1 day) is short for a change gating full collateral custody</strong> <code>[phase1: governance]</code> — below the 48-72h norm used elsewhere in the same codebase for comparable custody-critical changes.</li>
+<li><strong>[30] Sortition weight mixes a request-time balance snapshot with a live <code>ticketPrice</code> read</strong> <code>[both: phase1 governance · phase2 lead (numerical-gap: stale numActiveOperators, related mechanism)]</code> — a <code>ticketPrice</code> change within the submission window skews committee-selection odds without a corresponding collateral change.</li>
+<li><strong>[25] EIP-712 Lane B evidence-replay key omits <code>block.chainid</code> (inconsistent with Lane A)</strong> <code>[phase1: signatures]</code> — harmless in practice (per-deployment storage), consistency-only.</li>
+<li><strong>[25] Lane A/B use structurally different replay keys in one shared mapping — same fault slashable once per lane</strong> <code>[phase1: signatures]</code> — governance-policy configuration concern, not a code defect.</li>
+<li><strong>[20] No cap on <code>SLASHER_ROLE</code> membership</strong> <code>[phase1: access-control]</code></li>
+</ul>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong>[15] BFV decryption/PK proofs are not cryptographically bound to <code>e3Id</code>/ciphertext — cross-E3 proof replay when committees coincide</strong> <code>[both: phase1 general/signatures · phase2 leads x6 — the single most-corroborated informational item across the entire audit]</code> — explicitly documented in-code as an accepted &quot;domain binding relaxation … future work.&quot; Recommend prioritizing this for the next circuit revision given how consistently every independent lens flagged it.</li>
+<li><strong>[15] <code>BfvPkVerifier</code>/<code>DkgFoldAttestationVerifier</code> public-input offset may be off-by-one (<code>3h+6</code> vs. documented <code>3h+5</code> layout)</strong> <code>[phase2: math-precision]</code> — unverifiable without the circuit spec; if real, causes a liveness revert (<code>InvalidPublicInputsLength</code>), not a fund-loss bug.</li>
+<li><strong>[15] IMT leaf slots are never reclaimed — sustained churn eventually exhausts the ciphernode registry</strong> <code>[phase1: dos]</code> — latent capacity ceiling (~1.05M leaves), not practically weaponizable.</li>
+<li><strong>[15] Deterministic, publicly-seeded sortition allows pre-computation of selection odds</strong> <code>[phase1: governance]</code> — contingent on the seed source (in <code>Interfold</code>, out of this file&#39;s scope) being unpredictable.</li>
+<li><strong>[15] FOLD locked/vesting balances carry full <code>ERC20Votes</code> weight and require manual self-delegation</strong> <code>[phase1: governance]</code> — currently inert (no Governor in scope); becomes live the moment on-chain governance consumes FOLD votes.</li>
+<li><strong>[10] Rounding-to-zero can permanently strand <code>honestNodeAmount</code>/dust for large committees with tiny honest shares</strong> <code>[phase2: leads x3]</code> — dust-scale at realistic (≥1 USDC) fee minimums.</li>
+<li><strong>[10] <code>slashTicketBalance</code> ignores the <code>_exits.slashPendingAssets</code> return value, unlike the symmetric <code>slashLicenseBond</code> check</strong> <code>[phase2: asymmetry]</code> — unproven defensive-symmetry gap.</li>
+<li><strong>[10] An appealed-but-never-resolved Lane B proposal permanently blocks operator deregistration</strong> <code>[phase2: periphery]</code> — governance-inaction dependent, not a permissionless attacker path.</li>
+<li><strong>[10] Success-path vs. failure-path latecomer slashed-fund distributions apply different node/protocol splits</strong> <code>[phase2: asymmetry]</code> — undocumented divergence, may be intentional.</li>
+<li><strong>[10] Mispriced availability window at a far-future, zero-width <code>inputWindowStart</code>/<code>inputWindowEnd</code></strong> <code>[phase2: numerical-gap]</code> — requester can underpay standby cost; impact bounded by whether idle slots impose real operator cost.</li>
+<li><strong>[10] Fee-quote math double-rounds down in the requester&#39;s favor (dust-scale)</strong> <code>[phase1: precision-math]</code></li>
+<li><strong>[10] Per-node reward split rounds entire remainder to one node when reward &lt; committee size</strong> <code>[phase1: precision-math]</code> — conservation preserved, fairness-only.</li>
+<li><strong>[10] Generated Honk-verifier field division returns 0 on zero denominator instead of reverting</strong> <code>[phase1: precision-math]</code> — vendored generated code; would fail proof verification downstream, not exploitable.</li>
+<li><strong>[5] Reentrancy surface at <code>Interfold.request</code> via unguarded <code>e3Program.validate()</code> mid-function</strong> <code>[phase2: leads x3]</code> — no concrete drain path constructed by any agent; shares root cause with Finding #8.</li>
+<li><strong>[5] Initialization front-running depends on unverifiable deployment-script atomicity</strong> <code>[phase1: proxies]</code> — out of scope (deploy scripts not reviewed).</li>
+</ul>
+<hr>
+<h2 id="findings-list">Findings List</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[100]</td>
+<td>Unauthenticated <code>publishCommittee</code> lets anyone hijack the committee encryption key</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[90]</td>
+<td><code>CommitteeHashLib.hash</code> double-shifts addresses, corrupting committee-hash domain binding</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[85]</td>
+<td>Slashed collateral paid out in wrong token — cross-E3 insolvency and fund drain</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[80]</td>
+<td>Lane A slash proposals don&#39;t block deregistration during appeal window</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[75]</td>
+<td><code>ExitQueueLib</code> permanently locks funds after 64 single-asset exit cycles</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[70]</td>
+<td>Frozen honest-committee snapshot lets a slashed operator reclaim own penalty</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[65]</td>
+<td>Late slashed funds skip requester-first priority</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[60]</td>
+<td><code>registerE3Program</code> has no access control</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[55]</td>
+<td>Unbounded, non-timelocked <code>ticketPrice</code>/<code>minTicketBalance</code> — instant DoS</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[50]</td>
+<td>Non-aggregation E3s finalize with zero output verification</td>
+</tr>
+<tr>
+<td>11</td>
+<td>[50]</td>
+<td>Critical fund-routing pointers swappable with no timelock</td>
+</tr>
+</tbody></table></div>
+<p><em>(Low/Info items listed in their own sections above, per report-formatting.md threshold rules.)</em></p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. Not false positives — high-signal for manual review. Not scored.</em></p>
+<ul>
+<li><strong>Stale <code>numActiveOperators</code> after admin reprice</strong> — <code>BondingRegistry._updateOperatorStatus</code> — Code smells: incremental counter recomputed only when the specific operator next transacts, not when <code>setTicketPrice</code>/<code>setMinTicketBalance</code>/<code>setLicenseRequiredBond</code> change the thresholds for everyone — stale-high admits unfillable committees, stale-low blocks valid requests.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-driven two-phase audit system (breadth checklist pass + blind depth attacker pass + hybrid reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, bug bounty program, and on-chain monitoring are strongly recommended before mainnet deployment — particularly given the Critical (#1) and multiple High findings (#2-#5) identified above, several of which were independently re-derived and confirmed against the live source by the orchestrating auditor.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidy5yw2cr7lhcnf6dgubgi24h3v7pub47gg5pqhftkqnowa2dvi6a.ipfs.community.bgipfs.com/"><code>https://bafkreidy5yw2cr7lhcnf6dgubgi24h3v7pub47gg5pqhftkqnowa2dvi6a.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/299">#299</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

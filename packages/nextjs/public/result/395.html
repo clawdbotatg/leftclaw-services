@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ArbitrationModule.sol — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #395">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ArbitrationModule.sol</h1>
+    <p class="job-sub">Job #395 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/395"><b>Job page</b> #395</a>
+      <a class="chip" href="https://bafkreibz3sb5h7boe5zktjwv2ygsqpu3swmo7u2gzser77efuumtltklve.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#coverage-gate">Coverage Gate</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — ArbitrationModule.sol</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>ArbitrationModule.sol</code> — single contract, source supplied directly in the job request (no repo/on-chain address given)</td>
+</tr>
+<tr>
+<td><strong>SHA-256</strong></td>
+<td><code>965b16ff121819c1ebe19d33de00d4754dcbfdb5a413ade605b44357194702bd</code></td>
+</tr>
+<tr>
+<td><strong>Lines of code</strong></td>
+<td>383</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Single-file (imports <code>IArbitrationModule</code>, <code>ITaskRegistry</code>, <code>IEscrowVault</code>, <code>IAgentDepositVault</code>, <code>ReputationRegistry</code> are out-of-scope black boxes — no source available)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context map (opus) → ethskills breadth, 5 domains (sonnet) → pashov depth, 12 agents blind (sonnet) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>45 (findings below 45 listed as Leads, not findings)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation summary:</strong> Overlap: 8 (self-arbitration — 9 agents across both phases; tie-break bond extraction — 10 agents; reputation-timeout bugs — 4 agents; refund-branch failure isolation — 4 agents; no-code-address bypass — 3 agents; escalate griefing — 4 agents; stale arbitrator eligibility — 9 agents; hardcoded decimals — 2 agents) · Phase-1-only: 0 (every phase-1 finding was independently reproduced or corroborated in phase 2) · Phase-2-only: 2 (openDispute taskId-dedup DoS; vault-configuration-timing bond bypass) · Re-examined leads kept: 1 (token-identity drift — every agent that raised it independently chose Lead over Finding, judgment preserved) · Coverage holes closed: 0 (both phases independently covered all 12 state-changing entrypoints).</p>
+<p>This engagement audits <code>ArbitrationModule.sol</code> as a standalone target. No findings, conclusions, or source from any other audit were used — this report reflects only this job&#39;s own phase 0 map, phase 1 breadth, and phase 2 depth agents.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setReputationRegistry</code>/<code>setAgentDepositVault</code> (85, 91)</td>
+<td><code>onlyOwner</code> + one-time</td>
+<td>owner, once</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>setFallbackResolver</code>/<code>setDisputeOpeningPaused</code> (97, 101)</td>
+<td><code>onlyOwner</code></td>
+<td>owner</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>registerArbitrator</code> (107)</td>
+<td>deposit min, cooldown, not task party, task idle</td>
+<td>anyone meeting criteria</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>registerArbitratorGlobal</code> (137)</td>
+<td>deposit min, cooldown, not already global — <strong>no party exclusion</strong></td>
+<td>anyone meeting criteria</td>
+<td>no — <em>see Finding 1</em></td>
+</tr>
+<tr>
+<td><code>openDispute</code> (156)</td>
+<td><code>msg.sender == taskRegistry</code></td>
+<td>taskRegistry only</td>
+<td>yes — <em>see Findings 9, 10</em></td>
+</tr>
+<tr>
+<td><code>proposeArbitrator</code> (198)</td>
+<td>OPEN state, caller is dispute party, arbitrator eligible + tier rep gate — <strong>no self-arbitration check</strong></td>
+<td>dispute parties</td>
+<td>no — <em>see Finding 1</em></td>
+</tr>
+<tr>
+<td><code>escalate</code> (249)</td>
+<td>OPEN state, tier&lt;3, caller is dispute party</td>
+<td>dispute parties</td>
+<td>no — <em>see Finding 7</em></td>
+</tr>
+<tr>
+<td><code>resolveTimedOut</code> (268)</td>
+<td>OPEN/EVIDENCE, deadline passed — <strong>no caller-identity guard</strong></td>
+<td>anyone</td>
+<td>yes — <em>see Findings 3, 4, 6</em></td>
+</tr>
+<tr>
+<td><code>resolveDispute</code> (280)</td>
+<td><code>msg.sender == assignedArbitrator</code>, EVIDENCE state — <strong>no live eligibility re-check</strong></td>
+<td>assigned arbitrator only</td>
+<td>yes — <em>see Findings 2, 5, 8</em></td>
+</tr>
+<tr>
+<td><code>claimBondPayout</code> (347)</td>
+<td>non-zero <code>to</code>, caller has pending balance</td>
+<td>anyone with a pending balance</td>
+<td>yes, out</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles.</strong> Owner — two-step (<code>Ownable2Step</code>); unlocks the 4 setters. <code>taskRegistry</code>/<code>escrow</code> — immutable, no rotation ever. <code>reputationRegistry</code>/<code>agentDepositVault</code> — one-time-set. Dispute-scoped: <code>snapshotPoster</code>/<code>snapshotWorker</code> (frozen at open), <code>assignedArbitrator</code> (seated on 2-of-2 consent), <code>registeredArbitrator[taskId]</code>/<code>globalArbitrator</code> (self-service pools, deposit+cooldown gated only). <strong>Structural fact: no <code>ReentrancyGuard</code> anywhere in the contract</strong> — all external-call safety rests on CEI ordering; no exploitable window was found by any of the 12 depth agents.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[90] <strong>1. <code>proposeArbitrator</code> never excludes the dispute&#39;s own poster/worker — self-arbitration steals escrowed funds</strong></p>
+<p><code>ArbitrationModule.proposeArbitrator</code> / <code>registerArbitratorGlobal</code> / <code>resolveDispute</code> · Confidence: 90</p>
+<p><strong>Description</strong><br><code>registerArbitrator</code> explicitly excludes task parties (<code>require(msg.sender != t.poster &amp;&amp; msg.sender != t.worker)</code>, line 116) — proving the intended invariant &quot;arbitrator ≠ litigant.&quot; <code>registerArbitratorGlobal</code> (137-154) has no equivalent check, and critically, <code>proposeArbitrator</code> (198-246) never re-applies it before seating: its eligibility check (207-209) only verifies <code>registeredArbitrator[...] || globalArbitrator[...]</code>, never <code>arbitrator != d.snapshotPoster/d.snapshotWorker</code>. A task party who joins the global pool can be nominated by both sides (trivially, via a colluding or sybil counterparty) and seated as arbitrator of their own dispute. Tier-0 disputes (locked value &lt; $1) require <strong>zero</strong> reputation (219-224 has no branch for tier 0), so this needs nothing beyond a single deposit. Once seated, the attacker calls <code>resolveDispute</code> with an arbitrary <code>workerBps</code>, claims 100% of the escrow via <code>escrow.split</code>, and — since <code>resolvedCount</code>/reputation are credited unconditionally (286, 301-312) — can chain cheap tier-0 self-dealt disputes to farm the <code>resolvedCount&gt;=5</code>/<code>rep&gt;=200</code> credentials needed to self-arbitrate arbitrarily large (tier-2) disputes too. Independently found and proved by 9 of the audit&#39;s specialized agents.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Attacker registers wallet <code>A</code> globally: <code>registerArbitratorGlobal()</code> (137) — passes with only the deposit minimum, no party check exists on this path.</li>
+<li>Attacker (controlling both <code>P</code>=poster and <code>W</code>=worker on a self-created minimal-value task, or colluding with a real counterparty) triggers a dispute via <code>taskRegistry</code>; snapshot sets <code>d.snapshotPoster=P</code>, <code>d.snapshotWorker=W</code>.</li>
+<li>Both <code>P</code> and <code>W</code> call <code>proposeArbitrator(id, A)</code> (198) — passes <code>globalArbitrator[A]==true</code> (207), <code>meetsEntryMinimum(A)</code> (211-214), and tier-0 skips the reputation branch entirely (219-224). Both consents set → <code>d.assignedArbitrator=A</code>, state→EVIDENCE (241-245).</li>
+<li><code>A</code> calls <code>resolveDispute(id, 10000)</code> (280) — passes trivially since <code>msg.sender==A==d.assignedArbitrator</code> (282). <code>_finalise</code> → <code>escrow.split</code> sends 100% of escrow to the worker side (298); <code>resolvedCount[A]+=1</code> (286) and full <code>RESOLVE_REP_POINTS</code> credited (301-312).</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function proposeArbitrator(uint256 disputeId, address arbitrator) external {
+      Dispute storage d = disputes[disputeId];
+      require(d.state == DisputeState.OPEN, &quot;Arbitration: not open&quot;);
+      require(
+          msg.sender == d.snapshotPoster || msg.sender == d.snapshotWorker,
+          &quot;Arbitration: not party&quot;
+      );
+      require(arbitrator != address(0), &quot;Arbitration: zero arbitrator&quot;);
++     require(
++         arbitrator != d.snapshotPoster &amp;&amp; arbitrator != d.snapshotWorker,
++         &quot;Arbitration: arbitrator cannot be a party&quot;
++     );
+      require(
+          registeredArbitrator[d.taskId][arbitrator] || globalArbitrator[arbitrator],
+          &quot;Arbitration: not registered&quot;
+      );
+      ...
+</code></pre>
+<hr>
+<p>[85] <strong>2. Tie-break logic in <code>_settleDisputeBond</code> lets any seated arbitrator guarantee bond forfeiture by ruling an exact 5000bps tie</strong></p>
+<p><code>ArbitrationModule._settleDisputeBond</code> · Confidence: 85</p>
+<p><strong>Description</strong><br><code>initiatorWon = initiatorIsWorker ? workerBps &gt; 5000 : workerBps &lt; 5000</code> (335) — at exactly <code>workerBps==5000</code>, this is <code>false</code> for <strong>either</strong> role, so an arbitrator ruling a tie via <code>resolveDispute</code> (<code>byArbitrator=true</code>) always trips <code>byArbitrator &amp;&amp; !initiatorWon</code> (337) and forfeits the initiator&#39;s bond. The identical <code>5000</code> split reached via the permissionless <code>resolveTimedOut</code> (277, <code>byArbitrator=false</code>) <strong>always refunds</strong> (340-344) — the same economic outcome (a 50/50 escrow split) produces opposite bond consequences purely based on which function produced it. A profit-maximizing arbitrator can therefore rule exactly 5000 on every dispute they&#39;re seated on, extracting the full bond (up to <code>MAX_DISPUTE_BOND</code>=$100) with zero merit-based justification, zero economic risk, and no way for either party to detect the difference from an honest tie. Independently found and proved by 8 of the 12 depth agents, with several producing exhaustive worked traces.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Task escrow locked = $100 (100,000,000 units). Poster <code>P</code> opens dispute as initiator; bond = 5% = $5, debited via <code>debitDisputeBond</code> (188).</li>
+<li>Both parties legitimately consent to arbitrator <code>A</code> — no collusion required.</li>
+<li><code>A</code> calls <code>resolveDispute(id, 5000)</code> regardless of the actual merits.</li>
+<li><code>_settleDisputeBond</code>: <code>initiatorIsWorker=false</code>, <code>initiatorWon=(5000&lt;5000)=false</code>. <code>byArbitrator(true) &amp;&amp; !initiatorWon(true)</code> → forfeit branch fires (337-339): <code>A</code> receives <code>P</code>&#39;s full $5 bond, <code>resolvedCount[A]+=1</code>.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- bool initiatorWon = initiatorIsWorker ? workerBps &gt; 5000 : workerBps &lt; 5000;
++ bool isTie = workerBps == 5000;
++ bool initiatorWon = isTie
++     ? true  // treat an exact tie as bond-neutral, matching resolveTimedOut&#39;s treatment
++     : (initiatorIsWorker ? workerBps &gt; 5000 : workerBps &lt; 5000);
+</code></pre>
+<hr>
+<p>[78] <strong>3. Either party can stonewall arbitrator consent to force a merit-blind 50/50 outcome with a guaranteed floor and no bond risk</strong></p>
+<p><code>ArbitrationModule.resolveTimedOut</code> / <code>proposeArbitrator</code> · Confidence: 78</p>
+<p><strong>Description</strong><br>Reaching EVIDENCE requires both <code>posterConsented</code> and <code>workerConsented</code> on the <em>identical</em> address (241), with no tie-break, forced default, or penalty for non-participation. A party who knows a fair ruling would give them less than 50% has a strictly dominant strategy: never consent to any arbitrator (optionally combined with <code>escalate</code> to keep resetting the clock — see Finding 7). After the deadline, anyone calls the fully permissionless <code>resolveTimedOut</code> (268), which always splits 50/50 and — since <code>byArbitrator=false</code> unconditionally skips the forfeiture branch (337) — always refunds the initiator&#39;s bond regardless of who was actually at fault. This defeats the purpose of merit-based arbitration for any party willing to stall.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Worker delivers nothing on a $1000 task; poster opens a dispute as initiator (fair ruling: <code>workerBps=0</code>).</li>
+<li>Worker never calls <code>proposeArbitrator</code> with a matching candidate (no cost, no penalty).</li>
+<li>After the (possibly <code>escalate</code>-extended) deadline, anyone calls <code>resolveTimedOut(id)</code> → <code>_finalise(d, id, 5000, false)</code> → worker keeps 50% of escrow they were never entitled to, at zero cost.</li>
+</ol>
+<p><strong>Fix</strong><br>Introduce consequences for unilateral non-consent — e.g., a default/fallback arbitrator selectable by the non-stalling party after a grace period, or make the timeout outcome depend on which party obstructed consent, rather than an unconditional 50/50 available to whichever side benefits from stalling.</p>
+<hr>
+<p>[75] <strong>4. Bond-refund branch has no failure isolation — a single revert permanently locks the dispute and its escrowed funds</strong></p>
+<p><code>ArbitrationModule._settleDisputeBond</code> · Confidence: 75</p>
+<p><strong>Description</strong><br>The forfeit branch defers to <code>pendingBondPayouts</code> on any transfer failure (<code>_payBondOrDefer</code>, 356-368). The refund branch — which covers every timeout (the fallback explicitly designed to guarantee eventual resolution) plus every &quot;initiator wins&quot; ruling — has no equivalent protection: <code>forceApprove</code> + <code>creditDisputeBond</code> (341-342) are called unwrapped. Any revert (vault pause, blacklist, internal cap — <code>IAgentDepositVault</code> is out of scope) propagates through <code>_finalise</code>, unwinding <code>escrow.split</code> (298) and <code>state=RESOLVED</code> too. No owner override exists anywhere to force resolution. Corroborated by 4 agents across both phases.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Dispute opens, bond debited from initiator <code>I</code>.</li>
+<li><code>I</code> later becomes ineligible for a vault credit (pause/blacklist/cap — plausible operational vault behavior).</li>
+<li>Deadline passes; anyone calls <code>resolveTimedOut</code> → refund branch → <code>creditDisputeBond(I, bond)</code> reverts → entire tx reverts. <code>resolveDispute</code> hits the identical wall. Dispute permanently stuck OPEN/EVIDENCE; escrowed task funds never release.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  } else {
+-     usdc.forceApprove(address(agentDepositVault), bond);
+-     agentDepositVault.creditDisputeBond(d.initiator, bond);
+-     emit DisputeBondRefunded(disputeId, d.initiator, bond);
++     usdc.forceApprove(address(agentDepositVault), bond);
++     try agentDepositVault.creditDisputeBond(d.initiator, bond) {
++         emit DisputeBondRefunded(disputeId, d.initiator, bond);
++     } catch {
++         pendingBondPayouts[d.initiator] += bond;
++         emit BondPayoutDeferred(d.initiator, bond);
++     }
+  }
+</code></pre>
+<hr>
+<p>[68] <strong>5. <code>_payBondOrDefer</code>&#39;s raw <code>.call</code> has no contract-existence check — a no-code token address silently destroys the bond</strong></p>
+<p><code>ArbitrationModule._payBondOrDefer</code> · Confidence: 68</p>
+<p><strong>Description</strong><br>A <code>.call</code> to an address with no deployed code returns <code>(ok=true, data.length=0)</code> — satisfying none of the tri-condition&#39;s failure branches (360-364), misclassified as a successful transfer. Since <code>usdcToken()</code> is fetched fresh from the vault on every settlement (332) rather than cached/validated, if it ever resolves to a non-contract address (misconfiguration window, unset default), the forfeiture &quot;succeeds&quot; (<code>DisputeBondForfeited</code> emitted, <code>disputeBond</code> already zeroed at 330) but no tokens moved and no <code>pendingBondPayouts</code> credit is created — an unrecoverable silent loss. The same file&#39;s own <code>forceApprove</code>/<code>safeTransfer</code> calls (341, 352) go through OpenZeppelin&#39;s code-existence-safe <code>SafeERC20</code>, proving the protection exists in this codebase and simply wasn&#39;t applied here.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function _payBondOrDefer(IERC20 usdc, address recipient, uint256 amount) internal {
++     if (address(usdc).code.length == 0) {
++         pendingBondPayouts[recipient] += amount;
++         emit BondPayoutDeferred(recipient, amount);
++         return;
++     }
+      (bool ok, bytes memory data) = address(usdc).call(
+          abi.encodeCall(IERC20.transfer, (recipient, amount))
+      );
+      ...
+</code></pre>
+<hr>
+<p>[65] <strong>6. <code>_finalise</code>&#39;s reputation accounting doesn&#39;t distinguish a real ruling from a permissionless timeout default</strong></p>
+<p><code>ArbitrationModule._finalise</code> · Confidence: 65</p>
+<p><strong>Description</strong><br>Two related mechanisms, same root defect (the reputation block at 300-312 doesn&#39;t gate on <code>byArbitrator</code>): (a) <code>resolveTimedOut</code> hardcodes <code>workerBps=5000</code> (277), and <code>workerWon = workerBps &gt;= 5000</code> (302) unconditionally credits the worker as dispute &quot;winner&quot; on <em>every single timeout</em>, regardless of actual merits — a worker can force every dispute they&#39;re party to into timeout (per Finding 3) and collect a guaranteed &quot;won&quot; reputation entry for free. (b) The arbitrator reputation credit (305, <code>if (d.assignedArbitrator != address(0))</code>) fires whenever an arbitrator was ever seated, not only when they actually ruled — an arbitrator who is seated and then simply never calls <code>resolveDispute</code> still earns the full <code>RESOLVE_REP_POINTS</code> (50 == <code>MIN_REP_TIER1</code> exactly) via the timeout path, letting a do-nothing arbitrator clear the tier-1 eligibility bar for free.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  if (address(reputationRegistry) != address(0)) {
+-     bool workerWon = workerBps &gt;= 5000;
+-     reputationRegistry.recordDisputeOutcome(d.snapshotWorker, d.taskId, workerWon);
+-     reputationRegistry.recordDisputeOutcome(d.snapshotPoster, d.taskId, !workerWon);
+-     if (d.assignedArbitrator != address(0)) {
++     if (byArbitrator) {
++         bool workerWon = workerBps &gt;= 5000;
++         reputationRegistry.recordDisputeOutcome(d.snapshotWorker, d.taskId, workerWon);
++         reputationRegistry.recordDisputeOutcome(d.snapshotPoster, d.taskId, !workerWon);
+          reputationRegistry.recordArbitratorResolution(
+              d.assignedArbitrator, d.taskId, RESOLVE_REP_POINTS
+          );
+      }
+  }
+</code></pre>
+<hr>
+<p>[60] <strong>7. <code>escalate()</code> lets a single party unilaterally and repeatedly reset the resolution deadline and disrupt in-flight consent</strong></p>
+<p><code>ArbitrationModule.escalate</code> · Confidence: 60</p>
+<p><strong>Description</strong><br>No counterparty consent, cost, or cooldown required — any party can call this while OPEN, wiping any pending arbitrator proposal/consent (259-261) and resetting the full 7-day deadline (262), up to 3 times (<code>MAX_TIERS</code>). A party anticipating an unfavorable outcome can front-run the counterparty&#39;s consent completion, stall up to 21 additional days, and/or push the dispute into a tier whose <code>resolvedCount&gt;=5</code> requirement is unreachable early in the protocol&#39;s life, forcing the dispute toward the always-favorable-to-stallers timeout outcome (Finding 3).</p>
+<p><strong>Fix</strong><br>Require mutual consent for escalation past tier 0, decouple deadline extension from tier bump, or cap cumulative extension from the original open timestamp.</p>
+<hr>
+<p>[55] <strong>8. Arbitrator&#39;s deposit minimum is checked only at proposal time, never re-verified at resolution</strong></p>
+<p><code>ArbitrationModule.resolveDispute</code> · Confidence: 55</p>
+<p><strong>Description</strong><br><code>agentDepositVault.meetsEntryMinimum(arbitrator)</code> is checked once, at <code>proposeArbitrator</code> (211-214), and never again — <code>resolveDispute</code> (280-288) checks only <code>msg.sender==assignedArbitrator</code> and dispute state. The EVIDENCE window can last the full 7-day (or <code>escalate</code>-extended) timeout, giving ample time for an arbitrator to withdraw their collateral post-seating and still rule with zero skin in the game, undermining the deposit-gating rationale documented for arbitrator eligibility. 7 of 12 depth agents raised this; several treated it as a standalone finding.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function resolveDispute(uint256 disputeId, uint256 workerBps) external {
+      Dispute storage d = disputes[disputeId];
+      require(msg.sender == d.assignedArbitrator, &quot;Arbitration: not assigned&quot;);
+      require(d.state == DisputeState.EVIDENCE, &quot;Arbitration: not in evidence&quot;);
+      require(workerBps &lt;= 10000, &quot;Arbitration: invalid bps&quot;);
++     require(
++         address(agentDepositVault) == address(0) || agentDepositVault.meetsEntryMinimum(msg.sender),
++         &quot;Arbitration: arbitrator below min deposit&quot;
++     );
+      ...
+</code></pre>
+<hr>
+<p>[50] <strong>9. No dedup check on <code>openDispute</code> for the same <code>taskId</code> — a second dispute can become permanently unresolvable</strong></p>
+<p><code>ArbitrationModule.openDispute</code> / <code>_finalise</code> · Confidence: 50</p>
+<p><strong>Description</strong><br><code>openDispute</code> writes a fresh <code>disputes[disputeId]</code> on every call with no check for an already-open dispute on the same <code>taskId</code>. If two disputes are opened on the same task before the first resolves, and the first resolves first (running <code>escrow.split</code>, which by its own purpose mutates <code>lockedBalance</code>), the second dispute&#39;s <code>snapshotLockedBalance</code> becomes permanently stale — every future call to <code>_finalise</code> for it (via either <code>resolveDispute</code> or the permissionless <code>resolveTimedOut</code>) reverts unconditionally at the escrow-equality check (294-297), with no recovery path anywhere in the contract.</p>
+<p><strong>Fix</strong><br>Track and enforce &quot;at most one active dispute per <code>taskId</code>&quot; in <code>openDispute</code> (e.g. a <code>mapping(uint256 =&gt; bool) hasActiveDispute</code> guard, cleared in <code>_finalise</code>).</p>
+<hr>
+<p>[45] <strong>10. Bond charge is frozen at dispute-open time, decoupled from arbitration eligibility&#39;s live vault check</strong></p>
+<p><code>ArbitrationModule.openDispute</code> / <code>proposeArbitrator</code> · Confidence: 45</p>
+<p><strong>Description</strong><br><code>openDispute</code> skips the bond-debit block entirely if <code>agentDepositVault</code> isn&#39;t yet set (186), and never re-derives the bond later. <code>proposeArbitrator</code>, by contrast, live-reads <code>agentDepositVault</code> at seating time. A dispute opened before the owner&#39;s one-time <code>setAgentDepositVault</code> call is permanently bond-free (<code>disputeBond[id]</code> stays 0), yet can still receive a full-power real arbitrator ruling once the vault is configured — defeating the bond&#39;s stated anti-spam purpose for that dispute.</p>
+<p><strong>Fix</strong><br>Either require <code>agentDepositVault</code> to be set as a precondition of <code>openDispute</code> (mirroring <code>registerArbitrator</code>&#39;s hard requirement), or re-derive the bond at proposal/seating time rather than freezing it at open.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[90]</td>
+<td>Missing self-arbitration exclusion — theft of escrowed funds</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[85]</td>
+<td>Tie-break bond forfeiture exploit</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[78]</td>
+<td>Consent-stonewalling forces merit-blind 50/50</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[75]</td>
+<td>Refund branch has no failure isolation (permanent DoS)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[68]</td>
+<td><code>_payBondOrDefer</code> no-code-address bypass</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[65]</td>
+<td>Reputation accounting doesn&#39;t distinguish real ruling from timeout</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[60]</td>
+<td><code>escalate()</code> unilateral griefing</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[55]</td>
+<td>Arbitrator deposit not re-checked at resolution</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[50]</td>
+<td>No dedup on <code>openDispute</code> for same <code>taskId</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>[45]</td>
+<td>Vault-configuration-timing bond bypass</td>
+</tr>
+</tbody></table></div>
+<p><strong>Info (no security impact / intentional design, not independently exploitable):</strong> Hardcoded 6-decimal assumption in <code>_bondForAmount</code>/<code>_tierForAmount</code> thresholds, never validated against the vault&#39;s actual token. <code>debitDisputeBond</code>&#39;s external call (188) precedes the <code>disputeBond</code> bookkeeping write (189) — a CEI deviation with no demonstrated exploit given the absence of any reentrancy-exposing entrypoint for that specific window.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. These are not false positives — they are high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><strong>Token-identity drift</strong> — <code>_settleDisputeBond</code>/<code>claimBondPayout</code> — Code smells: <code>agentDepositVault.usdcToken()</code> is re-fetched fresh at settle (332) and claim (352) time rather than cached/pinned; <code>pendingBondPayouts</code> stores a bare amount with no token reference. Every agent that raised this independently chose to file it as a lead rather than a finding, since it requires unverifiable <code>IAgentDepositVault</code> token-mutability.</li>
+<li><strong>Escrow-balance equality is a hard revert with no recovery path</strong> — <code>_finalise</code>, lines 294-297 — depends entirely on unverified <code>IEscrowVault.freeze</code> semantics; if <code>lockedBalance</code> can legitimately drift post-freeze for any reason, the dispute (and its bond) is stuck forever with no admin override.</li>
+<li><strong>No <code>ReentrancyGuard</code> anywhere in the contract</strong> — every one of the 12 depth agents traced the external-call sites in <code>_finalise</code>/<code>_settleDisputeBond</code>/<code>claimBondPayout</code> and found CEI ordering closes every constructed same-dispute path; cross-dispute reentrancy fan-out during <code>escrow.split</code>&#39;s black-box payout mechanism could not be ruled out and remains a hardening gap worth adding a lock for regardless.</li>
+<li><strong><code>_payBondOrDefer</code>&#39;s raw <code>.call</code> copies unbounded return data before validation</strong> — defense-in-depth gap (return-data-bomb exposure) contingent on <code>usdcToken()</code> ever resolving to a hostile contract.</li>
+<li><strong><code>_bondForAmount</code>&#39;s clamp contradicts its own documented &quot;proportional to value&quot; claim</strong> at both extremes — a $1 dispute pays a bond 1,000,000× its value; a $1,000,000+ dispute pays a flat $100 (0.01%). Intentional clamp behavior, not a rounding accident — worth a threshold-design revisit.</li>
+</ul>
+<hr>
+<h2 id="coverage-gate">Coverage Gate</h2>
+<p>Entrypoints: 12 external/public state-changing functions in source, 12 examined by both phases. Threat-catalog rows: 8 identified in Phase 0, all 8 answered by the findings above. Coverage holes closed this pass: 0 — both phases independently examined every entrypoint; Turn-3 reconciliation performed cross-checks on leads only.</p>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-building + ethskills breadth + pashov-methodology depth). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Given the severity and multi-agent convergence on Findings 1 and 2 in particular, independent human review before mainnet deployment is strongly recommended. The <code>taskRegistry</code>/<code>escrow</code>/<code>agentDepositVault</code>/<code>reputationRegistry</code> trust assumptions could not be independently verified — their source was out of scope for this engagement.</p>
+</content></blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibz3sb5h7boe5zktjwv2ygsqpu3swmo7u2gzser77efuumtltklve.ipfs.community.bgipfs.com/"><code>https://bafkreibz3sb5h7boe5zktjwv2ygsqpu3swmo7u2gzser77efuumtltklve.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/395">#395</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

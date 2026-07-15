@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireBIPVault — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #376">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireBIPVault</h1>
+    <p class="job-sub">Job #376 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/376"><b>Job page</b> #376</a>
+      <a class="chip" href="https://bafkreieg5otfk7ucsbr7zvoojs6jo33sgpijwi77gwsu2viw6zk3iqb6fq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">5</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit — VaultfireBIPVault</h1>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>VaultfireBIPVault</code> — deployed contract, address <code>0x4f7E997C85bC1207485BaB8A0041Ca1ae0Fc9061</code> on Base (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Source</strong></td>
+<td>Verified exact match on Sourcify (<code>full_match</code>), compiler <code>0.8.24+commit.e11b9ed9</code>, single self-contained file, 355 lines</td>
+</tr>
+<tr>
+<td><strong>Context-only (out of scope)</strong></td>
+<td><code>VaultfireBondInsurancePool</code> at <code>0xa074e372d5221b605E9762e41B86EbdBEBF1a978</code> (Base) — the external contract the vault reads from. Verified via <code>cast call pool()</code> against the live vault and cross-checked against its own Sourcify-verified source. No findings are reported against this contract; it is referenced only to characterize the vault&#39;s dependency on it.</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase audit: Phase 0 (context/protocol-map/threat-catalog, opus) → Phase 1 (ethskills breadth, 5 domains, sonnet) → Phase 2 (pashov depth, 12 agents blind to Phase 1, sonnet) → Phase 3 (hybrid reconciliation + coverage gate)</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>Findings below 80 confidence are marked description-only per methodology; all findings ≥ Low severity are reported</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p><code>VaultfireBIPVault</code> is a <strong>stateless, read-only ERC-4626-shaped facade</strong> over an external insurance-pool contract. It holds zero ETH, has zero mutable storage beyond one immutable address, and every ERC-4626/ERC-20 write path (<code>deposit</code>, <code>mint</code>, <code>withdraw</code>, <code>redeem</code>, <code>transfer</code>, <code>transferFrom</code>, <code>approve</code>, <code>receive</code>, <code>fallback</code>) unconditionally reverts. All 20 sub-agents across both hunting phases (5 ethskills domain agents + 12 pashov attack agents) independently converged on the same conclusion: <strong>this contract has no fund-custody, arithmetic, reentrancy, or access-control attack surface</strong>, because it never holds funds, performs no arithmetic beyond identity pass-through, makes only <code>STATICCALL</code>-guaranteed external reads, and has no privileged role of any kind.</p>
+<p>The entire finding set is therefore <strong>data-integrity / integrator-trust issues on the vault&#39;s read surface</strong> — real, reproducible divergences from standard ERC-4626/ERC-20 semantics that could mislead an external consumer (aggregator, indexer, credit-scoring bot), but with <strong>no mechanism for value extraction through this contract</strong>, since it moves no value and has no redemption path. No Critical, High, or Medium findings were identified by either hunting phase.</p>
+<p><strong>Reconciliation summary</strong>: Overlap (both phases): 5 · Phase-1-only: 0 · Phase-2-only: 2 · Re-examined leads kept: 2 (single-agent, not promoted) · Coverage holes closed this pass: 0 (both phases already covered every entrypoint and threat-catalog row).</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><strong>No roles, no owner, no admin exist in this contract.</strong> No state variable stores <code>msg.sender</code> anywhere; the constructor does not retain the deployer.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Functions</th>
+<th>Guard</th>
+<th>State written</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Always-revert stubs</td>
+<td><code>deposit</code>(L231), <code>mint</code>(L243), <code>withdraw</code>(L256), <code>redeem</code>(L268), <code>transfer</code>(L276), <code>transferFrom</code>(L280), <code>approve</code>(L284), <code>receive</code>(L347), <code>fallback</code>(L351)</td>
+<td>none</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Pure/view reads</td>
+<td><code>asset</code>(L177), <code>totalAssets</code>(L183), <code>totalSupply</code>(L191), <code>balanceOf</code>(L202), <code>convertToShares</code>(L207), <code>convertToAssets</code>(L211), <code>max*</code>/<code>preview*</code>(L221-266), <code>allowance</code>(L288), <code>isInsured</code>(L297), <code>contributorProfile</code>(L302), <code>vaultStats</code>(L316), plus constant getters <code>WETH_BASE</code>, <code>pool</code>, <code>name</code>, <code>symbol</code>, <code>decimals</code></td>
+<td>none</td>
+<td>none</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p>Constructor (L165): guarded only by <code>if (pool_ == address(0)) revert ZeroAddress();</code> (L166); sets immutable <code>pool</code> once (L167). No post-deploy privileged actor exists. <strong>Entrypoints: 27 external/public functions in source, 27 in inventory — complete.</strong></p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>What they can reach</th>
+<th>What they could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary caller</td>
+<td>Any write-shaped entrypoint</td>
+<td>Nothing — all unconditionally revert</td>
+<td><strong>Invariant holds</strong> — confirmed independently by ethskills access-control agent and pashov access-control agent; no bypass found</td>
+</tr>
+<tr>
+<td>Arbitrary caller sending raw ETH</td>
+<td><code>receive()</code>/<code>fallback()</code></td>
+<td>Attempt to strand ETH in the vault</td>
+<td><strong>Addressed by finding #6</strong> (force-fed ETH via <code>selfdestruct</code> bypasses both, but is self-harm-only)</td>
+</tr>
+<tr>
+<td>DeFi aggregator / lending protocol treating vBIP as collateral via standard reads</td>
+<td><code>balanceOf</code>, <code>totalSupply</code>, <code>totalAssets</code>, <code>convertToAssets</code></td>
+<td>Could overvalue a holder&#39;s position after a pool claim payout</td>
+<td><strong>Addressed by finding #1</strong></td>
+</tr>
+<tr>
+<td>Integrator calling <code>previewDeposit</code>/<code>previewMint</code> without checking <code>maxDeposit</code>/<code>maxMint</code>==0</td>
+<td>Preview functions</td>
+<td>Misled into believing a deposit/mint is executable</td>
+<td><strong>Addressed by finding #2</strong></td>
+</tr>
+<tr>
+<td>Deployer (one-time, constructor only)</td>
+<td><code>constructor(pool_)</code></td>
+<td>Could point the vault at a wrong/malicious pool permanently</td>
+<td><strong>Addressed by finding #5</strong> — deployer-only, live deployment independently verified correct</td>
+</tr>
+<tr>
+<td>Hostile hypothetical <code>pool</code> (pool is genuine; recorded for completeness)</td>
+<td>Return arbitrary data / revert / burn gas on any read</td>
+<td>Feed integrators wrong numbers or grief read availability</td>
+<td><strong>Invariant holds</strong> — STATICCALL semantics guarantee no state corruption regardless of pool behavior; confirmed by execution-trace and boundary agents</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage: 6 threat rows, 6 answered. Entrypoints: 27/27 covered. Holes closed this pass: 0.</strong></p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[75] <strong>1. <code>balanceOf</code>/<code>totalSupply</code>/<code>totalAssets</code>/<code>convertToAssets</code> accounting-basis divergence after any pool claim payout</strong></p>
+<p><code>VaultfireBIPVault.balanceOf/totalSupply/totalAssets/convertToAssets</code> · Confidence: 75 · <code>[both phases: 10/12 pashov agents + ethskills erc4626/erc20/general]</code></p>
+<p><strong>Description</strong>: <code>totalSupply()</code>(L191-193)/<code>totalAssets()</code>(L183-185) both return the pool&#39;s <strong>live</strong> <code>totalPoolBalance()</code>, which decrements on every approved insurance-claim payout (pool L301). <code>balanceOf(account)</code>(L202-205) returns the pool&#39;s <strong>cumulative, monotonically-increasing</strong> <code>totalContributed</code>(pool L196), never decremented by a payout. <code>convertToAssets</code>/<code>convertToShares</code>(L207-213) are hardcoded 1:1 identity functions with no reference to either quantity. After the pool&#39;s first approved claim, <code>Σ balanceOf &gt; totalSupply</code> permanently and by a growing, unbounded margin — breaking the standard ERC-20/4626 invariant every aggregator/indexer/credit-scoring consumer of this vault&#39;s ABI is entitled to assume. Explicitly disclosed as intentional in the contract&#39;s own NatSpec (L197-201).</p>
+<p><strong>Proof of Concept</strong>: Agent A contributes 1 ETH via <code>pool.contribute()</code>. <code>vault.balanceOf(A) == vault.totalSupply() == vault.totalAssets() == 1e18</code> — consistent. A becomes insured (≥ 0.01 ETH) and gets a legitimate claim approved for the pool&#39;s allowed max (10% of pool = 0.1 ETH, pool L243-244, L292-305). <code>totalPoolBalance</code> drops to 0.9e18; <code>A</code>&#39;s <code>totalContributed</code> is untouched at 1e18 (no code path in the pool decrements it). Now <code>vault.totalSupply() == vault.totalAssets() == 0.9e18</code> but <code>vault.balanceOf(A) == vault.convertToAssets(vault.balanceOf(A)) == 1e18</code> — a single holder is reported as owning 111% of all tracked assets, with no cap or cross-check anywhere in the conversion path. This gap only ever grows as more claims are paid.</p>
+<p><strong>Why Low, not Medium/High</strong> (per finding-validation gates): the divergence&#39;s trigger is the pool owner&#39;s <code>resolveClaim</code> — a trusted-role action performed within documented intent (approving a legitimate claim is the pool&#39;s entire purpose), not an attacker action or admin misconduct. No identifiable in-scope victim exists: the vault holds no funds, has no redemption path (<code>maxRedeem</code>/<code>maxWithdraw</code> hardcoded to 0, L248-260), and shares are soulbound (<code>transfer</code>/<code>transferFrom</code>/<code>approve</code> all revert, L276-285), blocking the most obvious weaponization (using an inflated <code>balanceOf</code> as transferable collateral). Impact is contingent on an unspecified external consumer trusting the standard invariant without reading the NatSpec caveat — promoted from LEAD to FINDING per multi-agent convergence (10 of 12 depth-phase agents plus 2 breadth-phase domains independently reached the identical root cause with concrete traces), but capped at Low severity and confidence 75 given the complete absence of a fund-extraction mechanism through this contract itself.</p>
+<hr>
+<p>[75] <strong>2. <code>previewDeposit</code>/<code>previewMint</code> return non-zero values while <code>maxDeposit</code>/<code>maxMint</code> are hardcoded 0 and <code>deposit</code>/<code>mint</code> always revert</strong></p>
+<p><code>VaultfireBIPVault.previewDeposit/previewMint</code> · Confidence: 75 · <code>[phase2-only: 5/12 pashov agents]</code></p>
+<p><strong>Description</strong>: <code>maxDeposit</code>/<code>maxMint</code>(L221-223, L235-237) honestly signal &quot;0 capacity, action disabled,&quot; and <code>deposit</code>/<code>mint</code>(L231-245) unconditionally revert with <code>UseUnderlyingContribute()</code> — but <code>previewDeposit</code>/<code>previewMint</code>(L227-229, L239-241) still echo a plausible non-zero 1:1 value for any input, including <code>type(uint256).max</code>, with no bounds check. A caller/router that follows the common (non-defensive) pattern of reading <code>previewDeposit</code> for a quote without first gating on <code>maxDeposit == 0</code> is told a specific share amount is achievable when the corresponding action always reverts.</p>
+<p><strong>Proof of Concept</strong>: Call <code>previewDeposit(1 ether)</code> → returns <code>1e18</code> (looks like a valid quote). Call <code>deposit(1 ether, receiver)</code> → reverts with <code>UseUnderlyingContribute()</code> unconditionally, regardless of state or caller. No value ever moves before the revert (atomic), so no funds are at risk — only a misleading read for any composed transaction or UI relying on the preview alone.</p>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> — self-contained atomic revert, no fund-loss mechanism; a UX/spec-conformance gap only.</p>
+<hr>
+<p>[70] <strong>3. <code>previewWithdraw</code>/<code>previewRedeem</code> hardcode <code>0</code> while <code>convertToShares</code>/<code>convertToAssets</code> return 1:1 identity for the same input</strong></p>
+<p><code>VaultfireBIPVault.previewWithdraw/previewRedeem</code> · Confidence: 70 · <code>[both phases]</code></p>
+<p><strong>Description</strong>: <code>previewWithdraw</code>(L252-254)/<code>previewRedeem</code>(L264-266) return a bare <code>0</code> for any input, consistent with <code>maxWithdraw</code>/<code>maxRedeem</code>(L248-260) also being 0 — but this directly disagrees with <code>convertToShares</code>/<code>convertToAssets</code>(L207-213), which report the same shares/assets as fully redeemable 1:1. Two ABI-blessed valuation entry points on the same contract disagree by up to 100% of a position&#39;s apparent value, with nothing in the interface signaling which one a caller should trust.</p>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> — not independently exploitable (no successful <code>withdraw</code>/<code>redeem</code> exists to arbitrage the discrepancy).</p>
+<hr>
+<p>[70] <strong>4. <code>asset()</code> advertises WETH; real economic backing is native ETH held by a separate contract</strong></p>
+<p><code>VaultfireBIPVault.asset</code> · Confidence: 70 · <code>[both phases: 3/12 pashov agents + ethskills erc20]</code></p>
+<p><strong>Description</strong>: <code>asset()</code>(L177-179) returns the hardcoded canonical Base WETH address (L148) purely as tooling metadata. The vault never transfers, holds, or checks WETH anywhere; economic backing is native ETH custodied by the <em>pool</em>, not WETH custodied by the vault. <code>IERC20(vault.asset()).balanceOf(vault)</code> is always <code>0</code> while <code>totalAssets()</code> returns the pool&#39;s nonzero live balance — a generic ERC-4626 solvency heuristic (<code>asset.balanceOf(vault) &gt;= totalAssets()</code>) would flag this vault as insolvent/malformed even though the underlying pool genuinely holds the claimed ETH under a different accounting model.</p>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> — documented design tradeoff (NatSpec L145-147, L174-176); no fund-loss impact since the vault never holds or moves WETH.</p>
+<hr>
+<p>[70] <strong>5. Constructor validates only <code>pool_ != address(0)</code>, no code-existence or interface probe</strong></p>
+<p><code>VaultfireBIPVault.constructor</code> · Confidence: 70 · <code>[both phases]</code></p>
+<p><strong>Description</strong>: The only guard is <code>if (pool_ == address(0)) revert ZeroAddress();</code>(L166). <code>pool</code> is <code>immutable</code>(L151) with no setter — a misconfigured deployment (wrong address, EOA, or not-yet-deployed contract) would permanently brick every pool-dependent read (<code>totalAssets</code>, <code>totalSupply</code>, <code>balanceOf</code>, <code>isInsured</code>, <code>contributorProfile</code>, <code>vaultStats</code>) with no upgrade path.</p>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> — deploy-time-only, not attacker-reachable post-deployment. The live deployment was independently verified correct by this audit: <code>cast call 0x4f7E997C85bC1207485BaB8A0041Ca1ae0Fc9061 &quot;pool()(address)&quot;</code> resolves to <code>0xa074e372d5221b605E9762e41B86EbdBEBF1a978</code>, an exact Sourcify match for the genuine <code>VaultfireBondInsurancePool</code>.</p>
+<hr>
+<p>[60] <strong>6. Force-fed ETH (via <code>selfdestruct</code>) is permanently unrecoverable, contradicting the &quot;holds zero ETH&quot; claim</strong></p>
+<p><code>VaultfireBIPVault.receive/fallback</code> · Confidence: 60 · <code>[both phases]</code></p>
+<p><strong>Description</strong>: <code>receive()</code>(L347-349)/<code>fallback()</code>(L351-353) both unconditionally revert, blocking ordinary ETH transfers, but <code>selfdestruct(payable(vault))</code> from another contract bypasses both and increases <code>address(this).balance</code> without going through any function. No logic anywhere reads <code>address(this).balance</code> (only <code>pool.totalPoolBalance()</code>), so the stray ETH is permanently stranded — only the sender&#39;s own ETH is lost, no third-party impact.</p>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> — self-harm only (per finding-validation &quot;Do Not Report&quot; exclusion, this does not independently qualify as a Finding on its own merits, but is included for completeness given cross-phase convergence and its literal contradiction of the contract&#39;s NatSpec claim).</p>
+<hr>
+<p>[65] <strong>7. No <code>Transfer</code>/<code>Deposit</code> events are ever emitted</strong></p>
+<p><code>VaultfireBIPVault</code> (no code location — an absence) · Confidence: 65 · <code>[phase2-only: 2/12 pashov agents]</code></p>
+<p><strong>Description</strong>: Because <code>deposit</code>/<code>mint</code>/<code>transfer</code>/<code>transferFrom</code> always revert before any <code>emit</code>, no <code>Transfer</code>/<code>Deposit</code>/<code>Approval</code> event is ever emitted, even though <code>balanceOf</code>/<code>totalSupply</code> report live, non-zero, changing values sourced from the pool. Any indexer/subgraph that reconstructs holder lists or supply history from event logs (rather than direct <code>balanceOf</code> calls) will show zero holders and zero supply forever — a permanent divergence from what the live view functions report.</p>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> — data-completeness gap for event-log-based tooling only, no state or fund impact.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[75]</td>
+<td><code>balanceOf</code>/<code>totalSupply</code>/<code>totalAssets</code>/<code>convertToAssets</code> accounting-basis divergence after any pool claim payout</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[75]</td>
+<td><code>previewDeposit</code>/<code>previewMint</code> return non-zero while <code>maxDeposit</code>/<code>maxMint</code> are hardcoded 0 and <code>deposit</code>/<code>mint</code> always revert</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[70]</td>
+<td><code>previewWithdraw</code>/<code>previewRedeem</code> hardcode <code>0</code> while <code>convertToShares</code>/<code>convertToAssets</code> return 1:1 identity</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[70]</td>
+<td><code>asset()</code> advertises WETH; real economic backing is native ETH held by a separate contract</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[70]</td>
+<td>Constructor validates only <code>pool_ != address(0)</code>, no code-existence or interface probe</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[60]</td>
+<td>Force-fed ETH (via <code>selfdestruct</code>) is permanently unrecoverable</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[65]</td>
+<td>No <code>Transfer</code>/<code>Deposit</code> events are ever emitted</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. These are not false positives — they are high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><strong>Reputation-signal economic mismatch</strong> — <code>VaultfireBIPVault.isInsured/balanceOf/contributorProfile</code> — Code smells: the &quot;Insured&quot; badge and cumulative <code>balanceOf</code> are magnitude-blind and cannot distinguish a well-capitalized pool from one already drained by other agents&#39; claims, nor reflect the pool owner&#39;s discretionary, first-come claim-approval process (pool L278-313). A consumer pricing an agent&#39;s creditworthiness off this data alone (the vault&#39;s own stated use case — &quot;making them more attractive for high-value tasks&quot;) is pricing a promise the data structurally cannot express. Single-agent lead; no concrete consuming contract was in scope to confirm actual reliance.</li>
+<li><strong><code>totalAssets()</code> reads an accounting counter, not the pool&#39;s live balance</strong> — <code>VaultfireBIPVault.totalAssets</code> — Code smells: NatSpec (L19, L181-182) promises &quot;the pool&#39;s live ETH balance,&quot; but the implementation reads <code>pool.totalPoolBalance()</code>(L184) — a counter maintained only by the pool&#39;s <code>contribute()</code>/<code>resolveClaim()</code> — never <code>address(pool).balance</code>. If ETH ever reached the pool outside those two paths, the counter would permanently understate the true balance. The pool&#39;s own source (reviewed for context) has no <code>receive()</code>/<code>fallback()</code>, so no such path was found within this audit&#39;s scope; flagged as unverified against full on-chain pool history.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant orchestrating a three-phase methodology (context-building → ethskills breadth → pashov depth, blind, with hybrid reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreieg5otfk7ucsbr7zvoojs6jo33sgpijwi77gwsu2viw6zk3iqb6fq.ipfs.community.bgipfs.com/"><code>https://bafkreieg5otfk7ucsbr7zvoojs6jo33sgpijwi77gwsu2viw6zk3iqb6fq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/376">#376</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

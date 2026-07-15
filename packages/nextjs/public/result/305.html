@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeiDAO — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #305">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">WeiDAO</h1>
+    <p class="job-sub">Job #305 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/305"><b>Job page</b> #305</a>
+      <a class="chip" href="https://bafkreidaqyio7krxszcme2niqpbt3674tays4o5gzqhtknvgl5pikvpd4m.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#additional-findings-low-info-below-confidence-threshold-or-admin">Additional Findings (Low / Info — below confidence threshold, or admin-gated by design)</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — WeiDAO</h1>
+<p>Two-phase audit: Phase 1 breadth (ethskills, 7 domain checklists) → Phase 2 depth (pashov, 12 blind attack agents) → hybrid reconciliation with direct verification against the live, deployed dependency contract.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>WeiDAO</code> — <code>0x00000007988A79d16cf76B5dc4cF54dc3Af24936</code> (Ethereum mainnet)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Default — all in-scope <code>.sol</code> files, excluding <code>lib/</code>, <code>test/</code>, mocks</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>src/WeiDAO.sol</code> (1206 LOC, single in-scope contract)</td>
+</tr>
+<tr>
+<td><strong>Out of scope</strong></td>
+<td><code>lib/solady/*</code> (third-party library) · <code>NameNFT.sol</code> (external dependency, read for verification only, not independently audited)</td>
+</tr>
+<tr>
+<td><strong>Dependency</strong></td>
+<td><code>INameNFT</code> at <code>0x0000000000696760E15f265e828DB644A0c242EB</code> — verified source pulled and read to confirm cross-contract assumptions (see Reconciliation Notes)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Phase 1: 7 agents (general, precision-math, governance, access-control, assembly, dos, erc721), opus. Phase 2: 12 blind attack agents (9 specialty + 3 gap-hunter), opus.</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>75</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation</strong>: Overlap: 1 major root-cause cluster found independently by 4 phase-1 agents and 1 phase-2 agent (different mechanisms, same root cause) · Phase-1-only: several Low/Info items · Phase-2-only: 1 new Medium finding (economic-sybil-resistance) · Completeness: 20+ unique (function, bug-class) pairs raised across both phases, all covered below · Re-examined leads: the top finding&#39;s load-bearing assumption (does a plain WNS transfer bump <code>epoch</code>?) was <strong>directly verified against the deployed <code>NameNFT</code> source</strong> rather than left as an inference — see Reconciliation Notes. One lead (subdomain-expiry-ignored, raised by 6 separate agent runs across both phases) was <strong>refuted</strong> by that same verification and dropped.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[85] <strong>1. <code>dao.wei</code> role model has no re-verification after a parent-name transfer — role hijack and permanent veto-bypass, both confirmed against the live <code>NameNFT</code> contract</strong></p>
+<p><code>WeiDAO._roleHolder</code> / <code>WeiDAO._holder</code> / <code>WeiDAO.execute</code> / <code>WeiDAO.constructor</code> · Confidence: 85 · <code>[both]</code> — independently raised by 4 phase-1 agents (general, governance, access-control, erc721/nft) and confirmed as an executable FINDING by 1 phase-2 agent (flow-gap); root cause verified directly against <code>NameNFT.sol</code> source in reconciliation.</p>
+<p><strong>Description</strong></p>
+<p><code>vetoer()</code>/<code>executor()</code> resolve <em>live</em>, gated only on the DAO <strong>currently</strong> owning the parent name <code>dao.wei</code> (<code>_roleHolder</code> → <code>_holder(PROPOSAL_PARENT) == address(this)</code>) and on the target role subdomain&#39;s <code>parentEpoch</code> matching the parent&#39;s <em>current</em> <code>epoch</code>. I pulled the verified <code>NameNFT</code> source (<code>0x0000000000696760E15f265e828DB644A0c242EB</code>) to check the load-bearing assumption every agent had to infer from WeiDAO&#39;s own documentation, and confirmed it directly:</p>
+<ul>
+<li>A plain <code>transferFrom</code>/<code>safeTransferFrom</code> of <code>dao.wei</code> <strong>never bumps <code>epoch</code></strong> — only <code>_register()</code> does (<code>NameNFT.sol:680-711</code>), which runs on fresh registration or subdomain overwrite, never on a transfer. <code>_beforeTokenTransfer</code> (<code>NameNFT.sol:142-150</code>) only blocks transfers of <em>inactive</em> (expired) tokens; it does not touch <code>epoch</code>.</li>
+<li><code>registerSubdomainFor(label, parentId, to)</code> requires only <code>ownerOf(parentId) == msg.sender</code> (<code>NameNFT.sol:302-309</code>) — <strong>whoever currently owns <code>dao.wei</code> can (re)assign <code>exec.dao.wei</code>/<code>veto.dao.wei</code> to any address at any time</strong>, with no staleness or existence check for subdomains (<code>_register</code>&#39;s <code>AlreadyRegistered</code> guard applies only to top-level names, <code>NameNFT.sol:684-687</code>; a subdomain &quot;overwrite&quot; always succeeds for the current parent owner).</li>
+<li>Top-level names (<code>dao.wei</code> itself) become re-registerable by <strong>anyone</strong>, permissionlessly, via <code>commit()</code>/<code>reveal()</code>, once <code>block.timestamp &gt; expiresAt + GRACE_PERIOD</code> (<code>NameNFT.sol:687</code>, <code>GRACE_PERIOD = 90 days</code>, <code>REGISTRATION_PERIOD = 365 days</code> — <code>NameNFT.sol:80-81</code>). Re-registration <strong>does</strong> bump <code>epoch</code> (<code>NameNFT.sol:696</code>).</li>
+</ul>
+<p><code>WeiDAO.sol</code> has <strong>no function anywhere that renews <code>dao.wei</code></strong>. Combining these three facts yields a directly confirmed attack:</p>
+<p><strong>Path A — passive neglect (works even if the DAO launched perfectly cleanly):</strong></p>
+<ol>
+<li>Nobody renews <code>dao.wei</code> for <code>365 + 90 = 455</code> days after its last renewal (no automation exists in <code>WeiDAO.sol</code>; renewal would require a deliberate <code>execute</code>/<code>rescue</code> call to <code>NameNFT.renew</code>).</li>
+<li>Anyone permissionlessly re-registers <code>dao.wei</code> via <code>commit()</code>/<code>reveal()</code> (<code>NameNFT.sol:238-267</code>) — this bumps its <code>epoch</code> and makes the caller the new owner.</li>
+<li>The attacker calls <code>registerSubdomainFor(&quot;exec&quot;, dao.wei, attacker)</code> (they&#39;re now the parent owner — always succeeds, no staleness guard on subdomains).</li>
+<li>The attacker transfers <code>dao.wei</code> back to the DAO (a <strong>plain transfer</strong> — confirmed above this does <strong>not</strong> bump <code>epoch</code> again).</li>
+<li><code>_holder(PROPOSAL_PARENT)</code> now returns the DAO (owns an active, non-expired <code>dao.wei</code>) → <code>_roleHolder</code>&#39;s gate passes. <code>_holder(EXEC_ROLE)</code>: <code>parentEpoch</code> (set at attacker&#39;s re-registration) still equals the parent&#39;s <em>current</em> <code>epoch</code> (unchanged by the plain transfer in step 4) → resolves to the attacker. <code>executor() == attacker</code> → <code>rescue(anyTarget, treasuryBalance, anyData)</code> drains the entire treasury.</li>
+<li><strong>Even without step 4</strong> (attacker never gives <code>dao.wei</code> back), any proposal the attacker had already parked past <code>threshold</code>+<code>executionDelay</code> becomes <strong>permanently unvetoable and undrainable-by-nobody-but-executable-by-everybody</strong>: <code>veto()</code> requires <code>vetoer()</code>/<code>executor()</code> to be non-zero, which they cannot be while an outsider holds <code>dao.wei</code> — but <code>execute()</code> (<code>WeiDAO.sol:445-463</code>) has <strong>no equivalent check</strong> and keeps working regardless of who owns <code>dao.wei</code>. This half of the chain was independently found and gate-verified as a standalone FINDING by the phase-2 flow-gap agent.</li>
+</ol>
+<p><strong>Path B — deferred/careless handover (documented-but-risky deployment path):</strong> the constructor&#39;s atomic pull-and-mint (<code>WeiDAO.sol:262-273</code>) <em>does</em> unconditionally overwrite <code>veto.dao.wei</code>/<code>exec.dao.wei</code> to the intended <code>roleHolder</code> on every successful pull (confirmed: <code>registerSubdomainFor</code> always succeeds on subdomains, so this path is actually self-correcting even against pre-seeding — several phase-1 leads assumed it would revert on a pre-existing subdomain; verification shows it does not). The real gap is the contract&#39;s own documented fallback: &quot;no approval / no active name ⇒ deployment still succeeds and the name is handed over later&quot; (<code>WeiDAO.sol:256-261</code>). That later, manual <code>transferFrom</code> into the DAO has <strong>no equivalent post-transfer role verification/re-mint</strong> anywhere in the code — whatever <code>exec.dao.wei</code>/<code>veto.dao.wei</code> already exist under <code>dao.wei</code> at that moment (pre-minted by whoever controlled it before handover) are inherited as-is.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function execute(uint256 id) external returns (bytes memory result) {
+     if (id == 0 || id &gt; proposalCount) revert NoProposal();
+     Proposal storage p = proposals[id];
+     if (p.vetoed) revert Vetoed();
+     if (p.executed) revert AlreadyExecuted();
+     if (block.timestamp &lt; p.created + executionDelay) revert TooSoon();
++    if (_holder(PROPOSAL_PARENT) != address(this)) revert Unauthorized(); // fail closed with veto, not open
+ 
+     _sync(p);
+     if (p.conviction &lt; threshold) revert Rejected();
+</code></pre>
+<p>Additionally: bind role validity to DAO-controlled provenance rather than current parent ownership — e.g. record the <code>epoch</code> at which the DAO itself acquired <code>dao.wei</code> and require any trusted role subdomain&#39;s <code>parentEpoch</code> to equal that recorded value, not merely the parent&#39;s live epoch; and/or make <code>dao.wei</code> renewal a hard, permissionless-but-DAO-funded invariant (e.g. a public <code>keep()</code> function anyone can call that renews <code>dao.wei</code> from the treasury before it lapses). For the deferred-handover path, require <code>_holder(VETO_ROLE) == address(0) &amp;&amp; _holder(EXEC_ROLE) == address(0)</code> before trusting a manually-transferred <code>dao.wei</code>.</p>
+<p><strong>Severity note</strong>: rated High, not Critical — Path A requires either 455 days of renewal neglect (a specific-but-realistic precondition, not privileged) or a deployer choosing the documented-but-risky deferred-handover path (Path B) and accepting <code>dao.wei</code> from an unverified party. Both are &quot;specific conditions&quot; per the audit&#39;s own High-severity definition (&quot;loss of funds requiring specific conditions&quot;), not zero-precondition Critical.</p>
+<hr>
+<p>[75] <strong>2. Conviction weight is snapshotted at <code>support()</code> time and never re-validated against continued ownership</strong></p>
+<p><code>WeiDAO.support</code> / <code>WeiDAO.unsupport</code> / <code>WeiDAO.execute</code> · Confidence: 75 · <code>[phase2: economic-security]</code> — phase-1 raised adjacent stale-support leads (NFT-1, Governance-5, Governance-6) but not this specific ownership-decoupling framing; re-examined against source and confirmed as described.</p>
+<p><strong>Description</strong></p>
+<p><code>support()</code> checks <code>nft.ownerOf(tokenId) == msg.sender</code> only at the moment of the call (<code>WeiDAO.sol:395</code>); nothing thereafter re-checks live ownership or live weight. A supporter can back a proposal and immediately sell/transfer the backing name — the position keeps driving conviction until the <strong>new, uninvolved</strong> owner chooses to <code>unsupport</code> (<code>WeiDAO.sol:423</code>, owner-gated for a non-stale position) or until the frozen snapshot term naturally elapses and becomes permissionlessly prunable (up to a year later, per <code>weightOf</code>&#39;s own 365-day runway model). This collapses the intended cost from &quot;sink <code>W</code> of ETH for the whole conviction ramp&quot; (the contract&#39;s own stated sybil-resistance rationale: &quot;weight = sunk ETH already provides sybil resistance&quot;) to &quot;control <code>W</code> for one block.&quot;</p>
+<p><strong>Fix</strong></p>
+<p>The most direct fix is to let a position also be pruned by anyone once the backing name has <em>changed hands</em> (not only once it&#39;s stale/re-registered), since a transfer is exactly the signal that the original supporter&#39;s stake is gone:</p>
+<pre><code class="language-diff">  function unsupport(uint256 id, uint256 tokenId) external {
+      Support memory s = _support[id][tokenId];
+      uint256 w = s.weight;
+      if (w == 0) revert NotSupporting();
+      (,,, uint64 epoch,) = nft.records(tokenId);
+-     bool stale = block.timestamp &gt;= s.expiresAt || epoch != s.epoch;
++     address currentOwner = nft.ownerOf(tokenId);
++     bool stale = block.timestamp &gt;= s.expiresAt || epoch != s.epoch || currentOwner != s.originalSupporter;
+      if (!stale &amp;&amp; nft.ownerOf(tokenId) != msg.sender) revert NotHolder();
+</code></pre>
+<p>(illustrative — requires storing the original supporter&#39;s address in the <code>Support</code> struct.)</p>
+<p><strong>Note</strong>: mitigated during launch by <code>veto</code> + <code>executionDelay</code> (an attentive vetoer can catch and cancel a suspiciously-cheap threshold crossing); <strong>this compounds severely with Finding 1</strong> — once <code>dao.wei</code> lapses, the veto backstop this finding relies on is also gone, and the two chain into an unstoppable, cheaply-manufactured treasury drain.</p>
+<p><strong>Chain</strong>: <code>[Finding 1] + [Finding 2]</code> — conf = min(85, 75) = 75. A <code>dao.wei</code> lapse (Finding 1) removes the only backstop against a proposal whose conviction was manufactured via ownership-decoupled support (Finding 2), producing an attack strictly worse than either alone.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[85]</td>
+<td><code>dao.wei</code> role model has no re-verification after transfer — role hijack + veto-bypass, confirmed against live <code>NameNFT</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>[75]</td>
+<td>Conviction weight decoupled from continued ownership after <code>support()</code></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="additional-findings-low-info-below-confidence-threshold-or-admin">Additional Findings (Low / Info — below confidence threshold, or admin-gated by design)</h2>
+<p>These did not clear the 75-confidence bar for a full write-up (mostly because they are bounded, admin-gated, or require an already-privileged actor) but are real, source-verified observations worth the team&#39;s attention. Severity uses the standard scale (Critical/High/Medium/Low/Info).</p>
+<p><strong>[Medium] Veto is unbounded, permanent, single-role censorship.</strong> <code>veto()</code> (<code>WeiDAO.sol:434-441</code>) lets a single <code>veto.dao.wei</code>/<code>exec.dao.wei</code> holder cancel <em>any</em> not-yet-executed proposal forever, with no un-veto and no scope limit — total governance DoS by one compromised role NFT. <code>[phase1: access-control]</code></p>
+<p><strong>[Medium] <code>executionDelay</code> is a live global, not a per-proposal snapshot.</strong> A passed proposal (or exec) calling <code>setExecutionDelay(0)</code> (<code>WeiDAO.sol:514-519</code>) instantly collapses the veto-reaction window for <em>every</em> other in-flight proposal, not just future ones. Two independent phase-2 agents (boundary, trust-gap) sketched the same two-proposal race. <code>[both: governance, boundary, trust-gap]</code></p>
+<p><strong>[Low] Proposals never expire.</strong> <code>execute()</code> has no upper time bound — a proposal that ever crosses <code>threshold</code> stays executable indefinitely if any support lingers, even against a completely changed treasury/target years later. <code>[phase1: governance]</code></p>
+<p><strong>[Low] Stale/expired support inflates conviction until permissionlessly pruned, and can strip a renewed-but-not-re-supported name&#39;s <em>live</em> backing.</strong> <code>unsupport</code>&#39;s staleness check (<code>WeiDAO.sol:422</code>) is keyed to the frozen support-time snapshot expiry, not the name&#39;s live (possibly renewed) expiry — corroborated by 7 of 12 phase-2 agents plus 3 phase-1 agents (highest cross-agent convergence of any secondary item). Documented as an intended &quot;keeper duty,&quot; but real griefing/UX surface. <code>[both, 10 agents]</code></p>
+<p><strong>[Low] <code>setAlpha</code> retroactively reprices every un-synced proposal&#39;s entire backlog.</strong> Changing <code>alpha</code> applies the new decay rate over each proposal&#39;s whole un-synced gap rather than only going forward, letting a trusted setter nudge a near-threshold proposal by adjusting a global. Gated to gov/exec — governance-hygiene issue, not an external exploit. <code>[both, 5 agents]</code></p>
+<p><strong>[Low] Uncapped returndata in <code>execute()</code>/<code>rescue()</code>.</strong> Both copy and (for <code>execute</code>) re-emit the callee&#39;s full returndata with no cap — a target returning a very large blob could brick that one proposal&#39;s execution via gas inflation. Bounded because the target is always governance/exec-chosen. <code>[phase1: general, dos, assembly]</code></p>
+<p><strong>[Low] <code>execute()</code>/<code>rescue()</code> don&#39;t verify the target has code.</strong> A passed proposal with a codeless/typo&#39;d target and <code>value &gt; 0</code> silently burns treasury ETH with no effect while marking the proposal executed. <code>[phase1: general]</code></p>
+<p><strong>[Low] Extreme-parameter overflow of <code>_accrue</code>/<code>convictionMax</code>/<code>_passWeight</code>.</strong> No upper bound on <code>threshold</code> beyond <code>!= 0</code>; combined with <code>alpha</code> near <code>SCALE</code>, the conviction math can in principle overflow-revert. Computed thresholds for this are 30+ orders of magnitude above any sane configuration (verified: default <code>getFee</code> is 0.001 ETH/year, making realistic <code>threshold</code> values land around 1e26-1e27 vs. an overflow point near 1e58-1e59) — unreachable in practice. <code>[both, 8 agents across both phases — highest raw convergence, all converging on &quot;not reachable&quot;]</code></p>
+<p><strong>[Info] <code>_holder</code> ignoring a role subdomain&#39;s own <code>expiresAt</code> — REFUTED.</strong> Six separate agent runs (3 in phase 1, 3 in phase 2) independently flagged this as an unverifiable lead. Direct verification against <code>NameNFT.sol:706</code> shows subdomain records are always created with <code>expiresAt: parentId == 0 ? ... : 0</code> — <strong>subdomains never have an independent expiry; the field is always <code>0</code>.</strong> <code>_holder</code>&#39;s subdomain branch correctly has nothing to check here. No fix needed; this lead is dropped from the report per the reconciliation&#39;s hybrid re-examine step.</p>
+<p><strong>[Info] <code>setHtml</code>-served wallet-bridge JS is a phishing surface for the fully-trusted exec/governance path.</strong> A malicious (pre-relinquishment) exec or a passed proposal can rewrite the on-chain dapp&#39;s JS to prompt harmful signatures under the DAO&#39;s trusted origin. Admin-gated. <code>[phase2: access-control]</code></p>
+<p><strong>[Info] Future-proposal-id name-squatting griefs on-chain rendering only.</strong> A passed proposal can pre-register <code>&lt;future-id&gt;.dao.wei</code>, causing that later proposal&#39;s own naming to silently fail (swallowed by <code>propose</code>&#39;s try/catch) — cosmetic UI-only impact. <code>[phase2: asymmetry]</code></p>
+<p><strong>[Info] Alt-chain deployment caveat.</strong> <code>pragma ^0.8.30</code> emits PUSH0 by default; irrelevant for the current mainnet deployment. <code>[phase1: general]</code></p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Trails with concrete code smells where the full exploit path could not be completed. Not scored.</em></p>
+<ul>
+<li><strong>NameNFT external-interface trust assumptions</strong> — <code>weightOf</code>/<code>_holder</code>/<code>support</code>/<code>unsupport</code>/<code>_proposalNameId</code> — Code smells: hardcoded assumptions about <code>records()</code> field order, <code>getFee</code> units, and subdomain-namehash derivation. Now largely <strong>closed</strong> by this audit&#39;s direct reading of the deployed <code>NameNFT</code> source (field order, <code>epoch</code>-on-transfer, subdomain <code>expiresAt=0</code>, and <code>getFee</code> semantics all confirmed matching WeiDAO&#39;s assumptions); the one remaining unverified item is whether <code>_proposalNameId</code>&#39;s local namehash reproduction exactly matches <code>NameNFT</code>&#39;s internal subdomain-id derivation for numeric labels bit-for-bit — not independently re-derived in this pass.</li>
+<li><strong><code>weightOf()</code> truncating to zero for an active, short-runway name</strong> — confirmed <strong>not reachable</strong> in practice: <code>NameNFT</code>&#39;s <code>DEFAULT_FEE = 0.001 ether</code>/year makes the truncation window sub-microsecond.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated two-phase audit (breadth checklist pass + blind attacker-mindset pass, reconciled and cross-checked against the live on-chain dependency contract). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, and monitoring for <code>dao.wei</code> renewal status specifically, are strongly recommended before mainnet funds are entrusted to this contract at scale.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidaqyio7krxszcme2niqpbt3674tays4o5gzqhtknvgl5pikvpd4m.ipfs.community.bgipfs.com/"><code>https://bafkreidaqyio7krxszcme2niqpbt3674tays4o5gzqhtknvgl5pikvpd4m.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/305">#305</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SecondSwap (Marketplace, Vesting, Whitelist contracts) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #385">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">SecondSwap (Marketplace, Vesting, Whitelist contracts)</h1>
+    <p class="job-sub">Job #385 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/385"><b>Job page</b> #385</a>
+      <a class="chip" href="https://bafkreiak4mfrv72gycqgvezoj4zonqmfzfpjdfn5yth6bry4qhiw66fr24.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#coverage-gate">Coverage Gate</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — SecondSwap (Marketplace, Vesting, Whitelist contracts)</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td>github.com/code-423n4/2024-12-secondswap, commit <code>6693d9e4f03a37919a52626de64b1cadf632fd29</code></td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Named files (7 contracts, per client job description)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>SecondSwap_Marketplace.sol</code> · <code>SecondSwap_MarketplaceSetting.sol</code> · <code>SecondSwap_StepVesting.sol</code><br><code>SecondSwap_VestingDeployer.sol</code> · <code>SecondSwap_VestingManager.sol</code> · <code>SecondSwap_Whitelist.sol</code><br><code>SecondSwap_WhitelistDeployer.sol</code> (1823 LOC)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: (0) context map + access-control inventory + threat catalog, opus → (1) 6-domain ethskills breadth, opus → (2) 12-agent pashov attacker-mindset depth, opus, run blind to phase-1 findings → (3) hybrid reconciliation + coverage gate</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>50 (findings below 50 listed as Leads, not numbered findings)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Note on prior audit history:</strong> this codebase was previously audited via Code4rena (2024-12, code-423n4/2024-12-secondswap contest). The in-scope source still carries inline comments referencing several of that audit&#39;s findings (<code>// 3.1</code> … <code>// 3.10</code>), indicating fixes already applied for those specific items. Per this engagement&#39;s scope, this report was produced by a fresh, independent three-phase run against the current source — no prior report was read or reused. Findings below that overlap a <code>3.x</code>-tagged line are noted as already-mitigated; every other finding is newly identified by this audit&#39;s own phase 0/1/2 agents.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p>Phase 1 (6 domains: general, precision-math, erc20, access-control, dos, proxies) produced 44 raw<br>findings/notes; Phase 2 (12 pashov attacker agents, blind to Phase 1) produced 12 FINDINGs + 34<br>LEADs. Cross-phase dedup by root cause:</p>
+<ul>
+<li><strong>Overlap (found independently by both phases):</strong> 6 root causes — StepVesting <code>releaseRate</code><br>over-claim, Whitelist self-enrollment bypass, referral-fee dead code, unrestricted<br><code>initialize()</code>, fee-on-transfer/blocklist token risk, discount/rounding edge cases.</li>
+<li><strong>Phase-2-only (new, not surfaced by any Phase-1 domain):</strong> 1 root cause — <code>VestingManager</code><br>sell-limit (<code>maxSellPercent</code>) bypass via self-purchase (wash trade). Promoted to a numbered<br>finding after independent verification against source (see F4).</li>
+<li><strong>Phase-1-only:</strong> <code>isFreeze</code> blocking the seller&#39;s <code>unlistVesting</code> exit path (dos-1) — not<br>raised by any Phase-2 agent; re-examined directly against source in this reconciliation pass<br>and confirmed (see F5/coverage gate).</li>
+<li><strong>Re-examined leads kept as findings:</strong> 2 (wash-trade bypass; <code>isFreeze</code> exit-lock). <strong>Demoted<br>after re-examination:</strong> 1 major cluster — unrestricted-<code>initialize()</code> was raised at Medium/High<br>severity by 6 sub-agents across both phases, but this reconciliation pass located the project&#39;s<br>own Hardhat Ignition deployment scripts (<code>ignition/modules/DeployMarketplaceProxies.ts</code>,<br><code>DeployVestingManagerProxies.ts</code>, <code>DeployVestingDeployerProxies.ts</code>) in the cloned repo, all of<br>which deploy via <code>TransparentUpgradeableProxy</code> with <code>initData</code> passed to the proxy constructor —<br>i.e. <code>initialize()</code> runs atomically in the deployment transaction and is <strong>not</strong> front-runnable<br>in the intended topology. Downgraded to Low (see F7).</li>
+<li><strong>Coverage holes closed this pass:</strong> 1 (<code>isFreeze</code>/exit-lock re-read; not examined by Phase 2).</li>
+<li><strong>Confidence floor used:</strong> 50. Findings below 50 are listed under Leads.</li>
+</ul>
+<p>Every unique (Contract, function, bug-class) raised by either phase survives below, either as a<br>numbered finding, folded into a grouped finding (wide-description, distinct fixes preserved), or<br>listed under Leads.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract.function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Marketplace.initialize</td>
+<td><code>initializer</code> (proxy-atomic per deploy scripts)</td>
+<td>deployer, once</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Marketplace.addCoin</td>
+<td><code>s2Admin</code> (via MarketplaceSetting) L206</td>
+<td>s2Admin</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Marketplace.listVesting</td>
+<td><code>isFreeze</code> only L251</td>
+<td>any caller</td>
+<td>yes (vesting in)</td>
+</tr>
+<tr>
+<td>Marketplace.unlistVesting</td>
+<td><code>isFreeze</code> + seller-or-s2Admin L342-345</td>
+<td>seller or s2Admin</td>
+<td>yes (penalty + vesting out)</td>
+</tr>
+<tr>
+<td>Marketplace.spotPurchase</td>
+<td><code>isFreeze</code> only L510</td>
+<td>any caller (buyer==seller unblocked)</td>
+<td>yes (currency in, vesting out)</td>
+</tr>
+<tr>
+<td>Marketplace.setMarketplaceSettingAddress</td>
+<td>s2Admin L561</td>
+<td>s2Admin</td>
+<td>no</td>
+</tr>
+<tr>
+<td>MarketplaceSetting.set*Fee/Duration/Referral/WhitelistDeployer/Manager/Status</td>
+<td><code>onlyAdmin</code></td>
+<td>s2Admin</td>
+<td>no</td>
+</tr>
+<tr>
+<td>MarketplaceSetting.setS2Admin</td>
+<td>inline check L232, zero+same-address guarded</td>
+<td>s2Admin</td>
+<td>no</td>
+</tr>
+<tr>
+<td>StepVesting.claim</td>
+<td>none — scoped to caller&#39;s own entry</td>
+<td>any caller (self)</td>
+<td>yes (token out)</td>
+</tr>
+<tr>
+<td>StepVesting.transferVesting/createVesting(s)</td>
+<td>inline <code>tokenIssuer|manager|vestingDeployer</code></td>
+<td>those 3 roles</td>
+<td>yes/internal</td>
+</tr>
+<tr>
+<td>VestingDeployer.initialize</td>
+<td><code>initializer</code> (proxy-atomic)</td>
+<td>deployer, once</td>
+<td>no</td>
+</tr>
+<tr>
+<td>VestingDeployer.deployVesting</td>
+<td><code>_tokenOwner[msg.sender]==tokenAddress</code> L111</td>
+<td>registered token owner</td>
+<td>no (deploy)</td>
+</tr>
+<tr>
+<td>VestingDeployer.setTokenOwner/setManager/setAdmin</td>
+<td><code>onlyAdmin</code>; setAdmin has same-addr but <strong>no zero-addr</strong> check L163-166</td>
+<td>s2Admin</td>
+<td>no</td>
+</tr>
+<tr>
+<td>VestingDeployer.createVesting(s)/transferVesting</td>
+<td><code>_tokenOwner[msg.sender]==StepVesting(plan).token()</code></td>
+<td>token owner of that plan</td>
+<td>yes (downstream)</td>
+</tr>
+<tr>
+<td>VestingManager.initialize</td>
+<td><code>initializer</code> (proxy-atomic)</td>
+<td>deployer, once</td>
+<td>no</td>
+</tr>
+<tr>
+<td>VestingManager.listVesting/unlistVesting/completePurchase/getVestingTokenAddress</td>
+<td><code>onlyMarketplace</code></td>
+<td>marketplace</td>
+<td>yes/view</td>
+</tr>
+<tr>
+<td>VestingManager.setSellable</td>
+<td><code>s2Admin || vestingDeployer</code> L174</td>
+<td>s2Admin or vestingDeployer</td>
+<td>no</td>
+</tr>
+<tr>
+<td>VestingManager.setMaxSellPercent</td>
+<td><code>StepVesting(vesting).tokenIssuer()==msg.sender</code> L195, <strong>no upper bound</strong></td>
+<td>tokenIssuer</td>
+<td>no</td>
+</tr>
+<tr>
+<td>VestingManager.set(Marketplace/BuyerFee/SellerFee/VestingDeployer)</td>
+<td><code>onlyAdmin</code></td>
+<td>s2Admin</td>
+<td>no</td>
+</tr>
+<tr>
+<td>VestingManager.setAdmin</td>
+<td><code>onlyAdmin</code>, <strong>no zero-addr, no same-addr check</strong> L212-214</td>
+<td>s2Admin</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Whitelist.whitelistAddress</td>
+<td><strong>none — self-enroll</strong></td>
+<td>any caller</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Whitelist.setMaxWhitelist</td>
+<td><code>lotOwner</code> (immutable), increase-only</td>
+<td>lotOwner</td>
+<td>no</td>
+</tr>
+<tr>
+<td>WhitelistDeployer.deployWhitelist</td>
+<td><strong>none</strong></td>
+<td>any caller</td>
+<td>no (deploy)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles.</strong> The logical &quot;admin&quot; is <strong>three independent storage variables</strong> — <code>MarketplaceSetting.s2Admin</code>,<br><code>VestingManager.s2Admin</code>, <code>VestingDeployer.s2Admin</code> — each one-step-transferable, no cross-check that<br>they agree. Per the project&#39;s own Ignition deploy scripts, all three are set to the same account<br>(<code>m.getAccount(1)</code>) at initial deployment, and the cross-contract wiring (<code>setMarketplace</code>,<br><code>setVestingDeployer</code>, <code>setManager</code>) is performed in the same deployment run — so the reference<br>deployment is internally consistent at genesis. Nothing on-chain enforces they <em>stay</em> consistent<br>after independent post-deploy rotations.</p>
+<p><strong>Unguarded state-changing entrypoints:</strong> <code>Marketplace.listVesting</code>, <code>Marketplace.spotPurchase</code><br>(both <code>isFreeze</code>-only, no caller-identity gate — by design, these are public market actions),<br><code>StepVesting.claim</code> (self-scoped), <code>Whitelist.whitelistAddress</code> (self-scoped, <strong>the problem</strong> — see<br>F2), <code>WhitelistDeployer.deployWhitelist</code> (inert unless referenced by a real listing).</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Any seller (normal usage)</td>
+<td>claim ≥1 vesting step, then list remainder</td>
+<td>Over-claim tokens from the shared StepVesting pool</td>
+<td><strong>Addressed by F1 (High)</strong></td>
+</tr>
+<tr>
+<td>Any address</td>
+<td><code>Whitelist.whitelistAddress()</code> on a discoverable private listing</td>
+<td>Buy from a &quot;private&quot; sale, or sybil-fill slots to block intended buyers</td>
+<td><strong>Addressed by F2 (Medium)</strong></td>
+</tr>
+<tr>
+<td>Any seller acting as their own buyer</td>
+<td><code>spotPurchase</code> on own listing (no seller≠buyer check)</td>
+<td>Bypass <code>maxSellPercent</code> anti-dump cap indefinitely</td>
+<td><strong>Addressed by F4 (Medium)</strong></td>
+</tr>
+<tr>
+<td>Buyer supplying <code>_referral</code></td>
+<td>expects an on-chain reward</td>
+<td>Gets nothing; <code>feeCollector</code> keeps it</td>
+<td><strong>Addressed by F3 (Medium)</strong></td>
+</tr>
+<tr>
+<td>s2Admin</td>
+<td><code>addCoin</code> with unvetted token (decimals check commented out)</td>
+<td>Introduce fee-on-transfer/blocklist token, breaking purchase/claim accounting</td>
+<td><strong>Addressed by F6 (Medium)</strong></td>
+</tr>
+<tr>
+<td>Any address</td>
+<td>front-run <code>initialize()</code> before legitimate deploy</td>
+<td>Seize admin/wiring of a core contract</td>
+<td><strong>Invariant holds</strong> — deploy scripts prove atomic proxy-constructor init (F7, downgraded to Low)</td>
+</tr>
+<tr>
+<td>s2Admin (any of 3)</td>
+<td><code>setMarketplaceStatus(true)</code></td>
+<td>Freeze trading — but also blocks sellers&#39; own <code>unlistVesting</code></td>
+<td><strong>Addressed by F5 (Medium)</strong></td>
+</tr>
+<tr>
+<td>tokenIssuer / registered token owner</td>
+<td><code>transferVesting</code>/<code>VestingDeployer.transferVesting</code> with arbitrary <code>_grantor</code></td>
+<td>Move any beneficiary&#39;s (incl. a paying buyer&#39;s) vesting to any address</td>
+<td><strong>Documented centralization risk</strong> — privileged-role action, no unprivileged amplifier; see Leads</td>
+</tr>
+<tr>
+<td>s2Admin</td>
+<td><code>unlistVesting</code> as admin, no penalty</td>
+<td>Force-cancel any seller&#39;s listing</td>
+<td><strong>Documented centralization risk</strong> — admin action by design; see Leads</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[92] <strong>1. <code>StepVesting.transferVesting</code> recomputes the grantor&#39;s <code>releaseRate</code> with the wrong formula, letting a claimant over-claim from the shared token pool</strong></p>
+<p><code>SecondSwap_StepVesting.transferVesting()</code> · confrmed independently by 9 of 18 hunting agents across both phases (general-1, precision-math-1, and 7 of 12 pashov agents) · Confidence: 92</p>
+<p><strong>Description</strong></p>
+<p>At <code>contracts/SecondSwap_StepVesting.sol:230</code>:</p>
+<pre><code class="language-solidity">grantorVesting.totalAmount -= _amount;
+grantorVesting.releaseRate = grantorVesting.totalAmount / numOfSteps;
+</code></pre>
+<p>This recomputes the grantor&#39;s per-step release by dividing the <em>entire remaining</em> <code>totalAmount</code><br>by the <em>entire</em> <code>numOfSteps</code> — ignoring how many steps/tokens the grantor has already claimed.<br>The correct remaining-linear formula, used correctly elsewhere in the very same contract&#39;s<br><code>_createVesting</code> additive branch (<code>contracts/SecondSwap_StepVesting.sol:297-303</code>), is<br><code>(totalAmount - amountClaimed) / (numOfSteps - stepsClaimed)</code>. Because <code>claimable()</code>&#39;s non-final<br>branch (<code>contracts/SecondSwap_StepVesting.sol:184</code>, <code>claimableAmount = vesting.releaseRate * claimableSteps</code>) applies <strong>no cap</strong> against the true remainder <code>totalAmount - amountClaimed</code> (only<br>the final-step branch at lines 178-181 reconciles), an inflated <code>releaseRate</code> lets the grantor&#39;s<br><code>amountClaimed</code> climb past <code>totalAmount</code>, paying out real ERC20 tokens that back other<br>beneficiaries&#39; allocations and the marketplace&#39;s escrowed purchases. This is triggered by<br>completely ordinary usage: any long-term holder who claims some vested steps and later lists part<br>of their remaining allocation on the marketplace hits this path.</p>
+<p><strong>Proof of Concept</strong></p>
+<p><code>numOfSteps = 10</code>, grant <code>totalAmount = 1000</code> (<code>releaseRate = 100</code>).</p>
+<ol>
+<li>At step 5, beneficiary calls <code>claim()</code>: <code>stepsClaimed = 5</code>, <code>amountClaimed = 500</code>. True<br>remaining entitlement = 500.</li>
+<li>Beneficiary lists 200 on the marketplace → <code>Marketplace.listVesting</code> → <code>VestingManager.listVesting</code><br>→ <code>StepVesting.transferVesting(seller, manager, 200)</code>. The require at line 224<br>(<code>totalAmount - amountClaimed &gt;= amount</code> → <code>1000-500=500 &gt;= 200</code>) passes. <code>totalAmount</code> becomes<br><code>800</code>. Line 230 sets <code>releaseRate = 800/10 = 80</code>. The <strong>correct</strong> value would be<br><code>(800-500)/(10-5) = 60</code>.</li>
+<li>At steps 6-9, <code>claim()</code> is called each step: non-final branch pays <code>releaseRate * 1 = 80</code> each<br>time (lines 184, no cap). After 4 such claims: <code>amountClaimed = 500 + 4*80 = 820</code>, exceeding<br><code>totalAmount = 800</code> by <strong>20 tokens</strong> — tokens drawn from <code>StepVesting</code>&#39;s shared ERC20 balance<br>that back the 200 tokens escrowed for the buyer via <code>VestingManager</code>.</li>
+<li>At step 10 (the final step), the reconciliation branch computes <code>totalAmount - amountClaimed = 800 - 820</code>, which underflows and reverts — but the 20-token surplus was already extracted in<br>step 3, and the beneficiary simply stops claiming before the revert.</li>
+</ol>
+<p>The magnitude scales with how much is listed relative to what&#39;s already been claimed — larger<br>listed fractions after partial claims produce proportionally larger drains, up to the point where<br>the shared pool cannot cover the last legitimate claimant&#39;s <code>safeTransfer</code>, causing a permanent DoS<br>for that party.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- grantorVesting.releaseRate = grantorVesting.totalAmount / numOfSteps;
++ grantorVesting.releaseRate = (numOfSteps - grantorVesting.stepsClaimed) == 0
++     ? 0
++     : (grantorVesting.totalAmount - grantorVesting.amountClaimed) / (numOfSteps - grantorVesting.stepsClaimed);
+</code></pre>
+<p>As defense-in-depth, also cap the non-final branch of <code>claimable()</code>:</p>
+<pre><code class="language-diff">- claimableAmount = vesting.releaseRate * claimableSteps;
++ claimableAmount = Math.min(vesting.releaseRate * claimableSteps, vesting.totalAmount - vesting.amountClaimed);
+</code></pre>
+<hr>
+<p>[80] <strong>2. Private-listing whitelist is permissionless self-enrollment — defeats the access gate and enables slot-exhaustion griefing</strong></p>
+<p><code>SecondSwap_Whitelist.whitelistAddress()</code> · corroborated by 3 Phase-1 domains (general-2,<br>access-control-2, dos-4) and 3 independent Phase-2 agents (access-control, execution-trace,<br>periphery) · Confidence: 88</p>
+<p><strong>Description</strong></p>
+<p><code>contracts/SecondSwap_Whitelist.sol:57-64</code>:</p>
+<pre><code class="language-solidity">function whitelistAddress() external {
+    require(totalWhitelist &lt; maxWhitelist, &quot;SS_Whitelist: Reached whitelist limit&quot;);
+    require(userSettings[msg.sender] == false, &quot;SS_Whitelist: User is whitelisted&quot;);
+    userSettings[msg.sender] = true;
+    totalWhitelist++;
+    emit WhitelistedAddress(totalWhitelist, msg.sender);
+}
+</code></pre>
+<p>Enrollment is fully permissionless — any address may self-enroll, bounded only by a headcount cap.<br><code>lotOwner</code> (the seller, <code>contracts/SecondSwap_Whitelist.sol:21,47-50</code>) has no function to add or<br>remove a <em>specific</em> address; <code>setMaxWhitelist</code> (line 83) can only raise the cap, never curate<br>membership. Since <code>listings[plan][id].whitelist</code> is public and <code>WhitelistCreated</code> is emitted<br>(<code>contracts/SecondSwap_Marketplace.sol:301-303</code>), the whitelist contract address is discoverable by<br>anyone. A &quot;private&quot; listing therefore restricts <em>headcount</em>, not <em>identity</em> — two consequences:<br>(a) any address can self-enroll and buy a listing meant for a curated counterparty; (b) an attacker<br>can fill every slot with throwaway addresses before the intended buyers act, permanently locking<br>them out (no un-enroll path exists).</p>
+<p><strong>Proof of Concept</strong></p>
+<p>Seller creates a private listing with <code>_maxWhitelist = 3</code>, intending to sell only to 3 named<br>partners off-chain. An unrelated address reads the <code>WhitelistCreated</code> event, calls<br><code>whitelistAddress()</code> on the deployed whitelist, and immediately calls <code>spotPurchase</code> — succeeding,<br>despite never being invited. Separately: an attacker enrolls 3 throwaway addresses first;<br><code>totalWhitelist == maxWhitelist</code>; the 3 intended partners&#39; own <code>whitelistAddress()</code> calls now revert<br>with &quot;Reached whitelist limit,&quot; and the seller&#39;s only recourse (<code>setMaxWhitelist</code>) merely invites<br>the attacker to refill the new slots.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- function whitelistAddress() external {
+-     require(totalWhitelist &lt; maxWhitelist, &quot;SS_Whitelist: Reached whitelist limit&quot;);
+-     require(userSettings[msg.sender] == false, &quot;SS_Whitelist: User is whitelisted&quot;);
+-     userSettings[msg.sender] = true;
+-     totalWhitelist++;
+-     emit WhitelistedAddress(totalWhitelist, msg.sender);
+- }
++ function addToWhitelist(address[] calldata users) external {
++     require(msg.sender == lotOwner, &quot;SS_Whitelist: not lot owner&quot;);
++     for (uint256 i = 0; i &lt; users.length; i++) {
++         require(totalWhitelist &lt; maxWhitelist, &quot;SS_Whitelist: Reached whitelist limit&quot;);
++         if (!userSettings[users[i]]) {
++             userSettings[users[i]] = true;
++             totalWhitelist++;
++             emit WhitelistedAddress(totalWhitelist, users[i]);
++         }
++     }
++ }
+</code></pre>
+<p>(Add a symmetric <code>removeFromWhitelist</code> if partial revocation is desired.)</p>
+<hr>
+<p>[78] <strong>3. <code>VestingManager.listVesting</code>&#39;s <code>maxSellPercent</code> anti-dump cap is bypassable via self-purchase (wash trade)</strong></p>
+<p><code>SecondSwap_VestingManager.listVesting()</code> / <code>SecondSwap_Marketplace.spotPurchase()</code> · found by 1<br>Phase-2 agent (trust-gap) as a FINDING, corroborated by a second (invariant) as an independently<br>raised LEAD (&quot;maxsellpercent-bypass-via-buyback&quot;) · not surfaced by any Phase-1 domain; verified<br>against source directly in this reconciliation pass · Confidence: 78</p>
+<p><strong>Description</strong></p>
+<p><code>_validatePurchase</code> (<code>contracts/SecondSwap_Marketplace.sol:387-404</code>) never checks that<br><code>msg.sender != listing.seller</code> — a seller can buy their own listing. <code>VestingManager.listVesting</code><br>(<code>contracts/SecondSwap_VestingManager.sol:121-140</code>) derives the sell ceiling from a mutable<br><code>currentAlloc = SecondSwap_Vesting(plan).total(seller)</code> combined with the mutable <code>sold</code>/<code>bought</code><br>counters:</p>
+<pre><code class="language-solidity">uint256 sellLimit = userAllocation.bought;
+uint256 currentAlloc = SecondSwap_Vesting(plan).total(seller);
+if (currentAlloc + userAllocation.sold &gt; userAllocation.bought) {
+    sellLimit += ((currentAlloc + userAllocation.sold - userAllocation.bought) * vestingSettings[plan].maxSellPercent) / BASE;
+}
+</code></pre>
+<p>When a seller buys back their own listing via <code>spotPurchase</code>, <code>completePurchase</code><br>(<code>contracts/SecondSwap_VestingManager.sol:161-164</code>) increments <code>allocations[buyer].bought</code> <strong>and</strong><br><code>StepVesting.transferVesting</code> restores the buyer&#39;s (=seller&#39;s) <code>total()</code> — i.e. <code>currentAlloc</code> is<br>restored to its pre-listing value while <code>bought</code> permanently increases by the same amount. The<br>term <code>(currentAlloc + sold - bought)</code> is invariant under a self-purchase cycle (the <code>+currentAlloc</code><br>and <code>+bought</code> changes cancel), so each round-trip grows the sell ceiling by another<br><code>maxSellPercent</code> slice of the <em>original</em> grant — at the cost of only the buyer/seller fee, paid to<br><code>feeCollector</code>. Repeating this cycle lets a seller convert their entire capped, &quot;original<br>allocation&quot; (default-capped at 20%) into fully resellable liquidity, defeating the documented<br>anti-dump invariant that <code>sold</code> may never exceed <code>bought + maxSellPercent% of the original grant</code>.</p>
+<p><strong>Proof of Concept</strong></p>
+<p>Grant = 1000, <code>maxSellPercent = 2000</code> (20% default), <code>bought = sold = 0</code>.</p>
+<ol>
+<li>List 200: <code>currentAlloc(1000)+sold(0) &gt; bought(0)</code> → <code>sellLimit = (1000+0-0)*2000/10000 = 200</code>;<br><code>sold: 0→200 ≤ 200</code> OK. <code>total(seller)</code> drops to 800 (StepVesting escrow transfer).</li>
+<li>Seller calls <code>spotPurchase</code> on their own listing (no guard prevents <code>buyer == seller</code>).<br><code>completePurchase</code>: <code>bought: 0→200</code>; <code>StepVesting.transferVesting(manager, seller, 200)</code> restores<br><code>total(seller)</code> 800→1000 (additive branch in <code>_createVesting</code>).</li>
+<li>List another 200: <code>currentAlloc(1000)+sold(200) &gt; bought(200)</code> → <code>sellLimit = 200 + (1000+200-200)*2000/10000 = 200+200 = 400</code>; <code>sold: 200→400 ≤ 400</code> OK.</li>
+<li>Repeat: each cycle raises the ceiling by another 200 (20% of the original 1000), converging<br>toward <code>sold = 1000</code> — the seller has fully liquidated a position the protocol intended to cap<br>at 20% at any given time, at the cost of only cumulative marketplace fees.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ require(msg.sender != listing.seller, &quot;SS_Marketplace: cannot purchase own listing&quot;);
+</code></pre>
+<p>in <code>_validatePurchase</code> (<code>contracts/SecondSwap_Marketplace.sol:387</code>). This closes the bypass because<br>it is specifically the same address acting as both the escrow-restoring buyer and the<br><code>bought</code>-crediting recipient that makes the <code>(currentAlloc + sold - bought)</code> term cancel.<br>Alternatively, derive the &quot;original grant&quot; slice from an immutable snapshot taken at grant time<br>rather than the mutable <code>total()</code>.</p>
+<hr>
+<p>[72] <strong>4. Referral reward is computed and emitted but never paid — fee silently retained by <code>feeCollector</code></strong></p>
+<p><code>SecondSwap_Marketplace._handleTransfers()</code> · corroborated by 1 Phase-1 domain (general-3) and 1<br>Phase-2 agent as a FINDING (economic-security) plus a second as a LEAD (execution-trace) ·<br>Confidence: 72</p>
+<p><strong>Description</strong></p>
+<p><code>contracts/SecondSwap_Marketplace.sol:478-491</code>:</p>
+<pre><code class="language-solidity">referralFeeCost = 0;
+if (_referral != address(0) &amp;&amp; listing.whitelist == address(0)) {
+    referralFeeCost = buyerFeeTotal - (baseAmount * bfee * IMarketplaceSetting(marketplaceSetting).referralFee()) / (BASE * BASE);
+}
+IERC20(listing.currency).safeTransfer(listing.seller, (baseAmount - sellerFeeTotal));
+uint256 feeCollectorTotal = (buyerFeeTotal + sellerFeeTotal);
+IERC20(listing.currency).safeTransfer(IMarketplaceSetting(marketplaceSetting).feeCollector(), feeCollectorTotal);
+</code></pre>
+<p><code>referralFeeCost</code> is computed and later emitted as <code>Purchased.referralReward</code><br>(<code>contracts/SecondSwap_Marketplace.sol:541-550</code>), but is never transferred to any address — the<br>full <code>buyerFeeTotal + sellerFeeTotal</code> unconditionally goes to <code>feeCollector</code> regardless of whether<br>a referral participated. <code>MarketplaceSetting.referralFeeCollector</code><br>(<code>contracts/SecondSwap_MarketplaceSetting.sol:69</code>) is declared but never assigned or read anywhere<br>in scope, confirming the payout wiring was never completed. A buyer who supplies <code>_referral</code><br>expecting the advertised discount/reward gets nothing on-chain, and any off-chain system trusting<br><code>Purchased.referralReward</code> will credit a payment that never happened.</p>
+<p><strong>Proof of Concept</strong></p>
+<p><code>baseAmount = 10000</code>, <code>buyerFee = sellerFee = 250</code> bps, <code>referralFee = 1000</code> bps.<br><code>buyerFeeTotal = sellerFeeTotal = 250</code>. <code>referralFeeCost = 250 - (10000*250*1000)/(10000*10000) = 250 - 25 = 225</code>. <code>feeCollector</code> receives <code>250+250 = 500</code> in full; the referral address receives<br><code>0</code>; the emitted <code>referralReward</code> is <code>225</code> — a value that was computed but never moved.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ if (referralFeeCost &gt; 0) {
++     IERC20(listing.currency).safeTransfer(_referral, referralFeeCost);
++     feeCollectorTotal -= referralFeeCost;
++ }
+</code></pre>
+<p>or remove the referral parameter/event field entirely if referral settlement is intentionally<br>off-chain.</p>
+<hr>
+<p>[68] <strong>5. Global <code>isFreeze</code> pause blocks the seller&#39;s <code>unlistVesting</code> exit path, stranding escrowed vesting</strong></p>
+<p><code>SecondSwap_Marketplace.unlistVesting()</code> · Phase 1 only (dos-1); re-examined directly against<br>source in this reconciliation pass (coverage-gate hole) · Confidence: 68</p>
+<p><strong>Description</strong></p>
+<p>Once a seller lists (<code>contracts/SecondSwap_Marketplace.sol:339</code> <code>unlistVesting</code> is the only way<br>back), their vesting balance has already moved out of their own <code>StepVesting</code> entry into<br><code>VestingManager</code>&#39;s escrow (<code>VestingManager.listVesting</code> → <code>StepVesting.transferVesting</code>). But<br><code>unlistVesting</code> is gated by the same <code>isFreeze</code> modifier<br>(<code>contracts/SecondSwap_Marketplace.sol:190-196, 339</code>) as <code>listVesting</code>/<code>spotPurchase</code>. Any one of<br>the three independent <code>s2Admin</code> values can call <code>MarketplaceSetting.setMarketplaceStatus(true)</code><br>(one-step, no timelock) and this simultaneously halts trading <em>and</em> removes the seller&#39;s only path<br>to recover their escrowed vesting — turning what looks like a trading pause into a lock on user<br>assets, for as long as the admin leaves the freeze active.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Seller lists 1,000 tokens; <code>VestingManager</code> now escrows 1,000 for that listing.</li>
+<li><code>s2Admin</code> calls <code>setMarketplaceStatus(true)</code>.</li>
+<li>Seller calls <code>unlistVesting</code> → reverts on <code>isFreeze</code> (&quot;Marketplace is currently frozen&quot;).</li>
+<li>The seller has no alternative recovery path; the 1,000 tokens remain locked in the manager&#39;s<br>escrow for as long as the freeze is active, entirely at the admin&#39;s discretion.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- function unlistVesting(address _vestingPlan, uint256 _listingId) external isFreeze {
++ function unlistVesting(address _vestingPlan, uint256 _listingId) external {
+</code></pre>
+<p>Remove the pause from the exit/withdraw path (or add a permissionless emergency-unlist that<br>functions while frozen), so a pause can halt new trading without also locking already-escrowed<br>user assets.</p>
+<hr>
+<p>[65] <strong>6. Arbitrary currency and vesting tokens are trusted as exact-accounting, non-blocking ERC20s — fee-on-transfer, rebasing, and blocklist tokens break accounting or DoS the market</strong></p>
+<p>Cluster: <code>SecondSwap_Marketplace.addCoin()</code>/<code>_handleTransfers()</code>/<code>unlistVesting()</code>,<br><code>SecondSwap_StepVesting._createVesting()</code>/<code>claim()</code> · corroborated across 4 Phase-1 domains<br>(general-4/5, erc20-1/2/3/4/7, dos-2/3/6/7) and 2 Phase-2 agents (economic-security, trust-gap) ·<br>Confidence: 65 (grouped — see sub-points for individual mechanisms)</p>
+<p><strong>Description</strong></p>
+<p><code>addCoin</code>&#39;s decimals/behavior vetting is fully commented out<br>(<code>contracts/SecondSwap_Marketplace.sol:208-217</code>), so any token an admin adds as <code>currency</code> is<br>trusted unconditionally; the vesting token is likewise arbitrary, chosen by the token owner at<br><code>VestingDeployer.deployVesting</code>. Neither leg tolerates non-standard ERC20 behavior:</p>
+<ul>
+<li><strong>Fee-on-transfer / rebasing vesting token</strong> (<code>contracts/SecondSwap_StepVesting.sol:307</code>,<br><code>_createVesting</code> books <code>_totalAmount</code> but pulls via <code>safeTransferFrom</code> with no balance-delta<br>check) — under-funds the contract relative to booked allocations; later claimants&#39;<br><code>safeTransfer</code> (line 201) reverts for insufficient balance (permanent claim DoS for the<br>shortfall).</li>
+<li><strong>Fee-on-transfer / blocklisting currency</strong> (<code>contracts/SecondSwap_Marketplace.sol:476-492</code>) —<br>the three sequential transfers (<code>baseAmount+buyerFeeTotal</code> in, <code>baseAmount-sellerFeeTotal</code> to<br>seller, <code>buyerFeeTotal+sellerFeeTotal</code> to <code>feeCollector</code>) assume exact receipt; a fee-on-transfer<br>currency makes the final leg revert (purchase DoS for that currency); a blocklisting currency<br>(USDT-style) DoSes purchase for any listing whose seller — or the single global <code>feeCollector</code> —<br>is blocklisted.</li>
+<li><strong>Zero-fee-transfer revert</strong> (<code>contracts/SecondSwap_Marketplace.sol:488-491</code>) — when both<br>buyer/seller fees are 0 (allowed, no lower bound), <code>safeTransfer(feeCollector, 0)</code> reverts on<br>tokens that revert on zero-value transfers.</li>
+<li><strong>Penalty-fee path</strong> (<code>contracts/SecondSwap_Marketplace.sol:349-360</code>) — the flat <code>usdt</code> penalty<br>transfer is independently exposed to the same blocklist/pause risk, blocking early unlist (bounded<br>impact: seller can wait out <code>minListingDuration</code> or ask admin).</li>
+<li><strong>Unguarded <code>decimals()</code> at purchase time</strong> (<code>contracts/SecondSwap_Marketplace.sol:465-468</code>) —<br><code>listVesting</code> gates vesting-token existence of <code>decimals()</code> via <code>doesFunctionExist</code><br>(line 264-274, a <code>staticcall</code>-based existence check whose return data is discarded), but<br><code>_handleTransfers</code> calls <code>.decimals()</code> directly with no such guard, so a token that later reverts<br>on <code>decimals()</code> bricks purchases of an already-created listing.</li>
+</ul>
+<p><strong>Proof of Concept</strong> (representative — fee-on-transfer currency)</p>
+<p>Admin adds a 1%-fee-on-transfer token via <code>addCoin</code>. Buyer approves and calls <code>spotPurchase</code>;<br><code>safeTransferFrom</code> at line 476 delivers <code>0.99 * (baseAmount+buyerFeeTotal)</code> to the marketplace; the<br>contract then attempts to pay out <code>baseAmount+buyerFeeTotal</code> split across the seller and<br><code>feeCollector</code> legs — the final <code>safeTransfer</code> reverts for insufficient balance, and every purchase<br>in that currency permanently fails.</p>
+<p><strong>Fix</strong></p>
+<p>Re-enable and extend the <code>addCoin</code> vetting (decimals bound, and ideally a standard-behavior<br>allowlist); measure actual received amounts via balance-before/after in both <code>_createVesting</code><br>(vesting token) and <code>_handleTransfers</code> (currency token) rather than trusting the requested amount;<br>guard the <code>feeCollectorTotal</code> transfer with <code>if (feeCollectorTotal &gt; 0)</code>; cache vesting-token<br>decimals at list time instead of re-reading at purchase time.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed<br>in one analysis pass, or where impact is confined to a privileged role acting against documented<br>intent (no unprivileged amplifier — rejected as a numbered finding per gate 3, but recorded as a<br>trust-assumption disclosure). Not scored.</em></p>
+<ul>
+<li><strong>Unrestricted <code>initialize()</code> / missing <code>_disableInitializers()</code></strong> — <code>Marketplace.initialize()</code><br>L180, <code>VestingManager.initialize()</code> L107, <code>VestingDeployer.initialize()</code> L77 — Code smells: no<br>caller-identity check, no constructor calling <code>_disableInitializers()</code>. This reconciliation<br>confirmed via the project&#39;s own <code>ignition/modules/DeployMarketplaceProxies.ts</code>,<br><code>DeployVestingManagerProxies.ts</code>, and <code>DeployVestingDeployerProxies.ts</code> that the intended<br>deployment is a <code>TransparentUpgradeableProxy</code> with <code>initData</code> passed to the proxy constructor —<br>i.e. atomic, non-front-runnable initialization — and that none of the three implementations<br>contain <code>delegatecall</code>/<code>selfdestruct</code>/upgrade logic, so a bare, directly-initialized<br>implementation carries no exploitable authority. Residual risk is limited to future deployments<br>that deviate from these scripts, or a future implementation version that adds upgrade logic<br>without also adding <code>_disableInitializers()</code>. Recommend adding the guard anyway as free<br>defense-in-depth.</li>
+<li><strong><code>tokenIssuer</code>/registered token owner can move any beneficiary&#39;s vesting via arbitrary<br><code>_grantor</code></strong> — <code>StepVesting.transferVesting()</code> L216-235, <code>VestingDeployer.transferVesting()</code><br>L218-231 — the authorized role can name any <code>_grantor</code>, including a buyer who purchased on the<br>marketplace, and move their unclaimed vesting to any <code>_beneficiary</code>. This requires a privileged<br>role (<code>tokenIssuer</code>/registered owner) acting outside documented intent, with no unprivileged<br>amplifier — rejected as a numbered finding per the stricter gate, but flagged as a centralization<br>power a buyer would not reasonably expect; recommend restricting <code>_grantor</code> to the caller&#39;s own<br>entry or documenting this explicitly as an accepted trust assumption.</li>
+<li><strong><code>s2Admin</code> can force-unlist any seller&#39;s active listing, penalty-free</strong> —<br><code>Marketplace.unlistVesting()</code> L342-345 — admin action by design (vesting is returned, not<br>stolen); no unprivileged amplifier named, so not a numbered finding, but an unbounded,<br>no-timelock admin override worth documenting.</li>
+<li><strong>Triple-redundant <code>s2Admin</code>, no timelock, missing zero-address checks on two of three<br><code>setAdmin</code>s</strong> — <code>VestingManager.setAdmin()</code> L212-214 (no zero-address, no same-address check at<br>all), <code>VestingDeployer.setAdmin()</code> L163-166 (same-address only, no zero-address check), contrast<br><code>MarketplaceSetting.setS2Admin()</code> L232-235 (both checks). A zero/typo&#39;d admin permanently bricks<br>all <code>onlyAdmin</code> functions on that contract. Recommend adding <code>require(_admin != address(0))</code> to<br>both, and consider a two-step transfer pattern given the one-step, no-timelock design across all<br>three admin roles.</li>
+<li><strong><code>setTokenOwner</code> is one-shot and irrevocable</strong> — <code>VestingDeployer.setTokenOwner()</code> L141-144 —<br>no way to correct or revoke a wrong owner→token binding once set; a compromised or mistaken<br>owner key can never be de-privileged by the admin. Also a NatSpec/code direction mismatch<br>(comment says token→owner, code maps owner→token).</li>
+<li><strong>Shared manager escrow entry desyncs <code>stepsClaimed</code> across sellers → buyers</strong> —<br><code>VestingManager.listVesting</code>/<code>completePurchase</code> → <code>StepVesting._createVesting</code> — all sellers of<br>one plan escrow into a single <code>_vestings[manager]</code> entry; its <code>stepsClaimed</code> is fixed by the<br><em>first</em> lister and never updated by later listers, so buyers inherit a <code>stepsClaimed</code> unrelated<br>to the seller they actually bought from. Multiple Phase-2 agents traced this and confirmed it<br>does <strong>not</strong> break the total-claim cap (timing/fairness distortion only, not fund loss) — hence a<br>lead, not a finding.</li>
+<li><strong><code>_createVesting</code> fresh-entry branch and <code>StepVesting</code> constructor lack zero-denominator<br>guards present elsewhere</strong> — <code>_createVesting()</code> L292 has no guard on <code>numOfSteps - _stepsClaimed == 0</code> (the additive branch at L297 does); <code>stepDuration = (endTime-startTime) / numOfSteps</code> (constructor L133) can truncate to 0 if <code>numOfSteps &gt; (endTime-startTime)</code> with no<br>validation in <code>deployVesting</code>, bricking every <code>claimable()</code> call for that plan. Both are<br>configuration-triggered DoS paths, not currently reachable through an unprivileged attack in the<br>cases traced; recommend adding the missing guards and a <code>steps &lt;= endTime-startTime</code> check.</li>
+<li><strong>Discount/rounding edge cases</strong> — <code>_getDiscountedPrice()</code> L417-419 divides before multiplying<br>in the LINEAR branch (silently zeroing small-buy discounts) and <code>listVesting</code> never bounds<br><code>_discountPct &lt;= BASE</code> (a <code>FIX</code> listing with <code>discountPct &gt; 10000</code> reverts every purchase,<br>self-DoS only); <code>baseAmount</code>/fee division rounds down with no lower-bound enforcement, so very<br>small purchases can round trade fees to zero. All self-limiting or dust-scale; recommend<br><code>require(_discountPct &lt;= BASE)</code> and <code>Math.ceilDiv</code> for fee rounding as hardening.</li>
+<li><strong>No reentrancy guard; currency transfers precede <code>listing.balance</code>/<code>status</code> update in<br><code>spotPurchase</code></strong> — <code>_handleTransfers()</code> L476-492 vs <code>spotPurchase()</code> L530-531 — every Phase-2<br>agent that traced this confirmed Solidity 0.8&#39;s checked arithmetic on the balance decrement<br>currently blocks a net-profitable reentrant drain via a hook-bearing (ERC777-style) currency; the<br>ordering is nonetheless fragile and should not be relied upon. Recommend an explicit<br><code>nonReentrant</code> guard and CEI-ordering the state update before external calls.</li>
+<li><strong>Unbounded batch loops</strong> — <code>StepVesting.createVestings()</code> L260-267,<br><code>VestingDeployer.createVestings()</code> L193-206 (redundant second loop purely for events) — caller<br>self-DoS on an oversized array (trusted-caller-only, mitigable by chunking).</li>
+<li><strong>Informational</strong> — <code>WhitelistDeployer.deployWhitelist()</code> is fully permissionless but inert<br>unless referenced by a real listing; <code>hardhat/console.sol</code> imported in production contracts;<br>unused <code>Ownable</code> imports in <code>VestingManager</code>/<code>Whitelist</code>; <code>referralFeeCollector</code><br>(<code>MarketplaceSetting</code> L69) declared, never assigned or read.</li>
+</ul>
+<hr>
+<h2 id="coverage-gate">Coverage Gate</h2>
+<ul>
+<li><strong>Entrypoints:</strong> 42 external/public state-changing functions across the 7 contracts (per the<br>Phase-0 access-control inventory); all 22 addressed by at least one finding, lead, or an explicit<br>&quot;examined, no issue&quot; note above (e.g. <code>isFreeze</code> correctly gates all three trading entrypoints<br>with no bypass path found; <code>VestingManager.listVesting</code>&#39;s core <code>sold/bought/maxSellPercent</code><br>algebra holds under ordinary partial-buy/unlist/re-list sequences and is only broken by the<br>named self-purchase path in F3).</li>
+<li><strong>Threat-catalog rows:</strong> 9 rows in the Phase-0 catalog; 7 map to a numbered finding, 2 map to<br>documented centralization risks in Leads (tokenIssuer arbitrary-grantor power, admin<br>force-unlist) with no unprivileged amplifier found.</li>
+<li><strong>Holes closed this pass:</strong> 1 — <code>isFreeze</code> blocking <code>unlistVesting</code> (F5) was raised only by<br>Phase 1 and not examined by any Phase-2 agent; re-read directly against source during<br>reconciliation and confirmed as a genuine, distinct finding.</li>
+<li><strong>Completeness:</strong> every unique (Contract, function) pairing raised as a finding or lead in either<br>phase&#39;s raw output survives into this report, either as a numbered finding or under Leads.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated three-phase audit (context-building, ethskills<br>breadth checklist agents, pashov-methodology attacker-mindset agents, hybrid reconciliation). AI<br>analysis can never verify the complete absence of vulnerabilities and no guarantee of security is<br>given. A follow-up human review, and/or a bug bounty program, is recommended before mainnet<br>deployment given Finding 1&#39;s severity.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiak4mfrv72gycqgvezoj4zonqmfzfpjdfn5yth6bry4qhiw66fr24.ipfs.community.bgipfs.com/"><code>https://bafkreiak4mfrv72gycqgvezoj4zonqmfzfpjdfn5yth6bry4qhiw66fr24.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/385">#385</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

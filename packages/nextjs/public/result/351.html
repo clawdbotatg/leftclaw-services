@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VKPSessionKeyManager — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #351">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VKPSessionKeyManager</h1>
+    <p class="job-sub">Job #351 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/351"><b>Job page</b> #351</a>
+      <a class="chip" href="https://bafkreibbfp6yqo3ofd2bax7aarg44nudnnfvgfrczk4scfiikqvurfdiwu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#methodology-note-source-code-unavailable">⚠️ Methodology note — source code unavailable</a></li>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#1-iscontractallowed-scope-check-logic-is-inverted-confirmed-live">[1] isContractAllowed() scope-check logic is inverted — confirmed live on-chain</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#2-session-usagespend-recording-function-has-no-calleraccess-cont">[2] Session-usage/spend-recording function has no caller/access-control check</a></li>
+      <li><a href="#3-positive-findings-correctly-implemented-controls">[3] Positive findings — correctly implemented controls</a></li>
+      <li><a href="#caveats-and-recommendations-for-follow-up">Caveats and Recommendations for Follow-up</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — VKPSessionKeyManager</h1>
+<p><strong>Target:</strong> <a href="https://basescan.org/address/0x18622Fd3DF3269Ef3cf53cF374eB011A36DC4Be5"><code>0x18622Fd3DF3269Ef3cf53cF374eB011A36DC4Be5</code></a> (Base, chain 8453)<br><strong>Client focus areas:</strong> session-key expiry enforcement, scope leakage across sessions, and revocation</p>
+<h2 id="methodology-note-source-code-unavailable">⚠️ Methodology note — source code unavailable</h2>
+<p>This contract&#39;s source is <strong>not verified</strong> on Sourcify (checked directly, no match) or on BaseScan (the BaseScan explorer page shows only raw bytecode with a generic &quot;Similar Contracts&quot; search link — no verified source was found; this environment has no Etherscan/BaseScan API key to query the authenticated v2 API as a second check).</p>
+<p>Given no source, this audit was performed via <strong>bytecode-level reverse engineering</strong>, cross-validated with <strong>live empirical testing</strong> against the actual deployed contract on Base mainnet (read-only <code>eth_call</code> simulations — no state was changed and no transactions were sent):</p>
+<ol>
+<li>Recovered all 15 function selectors from the runtime bytecode&#39;s dispatcher and resolved most of their names via the public 4byte/OpenChain signature databases.</li>
+<li>Used <code>evmole</code> (bytecode static-analysis library) to recover argument types, state mutability, and storage layout (which functions read/write which storage slots).</li>
+<li>Manually disassembled and traced the security-critical functions (<code>createSession</code>, the session-usage/enforcement function, <code>revokeSession</code>, <code>revokeAllSessions</code>) instruction-by-instruction to reconstruct their logic.</li>
+<li><strong>Empirically confirmed the central finding below by directly calling the live contract&#39;s public view functions</strong> with <code>cast call</code> against real, existing on-chain sessions (session IDs 0 and 1) — this is not a static-analysis guess, it is a reproducible, observed result from the deployed contract.</li>
+</ol>
+<p>Confidence is noted per-finding. Findings 1 and 3 are empirically confirmed against live state. Findings 2 relies on bytecode absence-of-opcode evidence (strong but not source-verified). A source-level review is recommended to close out any residual uncertainty, particularly around the unnamed helper/getter functions not covered in depth below.</p>
+<p><strong>Reconstructed model:</strong> <code>Session</code> struct (7 words per session, keyed by <code>sessionId</code> in a mapping at storage slot 1): <code>[0] owner</code> (address, presumably the identity-registry-resolved principal), <code>[1] agent</code> (address, the delegate permitted to act under the session), <code>[2] perTx/budget cap</code>, <code>[3] total budget cap</code>, <code>[4] cumulative spent</code>, <code>[5] expiresAt</code>, <code>[6] createdAt</code>, <code>[7] packed flags</code> — byte0 = <code>revoked</code> (0=active,1=revoked), byte1 = <code>hasAllowlistRestriction</code> (1 if a non-empty <code>allowedContracts[]</code> was passed to <code>createSession</code>). A second mapping at slot 2 (<code>mapping(uint256 =&gt; mapping(address =&gt; bool))</code>) records, per session, which target contracts were explicitly allowlisted.</p>
+<hr>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>High</strong></td>
+<td><code>isContractAllowed()</code> scope-check logic is inverted — restricted sessions allow ANY target; unrestricted sessions allow NONE — empirically confirmed live</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>High</strong></td>
+<td>Session-usage/spend-recording function has no caller/access-control check</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Info (positive finding)</td>
+<td>Expiry, revocation, and session-owner checks are correctly implemented where tested</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="1-iscontractallowed-scope-check-logic-is-inverted-confirmed-live">[1] <code>isContractAllowed()</code> scope-check logic is inverted — confirmed live on-chain</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: Empirically confirmed (reproducible <code>eth_call</code> results against the live deployed contract, not a static-analysis inference)<br><strong>Location</strong>: <code>isContractAllowed(uint256,address)</code> (selector <code>0x56e99872</code>) and the identical inline logic embedded in the session-usage/enforcement function (selector <code>0xe3bff41d</code>)</p>
+<p><strong>Description</strong>: The contract packs a boolean into byte1 of each session&#39;s flags word recording whether a non-empty <code>allowedContracts</code> array was supplied at <code>createSession()</code> time (&quot;has restriction&quot; = 1). Tracing the bytecode shows the scope-check branches on this flag <strong>backwards</strong>:</p>
+<ul>
+<li>If the flag is <strong>1</strong> (a restriction <em>was</em> specified) → the code <strong>skips the per-contract allowlist mapping lookup entirely</strong> and treats every target as allowed.</li>
+<li>If the flag is <strong>0</strong> (no restriction was specified, i.e., the array was empty at creation — the natural way to express &quot;no restriction&quot;) → the code <strong>falls through to the allowlist mapping check</strong>, which is empty for that session, so every target is rejected.</li>
+</ul>
+<p>This means: a session created <em>with</em> a specific set of allowed contracts imposes <strong>no restriction at all</strong> (can call anything), while a session created <em>without</em> any restriction becomes <strong>completely unusable</strong> (can call nothing). This is a complete inversion of the intended access-scoping semantics.</p>
+<p><strong>Proof — live on-chain, read-only, reproducible right now</strong>:</p>
+<pre><code>$ cast call 0x18622Fd3DF3269Ef3cf53cF374eB011A36DC4Be5 \
+    &quot;isContractAllowed(uint256,address)(bool)&quot; 0 0x0000000000000000000000000000000000000000000000000000000000dead \
+    --rpc-url &lt;base-rpc&gt;
+true
+
+$ cast call ... &quot;isContractAllowed(uint256,address)(bool)&quot; 0 0x0000000000000000000000000000000000001111 --rpc-url &lt;base-rpc&gt;
+true
+
+$ cast call ... &quot;isContractAllowed(uint256,address)(bool)&quot; 0 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 --rpc-url &lt;base-rpc&gt;   # Base USDC
+true
+</code></pre>
+<p>Session <code>0</code> is a real, existing session (created by <code>0xA054f831B562e729F8D268291EBde1B2EDcFb84F</code>, agent <code>0x98313f37Dd0eB670265C2Ddae279C1b19759c61d</code>) with its &quot;hasAllowlistRestriction&quot; byte confirmed set to <code>1</code> via direct storage read (<code>base+7 = 0x0100</code>). None of the three addresses above — an unused placeholder, a trivial test address, and Base&#39;s canonical USDC contract — were plausibly whitelisted for this session at creation, yet all three report as &quot;allowed.&quot; As a negative control, a session ID that was <strong>never created</strong> (<code>999999</code>, flags word = 0, i.e. the &quot;no restriction&quot; default) correctly returns <code>false</code>:</p>
+<pre><code>$ cast call ... &quot;isContractAllowed(uint256,address)(bool)&quot; 999999 0x0000000000000000000000000000000000001111 --rpc-url &lt;base-rpc&gt;
+false
+</code></pre>
+<p>This confirms the branch direction precisely: restriction-flag=1 → always <code>true</code>; restriction-flag=0 → always <code>false</code>. The underlying per-contract mapping (recoverable via the raw getter at selector <code>0x1c6014d5</code>, which correctly returns <code>false</code> for these same unwhitelisted addresses) shows the <em>intended</em> data is present and correct — only the enforcement wrapper&#39;s branch condition is backwards.</p>
+<p><strong>Impact</strong>: Any session created with an allowlist — the exact feature meant to scope what an agent can do with a session key — imposes no real restriction. Any code (in this contract or in other Vaultfire contracts that may consult <code>isContractAllowed</code>/the equivalent inline check to gate real fund movement) that relies on this function for scope enforcement is trusting a check that always passes for restricted sessions. This directly matches, and confirms, the client&#39;s &quot;scope leakage across sessions&quot; concern. Severity is rated High rather than Critical because this contract itself does not appear to hold or move funds directly (all 15 functions reject <code>msg.value != 0</code>, and no <code>CALL</code>/<code>STATICCALL</code>/<code>DELEGATECALL</code> opcode exists in the enforcement function) — actual fund-loss impact depends on whether other Vaultfire contracts trust this scope check to gate real value transfers, which is outside this job&#39;s scope to confirm.</p>
+<p><strong>Recommendation</strong>: Invert the branch condition — when <code>hasAllowlistRestriction</code> is true, check the per-contract mapping (<code>allowedContracts[sessionId][target]</code>) and reject if not present; when false, allow (or explicitly define &quot;no array at creation&quot; as &quot;reject all,&quot; if that is actually the intended semantics — but then the flag&#39;s purpose and the function name <code>isContractAllowed</code> should be revisited, since the current behavior for the &quot;no restriction&quot; case makes every such session permanently unusable for any target, which does not look intentional either). Add a regression test asserting: <code>createSession(..., allowedContracts=[X])</code> then <code>isContractAllowed(id, X) == true</code> and <code>isContractAllowed(id, Y) == false</code> for <code>Y != X</code>.</p>
+<hr>
+<h2 id="2-session-usagespend-recording-function-has-no-calleraccess-cont">[2] Session-usage/spend-recording function has no caller/access-control check</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: Strong bytecode evidence (no <code>CALLER</code> opcode anywhere in the function body); not independently confirmed against a live non-expired session since creating a fresh test session requires passing an external identity-registry gate this audit could not satisfy without real registered credentials — see caveat below.<br><strong>Location</strong>: selector <code>0xe3bff41d(uint256 sessionId, address target, uint256 amount)</code></p>
+<p><strong>Description</strong>: This function is the core session-key enforcement path — it checks the session isn&#39;t expired (<code>block.timestamp &lt;= expiresAt</code>), isn&#39;t revoked, that <code>amount</code> is within the session&#39;s remaining budget, and (per Finding 1) the target-allowlist check — then records the spend (cumulative-spent counter, checked-add, no overflow) and emits an event. <strong>No <code>CALLER</code> opcode appears anywhere in this function&#39;s bytecode</strong> — unlike <code>revokeSession</code>, which explicitly loads <code>CALLER</code> and compares it against the session&#39;s owner field (reverting with a custom error resolvable via public signature databases as <code>NotSessionOwner()</code> — confirmed live: calling <code>revokeSession(0)</code> from an unrelated address reverts with exactly this error). The usage/spend function has no equivalent check restricting it to the session&#39;s <code>agent</code> (or <code>owner</code>).</p>
+<p><strong>Attempted live confirmation</strong>: Calling this function against a real existing session (<code>sessionId=0</code>) from an arbitrary, unrelated address correctly reached the function&#39;s <em>first</em> internal check (reverting with the &quot;SessionExpired&quot; custom error, since that session&#39;s <code>expiresAt</code> — 2026-04-21 — has already passed relative to the current date) rather than being rejected earlier for lacking a caller relationship to the session. This is consistent with — though does not by itself fully prove, since the session being expired short-circuited before any later checks — the absence of a caller check.</p>
+<p><strong>Impact</strong>: If genuinely unrestricted, any third-party address could call this function against any session ID, consuming/recording spend against that session&#39;s budget cap for an unrestricted or (per Finding 1) effectively-unrestricted target, exhausting the legitimate agent&#39;s remaining allowance before they use it — a griefing/DoS vector against the session&#39;s intended usage. If any other Vaultfire contract trusts this contract&#39;s cumulative-spent/budget bookkeeping as a gate before releasing real funds elsewhere, a third party could pre-exhaust that gate for a victim&#39;s session.</p>
+<p><strong>Recommendation</strong>: Add an explicit <code>require(msg.sender == session.agent || msg.sender == session.owner)</code> (or equivalent) check to this function, mirroring the ownership check already present in <code>revokeSession</code>. Recommend the client (or a follow-up source-level review) confirm whether this omission is intentional (e.g., if this function is meant to be called only by a trusted, separately-access-controlled executor contract not evident from this contract&#39;s bytecode alone) — if so, an explicit caller allowlist (e.g., <code>onlyExecutor</code>) should still be added rather than relying on obscurity/expectation.</p>
+<hr>
+<h2 id="3-positive-findings-correctly-implemented-controls">[3] Positive findings — correctly implemented controls</h2>
+<p><strong>Severity</strong>: <span class="pill info">Info</span></p>
+<p>The following client-requested focus areas were checked and found to be correctly implemented, based on bytecode tracing and (where noted) live confirmation:</p>
+<ul>
+<li><strong>Expiry enforcement</strong>: the usage function correctly reverts (<code>SessionExpired</code>-equivalent custom error) when <code>block.timestamp &gt; expiresAt</code>, checked before any state mutation.</li>
+<li><strong>Revocation enforcement</strong>: <code>revokeSession</code>/<code>revokeAllSessions</code> correctly set a <code>revoked</code> bit on the session&#39;s flags word, and the usage function correctly checks and reverts on it. <strong>Confirmed live</strong>: <code>revokeAllSessions</code> was actually exercised on-chain (session <code>1</code> shows <code>revoked=1</code> in its flags word, matching a <code>SessionRevoked</code>-style event observed in this contract&#39;s transaction history).</li>
+<li><strong>Revocation ownership check</strong>: <code>revokeSession</code> correctly restricts revocation to the session&#39;s recorded owner. <strong>Confirmed live</strong>: calling <code>revokeSession(0)</code> from an unrelated address reverts with a custom error resolving (via public signature databases) to <code>NotSessionOwner()</code>.</li>
+<li><strong>Session creation is gated through an external identity registry</strong>: <code>createSession</code> makes a <code>STATICCALL</code> to a separate, real deployed contract (<code>identityRegistry()</code>, <code>0xa7BD20bf5De63df949cA5Be2F20835978eCba81A</code>) passing <code>(msg.sender, providedPrincipalAddress)</code>, and reverts if the call fails or returns a zero/invalid result — consistent with requiring the caller to be a registered agent for the specified principal before a session can be created on their behalf. This audit did not have credentials to exercise <code>createSession</code> live and did not review the identity registry&#39;s own logic (out of scope for this job).</li>
+<li><strong>Arithmetic safety</strong>: <code>expiresAt</code> computation and the cumulative-spent accumulator both route through a checked-addition helper (reverts with <code>Panic(0x11)</code> on overflow) rather than raw <code>ADD</code>.</li>
+</ul>
+<hr>
+<h2 id="caveats-and-recommendations-for-follow-up">Caveats and Recommendations for Follow-up</h2>
+<ul>
+<li><strong>This audit is bytecode-derived; a source-level review is strongly recommended</strong> to confirm Finding 2 with certainty and to review the several simple getter functions not analyzed in depth here (selectors <code>0xdc428ba0</code>, <code>0xb93df70b</code>, <code>0x7dcac3b1</code>, <code>0x1148eaae</code>, <code>0xffefdf3b</code> — all <code>view</code> functions per static analysis, low a priori risk, but not manually traced to the same depth as the state-changing functions above).</li>
+<li><strong>Finding 1 should be treated as urgent</strong>: it is empirically confirmed against the live deployed contract right now, with no special access required to reproduce.</li>
+<li>If other Vaultfire contracts (several of which are in this audit queue) consult this contract&#39;s <code>isContractAllowed</code> or session-validity state to gate real fund movement, those integrations should be re-checked in light of Finding 1 — a session presented as &quot;scope-restricted&quot; to a downstream consumer is not actually restricted.</li>
+</ul>
+<blockquote>
+<p>⚠️ This review was performed autonomously without access to verified source code. Findings 1 and 3 are empirically verified against live on-chain state; Finding 2 is based on bytecode static analysis with partial live corroboration. No guarantee of completeness is given — a source-level audit is recommended before this contract is trusted to gate additional value or integrations.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibbfp6yqo3ofd2bax7aarg44nudnnfvgfrczk4scfiikqvurfdiwu.ipfs.community.bgipfs.com/"><code>https://bafkreibbfp6yqo3ofd2bax7aarg44nudnnfvgfrczk4scfiikqvurfdiwu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/351">#351</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

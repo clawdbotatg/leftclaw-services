@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeagueFiEscrow.sol — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #327">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">LeagueFiEscrow.sol</h1>
+    <p class="job-sub">Job #327 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/327"><b>Job page</b> #327</a>
+      <a class="chip" href="https://bafkreidowamc53gafv3fbenacgnps2w7urfqk5srxziqfku7v5g7revame.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">4</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">6</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">7</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#informational">Informational</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#severity-totals">Severity Totals</a></li>
+      <li><a href="#methodology-note">Methodology Note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — LeagueFiEscrow.sol</h1>
+<p><strong>Client engagement</strong>: leftclaw.services job #327<br><strong>Target</strong>: <code>LeagueFiEscrow.sol</code> — per-league USDC escrow for TopPot FPL mini-leagues, Base mainnet<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (7 ethskills domain checklists, model=sonnet) → Phase 2 depth (12 pashov attacker-mindset agents, blind to phase 1, model=sonnet) → hybrid reconciliation<br><strong>Scope</strong>: single file, ~350 in-scope LOC (small scope)</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Completeness</strong>: 25 unique (Contract, function, bug-class) findings across both phases, all 25 covered below.</p>
+<p><strong>Overlap</strong>: 14 findings independently corroborated by both phases · Phase-1-only: 10 · Phase-2-only: 1 · Re-examined phase-unique leads kept: 11, demoted: 0.</p>
+<p>Convergence was unusually strong for a single-file, single-contract target: 3 of the 4 High-severity findings and the top Medium finding were each independently rediscovered by 4–9 of the 19 total agents across both phases (7 phase-1 checklist agents + 12 phase-2 attacker agents), from entirely different analytical angles (checklist walkthrough vs. adversarial/Socratic reasoning). This is treated as strong corroboration, not redundant noise.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="c-1-creatorfallbacksettle-lets-the-creator-unilaterally-redirect">[C-1] <code>creatorFallbackSettle()</code> lets the creator unilaterally redirect the entire prize pool to arbitrary addresses</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: access-control, general · phase2: math-precision agent (FINDING), trust-gap-hunter agent (FINDING), first-principles + flow-gap-hunter (leads)<br><strong>Location</strong>: <code>creatorFallbackSettle()</code> L352-361, <code>_settle()</code> L419-452</p>
+<p><strong>Description</strong>: Once 30 days pass after <code>seasonDeadline</code>, <code>creatorFallbackSettle()</code> requires only <code>onlyCreator</code> — no oracle involvement, no verification the oracle actually failed to respond, and <code>_settle()</code> never checks that <code>winners[i]</code> are members of <code>players[]</code>. The 30-day gate is purely time-based and every deployed league is guaranteed to eventually satisfy it. A creator can simply withhold cooperation on <code>settle()</code>, wait 30 days, and name themselves (or anyone) as 100%-bps &quot;winner,&quot; draining every player&#39;s deposit — with no oracle involvement and no requirement that the payout bear any relation to actual season results. This directly contradicts the contract&#39;s own documented invariant: <em>&quot;Neither party can redirect funds without the other&#39;s agreement.&quot;</em> The missing winner-membership check is a genuine access gap in the fallback mechanism&#39;s design, not merely expected admin-trust behavior — the documented intent is &quot;creator settles real results alone if oracle is unreachable,&quot; not &quot;creator pays themselves the entire pool regardless of results.&quot;</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Paid pot, 100 players deposit $25 USDC each → <code>prizePool = 2,500,000,000</code> ($2,500).</li>
+<li>Season ends. Oracle signs the correct standings and makes the signature available (per the documented flow), but the creator simply never submits <code>settle()</code>.</li>
+<li>At <code>seasonDeadline + 30 days + 1</code>, creator (satisfying <code>onlyCreator</code>/<code>onlyActive</code>) calls <code>creatorFallbackSettle(winners=[creator], bpsSplit=[10000])</code>.</li>
+<li>In <code>_settle()</code>: <code>total == 10000</code> passes the split check; the single winner (also the last winner) receives <code>remaining == pool</code> — the entire $2,500 goes to the creator, with zero oracle input and zero recourse for the 100 depositors.</li>
+</ol>
+<p><strong>Recommendation</strong>: Require <code>winners[i]</code> ∈ <code>players[]</code> (or, for free pots, restrict to the intended recipient set), and/or require the fallback payout to match a previously oracle-attested standings snapshot rather than an arbitrary creator-supplied list.</p>
+<hr>
+<h3 id="c-2-unconditional-payout-loops-in-refundall-and-settle-let-one-b">[C-2] Unconditional payout loops in <code>_refundAll()</code> and <code>_settle()</code> let one blocked recipient DoS every other recipient</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: erc20, dos (2 checklists) · phase2: economic-security, execution-trace, invariant, boundary, first-principles (5 FINDING agents) + math-precision, boundary (leads)<br><strong>Location</strong>: <code>_refundAll()</code> L454-474 (called by <code>cancelLeague()</code>), <code>_settle()</code> L439-451 (called by <code>settle()</code>/<code>creatorFallbackSettle()</code>)</p>
+<p><strong>Description</strong>: Both functions loop over recipients calling <code>usdc.safeTransfer</code> with no per-iteration isolation (no try/catch, no pull-payment fallback). USDC has an issuer-enforced blacklist (a real, precedented Circle/FiatToken capability for sanctioned or flagged addresses); a transfer to a blacklisted address reverts. A single blacklisted player or winner reverts the <em>entire</em> <code>cancelLeague()</code>/<code>settle()</code>/<code>creatorFallbackSettle()</code> transaction, blocking payout to every other, unrelated participant. This is most severe for <code>_refundAll()</code>: its recipient set (<code>players[]</code>) is deterministic and cannot be altered on retry, so <code>cancelLeague()</code> becomes <em>permanently</em> unusable once any depositor is blacklisted — the only recourse for the other honest players is waiting the full 180-day <code>emergencyWithdraw()</code> window (correctly pull-based and per-player-isolated, unaffected by this bug). The <code>_settle()</code> variant is marginally more recoverable since oracle+creator (or creator alone, via fallback) can in principle re-sign a corrected payload excluding the blacklisted winner — but that still requires off-chain coordination and blocks the original settlement attempt entirely.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Player deposits into a paid pot, is later added to USDC&#39;s blacklist (unrelated compliance/sanctions event).</li>
+<li>Creator calls <code>cancelLeague()</code>. <code>_refundAll()</code>&#39;s loop reaches the blacklisted player&#39;s <code>safeTransfer</code>, which reverts; the entire transaction — including the <code>status = Cancelled</code> write — rolls back.</li>
+<li>Every subsequent call to <code>cancelLeague()</code> reverts identically, since <code>players[]</code> cannot be modified once <code>Active</code>. All non-blacklisted players&#39; refunds are frozen for up to 180 days.</li>
+<li>The identical mechanism applies to <code>_settle()</code>: a blacklisted address anywhere in a signed <code>winners[]</code> list blocks payout to every other listed winner in that same call.</li>
+</ol>
+<p><strong>Recommendation</strong>: Convert both payout paths to a pull-based pattern (mirroring <code>emergencyWithdraw()</code>&#39;s isolation), e.g. credit a <code>pendingRefund</code>/<code>pendingClaim</code> mapping on transfer failure instead of reverting the batch:</p>
+<pre><code class="language-solidity">mapping(address =&gt; uint256) public pendingRefund;
+
+function _refundAll() internal {
+    uint256 fee = entryFee;
+    for (uint256 i = 0; i &lt; players.length; i++) {
+        address player = players[i];
+        if (hasDeposited[player]) {
+            hasDeposited[player] = false;
+            pendingRefund[player] += fee;
+            emit RefundIssued(player, fee);
+        }
+    }
+    uint256 seed = creatorSeed;
+    if (seed &gt; 0) {
+        creatorSeed = 0;
+        pendingRefund[creator] += seed;
+        emit SeedRefunded(creator, seed);
+    }
+    prizePool = 0;
+}
+
+function claimRefund() external nonReentrant {
+    uint256 amt = pendingRefund[msg.sender];
+    if (amt == 0) revert NothingToWithdraw();
+    pendingRefund[msg.sender] = 0;
+    usdc.safeTransfer(msg.sender, amt);
+}
+</code></pre>
+<p>Apply the equivalent pattern to <code>_settle()</code>&#39;s winner payout loop.</p>
+<hr>
+<h3 id="c-3-contracts-own-address-being-blacklisted-permanently-bricks-a">[C-3] Contract&#39;s own address being blacklisted permanently bricks all fund movement, with no rescue path</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — erc20 checklist. Re-examined in Turn 3 against source: confirmed — no owner role, no admin/rescue/sweep function exists anywhere in the contract.<br><strong>Location</strong>: whole contract — every fund-moving function (<code>deposit</code>, <code>withdraw</code>, <code>fundSeed</code>, <code>_settle</code>, <code>_refundAll</code>, <code>emergencyWithdraw</code>) transfers to/from <code>address(this)</code></p>
+<p><strong>Description</strong>: If the escrow contract&#39;s own address is ever added to USDC&#39;s issuer blacklist (precedented for contracts that receive tainted/sanctioned funds), every deposit and every payout path reverts — including <code>emergencyWithdraw()</code>, the contract&#39;s designed last resort. The contract has no <code>owner</code>, no admin role, and no rescue/sweep function of any kind. All funds held by the escrow at that point become permanently unrecoverable by any party.</p>
+<p><strong>Proof of Concept</strong>: League is funded normally with real USDC. Circle blacklists the escrow contract&#39;s address for any compliance reason. From that point, <code>deposit()</code>, <code>withdraw()</code>, <code>settle()</code>, <code>creatorFallbackSettle()</code>, <code>cancelLeague()</code>, and <code>emergencyWithdraw()</code> all revert permanently — there is no function in the contract that does not route a USDC transfer through <code>address(this)</code>.</p>
+<p><strong>Recommendation</strong>: This is a structural/architectural gap rather than a simple bug; document the risk explicitly. If desired, a heavily time-locked, multi-sig-gated emergency sweep function — usable only long after all normal and emergency windows have passed — would provide a last-resort recovery path without weakening the contract&#39;s day-to-day trust model.</p>
+<hr>
+<h3 id="c-4-free-pot-creatorseed-has-no-recovery-path-if-the-creators-ke">[C-4] Free-pot <code>creatorSeed</code> has no recovery path if the creator&#39;s key is lost — <code>emergencyWithdraw()</code> does not cover it</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: general, access-control (2 checklists) · phase2: access-control, execution-trace, invariant, asymmetry, numerical-gap-hunter (5 FINDING agents) + periphery, trust-gap-hunter (leads). The single most heavily corroborated finding in this audit (9 of 19 total agents across both phases).<br><strong>Location</strong>: <code>emergencyWithdraw()</code> L370-383, <code>deposit()</code> L194-206, <code>fundSeed()</code> L254-264</p>
+<p><strong>Description</strong>: For a free pot (<code>entryFee == 0</code>), <code>deposit()</code> always reverts, so <code>hasDeposited[player]</code> is never true for any address — the entire prize pool for a free pot is <code>creatorSeed</code>, funded solely via <code>fundSeed()</code>. <code>emergencyWithdraw()</code> is gated exclusively on <code>hasDeposited[msg.sender]</code> and never references <code>creatorSeed</code>. The only functions that can ever move <code>creatorSeed</code> (<code>cancelLeague()</code>, <code>settle()</code>, <code>creatorFallbackSettle()</code>) all require the creator&#39;s continued key access. If the creator&#39;s key is lost, destroyed, or abandoned — precisely the &quot;both parties disappeared&quot; scenario the contract&#39;s own NatSpec says <code>emergencyWithdraw()</code> protects against — the seeded prize is permanently stranded, even past the 180-day emergency window. This is third-party harm, not creator self-harm: the seed is a committed prize for the league&#39;s participants, not the creator&#39;s retained capital.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Creator deploys a free pot, calls <code>fundSeed(10,000_000000)</code> ($10,000 USDC), then <code>startLeague()</code>.</li>
+<li>Creator&#39;s key is lost/abandoned before settlement; the oracle backend is also offline.</li>
+<li>180+ days after <code>seasonDeadline</code>, any address calls <code>emergencyWithdraw()</code> — it reverts <code>NothingToWithdraw()</code> for every caller, since no free-pot participant ever has <code>hasDeposited == true</code>.</li>
+<li>The $10,000 has no remaining code path that can ever move it out of the contract.</li>
+</ol>
+<p><strong>Recommendation</strong>: Add a creator-seed-specific recovery path reachable after the emergency window without requiring the creator&#39;s signature:</p>
+<pre><code class="language-solidity">function emergencyRefundSeed() external nonReentrant {
+    if (status == Status.Completed || status == Status.Cancelled) revert AlreadySettled();
+    if (block.timestamp &lt; seasonDeadline + EMERGENCY_WINDOW) revert EmergencyWindowNotReached();
+    uint256 seed = creatorSeed;
+    if (seed == 0) revert NothingToWithdraw();
+    creatorSeed = 0;
+    prizePool -= seed;
+    usdc.safeTransfer(creator, seed);
+    emit SeedRefunded(creator, seed);
+}
+</code></pre>
+<hr>
+<h3 id="m-1-unbounded-seasondeadline-can-overflow-the-fallbackemergency-">[M-1] Unbounded <code>seasonDeadline</code> can overflow the fallback/emergency window checks, permanently disabling both safety valves</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: precision-math (finding with concrete overflow proof) · phase2: math-precision, economic-security (leads)<br><strong>Location</strong>: <code>creatorFallbackSettle()</code> L356, <code>emergencyWithdraw()</code> L373; root cause: constructor L161-186 (no validation of <code>_seasonDeadline</code>)</p>
+<p><strong>Description</strong>: <code>_seasonDeadline</code> is an unvalidated <code>uint256</code>. <code>seasonDeadline + CREATOR_FALLBACK_WINDOW</code> / <code>+ EMERGENCY_WINDOW</code> use Solidity 0.8 checked arithmetic. If <code>_seasonDeadline &gt; type(uint256).max - 180 days</code>, both additions revert unconditionally on every call, permanently disabling both fallback settlement and emergency withdrawal. Separately, a <code>_seasonDeadline</code> of <code>0</code> or a past timestamp collapses both windows to be immediately satisfiable, defeating the intended 30-day/180-day waiting periods entirely.</p>
+<p><strong>Proof of Concept</strong>: Deploy with <code>_seasonDeadline = type(uint256).max - 100</code>. Players deposit; league goes <code>Active</code>. If <code>settle()</code> never completes and the creator withholds <code>cancelLeague()</code>, both <code>creatorFallbackSettle()</code> and <code>emergencyWithdraw()</code> revert unconditionally on the overflowing addition — all funds permanently locked.</p>
+<p><strong>Recommendation</strong>: Validate <code>_seasonDeadline</code> against a sane bound in the constructor, e.g. <code>require(_seasonDeadline &gt; block.timestamp &amp;&amp; _seasonDeadline &lt;= block.timestamp + 3650 days)</code>.</p>
+<hr>
+<h3 id="m-2-oraclesigner-creator-is-not-prevented-collapsing-2-of-2-sett">[M-2] <code>oracleSigner == creator</code> is not prevented, collapsing 2-of-2 settlement into unilateral 1-of-1 control</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: general, access-control (2 checklists) · phase2: trust-gap-hunter, economic-security (leads)<br><strong>Location</strong>: constructor L161-186 (zero-address checks only)</p>
+<p><strong>Description</strong>: The constructor checks non-zero addresses but never <code>_oracleSigner != _creator</code>. If misconfigured to the same address/key (deployment-tooling bug or malicious deployment), one private key can produce both the raw EIP-712 oracle signature and the <code>personal_sign</code>-prefixed creator signature over the identical payload, satisfying <code>settle()</code> immediately with no 30-day wait and no independent oracle cooperation — silently defeating the documented 2-of-2 model.</p>
+<p><strong>Recommendation</strong>: Add <code>if (_oracleSigner == _creator) revert ZeroAddress();</code> in the constructor.</p>
+<hr>
+<h3 id="m-3-cancelleague-has-no-timing-restriction-creator-can-unilatera">[M-3] <code>cancelLeague()</code> has no timing restriction — creator can unilaterally override a known outcome; zero-cost prize rugpull for free pots</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: access-control · phase2: access-control (paid-pot override), trust-gap-hunter (free-pot rugpull variant) — 2 independent FINDING agents covering two distinct exploitation modes of the same root cause<br><strong>Location</strong>: <code>cancelLeague()</code> L290-297, <code>_refundAll()</code> L454-474</p>
+<p><strong>Description</strong>: <code>cancelLeague()</code> is callable at any time in <code>Open</code>/<code>Active</code>, with no gate tying it to &quot;before results are known.&quot; Two distinct harms follow from the same missing guard:</p>
+<ul>
+<li><strong>Paid pots</strong>: a creator who is also a depositor and would receive an unfavorable split under the agreed <code>bpsSplit</code> can withhold their <code>settle()</code> signature and call <code>cancelLeague()</code> instead — recovering their full stake while the actual winner(s) receive only a refund of their own entry fee, losing the profit they earned.</li>
+<li><strong>Free pots</strong>: <code>players[]</code> is always empty (free-pot participants never call <code>deposit()</code>), so <code>_refundAll()</code>&#39;s player loop is a no-op and cancellation is economically identical to &quot;creator reclaims the entire seeded prize on demand, forever, at zero cost&quot; — no oracle or player agreement required at any point.</li>
+</ul>
+<p><strong>Proof of Concept</strong> (paid pot): 4-person pot, $25 each, creator is a depositor. Season ends; oracle signs standings giving another player 100%. Creator refuses to co-sign <code>settle()</code> and calls <code>cancelLeague()</code> instead — every player, including the creator, gets back only their own $25; the actual winner never receives the $75 they earned.</p>
+<p><strong>Proof of Concept</strong> (free pot): Creator seeds $1,000 via <code>fundSeed()</code>, <code>startLeague()</code>s. Season ends, oracle attests a real winner off-chain. Creator, not wanting to pay out, calls <code>cancelLeague()</code> at any moment before <code>Completed</code> — the full $1,000 seed returns to the creator; the actual winner receives nothing.</p>
+<p><strong>Recommendation</strong>: Disallow <code>cancelLeague()</code> once <code>block.timestamp &gt;= seasonDeadline</code> (forcing <code>settle()</code>/<code>creatorFallbackSettle()</code> once the season has concluded), or require oracle cooperation/attestation for any post-deadline cancellation.</p>
+<hr>
+<h3 id="m-4-unbounded-maxentries-allows-players-to-grow-large-enough-to-">[M-4] Unbounded <code>maxEntries</code> allows <code>players[]</code> to grow large enough to gas-DoS <code>_refundAll()</code>/<code>cancelLeague()</code></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: dos · phase2: flow-gap-hunter (lead)<br><strong>Location</strong>: constructor L161-186 (<code>maxEntries</code> unvalidated), <code>_refundAll()</code> L454-474</p>
+<p><strong>Description</strong>: <code>maxEntries</code> has no upper-bound validation. <code>_refundAll()</code> iterates the entire <code>players</code> array with an external call + SSTOREs per element. A sufficiently large <code>players</code> array (via misconfiguration or Sybil deposits on a low-fee/L2 deployment) makes <code>cancelLeague()</code> exceed the block gas limit and revert unconditionally, with no recovery except the 180-day <code>emergencyWithdraw()</code>.</p>
+<p><strong>Recommendation</strong>: Cap <code>maxEntries</code> in the constructor to a value that keeps <code>_refundAll()</code>&#39;s worst-case gas well under the block gas limit; combine with the pull-based refund pattern from C-2 for full mitigation.</p>
+<hr>
+<h3 id="m-5-creators-eip-712-approval-signature-is-blind-signed-over-an-">[M-5] Creator&#39;s EIP-712 &quot;approval&quot; signature is blind-signed over an opaque digest</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: signatures · phase2: boundary (lead)<br><strong>Location</strong>: <code>settle()</code> L329-336, <code>_settlementDigest()</code> L406-417</p>
+<p><strong>Description</strong>: The contract&#39;s docs state the creator signature lets them &quot;review and approve the final standings.&quot; In practice <code>settle()</code> computes the digest on-chain and has the creator <code>personal_sign</code> the raw 32-byte hash — blind signing. The creator&#39;s wallet cannot display which winners/splits are being approved; all assurance depends on the frontend rendering correctly. A compromised or malicious frontend can request a signature over attacker-chosen winners while displaying correct-looking standings, defeating the documented independent-review property. (Requires attacker control of the signing pipeline — not third-party-triggerable on its own.)</p>
+<p><strong>Recommendation</strong>: Have the creator sign true EIP-712 typed data (<code>eth_signTypedData_v4</code>) directly against <code>DOMAIN_SEPARATOR</code>/<code>SETTLE_TYPEHASH</code> so wallets can render the struct fields for human review, instead of collapsing to an opaque <code>personal_sign</code> digest.</p>
+<hr>
+<h3 id="m-6-permissionless-startleague-allows-griefing-via-premature-or-">[M-6] Permissionless <code>startLeague()</code> allows griefing via premature or truncated lock</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> <em>(elevated from an initial Low assessment — see note)</em><br><strong>Origin</strong>: <code>[both]</code> — phase1: general, access-control (2 checklists, initially assessed Low) · phase2: <strong>6 of 12 attacker agents independently reported this as a direct FINDING</strong> (access-control, economic-security, execution-trace, periphery, first-principles, asymmetry) plus 3 more as leads — the most heavily corroborated Medium-tier issue in the audit.<br><strong>Location</strong>: <code>startLeague()</code> L277-284</p>
+<p><strong>Description</strong>: Any address can call <code>startLeague()</code> the moment a league is deployed and <code>Open</code>, with no minimum-participation or minimum-funding check, permanently closing further <code>deposit()</code>/<code>fundSeed()</code> calls. Two exploitation variants surfaced across phase 2&#39;s independent passes:</p>
+<ol>
+<li><strong>Paid pots</strong>: an attacker calls <code>startLeague()</code> before any player deposits (or after only a handful), permanently bricking the league at far below its intended size — the only recovery is <code>cancelLeague()</code> + full redeployment.</li>
+<li><strong>Free pots</strong>: an attacker watches for the creator&#39;s <em>first</em> <code>fundSeed()</code> call (the contract explicitly documents that <code>fundSeed()</code> &quot;may be called multiple times to top up the seed before lock&quot;) and immediately calls <code>startLeague()</code> before further top-ups land, permanently capping the prize below the creator&#39;s intended amount.</li>
+</ol>
+<p>Given this was independently rediscovered by half the phase-2 attacker fleet from distinct reasoning angles (access-control, economic incentive, execution trace, boundary conditions), this is reclassified from the initial phase-1 Low rating to Medium — it is a cheap (gas-only), reliably repeatable griefing vector against every league the platform deploys, not merely a theoretical edge case.</p>
+<p><strong>Proof of Concept</strong>: Creator deploys a paid pot (<code>entryFee = 25 USDC</code>, <code>maxEntries = 100</code>), intending to collect entries over several days. An unrelated address calls <code>startLeague()</code> in the very next block, before any <code>deposit()</code> lands. <code>players.length == 0</code>, <code>prizePool == 0</code>, <code>status == Active</code> — permanently; <code>deposit()</code> now reverts <code>NotOpen()</code> for everyone, forcing the creator to <code>cancelLeague()</code> (a no-op refund) and redeploy an entirely new escrow.</p>
+<p><strong>Recommendation</strong>: Restrict <code>startLeague()</code> to <code>onlyCreator</code> (or an authorized backend address), or require <code>players.length &gt; 0</code> (for paid pots) / a creator-configured minimum before allowing the <code>Open → Active</code> transition.</p>
+<hr>
+<h3 id="l-1-no-validation-of-winnersi-against-address0addressthis-in-set">[L-1] No validation of <code>winners[i]</code> against <code>address(0)</code>/<code>address(this)</code> in <code>_settle()</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — general checklist. Re-examined: confirmed, no such check exists at L448.<br><strong>Location</strong>: <code>_settle()</code> L448</p>
+<p><strong>Description</strong>: If an off-chain bug produces a zero address or the escrow&#39;s own address in <code>winners</code>, that share is either burned or trapped with no recovery function (the contract is already <code>Completed</code> by that point).</p>
+<p><strong>Recommendation</strong>: <code>if (winners[i] == address(0) || winners[i] == address(this)) revert ZeroAddress();</code></p>
+<hr>
+<h3 id="l-2-internal-accounting-trusts-nominal-transfer-amounts-instead-">[L-2] Internal accounting trusts nominal transfer amounts instead of measured balance deltas</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — erc20 checklist. Re-examined: confirmed at <code>deposit()</code> L199-203 and <code>fundSeed()</code> L258-261 — no balance-delta measurement.<br><strong>Location</strong>: <code>deposit()</code> L199-203, <code>fundSeed()</code> L258-261</p>
+<p><strong>Description</strong>: <code>prizePool</code>/<code>creatorSeed</code> are incremented by the requested amount, not a measured <code>balanceOf</code> delta. Not exploitable with genuine, fixed-at-deploy USDC (no transfer fee), but if <code>usdc</code> were ever misconfigured to a fee-on-transfer/deflationary token, accounting would overstate the real balance, eventually stranding some depositor&#39;s withdrawal/payout.</p>
+<p><strong>Recommendation</strong>: Low priority given <code>usdc</code> is immutable and expected to be canonical USDC; mitigated by hardening the constructor per L-6 below rather than changing the accounting pattern.</p>
+<hr>
+<h3 id="l-3-settle-struct-has-no-noncedeadline-signatures-remain-valid-i">[L-3] <code>Settle</code> struct has no nonce/deadline — signatures remain valid indefinitely while the league is Active</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — signatures checklist. Re-examined: confirmed no deadline/nonce field in <code>SETTLE_TYPEHASH</code>.<br><strong>Location</strong>: <code>SETTLE_TYPEHASH</code> L71-72, <code>_settlementDigest()</code> L406-417</p>
+<p><strong>Description</strong>: Once signed, a winners/split payload stays valid forever (until the league leaves <code>Active</code>). Payouts are computed from the <em>current</em> <code>prizePool</code>, not a value fixed at signing time — a stale-but-valid signature pair submitted after intervening <code>emergencyWithdraw()</code> calls would distribute a shrunken pool by the original split, producing outcomes neither signer intended at signing time.</p>
+<p><strong>Recommendation</strong>: Add a <code>deadline</code>/nonce field to the <code>Settle</code> struct and typehash; enforce it in <code>settle()</code>.</p>
+<hr>
+<h3 id="l-4-domainseparator-cached-as-immutable-at-deployment-no-fork-sa">[L-4] <code>DOMAIN_SEPARATOR</code> cached as immutable at deployment — no fork-safe recomputation</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: signatures · phase2: access-control (lead)<br><strong>Location</strong>: constructor L179-185</p>
+<p><strong>Description</strong>: Unlike OpenZeppelin&#39;s <code>EIP712._domainSeparatorV4()</code>, there is no fallback recomputation if <code>block.chainid</code> diverges from the cached value post-deployment (e.g. after a contentious hard fork). Not exploitable under current conditions; only relevant in a chain-split scenario.</p>
+<p><strong>Recommendation</strong>: Recompute the domain separator against live <code>block.chainid</code>, falling back to the cached value only when it matches.</p>
+<hr>
+<h3 id="l-5-winners-array-hashed-with-abiencodepacked-instead-of-spec-co">[L-5] <code>winners</code> array hashed with <code>abi.encodePacked</code> instead of spec-conformant EIP-712 array encoding</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: signatures · phase2: periphery (lead)<br><strong>Location</strong>: <code>_settlementDigest()</code> L413</p>
+<p><strong>Description</strong>: <code>keccak256(abi.encodePacked(winners))</code> packs each address as 20 raw bytes rather than the EIP-712-spec 32-byte-padded element encoding. Internally self-consistent (both signing paths replicate the same non-standard hash), but non-conformant with the declared <code>SETTLE_TYPEHASH</code>/<code>DOMAIN_SEPARATOR</code> — any tooling assuming standard EIP-712 semantics (native <code>eth_signTypedData_v4</code> UI, third-party verifiers) would compute a mismatched digest.</p>
+<p><strong>Recommendation</strong>: Encode <code>winners</code> per spec (each element individually padded to 32 bytes) if migrating to native typed-data signing.</p>
+<hr>
+<h3 id="l-6-no-erc-1271-support-a-smart-contract-wallet-creator-can-neve">[L-6] No ERC-1271 support — a smart-contract-wallet <code>creator</code> can never complete the primary <code>settle()</code> path</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — signatures checklist. Re-examined: confirmed, <code>_recoverSigner</code> only implements raw <code>ecrecover</code>.<br><strong>Location</strong>: <code>_recoverSigner()</code> L476-491, <code>settle()</code> L335</p>
+<p><strong>Description</strong>: If <code>creator</code> is a smart-contract wallet (Gnosis Safe, ERC-4337 account), it can never produce an <code>ecrecover</code>-verifiable signature, so <code>settle()</code> always reverts <code>BadCreatorSignature</code> — permanently forcing such leagues onto the 30-day-delayed <code>creatorFallbackSettle()</code> path (which inherits C-1&#39;s risk).</p>
+<p><strong>Recommendation</strong>: Add ERC-1271 <code>isValidSignature</code> support when <code>creator.code.length &gt; 0</code>.</p>
+<hr>
+<h3 id="l-7-no-upper-bound-on-winnerslength-relative-to-playerslength-in">[L-7] No upper bound on <code>winners.length</code> relative to <code>players.length</code> in <code>_settle()</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: dos · phase2: flow-gap-hunter (lead)<br><strong>Location</strong>: <code>_settle()</code> L419-452</p>
+<p><strong>Description</strong>: Nothing prevents an arbitrarily long signed <code>winners</code> array (bounded only by what oracle+creator agree to sign) from making the payout loop expensive enough to revert on gas. Requires collusion/compromise of both signers, so not third-party exploitable on its own, but no on-chain sanity check exists.</p>
+<p><strong>Recommendation</strong>: <code>if (winners.length &gt; players.length) revert InvalidWinners();</code></p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong>No validation that <code>_usdc</code> is the canonical Base USDC address</strong> <code>[phase1 only]</code> — deployment-tooling risk; no independent exploit path.</li>
+<li><strong>USDC issuer-controlled global pause halts every function, including <code>emergencyWithdraw()</code></strong> <code>[phase1 only]</code> — inherent to depending on a centralized, pausable stablecoin; not fixable on-chain.</li>
+<li><strong><code>nonReentrant</code> not the leftmost modifier</strong> on <code>cancelLeague()</code>/<code>settle()</code>/<code>creatorFallbackSettle()</code> <code>[phase1 only]</code> — harmless today (preceding modifiers only perform storage reads), latent footgun for future changes.</li>
+<li><strong><code>startLeague()</code> NatSpec contradicts the deposit-flow lifecycle</strong> <code>[phase1 only]</code> — the comment claims the backend calls it &quot;right after deploying,&quot; which would break the paid-pot deposit window if taken literally; likely a documentation error.</li>
+<li><strong><code>_recoverSigner()</code> always reverts <code>BadOracleSignature()</code></strong>, even when validating a malformed creator signature <code>[both]</code> — corroborated across 3 phase-1 checklists (assembly, signatures, access-control) and multiple phase-2 leads; misleading revert reason, no fund-safety impact.</li>
+<li><strong><code>ecrecover</code> return not explicitly checked against <code>address(0)</code></strong> in <code>_recoverSigner()</code> <code>[phase1 only]</code> — not exploitable; <code>oracleSigner</code>/<code>creator</code> are enforced non-zero and immutable at construction.</li>
+<li><strong>Signature malleability</strong> — <code>s</code> not restricted to the lower half of the curve order <code>[both]</code> — not exploitable; no signature-derived uniqueness/replay key is used anywhere in the contract.</li>
+<li><strong><code>emergencyWithdraw()</code> never removes the caller from <code>players[]</code></strong> <code>[phase2 only]</code> — <code>getPlayers()</code>/<code>playerCount()</code> over-report participants after an emergency exit; a view-consistency issue with no fund-safety impact, since <code>_refundAll()</code>/<code>_settle()</code> both gate on <code>hasDeposited</code>, not array membership.</li>
+<li><strong><code>prizePool</code> accounting is correctly decoupled from live <code>usdc.balanceOf()</code></strong> — checked specifically for force-transfer/self-destruct griefing; <strong>no issue found</strong>, noted for completeness.</li>
+</ul>
+<hr>
+<h2 id="severity-totals">Severity Totals</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill high">High</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>6</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>7</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>9 (incl. 1 explicitly-cleared item)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="methodology-note">Methodology Note</h2>
+<p>This report reconciles two independently-run analysis passes against the same source: a 7-agent breadth pass walking domain-specific checklists (general, precision-math, erc20, signatures, access-control, assembly, dos), and a 12-agent depth pass using adversarial/attacker-mindset reasoning, run blind to the first pass&#39;s output. The unusually high cross-pass and cross-agent corroboration on the top findings (C-1, C-2, C-4, M-6 were each independently rediscovered by 4 or more of the 19 total agents) is a strong signal these represent genuine, structurally-reachable issues rather than analytical artifacts — none were speculative &quot;the deployer probably wouldn&#39;t do X&quot; scenarios; each has a concrete, traced exploit path quoted against the actual source lines.</p>
+<blockquote>
+<p>⚠️ This review was performed by AI agents. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review and/or bug bounty program is recommended before mainnet deployment with material value at stake.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidowamc53gafv3fbenacgnps2w7urfqk5srxziqfku7v5g7revame.ipfs.community.bgipfs.com/"><code>https://bafkreidowamc53gafv3fbenacgnps2w7urfqk5srxziqfku7v5g7revame.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/327">#327</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

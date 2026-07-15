@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentDepositVault.sol — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #394">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">AgentDepositVault.sol</h1>
+    <p class="job-sub">Job #394 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/394"><b>Job page</b> #394</a>
+      <a class="chip" href="https://bafkreid5dg4fqc6c3fxaj6sdyphtmx5y2ga3aftjgzuwxkmuoyfadv42vq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#coverage-gate">Coverage Gate</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — AgentDepositVault.sol</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>AgentDepositVault.sol</code> — single contract, source supplied directly in the job request (no repo/on-chain address given)</td>
+</tr>
+<tr>
+<td><strong>SHA-256</strong></td>
+<td><code>cf06b8ee8ab4c0b885251c54278a449405cdb2951e7a5482c209232ffe3646d3</code></td>
+</tr>
+<tr>
+<td><strong>Lines of code</strong></td>
+<td>317</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Single-file (imports <code>ITaskRegistry</code>, <code>IArbitrationRecovery</code>, <code>TreasuryRouter</code>, <code>ReputationRegistry</code> are out-of-scope black boxes — no source available)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context map (opus) → ethskills breadth, 5 domains (sonnet) → pashov depth, 12 agents blind (sonnet) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>50 (findings below 50 listed as Leads, not findings)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation summary:</strong> Overlap: 6 (rotation-lockout ×5 agents, withdraw-rescue ×4 agents, zero-address-lock ×4 agents, reentrancy-lead ×3 agents ruled out, abi.decode-revert-lead ×5 agents, arbitration-migration-orphan ×4 agents) · Phase-1-only: 3 (access-control events/timelock, poster≠worker, PAUSE_DURATION dead code) · Phase-2-only: 3 (pullEmergencyTopUp bound, dispute-bond evasion, stranded-bond-custody) · Re-examined leads kept: 1 (reentrancy-during-rotation, downgraded from a phase-2 agent&#39;s tentative FINDING to a Lead — contingent on an unverifiable out-of-scope interface declaration) · Coverage holes closed: 0 (both phases independently covered all 14 state-changing entrypoints).</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>wire</code> (67)</td>
+<td><code>onlyOwner</code> + one-time</td>
+<td>owner, once</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>topUp</code> (85)</td>
+<td><code>nonReentrant</code>, self-scoped</td>
+<td>anyone</td>
+<td>yes, in</td>
+</tr>
+<tr>
+<td><code>withdraw</code> (98)</td>
+<td><code>nonReentrant</code>, self-scoped, external ceiling</td>
+<td>anyone</td>
+<td>yes, out — <em>see Finding 3</em></td>
+</tr>
+<tr>
+<td><code>pullEmergencyTopUp</code> (111)</td>
+<td><code>onlyRegistry</code></td>
+<td>taskRegistry</td>
+<td>yes, in — <em>see Finding 4</em></td>
+</tr>
+<tr>
+<td><code>setArbitrationModule</code> (157)</td>
+<td><code>onlyOwner</code> + one-time</td>
+<td>owner, once</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>rotateArbitrationModule</code> (163)</td>
+<td><code>onlyOwner</code> + 7 cross-checks</td>
+<td>owner</td>
+<td>no — <em>see Findings 1, 2</em></td>
+</tr>
+<tr>
+<td><code>debitDisputeBond</code> (184)</td>
+<td><code>onlyArbitration</code></td>
+<td>arbitrationModule</td>
+<td>yes, out — <em>see Finding 5</em></td>
+</tr>
+<tr>
+<td><code>creditDisputeBond</code> (195)</td>
+<td><code>onlyArbitration</code></td>
+<td>arbitrationModule</td>
+<td>yes, in</td>
+</tr>
+<tr>
+<td><code>debitAccessFee</code> (207)</td>
+<td><code>onlyRegistry</code></td>
+<td>taskRegistry</td>
+<td>yes, out</td>
+</tr>
+<tr>
+<td><code>debitDismissFee</code> (222)</td>
+<td><code>onlyRegistry</code></td>
+<td>taskRegistry</td>
+<td>yes, out — <em>see Finding 6</em></td>
+</tr>
+<tr>
+<td><code>debitLeaveFee</code> (250)</td>
+<td><code>onlyRegistry</code></td>
+<td>taskRegistry</td>
+<td>yes, out — <em>see Finding 6</em></td>
+</tr>
+<tr>
+<td><code>applyPlatformPenalty</code> (277)</td>
+<td><code>onlyRegistry</code></td>
+<td>taskRegistry</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>claimPayout</code> (287)</td>
+<td><code>nonReentrant</code>, self-scoped</td>
+<td>anyone</td>
+<td>yes, out</td>
+</tr>
+<tr>
+<td><code>renounceOwnership</code> (313)</td>
+<td>always reverts</td>
+<td>n/a</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles:</strong> Owner — two-step (<code>Ownable2Step</code>), renounce disabled. <code>taskRegistry</code>/<code>treasury</code>/<code>reputationRegistry</code> — set once via <code>wire</code>, no rotation path ever (Lead). <code>arbitrationModule</code> — set once, then owner-rotatable under self-referential cross-checks (Findings 1, 2).</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Compromised <code>arbitrationModule</code></td>
+<td><code>rotateArbitrationModule</code>&#39;s gate</td>
+<td>Permanently block its own removal while draining via <code>debitDisputeBond</code></td>
+<td><strong>Finding 1</strong></td>
+</tr>
+<tr>
+<td>Owner (honest) rotating a module holding un-refunded bonds</td>
+<td><code>rotateArbitrationModule</code></td>
+<td>(no attacker gain — agents&#39; bond refunds become permanently stranded)</td>
+<td><strong>Finding 2</strong></td>
+</tr>
+<tr>
+<td>Any agent (self)</td>
+<td><code>withdraw</code> after own address is USDC-blocklisted</td>
+<td>Nothing — principal becomes permanently stuck, no attacker gain, agent is the victim</td>
+<td><strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td>Compromised/buggy <code>taskRegistry</code></td>
+<td><code>pullEmergencyTopUp</code></td>
+<td>Pull an agent&#39;s full approved USDC balance instead of only the shortfall</td>
+<td><strong>Finding 4</strong></td>
+</tr>
+<tr>
+<td>Any agent (self)</td>
+<td><code>withdraw</code> before a dispute bond is collected</td>
+<td>Evade dispute-bond forfeiture entirely</td>
+<td><strong>Finding 5</strong></td>
+</tr>
+<tr>
+<td>Buggy <code>taskRegistry</code> passing <code>worker</code>/<code>poster = address(0)</code></td>
+<td><code>_payOrDefer</code> via dismiss/leave fee</td>
+<td>(no attacker gain — comp is burned, not redirected)</td>
+<td><strong>Finding 6</strong></td>
+</tr>
+<tr>
+<td>Any unprivileged caller</td>
+<td><code>topUp</code>, <code>pullEmergencyTopUp</code> delta accounting</td>
+<td>Credit ledger without real value transferred</td>
+<td>Invariant holds — <code>received&gt;0</code>/exact-receipt checks (91/117/200)</td>
+</tr>
+<tr>
+<td>Any unprivileged caller</td>
+<td><code>claimPayout</code></td>
+<td>Drain another address&#39;s <code>pendingPayouts</code></td>
+<td>Invariant holds — strictly <code>msg.sender</code>-keyed (289-291)</td>
+</tr>
+<tr>
+<td>Malicious <code>treasury</code> reentering fee-debit functions (no <code>nonReentrant</code>)</td>
+<td><code>topUp</code>/<code>withdraw</code>/<code>claimPayout</code> mid-fee-debit</td>
+<td>Cross-user fund extraction</td>
+<td>Invariant holds — every self-service function is <code>msg.sender</code>-scoped; 3 independent agents traced this and found no exploit path (Lead only)</td>
+</tr>
+<tr>
+<td>Owner rotating to a self-consistent malicious replacement</td>
+<td><code>rotateArbitrationModule</code></td>
+<td>Gain <code>onlyArbitration</code> power via an owner action</td>
+<td>No unprivileged amplifier found — out of scope per admin-action gating; noted as Lead (missing event/timelock, phase-1 access-control-1)</td>
+</tr>
+<tr>
+<td><code>taskRegistry</code> passing same address as <code>poster</code>/<code>worker</code></td>
+<td><code>debitDismissFee</code>/<code>debitLeaveFee</code></td>
+<td>Convert illiquid <code>deposits</code> to liquid USDC, bypassing <code>withdraw</code>&#39;s external ceiling</td>
+<td>Plausible mechanism, contingent on <code>taskRegistry</code> bug — Lead (Finding 8, Low)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[85] <strong>1. <code>withdraw()</code> has no alternate-recipient or rescue path — a blocklisted agent&#39;s principal is permanently unrecoverable</strong></p>
+<p><code>AgentDepositVault.withdraw</code> · Confidence: 85</p>
+<p><strong>Description</strong><br><code>withdraw()</code> (98-108) always pays out to <code>msg.sender</code> via <code>safeTransfer(msg.sender, amount)</code> (line 106); if that address is ever blocklisted by the USDC issuer, every future call reverts forever with no redirect parameter and no owner rescue path anywhere in the file — unlike <code>claimPayout(address to)</code> (287), which the same codebase explicitly gives an arbitrary-recipient escape hatch.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- function withdraw(uint256 amount) external nonReentrant {
++ function withdraw(uint256 amount, address to) external nonReentrant {
++     require(to != address(0), &quot;AgentDeposit: zero recipient&quot;);
+      require(blockedUntil[msg.sender] &lt;= block.timestamp, &quot;AgentDeposit: blocked&quot;);
+      require(taskRegistry != address(0), &quot;AgentDeposit: not wired&quot;);
+      require(amount &gt; 0, &quot;AgentDeposit: zero amount&quot;);
+      uint256 maxW = ITaskRegistry(taskRegistry).maxWithdrawableDeposit(msg.sender);
+      require(amount &lt;= maxW, &quot;AgentDeposit: exceeds withdrawable&quot;);
+      deposits[msg.sender] -= amount;
+      totalDeposits -= amount;
+-     IERC20(usdcToken).safeTransfer(msg.sender, amount);
+-     emit Withdrawn(msg.sender, amount, deposits[msg.sender]);
++     IERC20(usdcToken).safeTransfer(to, amount);
++     emit Withdrawn(msg.sender, amount, deposits[msg.sender]);
+  }
+</code></pre>
+<hr>
+<p>[80] <strong>2. <code>rotateArbitrationModule</code> can be permanently blocked by the current module it is trying to replace</strong></p>
+<p><code>AgentDepositVault.rotateArbitrationModule</code> · Confidence: 80</p>
+<p><strong>Description</strong><br>Every gate in <code>rotateArbitrationModule</code> (163-181) queries the <em>current</em> (outgoing) module for self-reported state — <code>disputeOpeningPaused()</code> (167), <code>activeDisputeCount()</code> (168) — with no owner override, timelock, or locally-tracked reference value. A compromised or adversarial current module can hardcode these getters to never satisfy the requires (or simply revert), permanently entrenching itself while retaining <code>onlyArbitration</code> power to drain every agent&#39;s balance to the <code>MIN_TASK_BALANCE</code> floor via <code>debitDisputeBond</code>. Corroborated independently by 5 of 12 phase-2 agents (access-control, first-principles, plus 3 more as leads) and phase-1&#39;s <code>general-1</code>/<code>dos-1</code>.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ uint256 public forceRotateRequestedAt;
++ address public pendingForceRotateModule;
++ uint256 public constant FORCE_ROTATE_DELAY = 3 days;
++
++ function initiateForceRotation(address _arbitration) external onlyOwner {
++     require(_arbitration != address(0), &quot;AgentDeposit: zero&quot;);
++     pendingForceRotateModule = _arbitration;
++     forceRotateRequestedAt = block.timestamp;
++ }
++
++ function executeForceRotation() external onlyOwner {
++     require(pendingForceRotateModule != address(0), &quot;AgentDeposit: none pending&quot;);
++     require(block.timestamp &gt;= forceRotateRequestedAt + FORCE_ROTATE_DELAY, &quot;AgentDeposit: delay not elapsed&quot;);
++     arbitrationModule = pendingForceRotateModule;
++     pendingForceRotateModule = address(0);
++ }
+</code></pre>
+<hr>
+<p>[80] <strong>3. Agents can evade dispute-bond forfeiture by withdrawing below <code>MIN_TASK_BALANCE</code> before arbitration collects</strong></p>
+<p><code>AgentDepositVault.withdraw</code> / <code>AgentDepositVault.debitDisputeBond</code> · Confidence: 80</p>
+<p><strong>Description</strong><br><code>withdraw()</code> has no local awareness of <code>MIN_TASK_BALANCE</code> or of any pending dispute — its only ceiling is the external, out-of-scope <code>ITaskRegistry.maxWithdrawableDeposit</code>, whose stated purpose (reserving for live task bindings) is orthogonal to this vault&#39;s private bond-floor invariant. An agent who anticipates an unfavorable dispute outcome can call <code>withdraw</code> down to (or below) <code>MIN_TASK_BALANCE</code> before arbitration calls <code>debitDisputeBond</code>; once <code>deposits[agent] &lt; MIN_TASK_BALANCE</code>, line 187&#39;s floor check makes the bond debit <strong>permanently and unconditionally impossible</strong> for any <code>amount &gt; 0</code>, not merely capped.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function withdraw(uint256 amount) external nonReentrant {
+      require(blockedUntil[msg.sender] &lt;= block.timestamp, &quot;AgentDeposit: blocked&quot;);
+      require(taskRegistry != address(0), &quot;AgentDeposit: not wired&quot;);
+      require(amount &gt; 0, &quot;AgentDeposit: zero amount&quot;);
+      uint256 maxW = ITaskRegistry(taskRegistry).maxWithdrawableDeposit(msg.sender);
+      require(amount &lt;= maxW, &quot;AgentDeposit: exceeds withdrawable&quot;);
++     require(deposits[msg.sender] - amount &gt;= MIN_TASK_BALANCE || deposits[msg.sender] - amount == 0, &quot;AgentDeposit: breaches task floor&quot;);
+      deposits[msg.sender] -= amount;
+      totalDeposits -= amount;
+      IERC20(usdcToken).safeTransfer(msg.sender, amount);
+      emit Withdrawn(msg.sender, amount, deposits[msg.sender]);
+  }
+</code></pre>
+<p>(The exact policy — full exit permitted only when no live task binding exists — should be reconciled with <code>taskRegistry</code>&#39;s own accounting; the point is that this vault currently enforces no floor of its own on <code>withdraw</code> at all.)</p>
+<hr>
+<p>[70] <strong>4. <code>rotateArbitrationModule</code> can orphan already-debited dispute bonds even on a fully honest rotation</strong></p>
+<p><code>AgentDepositVault.rotateArbitrationModule</code> / <code>AgentDepositVault.creditDisputeBond</code> · Confidence: 70</p>
+<p><strong>Description</strong><br>Distinct root cause from Finding 2: <code>onlyArbitration</code>/<code>creditDisputeBond</code> (195) binds strictly to whichever address currently sits in <code>arbitrationModule</code> — a single pointer, not a set — and rotation&#39;s only check on this is <code>current.activeDisputeCount()==0</code> (168), a self-reported, point-in-time claim with no in-vault reservation ledger. If a bond was <code>debitDisputeBond</code>-ed to the old module (190) but not yet <code>creditDisputeBond</code>-ed back at the moment of an otherwise-legitimate rotation, the old module permanently loses the ability to refund it (blocked by <code>onlyArbitration</code>), and the new module has no on-chain record that it is owed anything.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+ mapping(address =&gt; uint256) public outstandingBondsHeldBy;
+  function debitDisputeBond(address agent, uint256 amount) external onlyArbitration {
+      ...
++     outstandingBondsHeldBy[arbitrationModule] += amount;
+      IERC20(usdcToken).safeTransfer(arbitrationModule, amount);
+  }
+  function rotateArbitrationModule(address _arbitration) external onlyOwner {
+      ...
++     require(outstandingBondsHeldBy[arbitrationModule] == 0, &quot;AgentDeposit: outstanding bonds&quot;);
+      arbitrationModule = _arbitration;
+  }
+</code></pre>
+<hr>
+<p>[65] <strong>5. <code>_payOrDefer</code> has no zero-address guard — a bad <code>worker</code>/<code>poster</code> from <code>taskRegistry</code> silently burns compensation</strong></p>
+<p><code>AgentDepositVault._payOrDefer</code> · Confidence: 65</p>
+<p><strong>Description</strong><br><code>_payOrDefer</code> (297-311) never validates <code>recipient</code>, unlike <code>claimPayout</code> (288) which explicitly requires <code>to != address(0)</code> in the same file. A <code>transfer(address(0), amount)</code> reverts inside any standard ERC20, which the tri-condition (302-306) classifies as a soft failure and defers into <code>pendingPayouts[address(0)]</code> — a slot no transaction can ever claim (<code>msg.sender</code> can never be <code>address(0)</code>), permanently burning the compensation instead of reverting the whole fee-debit as a plain <code>safeTransfer</code> would have. Requires <code>taskRegistry</code> (trusted, out-of-scope) to supply a zero role address.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function _payOrDefer(address recipient, uint256 amount) internal {
+      if (amount == 0) return;
++     require(recipient != address(0), &quot;AgentDeposit: zero recipient&quot;);
+      (bool ok, bytes memory data) = usdcToken.call(
+          abi.encodeCall(IERC20.transfer, (recipient, amount))
+      );
+      ...
+  }
+</code></pre>
+<hr>
+<p>[60] <strong>6. <code>pullEmergencyTopUp</code> has no bound tied to the actual shortfall it exists to cover</strong></p>
+<p><code>AgentDepositVault.pullEmergencyTopUp</code> · Confidence: 60</p>
+<p><strong>Description</strong><br>The contract defines the correct emergency-shortfall bound via the view helper <code>emergencyTopUpRequired</code> (123-126, <code>MIN_TASK_BALANCE - deposits[agent]</code>), but <code>pullEmergencyTopUp</code> (111-121) — whose entire documented purpose is &quot;emergency top-up&quot; — never calls or enforces it; <code>amount</code> is validated only by <code>amount &gt; 0</code>. A buggy or compromised <code>taskRegistry</code> (with a standing large/infinite USDC approval from the agent, a common UX pattern for a contract topped up regularly) can pull far more than any deposit floor requires.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function pullEmergencyTopUp(address agent, uint256 amount) external onlyRegistry {
+      require(amount &gt; 0, &quot;AgentDeposit: zero amount&quot;);
++     require(amount &lt;= emergencyTopUpRequired(agent), &quot;AgentDeposit: exceeds shortfall&quot;);
+      require(blockedUntil[agent] &lt;= block.timestamp, &quot;AgentDeposit: blocked&quot;);
+      ...
+  }
+</code></pre>
+<hr>
+<p>[55] <strong>7. <code>setArbitrationModule</code>/<code>rotateArbitrationModule</code> change the highest-privilege role with no event and no timelock</strong></p>
+<p><code>AgentDepositVault.setArbitrationModule</code> / <code>AgentDepositVault.rotateArbitrationModule</code> · Confidence: 55</p>
+<p><strong>Description</strong><br><code>arbitrationModule</code> gates <code>debitDisputeBond</code>/<code>creditDisputeBond</code>, the highest-impact role besides owner. Both setters change it synchronously with no event (unlike <code>wire()</code>&#39;s <code>Wired</code> event) and no timelock, so standard event-indexed monitoring cannot detect a swap before it takes effect.</p>
+<hr>
+<p>[50] <strong>8. No <code>poster != worker</code> check in <code>debitDismissFee</code>/<code>debitLeaveFee</code></strong></p>
+<p><code>AgentDepositVault.debitDismissFee</code> / <code>AgentDepositVault.debitLeaveFee</code> · Confidence: 50</p>
+<p><strong>Description</strong><br>If <code>taskRegistry</code> (trusted, out-of-scope) ever supplies the same address for both roles, that address converts <code>EXIT_PARTY_COMP</code> worth of illiquid <code>deposits</code> into liquid USDC at the cost of only <code>EXIT_PROTOCOL_SHARE</code>, bypassing <code>withdraw()</code>&#39;s external ceiling check. Solvency is preserved (fee = comp + protocolShare is asserted per-call); this is a defense-in-depth gap contingent on unverifiable <code>taskRegistry</code> behavior, not a directly fund-draining bug.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[85]</td>
+<td><code>withdraw()</code> has no alternate-recipient or rescue path</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[80]</td>
+<td><code>rotateArbitrationModule</code> can be permanently blocked by the module it replaces</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[80]</td>
+<td>Dispute-bond evasion via unreserved <code>withdraw</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>[70]</td>
+<td><code>rotateArbitrationModule</code> can orphan already-debited bonds on an honest rotation</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[65]</td>
+<td><code>_payOrDefer</code> zero-address recipient silently burns compensation</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[60]</td>
+<td><code>pullEmergencyTopUp</code> has no bound tied to the actual shortfall</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[55]</td>
+<td>Arbitration-module changes emit no event / no timelock</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[50]</td>
+<td>No <code>poster != worker</code> check in exit-fee flows</td>
+</tr>
+</tbody></table></div>
+<p><strong>Info (no security impact, not exploitable):</strong> <code>PAUSE_DURATION</code> constant (line 21) is declared but never referenced anywhere in the file. No zero-amount guard before treasury-bound transfers in <code>debitAccessFee</code>/<code>debitDismissFee</code>/<code>debitLeaveFee</code> (inert under current USDC semantics).</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. These are not false positives — they are high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><strong>Reentrancy during <code>rotateArbitrationModule</code></strong> — <code>AgentDepositVault.rotateArbitrationModule</code> — Code smells: external calls to <code>current.disputeOpeningPaused()</code>/<code>activeDisputeCount()</code>/<code>escrow()</code> (167-174) execute <em>before</em> <code>arbitrationModule</code> is reassigned (180), so <code>onlyArbitration</code> still resolves to the outgoing module during these calls — a compromised module could in principle reenter <code>debitDisputeBond</code>. Contingent entirely on whether <code>IArbitrationRecovery</code>&#39;s getters are declared <code>view</code> in the out-of-scope interface (would force STATICCALL and block the reentrant state write); unverifiable from this scope.</li>
+<li><strong><code>_payOrDefer</code>&#39;s <code>abi.decode(data,(bool))</code> can itself revert</strong> — <code>AgentDepositVault._payOrDefer</code> — Code smells: a 32-byte return value that isn&#39;t canonical <code>0</code>/<code>1</code> panics instead of being classified as failure, defeating the graceful-degradation design. Requires <code>usdcToken</code> to deviate from the construction-time-asserted canonical USDC behavior. Flagged independently by 5 of 12 phase-2 agents.</li>
+<li><strong><code>creditDisputeBond</code>&#39;s exact-receipt check is asymmetric with <code>topUp</code>/<code>pullEmergencyTopUp</code></strong> — <code>AgentDepositVault.creditDisputeBond</code> — Code smells: <code>received==amount</code> (200) vs. <code>received&gt;0</code> elsewhere (91, 117); any transfer-amount deviation permanently strands a bond refund.</li>
+<li><strong>No reentrancy guard on <code>debitAccessFee</code>/<code>debitDismissFee</code>/<code>debitLeaveFee</code></strong> — Code smells: 2-3 external calls to <code>treasury</code> after ledger mutation, no <code>nonReentrant</code>. Three independent phase-2 agents traced this and found CEI ordering closes every constructed path (self-harm only) — not promoted to a finding.</li>
+<li><strong><code>wire()</code> has no pairwise address-distinctness check and no rotation path</strong> for <code>taskRegistry</code>/<code>treasury</code>/<code>reputationRegistry</code> — if any two are ever wired to the same address, <code>onlyRegistry</code> could be satisfied by a reentrant callback from <code>treasury</code>; and unlike <code>arbitrationModule</code>, there is no recovery path at all if any of the three is later compromised.</li>
+<li><strong><code>blockedUntil</code> is not enforced on <code>debitAccessFee</code>/<code>debitDismissFee</code>/<code>debitLeaveFee</code>/<code>debitDisputeBond</code>/<code>creditDisputeBond</code>/<code>claimPayout</code></strong> — a platform-blocked agent&#39;s ledger remains fully fee-debitable and bond-debitable, and pending payouts remain claimable. Matches the protocol map&#39;s own INV-10 structural note; intentionality unconfirmed.</li>
+<li><strong><code>MIN_TASK_BALANCE</code> is a flat floor, not scaled to concurrent task/dispute bindings</strong> — the same $8 balance can pass <code>meetsTaskMinimum</code> for arbitrarily many simultaneous bindings; a second concurrent dispute-bond debit against the same agent can be structurally blocked by the first debit already pinning the balance at the floor.</li>
+<li><strong><code>debitDismissFee</code>/<code>debitLeaveFee</code> record only <code>protocolShare</code> to <code>treasury.recordAccessFee</code>, not the full <code>fee</code></strong> — may under-count fees in downstream treasury bookkeeping/analytics if <code>TreasuryRouter</code> assumes the recorded amount reflects the full debited fee (unverifiable, out of scope).</li>
+</ul>
+<hr>
+<h2 id="coverage-gate">Coverage Gate</h2>
+<p>Entrypoints: 14 external/public state-changing functions in source, 14 examined by both phases. Threat-catalog rows: 12 identified in Phase 0, all 12 answered (6 by findings above, 6 by &quot;invariant holds&quot; with traced justification). Coverage holes closed this pass: 0 — both phases independently examined every entrypoint; Turn-3 reconciliation performed cross-checks on leads only, no first-time re-reads were required.</p>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-building + ethskills breadth + pashov-methodology depth). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Independent human review, bug bounty programs, and on-chain monitoring are strongly recommended before mainnet deployment at scale — particularly for the <code>taskRegistry</code>/<code>treasury</code>/<code>arbitrationModule</code> trust assumptions, which this review could not independently verify (their source was out of scope).</p>
+</content></blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreid5dg4fqc6c3fxaj6sdyphtmx5y2ga3aftjgzuwxkmuoyfadv42vq.ipfs.community.bgipfs.com/"><code>https://bafkreid5dg4fqc6c3fxaj6sdyphtmx5y2ga3aftjgzuwxkmuoyfadv42vq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/394">#394</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

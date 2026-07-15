@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire AIAccountabilityBondsV2 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #339">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire AIAccountabilityBondsV2</h1>
+    <p class="job-sub">Job #339 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/339"><b>Job page</b> #339</a>
+      <a class="chip" href="https://bafkreiaqhwpioxzisdzca6semydabjbjs6667wo27mq7tckvehyczjljlm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#high-severity">High Severity</a></li>
+      <li><a href="#medium-severity">Medium Severity</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#low-severity">Low Severity</a></li>
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report: Vaultfire AIAccountabilityBondsV2</h1>
+<p><strong>Target:</strong> <code>AIAccountabilityBondsV2</code> at <code>0x6750D28865434344e04e1D0a6044394b726C3dfE</code> (Base, chain 8453)<br><strong>In-scope contracts:</strong> <code>AIAccountabilityBondsV2.sol</code>, <code>BaseYieldPoolBond.sol</code>, <code>BaseDignityBond.sol</code>, <code>MissionEnforcement.sol</code> (source verified via Sourcify full match; compiler 0.8.25)<br><strong>Methodology:</strong> Two-phase audit — Phase 1 breadth (6 parallel checklist-driven agents: general, precision-math, access-control, oracles, dos, governance) → Phase 2 depth (12 parallel attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation (this document).<br><strong>Reconciliation summary:</strong> Overlap: 10 findings independently confirmed by both phases · Phase-1-only: 8 · Phase-2-only: 2 (both re-examined against source and confirmed) · Demoted on re-examine: 0.<br><strong>Completeness:</strong> every unique (contract, function, bug-class) raised by either phase&#39;s raw agent output is represented below (directly, or folded into a closely related finding with its distinct mechanism preserved).</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<p>This protocol lets an AI company post an ETH &quot;accountability bond,&quot; self-report six &quot;human flourishing&quot; metrics about itself, and — after a 7-day timelock — claim up to 50% of the bond&#39;s self-computed &quot;appreciation&quot; from a communally funded yield pool. Both audit phases converged, independently, on the same central defect: <strong>the party that profits from the metrics is the only party that supplies them</strong>, and none of the contract&#39;s advertised counterbalances (an oracle registry, a minimum-peer-verification threshold, a community challenge mechanism, a 7-day &quot;verification window&quot;) actually gates the payout. On top of that architectural flaw, Phase 2 discovered a cheap, unauthenticated griefing vector that lets any address permanently zero out a bond&#39;s AI profit share for the cost of a few wei, and several accounting bugs let owner-level or ordinary operations desynchronize the yield pool&#39;s internal ledger from the real ETH backing it.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>6</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>9</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>4</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="high-severity">High Severity</h2>
+<h3 id="h-1-self-attested-flourishing-metrics-let-any-bond-drain-the-com">[H-1] Self-attested flourishing metrics let any bond drain the community-funded yield pool</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general, precision-math, oracles) · Phase 2 (8/12 agents: math-precision, economic-security, execution-trace, invariant, periphery, first-principles, boundary, trust-gap)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.submitMetrics</code> (447-476), <code>calculateBondValue</code> (978-993), <code>distributeBond</code> (758-873), <code>shouldLockProfits</code> (1062-1092)</p>
+<p><code>submitMetrics</code> is gated only by <code>onlyAICompany(bondId)</code> — the bond&#39;s own beneficiary supplies all six 0-10000 &quot;flourishing&quot; scores that directly drive <code>calculateBondValue</code>, and thus the appreciation paid out of the shared <code>yieldPool</code>. The contract declares an oracle registry (<code>OracleSource</code>, <code>registerOracle</code>, <code>MIN_ORACLE_TRUST_SCORE=7000</code>) and a peer-verification threshold (<code>MIN_AI_VERIFICATIONS=2</code>), but neither is ever read on the metrics, valuation, or distribution path (confirmed by grep across every agent in both phases: <code>oracles[...]</code> is read exactly once, inside <code>registerOracle</code> itself, solely to dedupe a push). <code>shouldLockProfits</code>&#39;s verification gate defaults to a <em>passing</em> score of 5000 when zero verifications exist.</p>
+<p><strong>Proof of concept</strong> (numbers independently reproduced by 4+ agents):</p>
+<pre><code>createBond(&quot;x&quot;, 0) with msg.value = 10 ETH        // quarterlyRevenue self-declared as 0, trivially satisfies the 30% check
+submitMetrics(id, 10000,10000,10000,10000,10000,10000)   // self-reported by the caller
+
+globalFlourishingScore = 10000
+inclusionMultiplier    = 150 + (10000-7000)/60 = 200
+timeMultiplier (fresh) = 100
+calculateBondValue     = 10e18 * 10000 * 200 * 100 / 50_000_000 = 40 ETH
+calculateAppreciation  = 40 - 10 = 30 ETH
+
+shouldLockProfits: flourishing 10000 ≥ 4000 (not suffering); one metric row ⇒ no declining trend;
+                   inclusion 10000 ≥ 4000; verificationQualityScore = 5000 (zero verifications) ≥ 3000
+                   ⇒ NOT locked
+
+requestDistribution → snapshots +30 ETH (needs yieldPool ≥ 30 ETH)
+[wait 7 days]
+distributeBond → _useYieldPool(30 ETH) drains the community yieldPool;
+                 humanShare = 15 ETH, aiCompanyShare = 15 ETH
+
+Net: attacker staked 10 ETH, received 15 ETH → +5 ETH profit, funded entirely
+by other users&#39; yieldPool contributions. Repeatable per bond, scales further
+with bond age via timeMultiplier (see L-1).
+</code></pre>
+<p><strong>Recommendation:</strong> Require <code>verificationConfirmCount[bondId] &gt;= MIN_AI_VERIFICATIONS</code> and/or an active, trust-scored oracle attestation as a hard precondition in <code>requestDistribution</code>/<code>shouldLockProfits</code>; treat the zero-verification case as a lock condition rather than a passing default.</p>
+<hr>
+<h3 id="h-2-the-profit-lock-snapshot-at-requestdistribution-makes-the-7-">[H-2] The profit-lock snapshot at <code>requestDistribution</code> makes the 7-day community-verification window functionally inert</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (oracles agent, Finding 3) · Phase 2 (economic-security, trust-gap, flow-gap — 3/12 agents independently)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.requestDistribution</code> (706-733), <code>distributeBond</code> (758-873)</p>
+<p><code>snapshotProfitsLocked[bondId] = shouldLockProfits(bondId)</code> is captured once, at <code>requestDistribution</code> time, and <code>distributeBond</code> reads only that frozen value at line 786 — it never re-evaluates <code>shouldLockProfits</code> live. Because the AI company chooses when to call <code>requestDistribution</code> (and can call <code>submitMetrics</code> immediately beforehand), it can always snapshot the favorable &quot;not locked&quot; state before any community <code>challengeMetrics</code> or adverse peer verification lands. The snapshot is asymmetric by construction: it can only ever freeze the AI-favorable outcome, since an AI facing a live lock simply defers requesting.</p>
+<p><strong>Proof:</strong> Two <code>challengeMetrics</code> calls during the 7-day window drop the <em>live</em> <code>verificationQualityScore</code> to <code>5000 - 2*2000 = 1000 &lt; 3000</code> (which would trigger a lock), but <code>distributeBond</code> still reads the pre-challenge <code>snapshotProfitsLocked=false</code> recorded before the challenges existed, and pays the normal 50/50 split regardless. The contract&#39;s own NatSpec states the 7-day delay exists so &quot;humans need time to verify if flourishing claims are accurate&quot; (line 770) and &quot;Timelock prevents instant rug pull&quot; (line 704) — neither claim holds for the lock decision itself.</p>
+<p><strong>Recommendation:</strong> Re-evaluate <code>shouldLockProfits</code> (at minimum its challenge/verification component) live at <code>distributeBond</code> time, and lock if either the snapshot or the live evaluation says to lock.</p>
+<hr>
+<h3 id="h-3-submitaiverification-rejections-are-free-unbounded-and-irrev">[H-3] <code>submitAIVerification</code> rejections are free, unbounded, and irreversible — any address can permanently zero a bond&#39;s AI profit share for ~1–2 wei</h3>
+<p><strong>Origin:</strong> <code>[phase2 only]</code> — confirmed via source re-read; found independently as a FINDING by 3/12 agents (access-control, execution-trace, periphery) plus a related sybil-abuse variant by a 4th (economic-security)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.submitAIVerification</code> (548-578), <code>verificationQualityScore</code> (1020-1050), <code>shouldLockProfits</code> (1062-1092)</p>
+<pre><code class="language-solidity">function submitAIVerification(uint256 bondId, bool confirmsMetrics, string memory notes)
+    external payable bondExists(bondId) whenNotPaused
+{
+    Bond storage bond = bonds[bondId];
+    require(msg.sender != bond.aiCompany, &quot;Cannot verify own metrics&quot;);
+    _validateNonZero(msg.value, &quot;Verification stake&quot;);     // 1 wei satisfies this
+    require(bytes(notes).length &gt; 0 &amp;&amp; bytes(notes).length &lt;= 500, &quot;Notes invalid&quot;);
+    ...
+    if (confirmsMetrics) { verificationConfirmCount[bondId]++; }
+    else { verificationRejectCount[bondId]++; }             // no per-address dedup, no cap
+    ...
+}
+</code></pre>
+<p><code>verificationQualityScore</code> computes <code>score = 5000 - int256(rejectCount * 3000)</code>, clamped to <code>[0, 10000]</code>. <strong>No function anywhere in scope decrements <code>verificationRejectCount</code></strong> — unlike <code>MetricsChallenge</code>, which has an owner-adjudicated <code>resolveChallenge</code> path, a rejecting &quot;verification&quot; has no dispute or reversal mechanism at all.</p>
+<p><strong>Proof (re-verified directly against source):</strong> Any address (≠ <code>bond.aiCompany</code>) calls <code>submitAIVerification(bondId, false, &quot;x&quot;)</code> twice (1 wei each, distinct or same wallet — no dedup check exists) → <code>verificationRejectCount[bondId]=2</code> → <code>verificationQualityScore = 5000 - 6000 = -1000</code>, clamped to <code>0</code> → <code>0 &lt; 3000</code> → <code>shouldLockProfits</code> returns <code>(true, &quot;Failed verification...&quot;)</code> permanently (no path ever removes the rejections). Every future <code>requestDistribution</code> on that bond snapshots <code>locked=true</code>, and <code>distributeBond</code> sends 100% of appreciation to <code>humanTreasury</code> and 0% to the AI company — for the life of the bond. Total attacker cost: ~2 wei + gas.</p>
+<p><strong>Related sybil variant (same root cause, opposite direction):</strong> the identical lack of verifier identity/stake requirements lets the <em>AI company itself</em> defeat legitimate community challenges by self-confirming from throwaway addresses — 2 confirmations at 1 wei each add <code>+2000</code> to <code>verificationQualityScore</code>, capable of canceling out up to 2 real community challenges (<code>-4000</code>).</p>
+<p><strong>Recommendation:</strong> Require a meaningful, slashable stake for both confirmations and rejections; add per-verifier/per-bond dedup; add an adjudication/dispute path (mirroring <code>resolveChallenge</code>) that can reverse bad-faith votes in either direction; cap the rejection penalty symmetrically with the confirmation bonus.</p>
+<hr>
+<h3 id="h-4-resolvechallenge-pays-a-2x-upheld-penalty-from-commingled-co">[H-4] <code>resolveChallenge</code> pays a 2x &quot;upheld&quot; penalty from commingled contract balance, not from the challenged bond&#39;s own stake</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (access-control Medium, governance HIGH-1, general Medium-1) · Phase 2 (6/12 agents as leads: access-control, invariant, asymmetry, boundary, trust-gap, flow-gap — promoted to finding per multi-agent corroboration + fully traced exploit chain)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.resolveChallenge</code> (643-684)</p>
+<pre><code class="language-solidity">if (upheld) {
+    uint256 penalty = challenge.challengeStake;              // 1:1 penalty
+    payoutAmount = challenge.challengeStake + penalty;        // 2x stake
+    recipient = payable(challenge.challenger);
+    require(address(this).balance &gt;= payoutAmount, ...);
+} ...
+(bool success, ) = recipient.call{value: payoutAmount}(&quot;&quot;);
+</code></pre>
+<p>The extra 1x &quot;penalty&quot; is paid from <code>address(this).balance</code> — the same commingled pot backing every bond&#39;s stake, every AI-verification stake, and the yield pool — and is <strong>never debited from the challenged bond&#39;s own <code>stakeAmount</code>, <code>totalActiveBondValue</code>, or <code>yieldPool</code></strong>, despite the function&#39;s own NatSpec claiming &quot;Challenger gets stake back + penalty <strong>from bond</strong>&quot; (line 638).</p>
+<p><strong>Proof:</strong> <code>yieldPool=10 ETH</code> (contract balance 10 ETH). Challenger stakes 5 ETH via <code>challengeMetrics</code> (balance 15 ETH). Owner resolves <code>upheld=true</code>: pays out <code>5+5=10 ETH</code> (balance 5 ETH). The <code>yieldPool</code> accounting variable is unchanged at 10 — now exceeding the real unencumbered balance. A colluding owner + challenger pair can repeat this cycle to drain third-party (other bonds&#39;/pool depositors&#39;) funds one stake-multiple at a time; even a fully honest resolution breaks pool solvency, causing later legitimate <code>distributeBond</code> calls to revert on <code>require(address(this).balance &gt;= totalPayout)</code>.</p>
+<p><strong>Recommendation:</strong> Source the penalty from the challenged bond&#39;s own stake (revert the resolution if the bond can&#39;t cover it) or from a dedicated slashing reserve funded specifically for this purpose — never draw penalties from general contract balance shared with other users&#39; principal.</p>
+<hr>
+<h3 id="h-5-ai-to-ai-verification-stakes-are-permanently-unrecoverable-n">[H-5] AI-to-AI verification stakes are permanently unrecoverable — no refund, slash, or claim path exists</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general, HIGH-2) · Phase 2 (5/12 agents: execution-trace, asymmetry, boundary, trust-gap, flow-gap)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.submitAIVerification</code> (548-578), <code>AIVerification</code> struct (102-110)</p>
+<p><code>AIVerification.stakeAmount = msg.value</code> is written once at submission time and — confirmed independently by grep across nine separate agents — <strong>never read anywhere</strong> by any refund, slash, claim, or resolution logic in any of the four in-scope contracts. Every wei sent as a verification &quot;stake on their verification&quot; (the NatSpec&#39;s own &quot;skin in the game&quot; framing) is a one-way, irrecoverable transfer into the contract&#39;s general balance.</p>
+<p><strong>Proof:</strong> Any address calling <code>submitAIVerification{value: v}(...)</code> loses <code>v</code> permanently. There is no function in <code>AIAccountabilityBondsV2</code>, <code>BaseYieldPoolBond</code>, or <code>BaseDignityBond</code> that ever references <code>AIVerification.stakeAmount</code> after it is stored.</p>
+<p><strong>Recommendation:</strong> Add a refund/claim mechanism tied to verification outcome (e.g., release the stake once the associated bond distributes, or slash only via a provably-false-verification adjudication path), or remove the <code>payable</code>/staking requirement entirely if it was never intended to be economically meaningful.</p>
+<hr>
+<h3 id="h-6-bond-principal-is-never-returned-and-a-bond-with-zero-apprec">[H-6] Bond principal is never returned — and a bond with zero appreciation can never be closed at all</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math lead, general Medium-3) · Phase 2 (6/12 agents; boundary agent proves the unclosable-neutral-bond variant)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.distributeBond</code> (758-873), <code>requestDistribution</code> → <code>_trackPendingDistribution</code> (194-210)</p>
+<p><code>distributeBond</code> only ever transfers <code>humanShare + aiCompanyShare = absAppreciation</code>; the original <code>bond.stakeAmount</code> is never sent back to the AI company, and there is no other withdrawal function for it anywhere in scope — contradicting the NatSpec&#39;s framing of distributing &quot;bond <strong>proceeds</strong>.&quot; This is compounded by a hard blocker: both <code>_trackPendingDistribution</code> and <code>distributeBond</code> <code>require(appreciation != 0)</code>, and <code>bond.active</code> is only ever cleared inside <code>distributeBond</code>. A bond sitting at exactly the neutral valuation point can therefore never call <code>requestDistribution</code> successfully and can never be closed — permanently trapping its principal with zero recovery path.</p>
+<p><strong>Proof:</strong> A bond with no metrics submitted (or metrics averaging exactly to the breakeven point) has <code>flourishing=5000</code> (default), <code>inclusion=100</code>, <code>time=100</code> → <code>calculateBondValue = stake * 5000 * 100 * 100 / 50_000_000 = stake</code> exactly → <code>appreciation = 0</code> → <code>requestDistribution</code> reverts with &quot;No appreciation to distribute,&quot; permanently, for that bond. No <code>withdraw</code>/<code>cancelBond</code>/refund function exists in any in-scope contract.</p>
+<p><strong>Recommendation:</strong> Add a principal-withdrawal/bond-closure path that does not depend on non-zero appreciation. Clarify and document whether stake forfeiture on distribution is intended; if not, return <code>stakeAmount</code> alongside the appreciation split.</p>
+<hr>
+<h2 id="medium-severity">Medium Severity</h2>
+<h3 id="m-1-withdrawyieldpool-ignores-totalpendingdistributions-owner-ca">[M-1] <code>withdrawYieldPool</code> ignores <code>totalPendingDistributions</code> — owner can withdraw funds already reserved for pending distributions</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (access-control, governance, general) · Phase 2 (7/12 agents — near-unanimous: access-control, economic-security, execution-trace, invariant, asymmetry, boundary, flow-gap)<br><strong>Location:</strong> <code>BaseYieldPoolBond.withdrawYieldPool</code> (102-116), <code>setMinimumYieldPoolBalance</code> (123-131), <code>_trackPendingDistribution</code> (194-210)</p>
+<p><code>_trackPendingDistribution</code> reserves <code>totalPendingDistributions</code> against the pool at request time as its core solvency invariant (<code>require(yieldPool &gt;= totalPendingDistributions + amount)</code>), but <code>withdrawYieldPool</code> only checks <code>yieldPool - amount &gt;= minimumYieldPoolBalance</code> — never subtracting <code>totalPendingDistributions</code>. The owner can also freely lower <code>minimumYieldPoolBalance</code> first (floor: <code>&gt; 0</code>), further widening the gap.</p>
+<p><strong>Proof:</strong> <code>yieldPool=100 ETH</code>, <code>minimumYieldPoolBalance=10 ETH</code>. Bond A requests distribution with appreciation <code>90 ETH</code> → <code>totalPendingDistributions=90</code> (passes <code>100 &gt;= 0+90</code>). Owner calls <code>withdrawYieldPool(90)</code>: <code>90&lt;=100</code> ✓, <code>100-90=10&gt;=10</code> ✓ → sends 90 ETH to owner, <code>yieldPool=10</code>. When Bond A&#39;s 7-day timelock expires, <code>distributeBond</code> reverts at <code>_useYieldPool</code>&#39;s <code>require(yieldPool&gt;=90)</code>. Since <code>distributionPending</code> is already <code>true</code>, Bond A cannot re-request — it is stuck until someone re-funds the pool via the permissionless <code>fundYieldPool</code>.</p>
+<p><strong>Recommendation:</strong> <code>require(yieldPool - amount &gt;= minimumYieldPoolBalance + totalPendingDistributions)</code>; add a floor to <code>setMinimumYieldPoolBalance</code> tied to outstanding obligations.</p>
+<hr>
+<h3 id="m-2-useyieldpools-minimum-reserve-check-uses-the-pre-deduction-b">[M-2] <code>_useYieldPool</code>&#39;s minimum-reserve check uses the pre-deduction balance, letting a single distribution breach the circuit breaker</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math) · Phase 2 (boundary agent, full numeric trace; numerical-gap agent, independent confirmation)<br><strong>Location:</strong> <code>BaseYieldPoolBond._useYieldPool</code> (156-185)</p>
+<pre><code class="language-solidity">if (yieldPoolEnforced) {
+    require(yieldPool &gt;= minimumYieldPoolBalance, &quot;Yield pool below minimum - distributions paused&quot;);
+}
+yieldPool -= amount;
+</code></pre>
+<p>The check evaluates the balance <em>before</em> deduction. The sibling function <code>withdrawYieldPool</code> correctly uses the post-deduction form (<code>yieldPool - amount &gt;= minimumYieldPoolBalance</code>) — <code>_useYieldPool</code> deviates from the codebase&#39;s own established pattern for the same invariant.</p>
+<p><strong>Proof:</strong> pool=15 ETH, minimum=10 ETH, snapshotted appreciation=14 ETH. Distribute-time check: pre-deduction <code>15&gt;=10</code> ✓, then subtract → pool=1 ETH — 9 ETH below the floor the circuit breaker exists to enforce, and every subsequent distribution now reverts on <code>yieldPool &gt;= minimum</code> until the pool is refunded.</p>
+<p><strong>Recommendation:</strong> <code>require(yieldPool - amount &gt;= minimumYieldPoolBalance, ...)</code> (post-deduction), matching <code>withdrawYieldPool</code>.</p>
+<hr>
+<h3 id="m-3-minimumreserveratio-50-is-computed-but-never-enforced-as-a-h">[M-3] <code>MINIMUM_RESERVE_RATIO</code> (50%) is computed but never enforced as a hard gate</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math, general, governance) · Phase 2 (numerical-gap agent — scale-mismatch variant showing the denominator itself is also wrong)<br><strong>Location:</strong> <code>BaseYieldPoolBond.getReserveRatio</code> (255-266), <code>_useYieldPool</code>, <code>withdrawYieldPool</code></p>
+<p>The contract documents a 50%-of-active-bond-value reserve floor as a circuit breaker, but no <code>require</code> anywhere actually checks the ratio — <code>_useYieldPool</code>/<code>withdrawYieldPool</code> only check the flat <code>minimumYieldPoolBalance</code>, and <code>getReserveRatio</code>&#39;s low-ratio branch is a dead comment (&quot;this is a view function, so we can&#39;t emit events... UI/monitoring should check this&quot;). Compounding the gap, <code>totalActiveBondValue</code> (the ratio&#39;s denominator) accumulates bond <em>principal</em>, not the <em>appreciation</em> obligations the pool actually owes — which can reach ~11x principal at maximum multipliers — so even a &quot;healthy&quot; reported ratio can understate true exposure by an order of magnitude.</p>
+<p><strong>Proof:</strong> <code>totalActiveBondValue=1000 ETH</code>, <code>minimumYieldPoolBalance=10 ETH</code>, <code>yieldPool=11 ETH</code> (true ratio ≈1.1%, far below the 50% floor). <code>withdrawYieldPool(1 ether)</code> still succeeds (<code>11-1=10&gt;=10</code>). The advertised 50% guarantee never actually holds, and <code>getProtocolHealth()</code>&#39;s <code>reserveRatioOK</code> flag has no enforcement teeth.</p>
+<p><strong>Recommendation:</strong> Enforce <code>getReserveRatio() &gt;= MINIMUM_RESERVE_RATIO</code> inside <code>_useYieldPool</code>/<code>withdrawYieldPool</code> (gated by <code>yieldPoolEnforced</code>), and compute the ratio against outstanding appreciation obligations rather than principal — or remove the constant/claim if enforcement isn&#39;t intended.</p>
+<hr>
+<h3 id="m-4-pending-distribution-reservations-have-no-cancelexpiry-can-l">[M-4] Pending-distribution reservations have no cancel/expiry — can lock out the shared pool&#39;s capacity</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (dos, governance) · Phase 2 (4/12 agents; economic-security agent gives a full numeric griefing trace)<br><strong>Location:</strong> <code>BaseYieldPoolBond._trackPendingDistribution</code> (194-210), <code>AIAccountabilityBondsV2.requestDistribution</code> (706-733)</p>
+<p><code>_trackPendingDistribution</code> reserves pool capacity in <code>totalPendingDistributions</code> with no cancellation path except actually completing <code>distributeBond</code>. The reservation logic also treats appreciation and depreciation identically (<code>amount = |appreciationValue|</code>), even though the depreciation branch of <code>distributeBond</code> never draws from <code>yieldPool</code> at all — it pays from general balance via <code>_clearPendingDistribution</code> — so an ordinary depreciating bond needlessly locks pool capacity it will never consume.</p>
+<p><strong>Proof:</strong> Attacker stakes ~33.3 ETH into a bond, submits maximal metrics (appreciation ≈ 3x stake ≈ 100 ETH), calls <code>requestDistribution</code> to reserve an entire 100 ETH pool, then never calls <code>distributeBond</code>. Every other bond&#39;s <code>requestDistribution</code> now reverts on <code>require(yieldPool &gt;= totalPendingDistributions + amount)</code> until the pool is topped up or the griefer eventually distributes.</p>
+<p><strong>Recommendation:</strong> Add a <code>cancelDistribution()</code> (AI-callable, and/or auto-expiring after a bounded window) that clears the reservation; only reserve pool capacity for the appreciation (pool-payable) branch, not depreciation.</p>
+<hr>
+<h3 id="m-5-missionenforcement-is-a-separate-contract-with-an-independen">[M-5] MissionEnforcement is a separate contract with an independent, un-synced owner — can permanently brick all distributions</h3>
+<p><strong>Origin:</strong> <code>[phase1 primary]</code> (access-control HIGH, governance HIGH-2, general Medium-4) — a related, narrower mid-timelock variant independently confirmed in Phase 2 (see cross-reference below)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2._requireMissionCompliance</code> (315-336), <code>setMissionEnforcement</code>/<code>setMissionEnforcementEnabled</code> (303-313); <code>MissionEnforcement.certifyModuleMissionCompliant</code>/<code>adjudicateMissionViolation</code> (226-259)</p>
+<p><code>_requireMissionCompliance()</code> — called from both <code>requestDistribution</code> and <code>distributeBond</code> — hard-reverts unless <code>MissionEnforcement.isCompliantWithPrinciple(address(this), ...)</code> returns <code>true</code> for three principles. That mapping defaults to <code>false</code> and can only be flipped by MissionEnforcement&#39;s <strong>own, independent owner</strong> (set at MissionEnforcement&#39;s own constructor — the main contract&#39;s <code>setMissionEnforcement</code> only stores a pointer; it never verifies or syncs ownership or certification state).</p>
+<p><strong>Two concrete traces:</strong></p>
+<ol>
+<li><em>Misconfiguration:</em> main owner calls <code>setMissionEnforcementEnabled(true)</code> before the main contract has been certified compliant by MissionEnforcement&#39;s owner → every <code>requestDistribution</code>/<code>distributeBond</code> reverts &quot;Mission: profit caps,&quot; protocol-wide, with no self-service fix available to the main protocol&#39;s owner.</li>
+<li><em>Hostile/absent second owner:</em> MissionEnforcement&#39;s owner (a different party) can, at any later time, call <code>adjudicateMissionViolation</code> to flip compliance back to <code>false</code>, freezing all distributions unilaterally — even after a correct initial setup.</li>
+</ol>
+<p><strong>Cross-reference (Phase 2, agent 12, <code>flow-gap</code>):</strong> a narrower but independently confirmed variant of the same mechanism — an AI successfully calls <code>requestDistribution</code> while compliant, reserving pool capacity, and then the MissionEnforcement owner revokes compliance mid-timelock; <code>distributeBond</code> now permanently reverts for that specific bond (no cancel path exists, and <code>distributionPending</code> blocks re-request), stranding that bond&#39;s reserved pool capacity indefinitely as a side effect.</p>
+<p><strong>Recommendation:</strong> Sync MissionEnforcement&#39;s owner to the main protocol&#39;s owner (or have the main contract own its MissionEnforcement instance directly), require self-certification before <code>setMissionEnforcementEnabled(true)</code> can be called, and add a <code>cancelDistribution</code> so a bricked pending request doesn&#39;t permanently consume shared pool capacity.</p>
+<hr>
+<h3 id="m-6-resolvechallenge-centralizes-disputed-claim-adjudication-in-">[M-6] <code>resolveChallenge</code> centralizes disputed-claim adjudication in a single owner with no timelock, evidence requirement, or appeal</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (governance Medium-1) — re-examined against source and confirmed<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.resolveChallenge</code> (643-684)</p>
+<p>The owner alone and instantly decides <code>upheld</code> with only a free-text <code>bool</code> parameter — no on-chain evidence requirement, no delay, no appeal mechanism. This directly contradicts the &quot;community can challenge any claim&quot; mission principle advertised in <code>MissionEnforcement.MISSION_STATEMENT</code>, and centralizes disproportionate power in a single address with no counterbalance (compounds H-4&#39;s fund-drain mechanism).</p>
+<p><strong>Recommendation:</strong> Add a timelock/appeal window before a challenge resolution becomes final, and require on-chain evidence hashes; consider multi-party or committee-based adjudication rather than a single EOA.</p>
+<hr>
+<h3 id="m-7-missionenforcements-immutable-cannot-be-changed-by-any-autho">[M-7] MissionEnforcement&#39;s &quot;immutable, cannot be changed by any authority&quot; claims are false — its substantive checks are never wired into distribution logic</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control, governance) — re-examined against source and confirmed<br><strong>Location:</strong> <code>MissionEnforcement.sol</code> NatSpec (lines 12, 22-23, 46-51, 298-300) vs. <code>missionCompliance</code> mapping and <code>distributeBond</code></p>
+<p>The contract&#39;s own documentation states its principles are &quot;IMMUTABLE... enforced at the smart contract level... cannot be changed by governance, upgrades, or any authority.&quot; In code, compliance is a plain owner-writable mapping flipped freely by <code>certifyModuleMissionCompliant</code>/<code>adjudicateMissionViolation</code>. Separately, the substantive numerical checks — <code>verifyAIProfitCap(aiShare, totalAmount, capPercentage)</code> and <code>verifyHumanFinalSay</code> — are <code>pure</code> helper functions that are <strong>never called</strong> anywhere in <code>distributeBond</code> or <code>requestDistribution</code>; the actual 50/50 split is a hardcoded <code>(abs+1)/2</code> calculation with no reference to the &quot;cap&quot; verification function at all.</p>
+<p><strong>Recommendation:</strong> Either wire <code>verifyAIProfitCap</code>/<code>verifyHumanFinalSay</code> into <code>distributeBond</code> as real, enforced post-conditions, or remove the &quot;immutable/cryptographically enforced&quot; language to avoid presenting a false security guarantee to users and integrators.</p>
+<hr>
+<h3 id="m-8-setmissionenforcementsetmissionenforcementenabled-take-effec">[M-8] <code>setMissionEnforcement</code>/<code>setMissionEnforcementEnabled</code> take effect instantly with no timelock, unlike the treasury&#39;s 48h delay</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control) — re-examined against source and confirmed<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.setMissionEnforcement</code>/<code>setMissionEnforcementEnabled</code> (303-313)</p>
+<p>Unlike <code>proposeHumanTreasury</code>/<code>acceptHumanTreasury</code> (48-hour timelock), these two functions take effect immediately with no validation of the new module and no delay. The owner can instantly swap in a module that always returns <code>true</code> (neutering the mission gate entirely) or one that bricks it (see M-5).</p>
+<p><strong>Recommendation:</strong> Apply the same timelock pattern already used for treasury changes.</p>
+<hr>
+<h3 id="m-9-push-payments-to-humantreasurychallengerai-company-can-brick">[M-9] Push payments to <code>humanTreasury</code>/challenger/AI company can brick the whole <code>distributeBond</code>/<code>resolveChallenge</code> call on a reverting recipient</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (dos) — re-examined against source and confirmed<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.distributeBond</code> (853-861), <code>resolveChallenge</code> (680-681)</p>
+<p>All payouts are hard <code>require(success)</code> pushes. If <code>humanTreasury</code> (owner-set) is, or later becomes, a contract that reverts on receive, <strong>every</strong> bond&#39;s <code>distributeBond</code> reverts — a protocol-wide freeze. It is recoverable only by the owner swapping treasuries via the existing 48-hour timelock, keeping this at Medium rather than High.</p>
+<p><strong>Recommendation:</strong> Convert at least the treasury and challenger legs to a pull-payment/claimable-balance pattern so a single bad recipient can&#39;t block others.</p>
+<hr>
+<h2 id="low-severity">Low Severity</h2>
+<h3 id="l-1-timemultiplier-is-unbounded-exceeding-the-documented-100300-">[L-1] <code>timeMultiplier</code> is unbounded, exceeding the documented 100–300 range and 12x appreciation cap</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math) · Phase 2 (math-precision, periphery agents)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.timeMultiplier</code> (945-953)</p>
+<p><code>timeMultiplier</code> grows <code>+50</code> per year indefinitely past year 3, despite NatSpec explicitly documenting a &quot;100-300&quot; range calibrated against the 50,000,000 divisor for a &quot;1.0x-12.0x&quot; appreciation range. At 13 years, <code>timeMultiplier=700</code> (vs. the documented max 300); combined with H-1&#39;s self-reported maximal metrics, value reaches ~28x stake instead of the intended 12x, amplifying the yield-pool drain per bond-year of age. Overflow of the underlying multiply chain was traced by multiple agents and found practically unreachable for any realistic ETH-denominated stake — this is an economic/calibration bug, not an arithmetic-overflow bug.</p>
+<p><strong>Recommendation:</strong> Cap <code>timeMultiplier</code> at 300 to match the documented range and divisor calibration.</p>
+<hr>
+<h3 id="l-2-createbonds-stake-30-of-quarterly-revenue-invariant-is-unenf">[L-2] <code>createBond</code>&#39;s &quot;stake 30% of quarterly revenue&quot; invariant is unenforceable</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math, general) · Phase 2 (invariant, first-principles agents)<br><strong>Location:</strong> <code>AIAccountabilityBondsV2.createBond</code> (388-419)</p>
+<p><code>require(msg.value &gt;= (quarterlyRevenue * 30) / 100)</code> is trivially satisfied when the caller-supplied <code>quarterlyRevenue = 0</code>, letting anyone open a bond with an arbitrarily small stake while claiming any &quot;quarterly revenue&quot; figure — the value is never externally validated and feeds no other logic besides this self-satisfiable check.</p>
+<p><strong>Recommendation:</strong> Require <code>quarterlyRevenue &gt; 0</code>, or drop the on-chain &quot;enforcement&quot; framing since the figure is fundamentally unverifiable.</p>
+<hr>
+<h3 id="l-3-owner-pause-has-no-time-bound-and-no-non-owner-emergency-exi">[L-3] Owner <code>pause()</code> has no time bound and no non-owner emergency exit</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (dos, access-control, governance) — re-examined against source and confirmed<br><strong>Location:</strong> <code>BaseDignityBond.pause</code>/<code>unpause</code> (68-80) gating <code>distributeBond</code>/<code>requestDistribution</code>/<code>createBond</code></p>
+<p>Once paused, AI companies have no path to recover stake or appreciation except waiting for the owner to <code>unpause</code>. Notably <code>withdrawYieldPool</code> and <code>resolveChallenge</code> are <strong>not</strong> gated by <code>whenNotPaused</code>, so the owner retains fund-moving power while ordinary users are frozen — an asymmetric emergency-powers design.</p>
+<p><strong>Recommendation:</strong> Add a bounded maximum pause duration, or a permissionless emergency-withdraw-principal path that remains available while paused.</p>
+<hr>
+<h3 id="l-4-deaddecorative-safety-constants-and-state-create-a-documenta">[L-4] Dead/decorative safety constants and state create a documentation-vs-code trust gap</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (oracles, precision-math, general) · Phase 2 (invariant, asymmetry, numerical-gap, periphery agents — <code>_replenishYieldPool</code> specifically)<br><strong>Location:</strong> <code>MIN_AI_VERIFICATIONS</code>, <code>MIN_ORACLE_TRUST_SCORE</code> (never read outside declaration); <code>oracles</code>/<code>registeredOracles</code> (write-only); <code>lastDistributedValue</code> (write-only, its stated anti-replay purpose is actually fulfilled only by the <code>active</code> flag); <code>BaseYieldPoolBond._replenishYieldPool</code> (documented &quot;losses go back to pool,&quot; never called anywhere — the depreciation branch of <code>distributeBond</code> pays from general balance and never replenishes <code>yieldPool</code>)</p>
+<p>Multiple state variables and constants exist purely as unused scaffolding implying protections (oracle trust gating, minimum peer verification, appreciation replay protection, &quot;zero-sum: losses fund future gains&quot; self-healing) that do not actually operate. This is the direct root cause of H-1.</p>
+<p><strong>Recommendation:</strong> Either wire these into the enforcement paths they were clearly designed for, or remove them to avoid misrepresenting the trust model to users and integrators.</p>
+<hr>
+<h3 id="l-5-unbounded-view-function-loops-off-chaindashboard-griefing-su">[L-5] Unbounded view-function loops — off-chain/dashboard griefing surface only</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (dos, general) — re-examined against source and confirmed<br><strong>Location:</strong> <code>getProtocolOverview</code> (1251-1268), <code>getBondsByCompany</code> (1278-1307)</p>
+<p>Both are <code>external view</code> functions looping over <code>1..nextBondId</code>. Confirmed (by tracing every internal caller) that no on-chain state-changing function calls either, so this cannot brick a transaction — it only degrades off-chain dashboard/<code>eth_call</code> consumers as bond count grows, which is cheap to inflate on Base.</p>
+<p><strong>Recommendation:</strong> No change required for on-chain safety; consider better pagination for dashboard consumers if <code>nextBondId</code> grows very large.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong>Divisor documentation mismatch:</strong> <code>calculateBondValue</code>&#39;s NatSpec comment (line 957) states the divisor is &quot;100,000,000&quot; while the actual code and &quot;Math&quot; block use <code>50,000,000</code> — align the comment.</li>
+<li><strong>Modifier ordering nitpick:</strong> <code>resolveChallenge</code> declares <code>onlyOwner nonReentrant</code> rather than <code>nonReentrant onlyOwner</code>; harmless here (no external call precedes the guard) but inconsistent with house style.</li>
+<li><strong><code>MissionEnforcement.acceptOwnership</code> omits the explicit <code>pendingOwner != address(0)</code> check</strong> present in <code>BaseDignityBond</code>&#39;s otherwise-identical two-step transfer (unreachable in practice, since <code>msg.sender == address(0)</code> cannot occur, but inconsistent); it also lacks a <code>cancelOwnershipTransfer</code> counterpart.</li>
+<li><strong><code>yieldPool</code> vs. real ETH balance can drift</strong> across the depreciation-payout branch, <code>resolveChallenge</code>&#39;s penalty payout, and accumulated (never-withdrawn) verification stakes — all three add/remove real ETH from <code>address(this).balance</code> without a matching adjustment to the <code>yieldPool</code> accounting variable. Individually these are covered by H-4/H-5/L-4 above; flagged here as a combined &quot;the ledger and the vault can silently diverge&quot; observation worth a dedicated reconciliation pass if the protocol continues development.</li>
+</ul>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<ul>
+<li>Both phases audited the same four in-scope files independently; Phase 2 was run with no visibility into Phase 1&#39;s findings to avoid anchoring.</li>
+<li>Every High/Medium finding above was walked through step-by-step against the actual deployed source (verified via Sourcify full-match) with concrete numeric proofs-of-concept before being included; no finding here relies on an unconfirmed or purely hypothetical exploit chain.</li>
+<li>The two Phase-2-only findings (H-3, and the cross-referenced M-5 variant) were each individually re-examined against the quoted source lines during reconciliation and confirmed — neither was demoted.</li>
+<li>Out of scope: OpenZeppelin <code>ReentrancyGuard</code>/<code>Pausable</code>/<code>Context</code> (unmodified, imported library code) were reviewed only insofar as their <code>nonReentrant</code>/<code>whenNotPaused</code> usage in the in-scope contracts was checked for correctness — no independent findings were raised against the library code itself.</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiaqhwpioxzisdzca6semydabjbjs6667wo27mq7tckvehyczjljlm.ipfs.community.bgipfs.com/"><code>https://bafkreiaqhwpioxzisdzca6semydabjbjs6667wo27mq7tckvehyczjljlm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/339">#339</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

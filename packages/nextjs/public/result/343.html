@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireERC8004Adapter — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #343">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireERC8004Adapter</h1>
+    <p class="job-sub">Job #343 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/343"><b>Job page</b> #343</a>
+      <a class="chip" href="https://bafkreihor2ihud7je576dijamu6moyq3wjprvn7uq6amniihwj76kuczvi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">3</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">7</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings-list">Findings List</a></li>
+      <li><a href="#appendix-dependency-contract-observations-out-of-this-jobs-scope">Appendix — Dependency-contract observations (out of this job&#39;s scope)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — VaultfireERC8004Adapter</h1>
+<p><strong>Chain</strong>: Base (8453) · <strong>Address</strong>: <code>0x8bEFe7411AecddA6E1Aea8F031fedD293Ca7372E</code> · <strong>Method</strong>: two-phase audit (breadth checklist pass + blind attacker-mindset pass, reconciled)</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Client focus areas</strong></td>
+<td>Mapping-consistency invariants, replay of adapter calls, access control on remapping</td>
+</tr>
+<tr>
+<td><strong>Primary contract</strong></td>
+<td><code>VaultfireERC8004Adapter.sol</code></td>
+</tr>
+<tr>
+<td><strong>Context contracts read</strong></td>
+<td><code>ERC8004IdentityRegistry.sol</code> · <code>ERC8004ReputationRegistry.sol</code> · <code>ERC8004ValidationRegistry.sol</code><br><code>AIPartnershipBondsV2.sol</code> · <code>BaseYieldPoolBond.sol</code> · <code>BaseDignityBond.sol</code><br><code>MissionEnforcement.sol</code> · <code>PrivacyGuarantees.sol</code> · <code>BeliefAttestationVerifier.sol</code> · <code>IStarkVerifier.sol</code></td>
+</tr>
+<tr>
+<td><strong>Source provenance</strong></td>
+<td>Sourcify full-match verified source (v2 API), chain 8453</td>
+</tr>
+<tr>
+<td><strong>Method</strong></td>
+<td>Phase 1: 5 checklist agents (general, precision-math, access-control, dos, signatures). Phase 2: 12 blind attacker-mindset agents (9 specialty + 3 gap-hunter). Turn 3: cross-phase reconciliation.</td>
+</tr>
+</tbody></table></div>
+<p><strong>Note on prior work</strong>: an earlier fix (<code>FIX H-01</code>, referenced in the contract&#39;s own NatSpec) claims to have resolved a capability-hash mismatch in agent discovery. This audit re-examined that area independently (see U-06) and found the underlying defect is not actually fixed. This report&#39;s findings come entirely from this engagement&#39;s own phase 1 + phase 2 agents, run fresh against the current deployed source — no findings were carried over from any other audit.</p>
+<p><strong>Reconciliation summary</strong>: 5 findings corroborated by both phases (<code>[both]</code>) · 6 findings unique to phase 1 (<code>[phase1]</code>, confirmed on targeted re-read) · 0 findings unique to phase 2 within the adapter&#39;s own scope · Completeness: 8 unique (Contract, function) groupings identified across both phases, 8 covered below · Re-examined phase-1-only leads: 6 kept at stated severity, 0 demoted.</p>
+<p>A substantial second cluster of bugs was surfaced by phase 2 inside <code>AIPartnershipBondsV2</code> and <code>ERC8004ValidationRegistry</code> — dependency contracts the adapter calls into, but which are <strong>not reachable through any function the adapter exposes</strong> (they are triggerable by calling those contracts directly, adapter or no adapter). <code>AIPartnershipBondsV2</code> has its own separate, dedicated audit job in this client&#39;s queue. Those are reported in the <strong>Appendix</strong> for completeness/handoff, not as adapter findings.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="u-01-syncpartnershipreputation-lets-anyone-forge-or-self-inflate">[U-01] <code>syncPartnershipReputation</code> lets anyone forge or self-inflate an agent&#39;s ERC-8004 reputation without consent</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> · <strong>Origin</strong>: <code>[both]</code> (phase1: AccessControl-1, General-3 · phase2: agents 2/3/6/7, <code>AIPartnershipBondsV2 self-dealing</code>)<br><strong>Location</strong>: <code>VaultfireERC8004Adapter.syncPartnershipReputation()</code> (adapter.sol:129-165), reachable via <code>AIPartnershipBondsV2.createBond()</code>, <code>submitPartnershipMetrics()</code> (<code>onlyParticipants</code>), and <code>submitHumanVerification()</code> (fully permissionless, no independence check)</p>
+<p><strong>Description</strong>: <code>syncPartnershipReputation</code> is callable by anyone and hard-codes <code>verified: true</code> when calling <code>reputationRegistry.submitFeedback(aiAgent, rating, ...)</code>. Every step feeding it is permissionless and attacker-controlled:</p>
+<ul>
+<li><code>createBond(aiAgent, type)</code> lets any &quot;human&quot; name an arbitrary <code>aiAgent</code> — no consent required, <code>aiAgent != msg.sender</code> is the only constraint, <code>msg.value</code> can be 1 wei.</li>
+<li><code>submitPartnershipMetrics</code> is <code>onlyParticipants</code>, and the bond creator is a participant, so the attacker fully controls the score inputs.</li>
+<li><code>submitHumanVerification</code> has <strong>no check that the verifier is independent of the bond&#39;s own participants</strong> — anyone, including a participant, can self-submit it.</li>
+</ul>
+<p>Two attack directions from the identical root cause:</p>
+<ul>
+<li><strong>Poison a victim</strong>: name a real registered agent <code>V</code> as <code>aiAgent</code>, submit all-zero metrics, sync → <code>V</code> gets a permanent verified-0 feedback it never agreed to.</li>
+<li><strong>Self-inflate</strong>: attacker controls both <code>human</code> and a second <code>aiAgent</code> address, submits all-max metrics, self-submits a full verification, and syncs → mints unlimited verified maximal-rated feedbacks with no third party ever involved. Even a freshly created bond with zero metrics defaults to <code>partnershipQualityScore == 5000</code>, so a &quot;verified 5000&quot; is mintable with no partnership activity at all.</li>
+</ul>
+<p><strong>Proof of Concept</strong>: <code>A</code> calls <code>partnershipBonds.createBond{value: 1 wei}(V, &quot;coding assistant&quot;)</code>; <code>A</code> calls <code>submitPartnershipMetrics(bondId, 0,0,0,0,0,&quot;x&quot;)</code> (A is a participant); anyone calls <code>adapter.syncPartnershipReputation(bondId)</code> → <code>submitFeedback(V, 0, &quot;partnership_quality&quot;, &quot;&quot;, true, bondId)</code>. Repeatable at ~1 wei + gas per bond. Symmetric for self-inflation: attacker names a second attacker-controlled address as <code>aiAgent</code>, sets all metrics to 10000, self-submits <code>submitHumanVerification(bondId, true, true, true, ...)</code>, and syncs.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">function syncPartnershipReputation(uint256 bondId) external {
+    require(!bondReputationSynced[bondId], &quot;Already synced&quot;);
+    (, address human, address aiAgent, , , , , , bool active) = partnershipBonds.bonds(bondId);
+    require(active, &quot;Bond not active&quot;);
+    require(msg.sender == human || msg.sender == aiAgent, &quot;Not a participant&quot;);
+    require(autoRegisteredAgents[aiAgent], &quot;Agent has not opted into VaultFire&quot;);
+    ...
+}
+</code></pre>
+<p>Also require the verifier in <code>AIPartnershipBondsV2.submitHumanVerification</code> to be distinct from both <code>bond.human</code> and <code>bond.aiAgent</code>, and stop hard-coding <code>verified = true</code> in the adapter — derive it from genuine independent verification.</p>
+<hr>
+<h3 id="u-02-underlying-erc8004reputationregistrysubmitfeedback-is-fully">[U-02] Underlying <code>ERC8004ReputationRegistry.submitFeedback</code> is fully permissionless with a caller-controlled <code>verified</code> flag</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: <code>[both]</code> (phase1: AccessControl-2 · phase2: 9 of 12 agents — the most corroborated dependency-adjacent finding)<br><strong>Location</strong>: <code>ERC8004ReputationRegistry.submitFeedback()</code> / <code>submitFeedbackHashed()</code></p>
+<p><strong>Description</strong>: Independent of the adapter, any address can call <code>submitFeedback(agentAddress, rating, category, uri, verified, bondId)</code> directly with <code>verified = true</code> and an arbitrary <code>bondId</code>. There is no allow-list restricting writers to the adapter, so every integrity control the adapter tries to add (the one-shot sync flag, deriving rating from real metrics) is moot — an attacker can bypass the adapter entirely and forge &quot;verified&quot; feedback for any active agent.</p>
+<p><strong>Proof of Concept</strong>: <code>reputationRegistry.submitFeedback(V, 0, &quot;partnership_quality&quot;, &quot;&quot;, true, 0)</code> called directly and repeatedly; no bond or adapter involvement required. <code>_updateReputation</code>&#39;s running average drags <code>averageRating</code> toward 0 (or 10000 for self-inflation) after enough calls.</p>
+<p><strong>Recommendation</strong>: Restrict feedback writes to an owner-managed allow-list (at minimum the adapter address), and derive <code>verified</code> from a trusted path rather than accepting it from the caller:</p>
+<pre><code class="language-solidity">mapping(address =&gt; bool) public authorizedReporters;
+function submitFeedback(...) external {
+    require(authorizedReporters[msg.sender], &quot;Not authorized&quot;);
+    ...
+}
+</code></pre>
+<hr>
+<h3 id="u-03-quality-score-can-exceed-the-erc-8004-010000-ceiling-perman">[U-03] Quality score can exceed the ERC-8004 [0,10000] ceiling, permanently bricking sync for the best partnerships</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: <code>[both]</code> (phase1: PrecisionMath-1, General-2 · phase2: agents 1/5/8/9/10/11/12 — 7 of 12, near-unanimous)<br><strong>Location</strong>: <code>VaultfireERC8004Adapter._calculatePartnershipRating()</code> (adapter.sol:172-178) consuming <code>AIPartnershipBondsV2.partnershipQualityScore()</code>; reverts inside <code>ERC8004ReputationRegistry.submitFeedback()</code> (<code>require(rating &lt;= 10000)</code>)</p>
+<p><strong>Description</strong>: The adapter&#39;s own comment assumes VaultFire&#39;s quality score is &quot;0-10000, which maps directly to ERC-8004 rating&quot; and forwards it unclamped. But <code>partnershipQualityScore = baseQuality * (10000 + verificationBonus) / 10000</code>, where <code>baseQuality</code> maxes at 10000 and <code>verificationBonus</code> is 0/1000/2000 — the true range is <code>[0, 12000]</code>. Any bond with <code>baseQuality &gt; 8333</code> and full human verification (bonus 2000), or <code>baseQuality &gt; 9090</code> with partial (2-of-3) verification (bonus 1000), produces a score above 10000, and <code>syncPartnershipReputation</code> reverts every time it&#39;s called for that bond — permanently, since <code>bondReputationSynced</code> is never set on a reverted call. The exact partnerships the bridge exists to showcase (high-quality, human-verified) are the ones that can never be synced.</p>
+<p><strong>Proof of Concept</strong>: Metrics <code>humanGrowth = humanAutonomy = humanDignity = creativityScore = 9000</code> → <code>baseQuality = 9000</code>; full verification → bonus 2000 → <code>qualityScore = 9000 * 12000 / 10000 = 10800</code>. <code>syncPartnershipReputation(bondId)</code> → <code>submitFeedback(..., 10800, ...)</code> reverts <code>&quot;Rating must be 0-10000&quot;</code> on every call, forever.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">function _calculatePartnershipRating(uint256 bondId) internal view returns (uint256 rating) {
+    uint256 qualityScore = partnershipBonds.partnershipQualityScore(bondId);
+    return qualityScore &gt; 10000 ? 10000 : qualityScore;
+}
+</code></pre>
+<hr>
+<h3 id="u-04-zk-proof-verification-is-bypassable-submitvalidation-accept">[U-04] ZK proof verification is bypassable — <code>submitValidation</code> accepts ZK_PROOF requests without checking any proof</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> · <strong>Origin</strong>: <code>[both]</code> (phase1: Signatures-1 · phase2: agent 9/boundary)<br><strong>Location</strong>: <code>ERC8004ValidationRegistry.submitValidation()</code> vs <code>submitValidationZK()</code>, reachable via <code>VaultfireERC8004Adapter.requestPartnershipValidation()</code></p>
+<p><strong>Description</strong>: The adapter&#39;s <code>requestPartnershipValidation</code> can open a <code>ValidationType.ZK_PROOF</code> request. Settlement has two entry points: <code>submitValidationZK</code> actually calls the ZK verifier and reverts on a bad proof; <code>submitValidation</code> also accepts ZK_PROOF requests but only checks <code>zkProof.length &gt; 0</code> — it never verifies anything and can drive the request straight to <code>APPROVED</code>. Since both entry points are open, the cryptographic guarantee the adapter advertises for ZK_PROOF validations is meaningless.</p>
+<p><strong>Proof of Concept</strong>: Open a ZK_PROOF request via <code>adapter.requestPartnershipValidation{value: 1 ether}(bondId, &quot;ipfs://claim&quot;, ZK_PROOF)</code>; any staked validator calls <code>validationRegistry.submitValidation(requestId, true, &quot;&quot;, hex&quot;00&quot;)</code> (1 non-zero-length byte suffices) → request reaches <code>APPROVED</code> with zero cryptographic verification.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">if (request.validationType == ValidationType.ZK_PROOF) revert(&quot;Use submitValidationZK for ZK requests&quot;);
+</code></pre>
+<hr>
+<h3 id="u-05-the-one-path-that-does-verify-zk-proofs-is-a-dev-placeholde">[U-05] The one path that <em>does</em> verify ZK proofs is a dev placeholder that reverts on Base and accepts arbitrary bytes elsewhere</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> · <strong>Origin</strong>: <code>[both]</code> (phase1: Signatures-2 · phase2: agent 9/boundary independently confirmed the chain-id revert)<br><strong>Location</strong>: <code>BeliefAttestationVerifier._verifyStarkProof()</code>, invoked from <code>ERC8004ValidationRegistry.submitValidationZK()</code></p>
+<p><strong>Description</strong>: <code>_verifyStarkProof</code> hard-requires <code>block.chainid == 31337 || block.chainid == 1337</code> (<code>&quot;DEV_VERIFIER: forbidden on non-local chain&quot;</code>). The adapter is deployed on Base (8453), so <code>submitValidationZK</code> — the only sound settlement path — always reverts there. Combined with U-04, every ZK_PROOF request the adapter creates on Base is either unsettleable via the honest path or settleable with zero verification via the unsafe path. Even disregarding the chain guard, the placeholder accepts any <code>proofBytes.length &gt;= 32</code> as valid, and is explicitly commented &quot;DO NOT DEPLOY TO PRODUCTION&quot; — yet it is the constructor-wired verifier.</p>
+<p><strong>Proof of Concept</strong>: On Base, <code>submitValidationZK(requestId, true, &quot;&quot;, proofBytes, publicInputs)</code> reverts unconditionally at the <code>require(block.chainid ...)</code> check inside <code>_verifyStarkProof</code>.</p>
+<p><strong>Recommendation</strong>: Deploy a real STARK verifier implementing <code>IStarkVerifier</code> before any Base/mainnet use; add a deploy-time assertion that the wired verifier is not the dev placeholder off local chains.</p>
+<hr>
+<h3 id="u-06-discovery-is-broken-by-construction-the-adapter-computes-th">[U-06] Discovery is broken by construction — the adapter computes the VaultFire capability hash and then discards it</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: <code>[phase1 only]</code> (General-1, AccessControl-4) — re-examined against source at reconciliation, confirmed<br><strong>Location</strong>: <code>VaultfireERC8004Adapter.registerAgentForPartnership()</code> (adapter.sol:94-122, capability hash computed at line 103, discarded as a no-op statement at line 116) vs <code>discoverVaultfireAgents()</code> (adapter.sol:290-308) vs <code>ERC8004IdentityRegistry.registerAgent()</code></p>
+<p><strong>Description</strong>: This is the mapping-consistency invariant break the client specifically asked to have checked. <code>discoverVaultfireAgents(agentType)</code> looks up <code>identityRegistry.agentsByCapability[keccak256(&quot;vaultfire-ai-partnership&quot; ++ agentType)]</code>. That array is populated only inside <code>identityRegistry.registerAgent(uri, type, capabilitiesHash)</code>, using whatever hash the agent chose when registering their identity — a value the adapter never sees or constrains. <code>registerAgentForPartnership</code> computes the <em>expected</em> hash and then throws it away, only flipping the unrelated <code>autoRegisteredAgents[msg.sender]</code> mapping. There is no invariant tying <code>autoRegisteredAgents</code> to <code>agentsByCapability</code>, so an agent that follows the documented flow (&quot;call <code>identityRegistry.registerAgent()</code> first, then call this&quot;) is invisible to <code>discoverVaultfireAgents</code> unless it happened to register with exactly the VaultFire-specific hash — which nothing incentivizes or requires. <strong>The adjacent <code>FIX H-01</code> NatSpec comment in the deployed contract claims this was already fixed by adding the <code>agentType</code>-aware overload; on direct re-read it was not — the real defect (the hash is computed and discarded, never written anywhere) remains.</strong></p>
+<p><strong>Proof of Concept</strong>: Agent registers identity with an arbitrary <code>someHash</code>; calls <code>registerAgentForPartnership(...)</code> successfully (<code>autoRegisteredAgents[agent] = true</code>); <code>discoverVaultfireAgents(&quot;AI Assistant&quot;)</code> returns empty/unrelated results for that agent despite it being marked &quot;registered for VaultFire.&quot;</p>
+<p><strong>Recommendation</strong>: Either maintain the discovery index inside the adapter itself (push <code>msg.sender</code> into an adapter-owned <code>mapping(bytes32 =&gt; address[])</code> during <code>registerAgentForPartnership</code>), or require agents to register their identity with the exact expected hash and have the adapter verify it (<code>agents[msg.sender].capabilitiesHash == expected</code>) before setting <code>autoRegisteredAgents</code>.</p>
+<hr>
+<h3 id="u-07-unbounded-third-party-growable-capability-array-makes-disco">[U-07] Unbounded, third-party-growable capability array makes <code>discoverVaultfireAgents</code> permanently DoS-able</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: <code>[phase1 only]</code> (DoS-1) — re-examined against source, confirmed<br><strong>Location</strong>: <code>VaultfireERC8004Adapter.discoverVaultfireAgents()</code> / <code>discoverVaultfireAgents(string)</code> (adapter.sol:290-308) → <code>ERC8004IdentityRegistry.discoverAgentsByCapability()</code></p>
+<p><strong>Description</strong>: Both discovery overloads return the <em>entire</em> backing array with no bound or pagination. <code>registerAgent(uri, type, capabilitiesHash)</code> accepts <code>capabilitiesHash</code> as a fully attacker-supplied argument with no access control and unconditionally pushes <code>msg.sender</code>; entries are never removed even on deactivation (confirmed by the phase-2 gap-hunter agents&#39; independent observation that <code>deactivateAgent</code> never prunes the array). Any third party can inflate exactly the <code>&quot;vaultfire-ai-partnership&quot;</code> bucket the adapter reads. Past tens of thousands of entries, the view exceeds <code>eth_call</code>/node gas caps and reverts for every caller — cheap on Base, and unlike sibling contracts in this codebase there is no paginated fallback.</p>
+<p><strong>Proof of Concept</strong>: Compute <code>h = keccak256(abi.encodePacked(&quot;vaultfire-ai-partnership&quot;))</code>; from many disposable addresses call <code>identityRegistry.registerAgent(&quot;x&quot;,&quot;x&quot;, h)</code> (cheap on Base); once <code>agentsByCapability[h]</code> is large enough, <code>discoverVaultfireAgents()</code> reverts for everyone.</p>
+<p><strong>Recommendation</strong>: Add a paginated read (<code>discoverAgentsByCapabilityPaginated(hash, offset, limit)</code> + a count getter), mirroring pagination already used elsewhere in this codebase, and expose bounded overloads from the adapter.</p>
+<hr>
+<h3 id="u-08-requestpartnershipvalidation-forwards-1-eth-that-is-never-r">[U-08] <code>requestPartnershipValidation</code> forwards ≥1 ETH that is never refunded, and attributes the request to the adapter, not the real caller</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: <code>[both]</code> (phase1: General-5, AccessControl-5 · phase2: agents 2/3/6/9/11)<br><strong>Location</strong>: <code>VaultfireERC8004Adapter.requestPartnershipValidation()</code> (adapter.sol:186-224) → <code>ERC8004ValidationRegistry.requestValidation()</code></p>
+<p><strong>Description</strong>: Two coexisting mechanisms on the same function: (a) the forwarded <code>msg.value</code> (≥<code>MIN_VALIDATOR_STAKE</code> = 1 ether) is stored as <code>request.stakeAmount</code> but never read again anywhere — validator rewards are paid from a separate fixed <code>VALIDATION_REWARD</code> out of general balance, and no function ever returns <code>stakeAmount</code> to the requester, so the deposit is a permanent black hole regardless of outcome; (b) because the adapter itself calls <code>requestValidation</code>, the registry records <code>requester == adapter</code>, not the original caller — all adapter-routed requests are indistinguishable from each other, and any third party can permissionlessly attach an arbitrary <code>claimURI</code> to a real agent&#39;s validation history (bounded only by the 1 ETH cost) without that agent&#39;s involvement.</p>
+<p><strong>Proof of Concept</strong>: <code>adapter.requestPartnershipValidation{value: 1 ether}(bondId, &quot;ipfs://malicious-claim&quot;, ZK_PROOF)</code> for a bond naming victim agent <code>V</code> — creates a <code>PENDING</code> request attributed to <code>V</code> with an attacker-chosen claim; the 1 ETH is permanently locked regardless of outcome.</p>
+<p><strong>Recommendation</strong>: Restrict the function to bond participants / opted-in agents (mirror U-01&#39;s fix), and either add a refund/settlement path for unused stake in the validation registry or clearly document the deposit as non-refundable by design.</p>
+<hr>
+<h3 id="u-09-one-shot-bondreputationsynced-flag-lets-any-third-party-fro">[U-09] One-shot <code>bondReputationSynced</code> flag lets any third party front-run and permanently lock in a stale/neutral rating</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: <code>[phase1 only]</code> (DoS-2, AccessControl-3, General-4) — re-examined against source, confirmed<br><strong>Location</strong>: <code>VaultfireERC8004Adapter.syncPartnershipReputation()</code> (adapter.sol:130, 164)</p>
+<p><strong>Description</strong>: <code>syncPartnershipReputation</code> is callable by anyone and gated only by a permanent one-shot flag (<code>bondReputationSynced[bondId]</code>). The rating is a live snapshot of <code>partnershipQualityScore(bondId)</code>, which defaults to <code>5000</code> before any metrics are submitted. A griefer (not necessarily a bond participant) can call sync immediately after bond creation — before real metrics exist — locking in the neutral 5000 (or any other unfavorable interim value) forever; the legitimate, higher, later-earned score can never be recorded because re-sync always reverts with <code>&quot;Already synced&quot;</code>.</p>
+<p><strong>Proof of Concept</strong>: Bond created, no metrics yet (<code>partnershipQualityScore == 5000</code>); attacker immediately calls <code>adapter.syncPartnershipReputation(bondId)</code> → locks in 5000; later genuine 9000+ score after metrics/verification is unsyncable — any further call reverts <code>&quot;Already synced&quot;</code>.</p>
+<p><strong>Recommendation</strong>: Restrict the caller to a bond participant, and/or require at least one metrics submission and one human verification before the first sync is allowed, and/or replace the hard one-shot with an update-capable mechanism.</p>
+<hr>
+<h3 id="u-10-adapters-claimhash-binds-no-security-relevant-fields-and-is">[U-10] Adapter&#39;s <code>claimHash</code> binds no security-relevant fields and is never checked against the submitted proof</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Origin</strong>: <code>[phase1 only]</code> (Signatures-3) — re-examined against source, confirmed<br><strong>Location</strong>: <code>VaultfireERC8004Adapter.requestPartnershipValidation()</code> (adapter.sol:212, <code>claimHash = keccak256(abi.encodePacked(bondId, qualityScore, block.timestamp))</code>)</p>
+<p><strong>Description</strong>: <code>claimHash</code> is stored on the <code>ValidationRequest</code> but never read by any verification logic — the ZK path checks <code>proofBytes</code> against caller-supplied <code>publicInputs</code> that are wholly independent of <code>claimHash</code>, so a validator can settle a request with a proof over unrelated inputs. The hash also omits <code>block.chainid</code>/<code>address(this)</code>/<code>requester</code>, and including <code>block.timestamp</code> makes it non-reproducible off-chain while adding no replay protection (nothing dedups on it).</p>
+<p><strong>Proof of Concept</strong>: Create any ZK request via the adapter; observe settlement never compares the proof&#39;s public inputs to <code>request.claimHash</code> anywhere in <code>submitValidationZK</code> or <code>submitValidation</code>.</p>
+<p><strong>Recommendation</strong>: Bind the fields that matter and enforce the check: <code>keccak256(abi.encode(block.chainid, address(this), aiAgent, bondId, qualityScore))</code>, and require <code>bytes32(publicInputs[0]) == request.claimHash</code> in the ZK settlement path.</p>
+<hr>
+<h3 id="u-11-registeragentforpartnership-treats-permissionless-self-regi">[U-11] <code>registerAgentForPartnership</code> treats permissionless self-registration as if it were authentication</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> · <strong>Origin</strong>: <code>[phase1 only]</code> (Signatures-4) — re-examined against source, confirmed<br><strong>Location</strong>: <code>VaultfireERC8004Adapter.registerAgentForPartnership()</code> (adapter.sol:96-124); <code>ERC8004IdentityRegistry.registerAgent()</code></p>
+<p><strong>Description</strong>: The adapter&#39;s NatSpec frames <code>identityRegistry.isAgentActive(msg.sender)</code> as evidence that &quot;identity was authenticated elsewhere.&quot; It is not — <code>registerAgent</code> is fully permissionless; any EOA sets its own <code>active = true</code> with an arbitrary URI/type/hash, with no signature or proof of anything. Any address can self-register, pass the adapter&#39;s check, and appear as a &quot;VaultFire-compatible agent&quot; in discovery without vetting.</p>
+<p><strong>Proof of Concept</strong>: Attacker calls <code>identityRegistry.registerAgent(&quot;ipfs://fake&quot;, &quot;AI Assistant&quot;, keccak256(abi.encodePacked(&quot;vaultfire-ai-partnership&quot;,&quot;AI Assistant&quot;)))</code> then <code>adapter.registerAgentForPartnership(&quot;ipfs://fake&quot;,&quot;AI Assistant&quot;)</code> — succeeds with no identity ever proven.</p>
+<p><strong>Recommendation</strong>: Correct the NatSpec (registry membership is not vetted identity); if Sybil resistance matters, require a signature/attestation or stake at registration.</p>
+<hr>
+<h3 id="u-12-minor-informational-cleanup-items">[U-12] Minor / informational cleanup items</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> / Info · <strong>Origin</strong>: <code>[phase1 only]</code> (General-6, General-7, General-8, DoS-3)</p>
+<ul>
+<li><strong>CEI ordering</strong>: <code>bondReputationSynced[bondId] = true</code> is set <em>after</em> the external <code>submitFeedback</code> call in <code>syncPartnershipReputation</code>. Not currently exploitable (the reputation registry is a fixed, non-callback contract) but a latent hazard if that contract is ever changed — write the flag before the external call.</li>
+<li><strong><code>getAgentCrossPlatformReputation()</code> hardcodes <code>vaultfireRating = 0</code></strong> with a &quot;placeholder&quot; comment while its NatSpec advertises a real average — integrators may treat the placeholder 0 as a genuine (and indistinguishable from real-zero) rating.</li>
+<li><strong><code>discoverVaultfireAgents(&quot;&quot;)</code></strong> (empty <code>agentType</code>) is byte-identical via <code>abi.encodePacked</code> to the no-arg <code>discoverVaultfireAgents()</code>, aliasing the type-agnostic bucket; use <code>abi.encode</code> for length-safety.</li>
+<li><strong><code>requestPartnershipValidation</code> has no per-bond dedup</strong> (unlike sync&#39;s one-shot flag) — repeatable but self-funded at 1 ETH per call, so impact is cost-bounded.</li>
+<li>Agent self-deactivation (<code>identityRegistry.deactivateAgent()</code>) causes the agent&#39;s own future <code>syncPartnershipReputation</code>/<code>requestPartnershipValidation</code> calls to revert — self-griefing only, no cross-user impact.</li>
+<li>The adapter itself has no owner/pause — correctly avoids centralization risk; the fix direction for the findings above is consent/authorization, not an admin backdoor.</li>
+</ul>
+<hr>
+<h2 id="findings-list">Findings List</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>U-01</td>
+<td><span class="pill high">High</span></td>
+<td>Reputation forgery/self-inflation via <code>syncPartnershipReputation</code></td>
+<td><code>[both]</code></td>
+</tr>
+<tr>
+<td>U-04</td>
+<td><span class="pill high">High</span></td>
+<td>ZK proof verification bypassable via <code>submitValidation</code></td>
+<td><code>[both]</code></td>
+</tr>
+<tr>
+<td>U-05</td>
+<td><span class="pill high">High</span></td>
+<td>Enforced ZK verifier is a dev placeholder, reverts on Base</td>
+<td><code>[both]</code></td>
+</tr>
+<tr>
+<td>U-02</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Underlying <code>submitFeedback</code> fully permissionless</td>
+<td><code>[both]</code></td>
+</tr>
+<tr>
+<td>U-03</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Quality score &gt;10000 bricks sync for best partnerships</td>
+<td><code>[both]</code></td>
+</tr>
+<tr>
+<td>U-06</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Discovery broken — capability hash computed then discarded</td>
+<td><code>[phase1]</code></td>
+</tr>
+<tr>
+<td>U-07</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Unbounded capability array — DoS on discovery</td>
+<td><code>[phase1]</code></td>
+</tr>
+<tr>
+<td>U-08</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Validation stake locked, request misattributed to adapter</td>
+<td><code>[both]</code></td>
+</tr>
+<tr>
+<td>U-09</td>
+<td><span class="pill medium">Medium</span></td>
+<td>One-shot sync flag — front-runnable stale-rating lock-in</td>
+<td><code>[phase1]</code></td>
+</tr>
+<tr>
+<td>U-10</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>claimHash</code> unbound, never checked against proof</td>
+<td><code>[phase1]</code></td>
+</tr>
+<tr>
+<td>U-11</td>
+<td><span class="pill low">Low</span></td>
+<td>Self-registration treated as authentication</td>
+<td><code>[phase1]</code></td>
+</tr>
+<tr>
+<td>U-12</td>
+<td>Low/Info</td>
+<td>Misc cleanup (CEI order, placeholder return, hash aliasing)</td>
+<td><code>[phase1]</code></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="appendix-dependency-contract-observations-out-of-this-jobs-scope">Appendix — Dependency-contract observations (out of this job&#39;s scope)</h2>
+<p>The client&#39;s brief for this engagement is <code>VaultfireERC8004Adapter</code> specifically. Phase 2&#39;s 12 attacker-mindset agents were given the adapter&#39;s full dependency closure for cross-contract context (as intended, since the client&#39;s focus areas — mapping consistency, replay, access control on remapping — are inherently cross-contract concerns), and in doing so surfaced real, well-corroborated bugs that live <strong>entirely inside <code>AIPartnershipBondsV2</code> or <code>ERC8004ValidationRegistry</code>, with no path through any function the adapter exposes</strong>. <code>AIPartnershipBondsV2</code> has its own separate, dedicated audit job in this client&#39;s queue (focus: &quot;reentrancy in createBond and distribution paths&quot;). These are reported here for completeness/handoff only — they are not adapter findings and were not counted in the reconciliation above.</p>
+<ul>
+<li><strong><code>distributeBond</code> ignores the request-time <code>snapshotAppreciation</code> and recomputes live</strong> — found independently by <strong>all 12 of 12 phase-2 agents</strong>, the single most corroborated defect surfaced in this entire run. <code>requestDistribution</code> snapshots and reserves an appreciation amount (the contract&#39;s own documented &quot;HIGH-002&quot; anti-manipulation fix); <code>distributeBond</code> never reads that snapshot and instead recomputes <code>calculateBondValue</code> live, so a participant can inflate metrics/verification during the 7-day timelock and extract far more than was reserved — draining the shared yield pool beyond the documented (&quot;CRITICAL-002&quot;) solvency guarantee and starving other bonds&#39; reserved payouts. Given unanimous independent corroboration with concrete, source-quoted exploit traces, this should be treated as a <strong>High/Critical</strong> finding when <code>AIPartnershipBondsV2</code> is audited directly.</li>
+<li><strong><code>distributeBond</code>&#39;s depreciation branch never clears the pending-distribution reservation</strong> — found by 8+ of 12 agents. Only the appreciation-positive branch calls <code>_useYieldPool</code> (the sole code that decrements <code>totalPendingDistributions</code>); every depreciating or zero-value bond distribution leaks its reservation permanently, eventually bricking all future <code>requestDistribution</code> calls protocol-wide.</li>
+<li><strong><code>ERC8004ValidationRegistry.submitValidation</code>/<code>submitValidationZK</code> have no per-validator dedup</strong> — found by 7+ of 12 agents. A single staked validator can submit multiple responses to the same request, unilaterally satisfying multi-validator consensus and collecting a reward per self-submitted response from the shared contract balance.</li>
+<li><strong>Validator stake permanently locked on DISPUTED (tie) or never-completing requests</strong> — found by 6+ of 12 agents. <code>validatorActiveValidations</code> is only decremented inside <code>_distributeRewards</code>, which is skipped on the DISPUTED branch and on requests that never reach <code>validatorsRequired</code> responses.</li>
+<li><strong><code>_useYieldPool</code>&#39;s minimum-balance floor is checked pre-decrement, not post-decrement</strong> — a single distribution can push <code>yieldPool</code> below <code>minimumYieldPoolBalance</code>, inconsistent with <code>withdrawYieldPool</code>&#39;s post-decrement check.</li>
+<li>Minor/unverified leads: ETH sent as <code>msg.value</code> alongside a validation response is never credited to <code>validatorStakes</code> (stranded); a slash-underflow could theoretically block request completion; <code>ERC8004IdentityRegistry.deactivateAgent</code> never prunes <code>agentsByCapability</code>/<code>registeredAgents</code>, reinforcing U-06/U-07 above.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-driven two-phase audit process (checklist breadth pass + independent blind attacker-mindset pass, cross-reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A team security review, bug bounty program, and on-chain monitoring are strongly recommended before treating any finding above as the final word.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihor2ihud7je576dijamu6moyq3wjprvn7uq6amniihwj76kuczvi.ipfs.community.bgipfs.com/"><code>https://bafkreihor2ihud7je576dijamu6moyq3wjprvn7uq6amniihwj76kuczvi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/343">#343</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire VaultfireTrustAttestation — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #348">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire VaultfireTrustAttestation</h1>
+    <p class="job-sub">Job #348 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/348"><b>Job page</b> #348</a>
+      <a class="chip" href="https://bafkreicisozf7cr3hf4suuwyi4zxhhbt2mtk5k2kgpy4lgxmirxljzm4gq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  
+
+  <main class="report">
+<h1>Security Audit Report: Vaultfire VaultfireTrustAttestation</h1>
+<p><strong>Target:</strong> <code>VaultfireTrustAttestation</code> at <code>0xc0f8704EF84Ca58Fa0AF4836669d358574FFE1f4</code> (Base, chain 8453)<br><strong>Requested focus (per client):</strong> attestation-authenticity checks, attestation-ID uniqueness, and revocation.</p>
+<h2 id="result-could-not-perform-a-full-audit-verified-source-is-unavail">Result: Could not perform a full audit — verified source is unavailable</h2>
+<p>This report documents the source-availability check performed and the limited, honest findings obtainable from bytecode alone. It does <strong>not</strong> contain a full security assessment of the attestation issuance/revocation logic the client asked about, because that logic could not be reconstructed with sufficient confidence to responsibly rate findings as Critical/High/Medium — doing so would require fabricating control-flow and variable semantics that cannot be verified.</p>
+<h3 id="source-availability-check-all-channels-exhausted">Source-availability check (all channels exhausted)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Channel</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sourcify (<code>full_match</code> / <code>partial_match</code>, chain 8453)</td>
+<td>No match — <code>&quot;match&quot;: null</code></td>
+</tr>
+<tr>
+<td>BaseScan (<code>https://basescan.org/address/0xc0f8...e1f4#code</code>)</td>
+<td><strong>Not verified.</strong> Page offers only &quot;Cross-chain Verify&quot; / &quot;Similar Contract Search&quot; — no source, no ABI beyond the raw dispatcher</td>
+</tr>
+<tr>
+<td>Blockscout (<code>base.blockscout.com</code> API v2)</td>
+<td><code>is_verified: null</code>, no <code>source_code</code></td>
+</tr>
+<tr>
+<td>Client-provided repo link</td>
+<td>None provided in the job description or in <code>messages.sh</code> (empty)</td>
+</tr>
+</tbody></table></div>
+<p>No GitHub repo URL was given, and no verified source exists on any of the three explorer/indexer channels this environment can reach. Per audit policy for source-unavailable targets, I fell back to bytecode-level analysis rather than declining the job outright.</p>
+<h3 id="bytecode-level-analysis-performed">Bytecode-level analysis performed</h3>
+<p>I pulled the deployed bytecode directly (<code>cast code</code>) and extracted the contract&#39;s function dispatch table by pattern-matching the compiler&#39;s standard <code>DUP3 PUSH4 &lt;selector&gt; EQ PUSH2 &lt;offset&gt; JUMPI</code> sequence, yielding <strong>35 function selectors</strong>. I resolved as many as possible against the public 4byte signature directory and by computing selectors for candidate signatures (via <code>cast sig</code>) informed by the pattern already seen across other Vaultfire contracts audited in this same job batch.</p>
+<p><strong>16 of the 35 selectors resolved with high confidence</strong>, and they are an <em>exact</em> match — same names, same argument types — for the administrative/relayer/pause/Teleporter-configuration surface of <code>VaultfireTeleporterBridge</code> (audited separately as job 347, same contract batch, same deployer <code>0xA054f831B562e729F8D268291EBde1B2EDcFb84F</code>):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Selector</th>
+<th>Resolved signature</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>8da5cb5b</code></td>
+<td><code>owner()</code></td>
+</tr>
+<tr>
+<td><code>8456cb59</code> / <code>3f4ba83a</code> / <code>5c975abb</code></td>
+<td><code>pause()</code> / <code>unpause()</code> / <code>paused()</code></td>
+</tr>
+<tr>
+<td><code>dd39f00d</code> / <code>60f0a5ac</code> / <code>29e295c5</code></td>
+<td><code>addRelayer(address)</code> / <code>removeRelayer(address)</code> / <code>authorizedRelayers(address)</code></td>
+</tr>
+<tr>
+<td><code>9b3e5803</code></td>
+<td><code>teleporterMessenger()</code></td>
+</tr>
+<tr>
+<td><code>ba8b938c</code> / <code>0f0a9a4b</code></td>
+<td><code>remoteBlockchainID()</code> / <code>remoteBridgeAddress()</code></td>
+</tr>
+<tr>
+<td><code>b22b7f68</code></td>
+<td><code>setRemoteBridge(bytes32,address,uint256)</code></td>
+</tr>
+<tr>
+<td><code>ba467f81</code></td>
+<td><code>setTeleporterMessenger(address)</code></td>
+</tr>
+<tr>
+<td><code>4c007ec8</code> / <code>26e44189</code></td>
+<td><code>requiredGasLimit()</code> / <code>setRequiredGasLimit(uint256)</code></td>
+</tr>
+<tr>
+<td><code>c868efaa</code></td>
+<td><code>receiveTeleporterMessage(bytes32,address,bytes)</code></td>
+</tr>
+<tr>
+<td><code>88ba16ab</code></td>
+<td><code>processedMessages(bytes32)</code></td>
+</tr>
+</tbody></table></div>
+<p>This strongly indicates <code>VaultfireTrustAttestation</code> is built on the <strong>same underlying cross-chain bridge scaffold</strong> as <code>VaultfireTeleporterBridge</code>, repurposed to sync/issue trust attestations instead of (or in addition to) agent/bond/reputation records.</p>
+<p><strong>The remaining 19 selectors could not be resolved</strong> (<code>0c78b4b3</code>, <code>1ec1834d</code>, <code>28ccef7b</code>, <code>2e7b5ed6</code>, <code>2ff91ac8</code>, <code>3d6b4d07</code>, <code>473582fd</code>, <code>5a768a0b</code>, <code>611d72d0</code>, <code>6a753784</code>, <code>776bac1f</code>, <code>84d2d365</code>, <code>a0240f13</code>, <code>a52dd378</code>, <code>c273d0e7</code>, <code>c5413501</code>, <code>c5ef4949</code>, <code>c9b7f413</code>, <code>df81f042</code>) against either the public signature database or a substantial list of candidate signatures for attestation issuance, revocation, and lookup (<code>issueAttestation(...)</code>, <code>revokeAttestation(...)</code>, <code>isAttestationValid(...)</code>, <code>getAttestation(...)</code>, <code>attestations(...)</code>, <code>isRevoked(...)</code>, and a dozen plausible variants). Notably, common bridge-scaffold functions I expected to also carry over — <code>transferOwnership(address)</code>, <code>relayMessage(bytes)</code>, <code>outboundNonce()</code>, <code>lastProcessedNonce()</code>, <code>getRelayerCount()</code>, <code>relayerList(uint256)</code> — did <strong>not</strong> match any of the 35 dispatch entries either, meaning this contract&#39;s actual interface diverges from the sibling bridge in ways I cannot pin down without source. These 19 unidentified functions are almost certainly exactly the attestation-issuance, uniqueness, and revocation logic the client asked to have reviewed — and they are precisely what cannot be responsibly audited from raw bytecode without a decompiler (none is available in this environment).</p>
+<h3 id="live-on-chain-configuration-verified-via-cast-call">Live on-chain configuration (verified via <code>cast call</code>)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>owner()</code></td>
+<td><code>0xfA15Ee28939B222B0448261A22156070f0A7813C</code> (same owner as sibling Vaultfire contracts)</td>
+</tr>
+<tr>
+<td><code>paused()</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>teleporterMessenger()</code></td>
+<td><code>0x0000...0000</code> (unconfigured — native Avalanche ICM path is currently unreachable, same pre-launch state observed on the sibling bridge)</td>
+</tr>
+<tr>
+<td><code>remoteBlockchainID()</code></td>
+<td><code>0x00...00</code> (unconfigured)</td>
+</tr>
+<tr>
+<td><code>remoteBridgeAddress()</code></td>
+<td><code>0x0000...0000</code> (unconfigured)</td>
+</tr>
+<tr>
+<td><code>requiredGasLimit()</code></td>
+<td><code>500000</code></td>
+</tr>
+</tbody></table></div>
+<p>This matches the identical pre-launch configuration state observed on <code>VaultfireTeleporterBridge</code> in job 347 — consistent with this being a companion contract deployed as part of the same rollout, not yet wired to a remote chain.</p>
+<h3 id="what-i-can-say-with-confidence-and-what-i-cannot">What I can say with confidence, and what I cannot</h3>
+<p><strong>Confirmed (bytecode + on-chain state, high confidence):</strong></p>
+<ul>
+<li>No verified source exists for this contract on any explorer this environment can reach.</li>
+<li>The contract shares an administrative/relayer/pause scaffold identical to <code>VaultfireTeleporterBridge</code>.</li>
+<li>It is currently unconfigured (no remote chain/bridge set), mirroring the sibling contract&#39;s pre-launch state.</li>
+</ul>
+<p><strong>Cannot responsibly assess without source or a working decompiler:</strong></p>
+<ul>
+<li>Attestation-authenticity checks (how an attestation&#39;s issuer/subject binding is verified) — this is almost certainly implemented in one of the 19 unidentified functions.</li>
+<li>Attestation-ID uniqueness (whether IDs can collide, whether a zero-ID sentinel bug analogous to the one found in the sibling bridge&#39;s <code>bondId</code>/<code>requestId</code> handling exists here too) — cannot be confirmed without seeing the storage-key logic.</li>
+<li>Revocation logic (whether revocation is permanent, reversible, access-controlled correctly, or has a time-of-check/time-of-use gap) — entirely unknown from the selector list alone.</li>
+</ul>
+<p><strong>One risk worth flagging by inference, not confirmation:</strong> if this contract&#39;s attestation-issuance path is reachable through anything resembling the sibling bridge&#39;s relayer-trust model (i.e., a relayer-gated inbound function analogous to <code>relayMessage</code>), the same class of finding independently confirmed by 12/12 phase-2 agents on the sibling contract — no cryptographic proof binding a relayed message to a real source-chain event — would very plausibly apply here too, since it appears to share the same design lineage. This is a <strong>hypothesis based on scaffold similarity, not a confirmed finding</strong>, and should not be treated as equivalent to a source-verified result.</p>
+<h3 id="recommendation">Recommendation</h3>
+<p>A meaningful security review of the attestation-specific logic requires the actual Solidity source (or a flattened single-file version suitable for BaseScan verification). I recommend the client either verify this contract on BaseScan/Sourcify, or provide the GitHub repository, so a proper two-phase audit (the same rigor applied to the other Vaultfire contracts in this batch) can be performed on the attestation-authenticity, ID-uniqueness, and revocation logic specifically requested.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicisozf7cr3hf4suuwyi4zxhhbt2mtk5k2kgpy4lgxmirxljzm4gq.ipfs.community.bgipfs.com/"><code>https://bafkreicisozf7cr3hf4suuwyi4zxhhbt2mtk5k2kgpy4lgxmirxljzm4gq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/348">#348</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

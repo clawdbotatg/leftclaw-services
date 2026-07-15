@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire ProductionBeliefAttestationVerifier — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #345">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire ProductionBeliefAttestationVerifier</h1>
+    <p class="job-sub">Job #345 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/345"><b>Job page</b> #345</a>
+      <a class="chip" href="https://bafkreiczdav5hmdjzavq6zpwhw6safythf3uprlux5inigrbclmzajel3u.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#critical-severity">Critical Severity</a></li>
+      <li><a href="#high-severity">High Severity</a></li>
+      <li><a href="#medium-severity">Medium Severity</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#low-severity">Low Severity</a></li>
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#governance-verdict-clients-specific-claim">Governance Verdict: Client&#39;s Specific Claim</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report: Vaultfire ProductionBeliefAttestationVerifier</h1>
+<p><strong>Target:</strong> <code>ProductionBeliefAttestationVerifier</code> at <code>0x2a46B5932e9559176241056A04a608B8fEbCc5A7</code> (Base, chain 8453)<br><strong>In-scope contracts:</strong> <code>ProductionBeliefAttestationVerifier.sol</code>, <code>IRiscZeroVerifier.sol</code>, <code>IStarkVerifier.sol</code> (source extracted from BaseScan&#39;s verified Standard-JSON-Input; not present on Sourcify)<br><strong>Methodology:</strong> Two-phase audit — Phase 1 breadth (5 parallel checklist-driven agents: general, precision-math, access-control, governance/timelock, replay-pattern) → Phase 2 depth (12 parallel attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation (this document).<br><strong>Reconciliation summary:</strong> Overlap: 8 findings independently confirmed by both phases · Phase-1-only: 4 (all involving live on-chain verification) · Phase-2-only: 0 genuinely novel (one phase-2 finding sharpened an existing phase-1 finding into two distinct issues) · Demoted on re-examine: 0.<br><strong>Completeness:</strong> every unique (contract, function, bug-class) raised by either phase&#39;s raw agent output is represented below.</p>
+<p><strong>Independent on-chain verification performed by the orchestrator:</strong> two of this report&#39;s Critical findings were verified directly against live Base Mainnet state and the real RISC Zero router&#39;s Sourcify-verified ABI, not merely inferred from source review — see [C-1] and [C-2] for the exact <code>cast</code> commands and results.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<p>This contract is meant to be Vaultfire&#39;s production RISC Zero zk-proof verifier for &quot;belief attestations.&quot; Both audit phases converged on a striking result: <strong>the deployed contract has never worked</strong>. Its immutable <code>riscZeroVerifier</code> reference points to an address with zero bytecode (not the real, documented RISC Zero router), and — independently, and even after fixing that — the in-scope interface declares a <code>bool</code> return value that the real router&#39;s actual ABI does not have, which would cause every genuinely successful verification to revert uncatchably. <code>attestationCount()</code> reads <code>0</code> on the live contract, consistent with it never having recorded a single attestation since deployment. Beyond these deployment-breaking issues, both phases also converged heavily on a <code>moduleId</code> truncation bug in the legacy interface that lets a replayed real proof register an arbitrary, unproven module identifier, and on the complete absence of replay protection for verified proofs. The client&#39;s specific question — &quot;can the 48-hour VK-rotation timelock be bypassed, even by the owner?&quot; — was traced in full by the governance-focused phase-1 agent and independently re-confirmed by the orchestrator: <strong>the timelock holds; there is no bypass.</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>7</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>1</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="critical-severity">Critical Severity</h2>
+<h3 id="c-1-deployed-risczeroverifier-immutable-points-to-an-address-wit">[C-1] Deployed <code>riscZeroVerifier</code> immutable points to an address with zero bytecode — the live contract has never successfully verified a single proof</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (general agent) — independently re-verified live on-chain by the orchestrator via direct <code>cast</code> calls<br><strong>Location:</strong> constructor (207-217), all verification paths</p>
+<p><code>riscZeroVerifier</code> is set once, immutably, in the constructor. On the live deployment it was set to <code>0xA054f831B562e729F8D268291EBde1B2EDcFb84F</code> — an address with <strong>no deployed bytecode</strong> — rather than the documented real Base <code>RiscZeroVerifierRouter</code> at <code>0x0b144e07a0826182b6b59788c34b32bfa86fb711</code> (hardcoded in this contract&#39;s own header comment).</p>
+<p><strong>Proof (independently reproduced by the orchestrator against <code>https://mainnet.base.org</code>):</strong></p>
+<pre><code>$ cast call 0x2a46B5932e9559176241056A04a608B8fEbCc5A7 &quot;riscZeroVerifier()(address)&quot; --rpc-url $RPC
+0xA054f831B562e729F8D268291EBde1B2EDcFb84F
+$ cast code 0xA054f831B562e729F8D268291EBde1B2EDcFb84F --rpc-url $RPC
+0x                                    # zero bytecode — not a contract
+$ cast code 0x0b144e07a0826182b6b59788c34b32bfa86fb711 --rpc-url $RPC
+0x6080604052...                      # 4715+ bytes — the real router
+$ cast call 0x2a46B5932e9559176241056A04a608B8fEbCc5A7 &quot;attestationCount()(uint256)&quot; --rpc-url $RPC
+0
+$ cast call 0x2a46B5932e9559176241056A04a608B8fEbCc5A7 &quot;imageId()(bytes32)&quot; --rpc-url $RPC
+0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff   # placeholder, not a real guest-program hash
+</code></pre>
+<p><code>attestationCount()==0</code> and the placeholder <code>imageId</code> corroborate that this &quot;production&quot; contract has never successfully recorded an attestation since deployment (BaseScan shows only one prior transaction, an ownership transfer). Because <code>riscZeroVerifier</code> is <code>immutable</code>, <strong>this cannot be fixed in place</strong> — it requires a full redeploy.</p>
+<p><strong>Recommendation:</strong> Redeploy with the correct constructor argument, and add <code>require(_riscZeroVerifier.code.length &gt; 0)</code> in the constructor to catch this exact class of misconfiguration before it can ship again.</p>
+<hr>
+<h3 id="c-2-irisczeroverifierverifys-declared-returns-bool-does-not-matc">[C-2] <code>IRiscZeroVerifier.verify()</code>&#39;s declared <code>returns (bool)</code> does not match the real router&#39;s void ABI — even after fixing C-1, every successful verification would still uncaught-revert</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general agent) · Phase 2 (all 12/12 agents raised this in some form; 6 independently fetched/confirmed the real interface from GitHub) — independently re-verified by the orchestrator against the real router&#39;s Sourcify-verified ABI<br><strong>Location:</strong> <code>IRiscZeroVerifier.sol:45-49</code>; call sites in <code>_verifyAndRecord</code> (317), <code>verifyAttestation</code> (277)</p>
+<p>The in-scope interface declares:</p>
+<pre><code class="language-solidity">function verify(bytes calldata proof, bytes32 imageId, bytes32 journalDigest) external view returns (bool);
+</code></pre>
+<p>The real, deployed <code>RiscZeroVerifierRouter</code> at <code>0x0b144e07a0826182b6b59788c34b32bfa86fb711</code> has — confirmed independently by the orchestrator via its Sourcify-verified ABI, and separately by multiple phase-2 agents against the actual <code>risc0-ethereum</code> GitHub source — <code>&quot;outputs&quot;:[]</code>: <strong>no return value at all</strong>. Both call sites use <code>try riscZeroVerifier.verify(...) returns (bool) { ... }</code>, which attempts to ABI-decode a <code>bool</code> from the 0 bytes of return data the real router actually returns on success.</p>
+<p><strong>Proof:</strong> A decode failure on the <em>success</em> branch of a <code>try</code> statement&#39;s return data is, per Solidity&#39;s own semantics, not a catchable exception — it propagates as an uncaught revert of the entire transaction, bypassing both <code>catch Error(string)</code> and the bare <code>catch {}</code>. This means: <strong>even after redeploying with the correct router address (fixing C-1), every genuinely valid proof would still cause the whole transaction to revert</strong>, because the real router returns 0 bytes on success and the calling code cannot decode a <code>bool</code> from that. Only the failure path (the real router reverting on an invalid proof) is a genuine external-call revert that the try/catch correctly intercepts. This bug is independent of, and compounds with, C-1.</p>
+<p><strong>Recommendation:</strong> Fix <code>IRiscZeroVerifier.sol</code>&#39;s <code>verify</code> signature to match the real ABI (no return value), and update both call sites to <code>try riscZeroVerifier.verify(seal, imageId, journalDigest) { ... } catch ...</code> with no <code>returns (...)</code> clause.</p>
+<hr>
+<h2 id="high-severity">High Severity</h2>
+<h3 id="h-1-moduleid-truncation-mismatch-in-the-legacy-verifyproof-path-">[H-1] <code>moduleId</code> truncation mismatch in the legacy <code>verifyProof</code> path lets a replayed real seal register an arbitrary, unproven <code>moduleId</code></h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math, general, replay-pattern) · Phase 2 (10/12 agents, all with matching numeric PoCs)<br><strong>Location:</strong> <code>verifyProof</code> (224-241) → <code>_verifyAndRecord</code> (299-335) → <code>_recordAttestation</code> (337-365)</p>
+<p><code>verifyProof</code> validates <code>epoch &gt; MAX_EPOCH</code> (guaranteeing lossless truncation to <code>uint32</code>) but has <strong>no equivalent bound check on <code>moduleId</code></strong>. <code>_verifyAndRecord</code> computes the cryptographic journal digest using <code>uint32(moduleId)</code> (truncated), but passes the <strong>full, untruncated <code>uint256 moduleId</code></strong> to <code>_recordAttestation</code>, which stores/emits it verbatim. Since <code>uint32(x) == uint32(x + k·2^32)</code> for any integer k, any <code>moduleId</code> congruent to the real proven value mod 2^32 produces an identical journal digest and passes verification against the <em>same</em> seal — while a completely different, attacker-chosen value gets permanently recorded on-chain.</p>
+<p><strong>Proof:</strong> Given one genuine valid seal for real tuple <code>(H, A, E, trueModuleId=7)</code>: anyone (no access control on <code>verifyProof</code>) calls <code>verifyProof(seal, [H, uint160(A), E, 7 + 2**32])</code>. <code>uint32(7+2**32)=7</code>, so the digest matches and verification succeeds; <code>_recordAttestation</code> stores/emits <code>moduleId = 4294967303</code> — a value never proven by the SNARK, overwriting the prior legitimate record (the storage key excludes <code>moduleId</code> — see M-1).</p>
+<p><strong>Confirmed NOT applicable to <code>verifyAttestation</code>:</strong> one phase-2 agent independently verified via a live Foundry/anvil test that Solidity&#39;s <code>abi.decode</code> into a <code>uint32</code> slot reverts on non-clean upper bits (unlike an explicit narrowing cast, which silently truncates) — so the preferred <code>verifyAttestation</code> path, which decodes <code>epoch</code>/<code>moduleId</code> directly as <code>uint32</code>, cannot diverge this way. Only the legacy <code>verifyProof</code> path is vulnerable.</p>
+<p><strong>Recommendation:</strong> Add <code>if (moduleId &gt; type(uint32).max) revert InvalidModuleId();</code> in <code>verifyProof</code>, mirroring the existing <code>epoch</code> check.</p>
+<hr>
+<h3 id="h-2-no-replayduplicate-submission-protection-a-valid-proof-can-b">[H-2] No replay/duplicate-submission protection — a valid proof can be resubmitted indefinitely to inflate <code>attestationCount</code> and refresh <code>verifiedAt</code></h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (replay-pattern, general) · Phase 2 (10/12 agents)<br><strong>Location:</strong> <code>_recordAttestation</code> (337-365), reached unconditionally from both <code>verifyProof</code> and <code>verifyAttestation</code></p>
+<p><code>IRiscZeroVerifier.verify</code> is a stateless, deterministic <code>view</code> check with no on-chain nullifier — the same exact <code>(seal, publicInputs)</code>/<code>(seal, journalData)</code> tuple, permanently visible in public calldata, can be resubmitted by anyone, any number of times, and will re-verify successfully every time. <code>_recordAttestation</code> never checks <code>attestations[key].exists</code> before overwriting, so every resubmission re-increments <code>attestationCount</code> and bumps <code>verifiedAt</code> to the current block timestamp, despite no new proof having been generated.</p>
+<p><strong>Proof:</strong> Submit a genuine <code>verifyAttestation(seal, journalData)</code> at t0 → <code>attestationCount=1</code>, <code>verifiedAt=t0</code>. Anyone copies the same calldata from the chain and resubmits at t1 → verification succeeds identically, <code>attestationCount=2</code>, <code>verifiedAt=t1</code> — for an attestation that was never freshly re-proven. Repeatable indefinitely at gas cost only.</p>
+<p><strong>Recommendation:</strong> Gate <code>_recordAttestation</code> on <code>!attestations[key].exists</code> (or a <code>usedSeal[keccak256(seal)]</code> nullifier) before incrementing <code>attestationCount</code>/overwriting <code>verifiedAt</code>.</p>
+<hr>
+<h3 id="h-3-single-eoa-owner-has-no-independent-vetoguardian-for-a-pendi">[H-3] Single EOA owner has no independent veto/guardian for a pending malicious <code>imageId</code> proposal</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control) — re-examined against source and confirmed<br><strong>Location:</strong> <code>proposeImageIdChange</code>/<code>cancelImageIdChange</code>/<code>executeImageIdChange</code> (433-467)</p>
+<p>The only guard on a new <code>imageId</code> is non-zero — no on-chain validation ties it to any specific, audited guest program. Critically, <code>cancelImageIdChange</code> is itself <code>onlyOwner</code>, so if the owner key is compromised, the attacker who proposed a malicious <code>imageId</code> is the only party who can cancel it; no guardian role exists to veto a pending change during the 48h review window. This is conditioned on owner-key compromise, not directly triggerable by an outside attacker without that precondition.</p>
+<p><strong>Proof (trace):</strong> Attacker obtains the owner key → calls <code>proposeImageIdChange(evilImageId)</code> where <code>evilImageId</code> is the hash of an attacker-compiled guest program that trivially satisfies any <code>journalDigest</code> the attacker wants → no other address can cancel this during the 48h window → after 48h, <code>executeImageIdChange()</code> succeeds → attacker can now register arbitrary, forged belief attestations that any downstream Vaultfire consumer trusts.</p>
+<p><strong>Recommendation:</strong> Make <code>owner</code> a multisig/governance contract; add an independent guardian role that can cancel a pending proposal without the proposer&#39;s cooperation; consider requiring published, reproducible-build metadata for any proposed <code>imageId</code>.</p>
+<hr>
+<h2 id="medium-severity">Medium Severity</h2>
+<h3 id="m-1-attestation-storage-key-and-hasattestation-flag-omit-modulei">[M-1] Attestation storage key and <code>hasAttestation</code> flag omit <code>moduleId</code> (and effectively <code>epoch</code>) — cross-record overwrite and stale-flag issues</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math, replay-pattern) · Phase 2 (6/12 agents, as leads — exploitability depends on downstream consumer semantics not in scope)<br><strong>Location:</strong> <code>_recordAttestation</code> (345-347), <code>hasAttestation</code> mapping (176), <code>isAttested</code> (382-387)</p>
+<p>The storage key <code>keccak256(abi.encodePacked(beliefHash, attester, epoch))</code> excludes <code>moduleId</code>, so two independently valid proofs for the same <code>(beliefHash, attester, epoch)</code> but different <code>moduleId</code> silently overwrite each other&#39;s record with no error/event signaling the loss (and <code>attestationCount</code> still increments on the overwrite). Separately, <code>hasAttestation[beliefHash][attester]</code> is keyed by neither <code>epoch</code> nor <code>moduleId</code>, is set once and never cleared, so <code>isAttested()</code> returns <code>true</code> forever after a single, possibly very stale, attestation.</p>
+<p><strong>Recommendation:</strong> Include <code>moduleId</code> in the storage key (<code>keccak256(abi.encodePacked(beliefHash, attester, epoch, moduleId))</code>); re-key or deprecate <code>hasAttestation</code>/<code>isAttested</code> in favor of <code>getAttestation(...).exists</code>, which is at least epoch-aware.</p>
+<hr>
+<h3 id="m-2-verifyattestations-verificationfailed-event-is-unconditional">[M-2] <code>verifyAttestation</code>&#39;s <code>VerificationFailed</code> event is unconditionally rolled back by the trailing <code>require</code> — permanently unobservable, unlike the identical event on the legacy path</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general, replay-pattern — as one component of a broader inconsistency finding) · Phase 2 (4/12 agents independently)<br><strong>Location:</strong> <code>verifyAttestation</code> (277-293)</p>
+<p>Both catch branches <code>emit VerificationFailed(...)</code> then set <code>verified=false</code>; the very next line, <code>require(verified, &quot;Attestation proof verification failed&quot;)</code>, reverts the whole call. An EVM revert discards every log emitted since the current call frame began, so the just-emitted event never actually reaches a transaction receipt through this entry point — contradicting the function&#39;s own inline comment (&quot;AUDIT FIX: Reverts on proof failure instead of silently returning false&quot;) and inconsistent with <code>_verifyAndRecord</code> (the legacy path), which emits the identical event and gracefully <code>return</code>s <code>false</code> without reverting, so that event <em>does</em> persist there.</p>
+<p><strong>Recommendation:</strong> Either drop the revert and return <code>false</code> (matching the legacy path&#39;s observable event), or drop the emit-then-revert dance and propagate the failure reason directly via a custom error.</p>
+<hr>
+<h3 id="m-3-fail-open-legacy-verifyproof-path-re-introduces-the-exact-fa">[M-3] Fail-open legacy <code>verifyProof</code> path re-introduces the exact fail-open pattern the contract&#39;s own comment says was already fixed for <code>verifyAttestation</code></h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general/replay-pattern, as part of the same broader inconsistency finding) · Phase 2 (trust-gap agent, sharpest framing)<br><strong>Location:</strong> <code>verifyProof</code>/<code>_verifyAndRecord</code> (224-241, 299-335) vs. <code>verifyAttestation</code> (254-293)</p>
+<p><code>verifyAttestation</code>&#39;s own inline comment states: <em>&quot;AUDIT FIX: Reverts on proof failure instead of silently returning false.&quot;</em> This is the team&#39;s own documented record that fail-open verification was previously identified and fixed as a security defect for the &quot;preferred&quot; interface. The legacy <code>verifyProof</code>/<code>_verifyAndRecord</code> path — explicitly documented as a &quot;drop-in replacement wherever the existing Vaultfire contracts reference the verifier&quot; — still contains that exact un-fixed fail-open shape: its catch branches <code>emit VerificationFailed(...)</code> and <code>return false</code> with no revert, meaning an integrator who calls the legacy interface without explicitly checking the boolean return would silently treat a rejected proof as accepted.</p>
+<p><strong>Recommendation:</strong> Apply the same revert-on-failure fix to <code>verifyProof</code>/<code>_verifyAndRecord</code>, or prominently document that every legacy-interface integrator must check the return value.</p>
+<hr>
+<h3 id="m-4-beliefscore-is-hardcoded-to-minbeliefthreshold-8000-for-ever">[M-4] <code>beliefScore</code> is hardcoded to <code>MIN_BELIEF_THRESHOLD</code> (8000) for every attestation — never derived from or bound by the proof</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math, general) · Phase 2 (6/12 agents)<br><strong>Location:</strong> <code>_verifyAndRecord</code> (279), <code>verifyAttestation</code> (323), <code>_recordAttestation</code> (337-365)</p>
+<p>The journal schema actually committed to and cryptographically checked is only <code>(beliefHash, attester, epoch, moduleId)</code> — no belief score field exists in the journal at all. Both entry points always pass the literal constant <code>MIN_BELIEF_THRESHOLD</code>, which is then stored and emitted, misleadingly implying a proof-derived graded value when every record will read exactly <code>8000</code>, forever.</p>
+<p><strong>Recommendation:</strong> Either extend the journal to genuinely commit a score (requires guest-program changes) or rename/document the field to make clear it is a fixed pass/fail sentinel, not a graded score.</p>
+<hr>
+<h3 id="m-5-single-step-transferownership-with-no-two-step-acceptance-a-">[M-5] Single-step <code>transferOwnership</code> with no two-step acceptance — a typo permanently bricks the entire timelock-gated <code>imageId</code>-update path</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control, governance) — re-examined against source and confirmed<br><strong>Location:</strong> <code>transferOwnership</code> (470-477)</p>
+<p>Only a zero-address check guards the new owner; there is no <code>pendingOwner</code>/<code>acceptOwnership</code> two-step pattern. A single mistyped or inaccessible address transfers <code>owner</code> instantly and permanently — every <code>onlyOwner</code> function (including <code>proposeImageIdChange</code>/<code>executeImageIdChange</code>/<code>cancelImageIdChange</code>) then reverts forever, with no recovery path anywhere in the contract (would require a full redeploy plus repointing every downstream consumer).</p>
+<p><strong>Recommendation:</strong> Implement an <code>Ownable2Step</code>-style pattern (<code>transferOwnership</code> sets <code>pendingOwner</code>; <code>acceptOwnership()</code> finalizes).</p>
+<hr>
+<h3 id="m-6-verifyattestation-omits-the-zero-value-validation-present-in">[M-6] <code>verifyAttestation</code> omits the zero-value validation present in <code>verifyProof</code> (unconfirmed lead — depends on out-of-scope guest-circuit constraints)</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (replay-pattern, as a LEAD) · Phase 2 (3/12 agents)<br><strong>Location:</strong> <code>verifyAttestation</code> (254-293) vs. <code>verifyProof</code> (224-241)</p>
+<p><code>verifyProof</code> explicitly rejects <code>beliefHash==0</code>/<code>attester==0</code> before recording; <code>verifyAttestation</code> performs no equivalent check before computing the digest and recording — an inconsistent-duplicated-logic pattern between two entry points documented as equivalent. Whether this is practically exploitable depends on constraints enforced by the out-of-scope RISC Zero guest program, which no in-scope file can confirm.</p>
+<p><strong>Recommendation:</strong> Add the same zero-value checks to <code>verifyAttestation</code> for parity.</p>
+<hr>
+<h3 id="m-7-no-expiry-on-a-ready-to-execute-imageid-proposal">[M-7] No expiry on a ready-to-execute <code>imageId</code> proposal</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (governance) — re-examined against source and confirmed<br><strong>Location:</strong> <code>executeImageIdChange</code> (444-456)</p>
+<p>Only a floor (<code>block.timestamp &gt;= pendingImageIdEffectiveAt</code>) is checked; there is no upper bound, so a proposal can sit reviewed-and-ready for months before execution, potentially executing long after the community&#39;s original review context is stale. Does not itself weaken the minimum-delay guarantee (see the Governance Verdict below).</p>
+<p><strong>Recommendation:</strong> Add an expiry window forcing re-proposal (and a fresh 48h wait) if execution doesn&#39;t happen within a reasonable time of the timelock clearing.</p>
+<hr>
+<h2 id="low-severity">Low Severity</h2>
+<h3 id="l-1-documentation-says-journaldigest-keccak256-the-actual-implem">[L-1] Documentation says <code>journalDigest = keccak256(...)</code>; the actual implementation uses <code>sha256(...)</code> throughout</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general, precision-math) · Phase 2 (4/12 agents)<br><strong>Location:</strong> <code>IRiscZeroVerifier.sol:40-43</code> vs. actual code (lines 275, 315)</p>
+<p>The doc comment is stale/wrong (sha256 is in fact the correct RISC Zero convention, and the code correctly does this); could mislead an off-chain integrator writing a second verifier or guest program against this doc into using the wrong hash function, causing valid-looking proofs to fail digest matching.</p>
+<p><strong>Recommendation:</strong> Correct the doc comment to <code>sha256</code>.</p>
+<hr>
+<h3 id="l-2-no-maximum-bound-on-moduleids-downstream-cast-in-verifyproof">[L-2] No maximum bound on <code>moduleId</code>&#39;s downstream cast in <code>verifyProof</code>&#39;s input validation, and <code>publicInputs[1]</code>→<code>address</code> truncation has no defense-in-depth bound check</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (precision-math) — re-examined against source and confirmed as a best-practice gap distinct from H-1&#39;s confirmed exploit<br><strong>Location:</strong> <code>verifyProof</code> line 232 (<code>address(uint160(publicInputs[1]))</code>)</p>
+<p>No check that <code>publicInputs[1] &lt;= type(uint160).max</code> before truncating to <code>address</code>. Unlike <code>moduleId</code> (H-1), no exploit path was constructed here since the truncated <code>attester</code> value is used consistently everywhere downstream (no divergence point between what&#39;s hashed and what&#39;s stored) — this is a defense-in-depth gap, not a confirmed vulnerability.</p>
+<p><strong>Recommendation:</strong> Add <code>if (publicInputs[1] &gt; type(uint160).max) revert InvalidAttesterAddress();</code> for defense-in-depth.</p>
+<hr>
+<h3 id="l-3-vaultfires-own-custom-missionenforcement-style-immutability-">[L-3] Vaultfire&#39;s own custom <code>MissionEnforcement</code>-style &quot;immutability&quot; framing is absent here — N/A, no analogous claim in this contract (informational cross-reference note)</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> — informational note, no finding<br><strong>Location:</strong> N/A</p>
+<p>Unlike other Vaultfire contracts audited in prior/parallel engagements, this contract&#39;s NatSpec does not make any &quot;immutable, cannot be changed by any authority&quot; claims about the <code>imageId</code>/verifier trust root that the code fails to honor — its documentation accurately reflects that the owner can rotate <code>imageId</code> (behind a genuine 48h timelock) and that <code>riscZeroVerifier</code> truly is immutable. No governance/documentation-mismatch finding applies to this contract.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong><code>isAttested</code>/<code>hasAttestation</code> naming vs. actual semantics:</strong> the flag means &quot;has ever, at any point, had one successful attestation recorded&quot; — not &quot;is currently/freshly attested&quot; — worth clarifying in NatSpec given the name&#39;s implication of currency.</li>
+<li><strong>Unbounded pending-proposal window (see M-7) and lack of published on-chain metadata for a proposed <code>imageId</code> (see H-3)</strong> compound each other: a proposal could sit pending for months with no way for the community to verify what it actually corresponds to beyond the raw <code>bytes32</code> hash.</li>
+</ul>
+<hr>
+<h2 id="governance-verdict-clients-specific-claim">Governance Verdict: Client&#39;s Specific Claim</h2>
+<p><strong>Claim under test:</strong> &quot;VK rotation timelock cannot be bypassed (even by owner).&quot;</p>
+<p><strong>Verdict: CONFIRMED HOLDS.</strong></p>
+<ul>
+<li>Grep of the full contract confirms <code>imageId</code> has exactly two write sites: the constructor (one-time) and <code>executeImageIdChange()</code>. There is no <code>assembly</code>, <code>delegatecall</code>, or proxy/implementation-swap surface (confirmed the deployed address is a plain, non-proxy verified contract).</li>
+<li><code>executeImageIdChange()</code> is unconditionally gated by <code>pendingImageId != 0</code> and <code>block.timestamp &gt;= pendingImageIdEffectiveAt</code>, and <code>pendingImageIdEffectiveAt</code> is only ever set to <code>block.timestamp + 48 hours</code> inside <code>proposeImageIdChange()</code> — never to an earlier value by any code path.</li>
+<li><code>cancelImageIdChange()</code> + re-<code>proposeImageIdChange()</code> only <strong>restarts</strong> a fresh 48h clock; it can never shorten or skip the wait for whatever value is ultimately executed.</li>
+<li>A compromised/new owner (via H-3 or M-5) inherits the exact same <code>propose → wait 48h → execute</code> mechanics for any new <code>imageId</code> of their choosing — ownership compromise is a real, separate governance risk (H-3, M-5), but it does not defeat the minimum-delay guarantee itself.</li>
+</ul>
+<p>The only real gaps adjacent to this claim are governance-hygiene issues (H-3&#39;s missing veto/guardian role, M-5&#39;s single-step ownership transfer, M-7&#39;s missing proposal expiry) — none of which allow the 48-hour minimum delay on an image-ID rotation to be skipped or shortened.</p>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<ul>
+<li>Both phases audited the same three in-scope files independently; Phase 2 was run with no visibility into Phase 1&#39;s findings to avoid anchoring.</li>
+<li>Unlike a typical audit, this engagement required and involved genuine <strong>live on-chain verification</strong> beyond static source review: the orchestrator independently confirmed C-1 and C-2 against Base Mainnet RPC calls and the real router&#39;s Sourcify-verified ABI, and one phase-2 agent independently confirmed H-1&#39;s truncation-vs-decode distinction via a local Foundry/anvil test. These are noted explicitly in each finding rather than presented as ordinary static-analysis claims.</li>
+<li>The unusual near-total overlap between phases (8 of 9 substantive phase-2 conclusions independently matching a phase-1 finding, several with independently-fetched corroborating evidence from the real RISC Zero GitHub repository) reflects that this is a small, self-contained contract where both breadth and depth analysis converge on the same small set of root causes — not a methodology failure.</li>
+<li>Out of scope: the RISC Zero <code>RiscZeroVerifierRouter</code>/underlying verifier implementations and the off-chain RISC Zero guest program (Rust circuit) were not audited; several Medium findings above are explicitly conditioned on assumptions about that out-of-scope code and are flagged as such.</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiczdav5hmdjzavq6zpwhw6safythf3uprlux5inigrbclmzajel3u.ipfs.community.bgipfs.com/"><code>https://bafkreiczdav5hmdjzavq6zpwhw6safythf3uprlux5inigrbclmzajel3u.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/345">#345</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

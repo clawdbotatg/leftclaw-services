@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultfireBatchOnboarder — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #367">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultfireBatchOnboarder</h1>
+    <p class="job-sub">Job #367 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/367"><b>Job page</b> #367</a>
+      <a class="chip" href="https://bafkreibivwzqmwe6neunoigidc5tfdtknyutxozqiy3zvl4ipbkbwjagcy.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">2</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope-note">Scope note</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads-investigated-and-resolved-not-promoted-to-findings">Leads investigated and resolved (not promoted to findings)</a></li>
+      <li><a href="#findings-summary">Findings summary</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — VaultfireBatchOnboarder</h1>
+<p><strong>Target</strong>: <code>VaultfireBatchOnboarder</code> at <code>0x82c6a0dd34F5cF57F8B98Ee118e911B977618890</code> on Base (chain 8453)<br><strong>Source</strong>: verified via Sourcify (exact match), <code>src/VaultfireBatchOnboarder.sol</code><br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (5 ethskills checklist agents: general, precision-math, access-control, erc4337, dos) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation.</p>
+<hr>
+<h2 id="scope-note">Scope note</h2>
+<p>The job brief asked us to focus on &quot;per-entry authorization inside the batch (a batched entry shouldn&#39;t be able to escalate privilege), gas-griefing, and partial-failure atomicity&quot; for a &quot;batch onboarding entry point.&quot; On inspection, <strong>the deployed contract contains no batch, loop, or array logic of any kind</strong> — <code>VaultfireBatchOnboarder</code> exposes exactly one external function, <code>onboardAndBond</code>, handling a single agent/bond pair per call. This was independently confirmed by 2 of 17 total agents across both phases. We audited the contract as deployed; the closest analog to &quot;per-entry privilege escalation&quot; turned out to be the entrypoint itself having no caller authorization at all (Finding 1, below), which both phases converged on independently and near-unanimously.</p>
+<p>For exploitability context, we also read (but did not exhaustively audit) the two contracts <code>onboardAndBond</code> calls into: <code>ERC8004IdentityRegistry</code> (0xa7BD20bf5De63df949cA5Be2F20835978eCba81A) and <code>AIPartnershipBondsV2</code> (0x01C479F0c039fEC40c0Cf1c5C921bab457d57441), both verified on Base via Sourcify. Findings below are scoped to <code>VaultfireBatchOnboarder</code>; the two dependency contracts were read only as needed to confirm/refute exploitability.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p>Overlap: 1 root-cause finding independently reproduced by both phases (Phase 1: 4 of 5 checklist agents; Phase 2: 11 of 12 attacker agents — the only phase-2 agent that did <em>not</em> find it was the math-precision specialist, for whom it is out of domain). Phase-1-only: 2 informational items directly answering the client&#39;s atomicity/naming questions. Phase-2-only: 0 (nothing phase 2 found fell outside what phase 1&#39;s access-control/general/erc4337/dos agents also surfaced). Re-examined leads: all phase-specific LEADs (unverified downstream self-bond enforcement, <code>MIN_STAKE_WEI</code> boundary matching, address provenance, reentrancy surface) were independently re-checked against the actual <code>ERC8004IdentityRegistry.sol</code> / <code>AIPartnershipBondsV2.sol</code> source — all resolved as <strong>not exploitable</strong> (see &quot;Leads investigated and resolved&quot; below); 0 promoted, 0 remain open.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-missing-caller-authorization-on-onboardandbond-any-third-party">[1] Missing caller authorization on <code>onboardAndBond</code> — any third party can permanently squat a delegated EOA&#39;s identity and force unwanted bonds</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 95 — independently reproduced by 15 of 17 total agents across both phases, with a fully concrete, source-verified exploit chain<br><strong>Location</strong>: <code>onboardAndBond()</code> · <code>VaultfireBatchOnboarder.sol:202-245</code><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (general, access-control, erc4337, dos) + Phase 2 (access-control, economic-security, execution-trace, invariant, periphery, first-principles, asymmetry, boundary, numerical-gap, trust-gap, flow-gap)</p>
+<p><strong>Description</strong>: <code>onboardAndBond</code> is <code>external</code> with no access control whatsoever — no <code>msg.sender == address(this)</code> self-call check, no signature or nonce binding the call&#39;s parameters to the delegated EOA owner&#39;s consent. Under EIP-7702, once an EOA delegates to this contract, <code>address(this)</code> inside the function is always the delegated EOA, but <code>msg.sender</code> is simply whoever sends the top-level transaction — which the contract&#39;s own design doc explicitly welcomes being &quot;anyone&quot; (principle 5: &quot;NO RELAYER DEPENDENCY... Anyone can submit a 7702 transaction with a user&#39;s authorization. We require nothing else.&quot;). Because delegation is persistent (principle 1) and publicly visible on-chain, and because the contract conflates &quot;permissionless gas sponsorship of a pre-signed transaction&quot; with &quot;no validation of call parameters,&quot; any third party can call <code>onboardAndBond</code> directly on a previously-delegated EOA at any time, supplying entirely attacker-chosen <code>agentURI</code>, <code>agentType</code>, <code>capabilitiesHash</code>, <code>aiAgent</code>, and <code>partnershipType</code>, funded by only <code>MIN_STAKE_WEI = 1</code> wei of the attacker&#39;s own money.</p>
+<p>Both downstream calls attribute their effects to the victim regardless of who calls: <code>IDENTITY_REGISTRY.registerAgent(...)</code> and <code>PARTNERSHIP_BONDS.createBond{value: msg.value}(...)</code> both see <code>msg.sender == address(this) == victim EOA</code>. Critically, <code>ERC8004IdentityRegistry.registerAgent()</code> is a <strong>one-time, permanent</strong> operation (<code>require(!agents[msg.sender].isRegistered, &quot;Agent already registered&quot;)</code>, <code>ERC8004IdentityRegistry.sol:84</code>, with no reset/unregister path and no way to later change <code>agentType</code>/<code>capabilitiesHash</code>). Since <code>registerAgent</code> runs before <code>createBond</code> and any revert unwinds the whole transaction, whoever&#39;s call lands first permanently wins the identity slot.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Victim <code>V</code> signs an EIP-7702 authorization delegating their EOA to <code>VaultfireBatchOnboarder</code> (chain 8453), intending to call <code>onboardAndBond</code> with real data — either bundled in the same transaction or as a follow-up, per the contract&#39;s own recommended flow. Delegation, once mined, is persistent until <code>V</code> explicitly revokes it — most users won&#39;t revoke immediately.</li>
+<li>Attacker <code>A</code> observes the delegation on-chain (or, in the bundled-tx case, extracts <code>V</code>&#39;s already-broadcast authorization tuple from the mempool and reuses it in their own competing transaction with higher priority fee — EIP-7702 authorization tuples only prove &quot;delegate to this address,&quot; never bind to any specific future calldata). <code>A</code> submits: <code>to = V</code>, <code>data = onboardAndBond(&quot;ipfs://spam&quot;, &quot;spam&quot;, 0x00.., A2, &quot;junk&quot;)</code> (<code>A2</code> a second attacker-controlled address to trivially clear the <code>aiAgent != msg.sender</code> guard), <code>value = 1 wei</code>.</li>
+<li>Inside execution: <code>address(this) == V</code>, <code>msg.sender == A</code>. All local checks pass. <code>IDENTITY_REGISTRY.registerAgent(...)</code> executes with <code>msg.sender == V</code>, permanently setting <code>agents[V].isRegistered = true</code> with <code>A</code>&#39;s garbage metadata. <code>PARTNERSHIP_BONDS.createBond{value:1}(A2, &quot;junk&quot;)</code> creates a permanent bond with <code>human == V</code>, <code>aiAgent == A2</code>, funded entirely by <code>A</code>&#39;s 1 wei.</li>
+<li><code>V</code>&#39;s own subsequent transaction reverts forever at the <code>registerAgent</code> step (&quot;Agent already registered&quot;). <code>V</code> can never successfully call <code>onboardAndBond</code> again. <code>V</code>&#39;s on-chain identity metadata (<code>agentType</code>, <code>capabilitiesHash</code>) is permanently attacker-controlled garbage, and <code>V</code> is permanently listed as the <code>human</code> party in an unwanted bond with an attacker-chosen <code>aiAgent</code>.</li>
+</ol>
+<p>No direct loss of the victim&#39;s pre-existing funds occurs (the attacker stakes only their own wei) — the impact is a permanent, irreversible denial of the contract&#39;s core purpose plus permanent corruption of the victim&#39;s on-chain identity/bond records. Rated High per standard severity convention (&quot;permanent DoS,&quot; not direct fund loss, hence not Critical).</p>
+<p><strong>Fix (Option A — self-call restriction, simplest)</strong>:</p>
+<pre><code class="language-diff"> function onboardAndBond(
+     string calldata agentURI,
+     string calldata agentType,
+     bytes32 capabilitiesHash,
+     address aiAgent,
+     string calldata partnershipType
+ ) external payable returns (uint256 bondId) {
++    require(msg.sender == address(this), &quot;only self-initiated calls&quot;);
+     if (block.chainid != BASE_CHAIN_ID) {
+         revert WrongChain(BASE_CHAIN_ID, block.chainid);
+     }
+</code></pre>
+<p>Trade-off: preserves the intended self-call flow but sacrifices the contract&#39;s advertised &quot;no relayer dependency&quot; design goal — a gas-sponsoring relayer could no longer submit calldata on the EOA&#39;s behalf, since a relayer&#39;s top-level call always has <code>msg.sender == relayer != address(this)</code>.</p>
+<p><strong>Fix (Option B — EIP-712 signature, preserves relayer sponsorship)</strong>:</p>
+<pre><code class="language-diff"> function onboardAndBond(
+     string calldata agentURI,
+     string calldata agentType,
+     bytes32 capabilitiesHash,
+     address aiAgent,
+-    string calldata partnershipType
++    string calldata partnershipType,
++    uint256 deadline,
++    bytes calldata signature
+ ) external payable returns (uint256 bondId) {
++    require(block.timestamp &lt;= deadline, &quot;expired&quot;);
++    bytes32 digest = keccak256(abi.encode(
++        agentURI, agentType, capabilitiesHash, aiAgent, partnershipType, deadline, block.chainid, address(this)
++    ));
++    require(ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(digest), signature) == address(this), &quot;invalid EOA signature&quot;);
+     if (block.chainid != BASE_CHAIN_ID) {
+</code></pre>
+<p>This lets any relayer submit the transaction while ensuring only a signature from the EOA&#39;s own key can authorize the specific parameters — preserving principle 5 without opening principle 1&#39;s &quot;safe in every future invocation context&quot; gap. Note the contract&#39;s current &quot;zero storage&quot; design (principle 3) precludes an on-chain nonce; the <code>deadline</code> bound above is the minimal replay mitigation compatible with statelessness, though a determined attacker could still replay the exact same signed payload before <code>deadline</code> if <code>V</code> intended it as one-time-only — if that matters, the &quot;zero storage&quot; principle needs to be revisited to add a nonce/used-flag.</p>
+<hr>
+<h3 id="2-self-bond-guard-and-onboardedwithbond-event-both-key-off-msgse">[2] Self-bond guard and <code>OnboardedWithBond</code> event both key off <code>msg.sender</code> instead of <code>address(this)</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 90 — confirmed by direct code reading in both phases; downstream impact independently verified as contained<br><strong>Location</strong>: <code>VaultfireBatchOnboarder.sol:225</code> (<code>SelfBondNotAllowed</code> check), <code>:237-244</code> (<code>OnboardedWithBond</code> event)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (general, access-control, erc4337) + Phase 2 (access-control, execution-trace, numerical-gap, trust-gap, flow-gap, asymmetry)</p>
+<p><strong>Description</strong>: The contract&#39;s own NatSpec claims &quot;Under that delegation, msg.sender IS the delegated EOA&quot; (line 191) — true only when the EOA submits its own transaction, false whenever a relayer or third party calls (a scenario the contract explicitly anticipates per principle 5, and the exact scenario exploited in Finding 1). Two places incorrectly treat <code>msg.sender</code> as if it were the EOA:</p>
+<ul>
+<li>Line 225: <code>if (aiAgent == msg.sender) revert SelfBondNotAllowed();</code> — under third-party calls, compares <code>aiAgent</code> against the caller, not the EOA, so it fails to catch a true self-bond (<code>aiAgent == address(this)</code>) and could spuriously reject a legitimate relayed call where <code>aiAgent</code> happens to equal the relayer.</li>
+<li>Lines 237-244: <code>emit OnboardedWithBond(msg.sender, ...)</code> — the <code>onboardedEoa</code> field, documented as &quot;the EOA being onboarded,&quot; is populated with the top-level caller instead of <code>address(this)</code>, misattributing the onboarded identity in any relayed call (including the attack in Finding 1) for any off-chain indexer/dashboard consuming this event.</li>
+</ul>
+<p><strong>Verified not independently exploitable beyond Finding 1</strong>: we confirmed by reading <code>AIPartnershipBondsV2.sol:219-244</code> that <code>createBond</code> independently re-derives and correctly enforces <code>require(aiAgent != msg.sender)</code> using its own call-frame <code>msg.sender</code>, which correctly resolves to <code>address(this)</code> = the victim EOA regardless of who called <code>onboardAndBond</code>. So the local guard&#39;s bug does not itself enable self-bonding — it is a correctness/observability bug, not a second attack path.</p>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-diff">-        if (aiAgent == msg.sender) revert SelfBondNotAllowed();
++        if (aiAgent == address(this)) revert SelfBondNotAllowed();
+</code></pre>
+<pre><code class="language-diff">         emit OnboardedWithBond(
+-            msg.sender,
++            address(this),
+             aiAgent,
+             bondId,
+             msg.value,
+             agentType,
+             partnershipType
+         );
+</code></pre>
+<hr>
+<h3 id="3-partial-failure-atomicity-confirmed-not-an-issue">[3] Partial-failure atomicity — confirmed not an issue</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>onboardAndBond()</code> · <code>VaultfireBatchOnboarder.sol:228-235</code><br><strong>Origin</strong>: <code>[phase1: dos]</code></p>
+<p>Directly addressing the client&#39;s brief: both external calls (<code>registerAgent</code>, <code>createBond</code>) are plain high-level Solidity calls with no <code>try/catch</code> and no unchecked low-level <code>.call</code>. Any revert in <code>createBond</code> propagates and reverts the entire transaction, rolling back <code>registerAgent</code>&#39;s state changes too. There is no scenario where the EOA ends up &quot;half-registered&quot; with no bond. No fix needed.</p>
+<hr>
+<h3 id="4-batchonboarder-naming-implies-functionality-that-does-not-exis">[4] &quot;BatchOnboarder&quot; naming implies functionality that does not exist</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: Contract name; <code>onboardAndBond()</code><br><strong>Origin</strong>: <code>[phase1: dos]</code></p>
+<p>Confirmed by full read: no loop, array, or batch of entries exists anywhere in this contract — <code>onboardAndBond</code> handles exactly one agent/bond pair per call. This directly affects how the job brief&#39;s &quot;per-entry authorization&quot; and &quot;gas-griefing across a batch&quot; questions should be read: there is no batch to escalate within; the real analog is Finding 1 (the single entrypoint itself has no caller authorization). Consider renaming to avoid implying batch semantics, or documenting explicitly that v1 is single-entry only.</p>
+<hr>
+<h2 id="leads-investigated-and-resolved-not-promoted-to-findings">Leads investigated and resolved (not promoted to findings)</h2>
+<ul>
+<li><strong>Downstream self-bond enforcement</strong> (raised independently in both phases): confirmed via direct read of <code>AIPartnershipBondsV2.sol:219-244</code> — <code>createBond</code> enforces <code>aiAgent != msg.sender</code> using its own correctly-resolved <code>msg.sender == address(this) == EOA</code>. Closes the gap noted in Finding 2; no independent exploit beyond Finding 1.</li>
+<li><strong><code>MIN_STAKE_WEI</code> boundary matching the downstream contract&#39;s actual minimum</strong> (Phase 2, math-precision agent): confirmed via <code>AIPartnershipBondsV2.sol:220</code> — <code>_validateNonZero(msg.value, ...)</code> matches <code>MIN_STAKE_WEI = 1</code>&#39;s &quot;strictly greater than zero&quot; semantics exactly. No divergence.</li>
+<li><strong>Trusted address provenance</strong> (&quot;Source of truth: theloopbreaker.com/api/contracts&quot; comment; Phase 2 invariant/boundary agents): both hardcoded target addresses independently confirmed via Sourcify to resolve to legitimate, verified <code>ERC8004IdentityRegistry</code> and <code>AIPartnershipBondsV2</code> contracts on Base mainnet. Documentation smell only, not a code-level bug.</li>
+<li><strong>Reentrancy surface via <code>IdentityRegistry</code> hooks</strong> (Phase 2 invariant agent): <code>ERC8004IdentityRegistry.registerAgent</code> (reviewed in full) is a plain storage-writing function with no external calls or callback hooks. No reentrancy surface exists.</li>
+<li><strong>No math/precision findings</strong>: contract has no division, multiplication, downcasting, or decimal-sensitive logic beyond a single <code>msg.value &gt;= 1</code> comparison. Confirmed independently by both phases&#39; math-precision agents.</li>
+</ul>
+<hr>
+<h2 id="findings-summary">Findings summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><span class="pill high">High</span></td>
+<td>Missing caller authorization on <code>onboardAndBond</code></td>
+<td><code>[both]</code> — 15/17 agents</td>
+</tr>
+<tr>
+<td>2</td>
+<td><span class="pill low">Low</span></td>
+<td><code>msg.sender</code>/<code>address(this)</code> conflation in self-bond check + event</td>
+<td><code>[both]</code> — 6 agents</td>
+</tr>
+<tr>
+<td>3</td>
+<td><span class="pill info">Info</span></td>
+<td>Partial-failure atomicity confirmed non-issue</td>
+<td><code>[phase1: dos]</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><span class="pill info">Info</span></td>
+<td>&quot;BatchOnboarder&quot; naming misleading — no batch logic exists</td>
+<td><code>[phase1: dos]</code></td>
+</tr>
+</tbody></table></div>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI audit agents (ethskills breadth pass + pashov depth pass, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, bug bounty program, and on-chain monitoring are strongly recommended before this contract is used to onboard real users, given Finding 1&#39;s severity and the fact that <code>ERC8004IdentityRegistry</code> registration is irreversible.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibivwzqmwe6neunoigidc5tfdtknyutxozqiy3zvl4ipbkbwjagcy.ipfs.community.bgipfs.com/"><code>https://bafkreibivwzqmwe6neunoigidc5tfdtknyutxozqiy3zvl4ipbkbwjagcy.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/367">#367</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

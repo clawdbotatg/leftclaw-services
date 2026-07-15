@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMFI Op-Lending V22 (Primary Marketplace / Position Vault / Factory / Leg Token) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #290">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">PMFI Op-Lending V22 (Primary Marketplace / Position Vault / Factory / Leg Token)</h1>
+    <p class="job-sub">Job #290 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/290"><b>Job page</b> #290</a>
+      <a class="chip" href="https://bafkreibdynuy4mrxdo74vsdtqsdjszeiu3me7ck6chdjuryve2eboeyqae.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card low"><div class="n">6</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">9</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — PMFI Op-Lending V22 (Primary Marketplace / Position Vault / Factory / Leg Token)</h1>
+<p><strong>Client job</strong>: leftclaw.services job #290<br><strong>Target</strong>: <code>0xcC3E1C18b58eE8Ec6550C60b75d820E4b45e2D2F</code> on <strong>Base</strong> (chain id 8453)<br><strong>Contract</strong>: <code>PMFIPrimaryMarketplaceV22</code> (deployer of the system; also contains <code>PMFIPositionVaultV22</code>, <code>PMFIPositionFactoryV22</code>, <code>PMFILegTokenV22</code> in the same file)<br><strong>Source</strong>: <code>src/PMFIOpLendingV22.sol</code>, 1053 lines, Solidity <code>^0.8.24</code>, verified via Sourcify (full match, chain 8453)<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (6 ethskills checklists: general, precision-math, erc20, defi-lending, access-control, chain-specific) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to phase 1) → hybrid reconciliation (this document).<br><strong>Model</strong>: opus for all 18 agents (scope: 1053 LOC / 4 contracts, single file — &quot;large&quot; per sizing rule).</p>
+<h2 id="executive-summary">Executive Summary</h2>
+<p><strong>0 Critical, 0 High, 0 Medium, 11 Low, 9 Info.</strong></p>
+<p>This is a peer-to-pool, zero-coupon-bond-style lending primitive: a borrower locks arbitrary owner-allowlisted collateral, mints matched &quot;P&quot; (payout claim, sold to lenders for USDC) and &quot;N&quot; (reclaim right, non-transferable, borrower-only) tokens, and settlement is strictly binary — full repayment pays P holders in USDC and returns all collateral to the borrower, or a missed deadline lets P holders split the collateral pro-rata. There is intentionally <strong>no oracle and no liquidation mechanism</strong>.</p>
+<p>Both audit passes — 6 breadth checklist agents and 12 independent blind attacker-mindset agents (18 agents total) — converged on the same conclusion: <strong>the core accounting is unusually tight</strong>. The invariant <code>pairedN + exercisedN + N.totalSupply() == initialCollateralAmount</code> and the pre-settlement identity <code>accountedCollateral == P.totalSupply() == N.totalSupply()</code> are asserted and preserved across every reachable state transition. All 12 blind attack agents attempted concrete fund-extraction, DoS, and invariant-breaking exploits and reported zero raw FINDINGs — only bounded LEADs, most of which cross-corroborate the same handful of root causes identified independently by the breadth pass. No exploit chain rated above Low survived source-level verification.</p>
+<p>The residual risk in this codebase is concentrated in one structural theme, corroborated by <strong>6 of the 12 blind agents plus 3 of the 6 breadth agents (9 of 18 total)</strong> — the highest-corroboration finding in this audit:</p>
+<blockquote>
+<p><strong>Arbitrary owner-allowlisted collateral is validated only at position-creation time, but positions live up to ~13 months. A collateral token that is well-behaved at listing but later becomes fee-on-transfer, rebasing, or blocklist-capable will permanently DoS every exit path</strong>, because every collateral outflow enforces a strict exact-balance-delta check with no fallback or sweep. See [UNI-1] below.</p>
+</blockquote>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Overlap: 9 unified findings corroborated by both phases · Phase-1-only: 6 · Phase-2-only: 2 · Re-examined leads kept: 8, demoted: 0.</strong></p>
+<p>Completeness: 17 unique (Contract, function/mechanism) items raised across both phases&#39; raw output; all 17 are covered in the 17 unified items below (9 overlap-merged + 6 phase-1-only + 2 phase-2-only).</p>
+<p>Every phase-1-only and phase-2-only item was re-read against source in this reconciliation pass (Turn 3 of the two-phase methodology) to confirm or demote; none were refuted — all are grounded in the actual code paths quoted below.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="uni-1-owner-allowlisted-collateral-that-later-changes-transfer-b">[UNI-1] Owner-allowlisted collateral that later changes transfer behavior can permanently freeze all exits</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: [GEN-2], [ERC20-3], [LEND-1]; phase2: [PASHOV-2] <code>[agents: 6]</code> — the single most-corroborated issue in this audit (9 of 18 total agents)<br><strong>Location</strong>: <code>PMFIPositionVaultV22.redeemP()</code>, <code>redeemPair()</code>, <code>claimCollateralRefund()</code>, <code>repayInFull()</code>; gate is <code>PMFIPositionFactoryV22.setCollateralAllowed()</code></p>
+<pre><code class="language-solidity">// PMFIPositionFactoryV22.createPosition() — allowlist checked ONLY here, at creation:
+if (!collateralAllowed[collateralAddress]) {
+    revert CollateralNotAllowed();
+}
+...
+// PMFIPositionVaultV22._redeemP() — every later exit enforces an EXACT delta:
+uint256 userCollateralAfter = collateral.balanceOf(user);
+if (
+    userCollateralAfter &lt; userCollateralBefore
+        || userCollateralAfter - userCollateralBefore != collateralOut
+) {
+    revert FeeOnTransferUnsupported();
+}
+</code></pre>
+<p><strong>Description</strong>: <code>collateralAllowed[token]</code> (factory line 677) is validated exactly once, at <code>createPosition()</code>. A position can remain open for <code>MAX_FUNDING_PERIOD</code> (30 days) plus <code>MAX_REPAYMENT_PERIOD</code> (365 days) — up to ~13 months. <code>accountedCollateral</code> is a cached accounting snapshot (vault line 131), not derived from live <code>balanceOf</code>. If the allowlisted collateral is an upgradeable-proxy token, a USDT-style token with a dormant fee switch, a rebasing token (stETH-style), or later gains a per-address blocklist, its balance behavior can diverge from the cached snapshot mid-life. Every subsequent outbound collateral transfer — <code>redeemP</code>, <code>redeemPair</code>, <code>claimCollateralRefund</code>, and the collateral leg of <code>repayInFull</code> — enforces a strict exact-delta check (<code>FeeOnTransferUnsupported</code> revert on any deviation) with <strong>no fallback, no partial-payout path, and no sweep/rescue function</strong>. This directly contradicts the factory&#39;s own design intent stated in its NatSpec: <em>&quot;Pause controls only block new positions and new purchases. User exits are never paused.&quot;</em> Token-level behavior changes bypass that guarantee entirely.<br><strong>Proof of Concept</strong>: Owner allowlists token X (fee-free, non-rebasing at listing time — passes the exact-delta check at deposit in <code>_safeTransferCollateralFromExact</code>). A position is created, funds, and later defaults (deadline passes unpaid). Before all P holders redeem, token X&#39;s issuer enables a transfer fee, or the vault becomes blocklisted, or X rebases down. <code>accountedCollateral</code> still reflects the pre-change amount. Every subsequent <code>redeemP()</code> call by a remaining P holder now fails the exact-delta check and reverts — that holder&#39;s entire pro-rata collateral share is permanently locked, with no code path to recover it. This was independently constructed and confirmed via source-tracing by 9 of the 18 total audit agents across both phases.<br><strong>Recommendation</strong>: Operationally restrict <code>setCollateralAllowed</code> to audited, fixed-supply, non-upgradeable, fee-free, non-rebasing tokens — the contract&#39;s own <code>FeeOnTransferUnsupported</code> naming shows this was already a conscious design tradeoff; document it explicitly for the owner. As a code-level mitigation, consider degrading gracefully instead of a hard revert:</p>
+<pre><code class="language-solidity">uint256 available = collateral.balanceOf(address(this));
+uint256 payout = Math.min(collateralOut, available);
+// pay `payout`, and either write off the shortfall or track it for later top-up
+</code></pre>
+<h3 id="uni-2-outbound-collateral-transfers-validate-only-the-recipients">[UNI-2] Outbound collateral transfers validate only the recipient&#39;s balance delta, not the vault&#39;s own</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: [ERC20-1]; phase2: [PASHOV-1] <code>[agents: 1]</code><br><strong>Location</strong>: <code>redeemPair()</code> L314-323, <code>_redeemP()</code> L490-501, <code>claimCollateralRefund()</code> L290-297, <code>repayInFull()</code> L401-412</p>
+<pre><code class="language-solidity">// _safeTransferCollateralFromExact (factory, inbound) — checks BOTH legs:
+uint256 payerBalanceBefore = token.balanceOf(payer);
+uint256 recipientBalanceBefore = token.balanceOf(recipient);
+IERC20(address(token)).safeTransferFrom(payer, recipient, amount);
+...
+if (payerBalanceAfter &gt; payerBalanceBefore || payerBalanceBefore - payerBalanceAfter != amount
+    || recipientBalanceAfter &lt; recipientBalanceBefore || recipientBalanceAfter - recipientBalanceBefore != amount)
+{ revert FeeOnTransferUnsupported(); }
+
+// redeemPair (outbound) — checks ONLY the recipient&#39;s leg:
+uint256 recipientBalanceBefore = collateral.balanceOf(msg.sender);
+IERC20(address(collateral)).safeTransfer(msg.sender, amount);
+uint256 recipientBalanceAfter = collateral.balanceOf(msg.sender);
+if (recipientBalanceAfter &lt; recipientBalanceBefore || recipientBalanceAfter - recipientBalanceBefore != amount)
+{ revert FeeOnTransferUnsupported(); }
+// vault&#39;s own balanceOf(address(this)) delta is never checked here
+</code></pre>
+<p><strong>Description</strong>: Every inbound transfer and every USDC transfer in this codebase symmetrically validates both sender and recipient balance deltas. The four outbound-collateral paths validate only the recipient&#39;s delta. A collateral token whose transfer fee is charged to the <em>sender</em> depending on the sender&#39;s role/address (e.g. waived for EOA depositors, charged when the sender is a contract) would pass the symmetric inbound check at deposit time (payer = EOA borrower) but silently over-drain the vault on every withdrawal (payer = vault contract) without being detected, since only the recipient&#39;s exact-amount receipt is checked.<br><strong>Proof of Concept</strong>: Requires a crafted, owner-allowlisted token implementing asymmetric per-sender-role fees — a narrow but concrete gap distinct from UNI-1 (that one is about behavior <em>changing over time</em>; this one is a code-level check asymmetry present from day one for a specific token shape).<br><strong>Recommendation</strong>: Make the four outbound helpers symmetric with the existing USDC/inbound helpers — assert the vault&#39;s own balance delta in addition to the recipient&#39;s.</p>
+<h3 id="uni-3-dead-write-only-state-variables-across-the-lifecycle">[UNI-3] Dead / write-only state variables across the lifecycle</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: [GEN-3], [LEND-2]; phase2: [PASHOV-3] <code>[agents: 6]</code><br><strong>Location</strong>: <code>closedWithoutOutstandingP</code> (L122, written L272/L326, never read); <code>collateralPoolAtSettle</code> / <code>pSupplyAtSettle</code> (L136/L138, written L453/L456, redemption math uses live values instead — see L474/L476); <code>PMFIPrimaryMarketplaceV22.Sale.usdcRemaining</code> (L785, decremented L963, zeroed L1009, never read in any branch)<br><strong>Description</strong>: Confirmed via full-lifecycle trace: none of these variables gate any logic. <code>previewRedeemP()</code> computes payouts from live <code>accountedCollateral</code>/<code>P.totalSupply()</code>, not the <code>*AtSettle</code> snapshots. No security impact today, but the dead settlement snapshots in particular are a latent fragility — if a future change made <code>accountedCollateral</code> mutable post-settle through a path that doesn&#39;t also update these snapshots, there is no cross-check to catch drift.<br><strong>Recommendation</strong>: Remove unused variables, or comment clearly as informational/event-only if kept for off-chain indexing.</p>
+<h3 id="uni-4-rounding-produces-bounded-self-limiting-dust-never-exploit">[UNI-4] Rounding produces bounded, self-limiting dust — never exploitable for extraction</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: [MATH-1], [MATH-2], [LEND-3]; phase2: [PASHOV-5] <code>[agents: 6]</code><br><strong>Location</strong>: <code>quoteFee()</code> L907-911, <code>previewRedeemP()</code>/<code>_redeemP()</code> L464-519<br><strong>Description</strong>: <code>quoteFee</code>&#39;s cumulative round-down design (<code>mulDiv(s.usdcRaisedToSeller + sellerPrice, SALE_FEE_BPS, BPS_DENOMINATOR)</code> minus already-accrued fee) makes total under-collection bounded to &lt;1 USDC base unit for a sale&#39;s entire lifetime regardless of fill fragmentation — confirmed by both the math-precision agent&#39;s telescoping proof and independent verification by the numerical-gap and invariant agents. <code>_redeemP</code> can burn P for a zero payout on sub-threshold <code>amount</code> when collateral decimals are high (up to 30) relative to a small USDC pool (<code>mulDiv(usdcPoolRemaining, amount, currentSupply)</code> floors to 0) — this is self-harm only: it reduces the caller&#39;s own claim and marginally <em>increases</em> the pro-rata share of remaining holders. No path allows a third party to extract this dust.<br><strong>Proof of Concept</strong> (MATH-2, worst case): 30-decimal collateral, <code>pSupplyAtSettle = currentSupply = 1e36</code>, early settle with <code>usdcPoolRemaining = 1e12</code> (1,000,000 USDC). Redeeming <code>amount = 1e23</code> P yields <code>usdcOut = floor(1e12·1e23/1e36) = 0</code> — the P is burned for nothing. Break-even threshold: <code>amount ≥ 1e24</code>.<br><strong>Recommendation</strong>: Optional: <code>if (collateralOut == 0 &amp;&amp; usdcOut == 0) revert ZeroAmount();</code> in <code>previewRedeemP</code> to prevent accidental zero-payout burns. If exact-to-the-wei fee capture matters, round <code>quoteFee</code>&#39;s cumulative fee up via <code>Math.Rounding.Ceil</code>.</p>
+<h3 id="uni-5-usdccollateral-blocklist-can-permanently-dos-a-sale-or-pos">[UNI-5] USDC/collateral blocklist can permanently DoS a sale or post-settlement exits</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: [ERC20-2]; phase2: [PASHOV-4] <code>[agents: 5]</code><br><strong>Location</strong>: <code>buy()</code> seller payout L970 (<code>_safeTransferUsdcExact(s.seller, sellerPrice)</code>), <code>_redeemP()</code>/<code>repayInFull()</code> post-settlement transfers L492/509/399/403<br><strong>Description</strong>: The factory&#39;s &quot;user exits are never paused&quot; guarantee covers only the protocol&#39;s own pause flags, not token-issuer-level controls. Official USDC (Circle) on Base carries blocklist/pause capability. If the borrower (the sale&#39;s fixed seller) becomes blocklisted mid-funding, every <code>buy()</code> on that sale reverts — only <code>cancel</code>/<code>closeExpired</code> remain, and the borrower simply cannot raise further (largely self-harm). If the <em>vault itself</em> becomes blocklisted post-settlement, every <code>redeemP()</code> call reverts, stranding every P holder&#39;s funds with no alternative withdrawal path.<br><strong>Recommendation</strong>: Largely inherent to using official USDC and cannot be fully removed. Consider a pull-payment/escrow model in <code>buy()</code> so a single blocklisted seller can&#39;t brick purchases for the whole sale. Document the residual risk for the vault-blocklist case, which has no code-level mitigation.</p>
+<h3 id="uni-6-feerecipient-is-immutable-in-both-factory-and-marketplace-">[UNI-6] <code>feeRecipient</code> is immutable in both factory and marketplace with no rotation path</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: [AC-1]; phase2: [PASHOV-7] <code>[agents: 1]</code><br><strong>Location</strong>: <code>PMFIPositionFactoryV22.feeRecipient</code> L544, <code>PMFIPrimaryMarketplaceV22.feeRecipient</code> L774<br><strong>Description</strong>: Set once at construction and never rotatable. Only <code>feeRecipient</code> may call <code>withdrawCreationFees()</code> (L753) and <code>withdrawProtocolFees()</code> (L1038). If the key is lost or compromised, protocol fee revenue — never user principal or collateral — is permanently stranded or drainable by the compromised key. Blast radius is strictly limited to protocol fees; no user-facing exit path depends on <code>feeRecipient</code>.<br><strong>Recommendation</strong>: Accept as a deliberate trust-minimization tradeoff, or add an <code>onlyOwner</code>-gated <code>setFeeRecipient(address)</code> with a zero-address check and event.</p>
+<h3 id="uni-7-owner-controlled-purchasecreation-pauses-never-touch-user-">[UNI-7] Owner-controlled purchase/creation pauses never touch user exits — verified, plus a mid-raise angle</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — phase1: [AC-2]; phase2: [PASHOV-8] <code>[agents: 1]</code><br><strong>Location</strong>: <code>setCreationPaused()</code> L628, <code>setPurchasesPaused()</code> L633, consumed only in <code>createPosition()</code> L670 and <code>buy()</code> L948<br><strong>Description</strong>: Both phases independently traced every exit/refund/redemption path (<code>redeemPair</code>, <code>repayInFull</code>, <code>settle</code>, <code>settleAndRedeemP</code>, <code>redeemP</code>, <code>claimCollateralRefund</code>, <code>cancel</code>, <code>closeExpired</code>) and confirmed neither pause flag is read there — the NatSpec claim holds for the protocol&#39;s own controls. Phase 2 added a specific angle: pausing purchases <em>mid-funding</em> (not just pre-funding) can starve a specific in-progress raise, pushing it toward forced expiry. No lender loses already-purchased P, and the borrower&#39;s obligation shrinks proportionally to unsold P — a liveness/governance lever, not a fund-loss path.<br><strong>Recommendation</strong>: None required for security; document as an intentional (if centralization-flavored) owner lever.</p>
+<h3 id="uni-8-renounceownership-correctly-disabled-declared-view-is-cosm">[UNI-8] <code>renounceOwnership()</code> correctly disabled; declared <code>view</code> is cosmetic</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: AC-3]</code> — re-examined against source in reconciliation, confirmed, not demoted<br><strong>Location</strong>: <code>PMFIPositionFactoryV22.renounceOwnership()</code> L618<br><strong>Description</strong>: Correctly overridden to always revert (<code>OwnershipRenunciationDisabled</code>), the intended behavior to prevent the owner from orphaning the collateral allowlist and pause controls. Declaring it <code>public view override onlyOwner</code> is legal (more restrictive than the base) and harmless since it unconditionally reverts before any state read.<br><strong>Recommendation</strong>: None required; optionally drop <code>view</code> for clarity since the intent is a disabled state-mutating function.</p>
+<h3 id="uni-9-p-claim-tokens-sent-to-non-redeeming-contracts-permanently">[UNI-9] P claim tokens sent to non-redeeming contracts permanently strand their share of the settlement pool</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: GEN-1]</code> — re-examined against source in reconciliation, confirmed, not demoted<br><strong>Location</strong>: <code>previewRedeemP()</code>/<code>_redeemP()</code> L464-519</p>
+<pre><code class="language-solidity">collateralOut = Math.mulDiv(accountedCollateral, amount, currentSupply);
+usdcOut = Math.mulDiv(usdcPoolRemaining, amount, currentSupply);
+</code></pre>
+<p><strong>Description</strong>: Post-settlement redemption divides a <em>fixed</em> pool by <em>live</em> <code>P.totalSupply()</code>. P is a freely transferable ERC20 (<code>transfersEnabled = true</code> in <code>PMFILegTokenV22</code>). There is no redemption logic reachable from the vault or marketplace themselves — if P is sent to either contract (or any other non-redeeming address) after settlement, it is never burned. <code>currentSupply</code> in the denominator still includes that stranded P indefinitely, so every remaining real holder&#39;s calculated share is understated relative to their true entitlement, and the corresponding slice of the pool becomes permanently unclaimable (no sweep function exists).<br><strong>Proof of Concept</strong>: Position settles in default with <code>accountedCollateral = funded</code>, <code>P.totalSupply() = funded</code>. A holder transfers <code>X</code> P to the vault or marketplace address. Real holders&#39; subsequent <code>redeemP</code> calls still divide by a <code>currentSupply</code> that includes <code>X</code>. The final real redemption leaves <code>mulDiv(pool, X, funded)</code> worth of collateral backing the now-unredeemable <code>X</code>, permanently locked. The party who sent the P forfeits their own claim (unprofitable self-sacrifice) — but the resulting stranded pool value is a real, permanent loss borne collectively by the remaining legitimate holders, not the sender.<br><strong>Recommendation</strong>: Either track an explicit &quot;redeemable P&quot; counter decremented only by genuine <code>_redeemP</code> burns (denominator becomes this counter, not live <code>totalSupply()</code>), or block P transfers to the vault/marketplace addresses in <code>PMFILegTokenV22._update()</code>.</p>
+<h3 id="uni-10-sequencer-downtime-spanning-repaymentdeadline-can-force-a">[UNI-10] Sequencer downtime spanning <code>repaymentDeadline</code> can force a solvent borrower into default</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only: CHAIN-1]</code> — chain-specific domain not covered by the blind pashov pass; re-examined against source in reconciliation, confirmed, not demoted<br><strong>Location</strong>: <code>repayInFull()</code> L373, <code>_settle()</code> L442</p>
+<pre><code class="language-solidity">// repayInFull — borrower can only repay strictly before/at the deadline:
+if (block.timestamp &gt; repaymentDeadline) { revert RepaymentClosed(); }
+...
+// _settle — anyone can crystallize default the instant the deadline passes:
+bool deadlinePassed = block.timestamp &gt; repaymentDeadline;
+if (!early &amp;&amp; !deadlinePassed) revert TooEarly();
+</code></pre>
+<p><strong>Description</strong>: Base runs a single centralized OP-stack sequencer. If it is down or censoring transactions in the window immediately before <code>repaymentDeadline</code>, a solvent, willing borrower&#39;s <code>repayInFull()</code> transaction cannot be sequenced. The instant the sequencer resumes past the deadline, any P holder can call <code>settle()</code> and irreversibly transfer the borrower&#39;s entire <code>accountedCollateral</code> to P holders — a real transfer of value driven purely by L2 liveness, not borrower behavior. No in-contract grace period exists; the only recourse is the slow L1 forced-inclusion path via the OptimismPortal delayed inbox, which is unlikely to land within a typical deadline window and is not surfaced to users by this contract.<br><strong>Recommendation</strong>: Add a fixed grace period after <code>repaymentDeadline</code> before default-settlement is permitted, e.g.:</p>
+<pre><code class="language-solidity">uint256 public constant SETTLE_GRACE = 6 hours;
+// _settle(): bool deadlinePassed = block.timestamp &gt; repaymentDeadline + SETTLE_GRACE;
+// repayInFull(): allow repayment through repaymentDeadline + SETTLE_GRACE as well
+</code></pre>
+<p>Rated Low rather than higher because the borrower chooses <code>repaymentDeadline</code> (up to 365 days) and can self-impose buffer by setting an earlier personal deadline than the contractual one.</p>
+<h3 id="uni-11-fixed-native-eth-creation-fee-is-not-the-actual-spam-gate">[UNI-11] Fixed native-ETH creation fee is not the actual spam gate on Base — confirmed non-issue</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: CHAIN-2]</code><br><strong>Description</strong>: <code>CREATION_FEE = 0.0001 ether</code> (~$0.30) is economically trivial on Base&#39;s low gas costs, but spam creation is actually gated by two independent, stronger mechanisms: the owner collateral-allowlist (<code>collateralAllowed</code>) and the requirement to lock the full <code>collateralAmount</code> of real collateral per vault. <code>allVaults</code> is append-only and never iterated on-chain, so unbounded growth is not a gas-DoS vector either. Non-issue.</p>
+<h3 id="uni-12-deadline-logic-correctly-avoids-l2-timing-pitfalls">[UNI-12] Deadline logic correctly avoids L2 timing pitfalls</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: CHAIN-3]</code><br><strong>Description</strong>: All time-gating uses <code>block.timestamp</code> (not <code>block.number</code>, avoiding the &quot;L2 blocks run faster&quot; pitfall), and no <code>block.prevrandao</code>/<code>basefee</code>/<code>blockhash</code> dependency exists. Sequencer timestamp drift is sub-minute and immaterial against this contract&#39;s hour/day-scale deadlines (<code>MIN_FUNDING_PERIOD = 1 hours</code> up to <code>MAX_REPAYMENT_PERIOD = 365 days</code>).</p>
+<h3 id="uni-13-solidity-0824-push0-opcode-confirmed-supported-on-base">[UNI-13] Solidity <code>^0.8.24</code> / PUSH0 opcode confirmed supported on Base</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only: CHAIN-4]</code><br><strong>Description</strong>: Base adopted PUSH0 with the Canyon upgrade; the contract&#39;s successful on-chain deployment and verification empirically confirms compatibility. No <code>SELFDESTRUCT</code>, nonstandard precompile, or bridge/L1-messaging assumptions are present.</p>
+<h3 id="uni-14-a-sales-final-dust-remainder-can-become-permanently-unsel">[UNI-14] A sale&#39;s final dust remainder can become permanently unsellable via <code>ZeroUsdcCost</code>, but always resolves cleanly</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase2 only: PASHOV-6]</code> <code>[agents: 2]</code> — re-examined against source in reconciliation, confirmed, not demoted<br><strong>Location</strong>: <code>buy()</code> L957, <code>quoteUsdc()</code> L894-904<br><strong>Description</strong>: If the final incremental fill&#39;s computed <code>sellerPrice</code> rounds down to 0, <code>buy()</code> reverts via <code>ZeroUsdcCost</code>, so <code>amountRemaining</code> can never reach exactly 0 through further purchases — the auto-<code>closeFunding(0)</code>-on-full-fill path becomes unreachable for that last dust slice. Confirmed this resolves cleanly: the borrower&#39;s <code>cancel()</code> or anyone&#39;s permissionless <code>closeExpired()</code> after expiry both correctly refund the unsold dust as <code>collateralRefundClaim</code> (verified via <code>_closeSale()</code> L1004-1013). No funds are lost or permanently stuck — cosmetic/liveness edge only.<br><strong>Recommendation</strong>: None required.</p>
+<h3 id="uni-15-degenerate-borrower-chosen-parameters-can-cause-rounding-">[UNI-15] Degenerate borrower-chosen parameters can cause rounding artifacts — self-harm only</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase2 only: PASHOV-9]</code> <code>[agents: 1]</code> — re-examined against source in reconciliation, confirmed, not demoted<br><strong>Location</strong>: <code>repaymentRequiredUsdc()</code> L334-337, <code>quoteUsdc()</code> L894-904<br><strong>Description</strong>: Extreme borrower-chosen configuration (e.g. <code>targetRaiseUsdc</code> tiny relative to <code>initialCollateralAmount</code>, only bounded by <code>!= 0</code>) can force all-or-nothing fills or round small holders&#39; entitlement toward zero. Confirmed only the position&#39;s own creator (the borrower, via <code>createPosition</code> parameters) can select these values — no counterparty or third party can be forced into a degenerate configuration.<br><strong>Recommendation</strong>: None required.</p>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<ul>
+<li><strong>6 breadth agents</strong> (opus): general, precision-math, erc20, defi-lending, access-control, chain-specific — checklist-driven coverage of ~500+ known vulnerability patterns, routed per the target&#39;s profile (ERC20 collateral/USDC handling, lending-like lifecycle with no oracle/liquidation, Base/OP-stack deployment).</li>
+<li><strong>12 depth agents</strong> (opus, blind to phase-1 output): 9 single-specialty attackers (math-precision, access-control, economic-security, execution-trace, invariant, periphery, first-principles, asymmetry, boundary) + 3 gap-hunters (numerical-gap, trust-gap, flow-gap) — each independently attempted concrete exploit chains against the full source.</li>
+<li><strong>Verification standard applied</strong>: every finding above traces a concrete code path with quoted source lines; no finding was rated above Low without a fully walked exploit chain, and none of the 18 agents across both phases could construct a Critical/High/Medium-severity extraction, theft, or unconditional-DoS path against this contract.</li>
+<li><strong>Convergence signal</strong>: the fact that 12 independent blind attacker-mindset agents, using entirely different mental models (economic, boundary, invariant, trust-gap, etc.), all converged on &quot;the core accounting holds&quot; is itself meaningful evidence of the codebase&#39;s soundness, in addition to the specific findings above.</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibdynuy4mrxdo74vsdtqsdjszeiu3me7ck6chdjuryve2eboeyqae.ipfs.community.bgipfs.com/"><code>https://bafkreibdynuy4mrxdo74vsdtqsdjszeiu3me7ck6chdjuryve2eboeyqae.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/290">#290</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

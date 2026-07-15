@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cortex (CX) System — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #318">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Cortex (CX) System</h1>
+    <p class="job-sub">Job #318 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/318"><b>Job page</b> #318</a>
+      <a class="chip" href="https://bafkreie7btkczoddwzka53muxexcnolwmvrhwizidvr6abkewt4g7r4tnu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#info-level-observations-no-action-required-or-informational-only">Info-level observations (no action required, or informational only)</a></li>
+      <li><a href="#items-explicitly-reviewed-and-cleared-no-finding">Items explicitly reviewed and cleared (no finding)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — Cortex (CX) System</h1>
+<p><strong>Client-supplied context:</strong> the client asked for due diligence on four related Base contracts referenced from &quot;the AI agent chat at cortexprotocol.com.&quot; Independent of that framing, the on-chain source (SYN→CX migration at a 5.5:1 ratio, a Synapse-style custom interchain-messaging framework, ERC20Votes governance, a LayerZero OFT bridge) is consistent with a real protocol migration, not a throwaway scam contract — this audit evaluates the code on its own merits regardless of how the client learned about it.</p>
+<p><strong>Targets (Base, chain id 8453):</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>CX</strong></td>
+<td><code>0x000000000000012DeF132E61759048bE5b5C6033</code></td>
+<td>Cortex governance/interchain token (ERC20Votes + ERC20Permit + ERC20Burnable + custom cross-chain messaging app)</td>
+</tr>
+<tr>
+<td><strong>LockDrop</strong></td>
+<td><code>0x00000010cd90b3688d249d84c616de3a0343e60f</code></td>
+<td>Lock-and-drop staking contract</td>
+</tr>
+<tr>
+<td><strong>CortexMigrator</strong></td>
+<td><code>0x000000000040407075C8BAae000050278B3D9A27</code></td>
+<td>SYN ↔ CX swap at a fixed 5.5 CX : 1 SYN ratio</td>
+</tr>
+<tr>
+<td><strong>CortexAdapter</strong></td>
+<td><code>0x00000D4900D72E000000fB00C004FE9abc7CA600</code></td>
+<td>LayerZero OFT bridge wrapper for CX</td>
+</tr>
+</tbody></table></div>
+<p><strong>Scope:</strong> 2241 custom LOC across ~32 files (OpenZeppelin and LayerZero library code treated as trusted, out of scope).</p>
+<p><strong>Methodology:</strong> Two-phase audit — Phase 1 checklist breadth (9 domain checklists, reflecting the system&#39;s real complexity: general, precision-math, erc20, bridges, signatures, governance, access-control, dos, assembly) run in parallel, followed by Phase 2 attacker-mindset depth (12 independent agents: 9 specialty + 3 gap-hunter), run <strong>blind</strong> to Phase 1&#39;s findings. A final reconciliation pass cross-checked both phases against each other, against the source, and — where a finding&#39;s severity hinged on live configuration — against the <strong>current on-chain state</strong> via direct <code>cast call</code>s to the deployed contracts.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p><strong>Overlap:</strong> the headline finding was independently discovered by phase 1&#39;s general checklist agent and corroborated by <strong>9 of 12</strong> phase-2 attacker-mindset agents (6 as full findings). Several Medium/Low findings were found independently by both phases. <strong>Phase-1-only:</strong> the governance/access-control centralization findings and most Info-level items. <strong>Phase-2-only:</strong> the LockDrop split-unlock rounding trail — initially raised as a full finding by 2 agents, downgraded to a Low/lead after 4 more agents and this orchestrator&#39;s own economic modeling showed it&#39;s dust-bounded at the deployed parameters.</p>
+<p><strong>On-chain verification performed during reconciliation</strong> (all via direct <code>cast call</code> against the live Base deployment, not assumed):</p>
+<ul>
+<li><code>CortexAdapter.hasRole(MINTER_ROLE, ...)</code> → <strong>true</strong>, <code>CortexMigrator.hasRole(MINTER_ROLE, ...)</code> → <strong>true</strong> — confirming the preconditions for the headline finding are/were live.</li>
+<li>CX&#39;s transfer-disabled freeze is <strong>currently lifted</strong> (<code>_transfersEnabled == true</code>, confirmed by simulating a zero-value <code>transfer()</code> between two unrelated, non-allow-listed addresses — it succeeds rather than reverting). This means the headline finding&#39;s exploit window has already closed for the current deployment.</li>
+<li><code>LockDrop.DROP_RATIO</code> = <code>5.5e18</code> (≥ <code>WAD</code>), <code>LOCK_TOKEN</code> = the legacy SYN token, <code>DROP_TOKEN</code> = CX, <code>totalLockedAmount</code> ≈ 29,813 tokens still recorded as locked, and <code>isLockingEnabled()</code> → <strong>false</strong> (the lock window closed around February 2025) — confirming the split-unlock rounding trail is both dust-bounded at this ratio <em>and</em> currently uncallable on the live instance.</li>
+<li>CX total supply ≈ 6.2M tokens, far under the ~18.4B cap implied by <code>CortexAdapter</code>&#39;s 9 shared decimals.</li>
+</ul>
+<p><strong>Completeness:</strong> every unique (contract, function, bug-class) tuple raised across both phases&#39; raw agent output is represented below, either as a numbered finding or in the Leads/Cleared sections.</p>
+<p>Every finding below was walked end-to-end against the actual source and, where relevant, against live on-chain state before assigning severity, per this engagement&#39;s verification standard.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-cortexadapter-bypasses-cxs-transfer-disabled-lock-a-second-bri">[1] <code>CortexAdapter</code> bypasses CX&#39;s transfer-disabled lock — a second bridge ignores the freeze the native bridge enforces</h3>
+<p><strong>Severity: Medium</strong> <em>(real, provable code-level gap; downgraded from what a naive reading suggests because the freeze window is already closed on the live deployment — see reconciliation note)</em><br><strong>Origin: [both]</strong> — phase1: general checklist agent; phase2: independently raised as a full FINDING by <strong>6 of 12</strong> agents (access-control, economic-security, execution-trace, periphery, first-principles, asymmetry), corroborated as a LEAD by 3 more (boundary, trust-gap-hunter, flow-gap-hunter) — the strongest convergence of this engagement.</p>
+<p><strong>Location:</strong> <code>CX._update()</code> (transfer-disabled guard), <code>CX._giveToken()</code>/<code>_takeToken()</code> (native bridge, correctly gated) vs. <code>CortexAdapter._debit()</code>/<code>_credit()</code> (LayerZero bridge, not gated).</p>
+<p><strong>Description:</strong> CX&#39;s <code>_update</code> transfer-disabled guard only reverts when <code>to != address(0) &amp;&amp; from != address(0)</code> — mints and burns are always exempt by design, so <code>mint()</code>, <code>burnAllocation</code>, and the LockDrop/Migrator distribution flows keep working pre-launch:</p>
+<pre><code class="language-solidity">if (!_transfersEnabled &amp;&amp; to != address(0) &amp;&amp; from != address(0) &amp;&amp; !isAllowListed[to] &amp;&amp; !isAllowListed[from]) {
+    revert CX__TransfersDisabled();
+}
+</code></pre>
+<p>CX&#39;s <em>own</em> cross-chain bridge adds an explicit extra check on top of this:</p>
+<pre><code class="language-solidity">function _giveToken(address recipient, uint256 amount) internal virtual override returns (uint256 amountGiven) {
+    if (!_transfersEnabled) revert CX__TransfersDisabled();
+    return InterchainToken._giveToken(recipient, amount);
+}
+</code></pre>
+<p><code>CortexAdapter</code> is a <em>second</em>, independent bridge (LayerZero OFT) that moves CX via the raw <code>mint()</code>/<code>burnFrom()</code> primitives directly — neither is gated by <code>_transfersEnabled</code>. Since a burn has <code>to==0</code> and a mint has <code>from==0</code>, both pass <code>_update</code> unconditionally, so a holder of &quot;locked&quot; (pre-launch) CX can burn it via the adapter and mint an unrestricted balance on another chain — the exact action the native bridge was specifically built to prevent.</p>
+<p><strong>Proof of Concept:</strong> While <code>_transfersEnabled == false</code>: holder approves <code>CortexAdapter</code>, calls <code>send(...)</code> → <code>_debit</code> calls <code>CX.burnFrom(holder, amount)</code> → <code>_update(holder, address(0), amount)</code> → guard skipped (burn exempt) → succeeds. LayerZero delivers to the peer chain → <code>_credit</code> calls <code>CX.mint(recipient, amount)</code> → <code>_update(address(0), recipient, amount)</code> → guard skipped (mint exempt) → succeeds. Confirmed on-chain that the precondition for this to matter was live: <code>CortexAdapter</code> currently holds <code>MINTER_ROLE</code> on CX (<code>hasRole</code> returns <code>true</code>). However, also confirmed on-chain that <strong>CX&#39;s transfer freeze is currently lifted</strong> — a zero-value <code>transfer()</code> between two unrelated addresses succeeds rather than reverting — so this specific bypass window has already closed for the live deployment. The finding stands as a real structural defect (worth fixing for any future re-freeze, a new token launch reusing this architecture, or if a similar dual-bridge pattern is deployed elsewhere) rather than a currently-exploitable drain.</p>
+<p><strong>Recommendation:</strong></p>
+<pre><code class="language-diff"> function _debit(address _from, uint256 _amountLD, uint256 _minAmountLD, uint32 _dstEid)
+     internal virtual override returns (uint256 amountSentLD, uint256 amountReceivedLD)
+ {
+     (amountSentLD, amountReceivedLD) = _debitView(_amountLD, _minAmountLD, _dstEid);
++    if (!ICX(address(innerToken)).transfersEnabled()) revert TransfersDisabled();
+     IMintableToken(address(innerToken)).burnFrom(_from, amountSentLD);
+ }
+</code></pre>
+<p>Apply the equivalent check in <code>_credit</code>, or — simpler operationally — only grant <code>CortexAdapter</code> (and <code>CortexMigrator</code>, see Finding 6) <code>MINTER_ROLE</code> after <code>enableTransfers()</code> has been called, so neither bridge is ever live during a frozen window.</p>
+<hr>
+<h3 id="2-defaultadminrole-can-self-grant-minterrolegovernancerole-for-u">[2] <code>DEFAULT_ADMIN_ROLE</code> can self-grant <code>MINTER_ROLE</code>/<code>GOVERNANCE_ROLE</code> for unlimited minting and arbitrary balance destruction</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [phase1 only]</strong> — governance + access-control checklist agents, independently, both flagging the identical root cause.</p>
+<p><strong>Location:</strong> <code>ICAppV1</code> constructor (grants only <code>DEFAULT_ADMIN_ROLE</code> to <code>admin_</code>, no <code>_setRoleAdmin</code> override anywhere), <code>CX.mint()</code>, <code>CX.burnAllocation()</code>.</p>
+<p><strong>Description:</strong> No <code>_setRoleAdmin</code> call exists anywhere in the bundle, so <code>DEFAULT_ADMIN_ROLE</code> is the admin of <code>MINTER_ROLE</code>, <code>GOVERNANCE_ROLE</code>, and <code>IC_GOVERNOR_ROLE</code> (and of itself). The interchain messaging side goes to considerable lengths to become trust-minimized (one-way <code>freezeGovernorAction</code>/<code>freezeLinkedApp</code>), but none of that protects the token-supply/burn powers: whoever holds <code>DEFAULT_ADMIN_ROLE</code> can <code>grantRole(MINTER_ROLE, self)</code> then <code>mint()</code> an unbounded amount (works regardless of transfer-enabled state), or <code>grantRole(GOVERNANCE_ROLE, self)</code> then use <code>burnAllocation</code>/<code>toggleAllowList</code> — all instantly, with no timelock.</p>
+<p><strong>Recommendation:</strong> Hold <code>DEFAULT_ADMIN_ROLE</code> in a timelock/multisig, not an EOA; consider a supply cap on <code>mint</code>; consider an irreversible &quot;renounce minting&quot; once cross-chain supply is seeded, mirroring the interchain side&#39;s freeze story.</p>
+<hr>
+<h3 id="3-burnallocation-lets-governancerole-destroy-any-holders-balance">[3] <code>burnAllocation()</code> lets <code>GOVERNANCE_ROLE</code> destroy any holder&#39;s balance without consent</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [phase1 only]</strong> — governance checklist agent.</p>
+<p><strong>Location:</strong> <code>CX.burnAllocation()</code> — gated only by <code>onlyRole(GOVERNANCE_ROLE) whenTransfersDisabled</code>, calls <code>_burn(account, amount)</code> directly with no consent, allowance check, or bound.</p>
+<p><strong>Description:</strong> Combined with <code>toggleAllowList</code> (grant frictionless transferability to chosen accounts while everyone else is frozen) and the one-way <code>enableTransfers</code>, a single <code>GOVERNANCE_ROLE</code> holder has a structural, unilateral clawback power over third-party pre-launch allocations (and their <code>ERC20Votes</code> checkpoints) with no on-chain acknowledgment from the victim.</p>
+<p><strong>Recommendation:</strong> If intended as a pre-launch correction tool, document it explicitly, add a dedicated event, constrain it (e.g. non-allow-listed targets only, or a published cap), and hold <code>GOVERNANCE_ROLE</code> in a timelock/multisig.</p>
+<hr>
+<h3 id="4-lockdrop-doesnt-measure-actual-received-balance-a-fee-on-trans">[4] <code>LockDrop</code> doesn&#39;t measure actual received balance — a fee-on-transfer/rebasing <code>LOCK_TOKEN</code> would desync accounting and brick unlock/finalization/recovery</h3>
+<p><strong>Severity: Medium</strong><br><strong>Origin: [both]</strong> — phase1: erc20 + general checklist agents; phase2: corroborated as leads by 3 agents (math-precision, boundary, flow-gap-hunter).</p>
+<p><strong>Location:</strong> <code>LockDrop.lock()</code> (credits <code>totalLockedAmount</code>/<code>lockedAmountOf</code> with the nominal parameter, never measures <code>balanceOf(this)</code> before/after <code>safeTransferFrom</code>), <code>unlock()</code>, <code>processFinishedLockdrop()</code>, <code>recover()</code>.</p>
+<p><strong>Description:</strong> If <code>LOCK_TOKEN</code> is fee-on-transfer or rebases down, the contract receives less than the recorded amount, so <code>totalLockedAmount</code> permanently exceeds real balance — <code>unlock()</code> overpays the last unlockers into a revert (principal stuck), <code>processFinishedLockdrop()</code>&#39;s burn reverts if real balance is short, and <code>recover()</code>&#39;s subtraction underflows and reverts, blocking even dust recovery.</p>
+<p><strong>On-chain note:</strong> the deployed instance&#39;s <code>LOCK_TOKEN</code> is the legacy SYN token (confirmed via <code>LOCK_TOKEN()</code> read), a standard non-fee ERC20 — so this is not live-exploitable against the current deployment, but the contract imposes no restriction that would prevent a future <code>LockDrop</code> instance (deployed via the same factory pattern) from using a fee-on-transfer or rebasing token.</p>
+<p><strong>Recommendation:</strong> Measure the actually-received amount via <code>balanceOf(this)</code> before/after <code>safeTransferFrom</code> and record that delta, or explicitly restrict <code>LOCK_TOKEN</code> to standard tokens and enforce it at the factory.</p>
+<hr>
+<h3 id="5-lockdropunlocks-per-call-rounding-lets-a-locker-recover-slight">[5] <code>LockDrop.unlock</code>&#39;s per-call rounding lets a locker recover slightly more than they should when splitting an unlock — dust-bounded at the deployed ratio, not practically exploitable</h3>
+<p><strong>Severity: Low</strong> <em>(reduced from an initial higher-severity read — see reconciliation)</em><br><strong>Origin: [phase2 only]</strong> — initially raised as a full FINDING by 2 of 12 agents (invariant, numerical-gap-hunter) with concrete worked examples; independently re-examined and downgraded by 4 more phase-2 agents (execution-trace, periphery, boundary) plus this orchestrator&#39;s own economic modeling.</p>
+<p><strong>Location:</strong> <code>LockDrop.lock()</code> (mints <code>floor(L·DROP_RATIO/WAD)</code> for the whole locked lump), <code>unlock()</code> (burns <code>floor(lᵢ·DROP_RATIO/WAD)</code> recomputed per call — the same formula applied to each piece, not tracked from what was actually minted).</p>
+<p><strong>Description:</strong> Because <code>Σ floor(lᵢ·r/W) ≤ floor((Σlᵢ)·r/W)</code> for integer division, fragmenting an <code>unlock</code> into many small pieces burns strictly less drop-token than minting the same aggregate amount would require, letting a locker recover 100% of their principal while keeping a small drop-token surplus. Two phase-2 agents demonstrated this with toy numbers (e.g., <code>DROP_RATIO=5.5e18</code>, <code>lock(2)</code> mints 11, two <code>unlock(1)</code> calls burn <code>5+5=10</code>, netting 1 wei of surplus drop-token) and, in one case, with a hypothetical <code>DROP_RATIO &lt; WAD</code> where every unit-sized unlock call rounds to a <strong>zero</strong> burn.</p>
+<p><strong>Reconciliation — walking the actual exploit path at the deployed parameters:</strong> the live <code>DROP_RATIO</code> is <code>5.5e18</code> (≥ <code>WAD</code> = <code>1e18</code>). At any ratio ≥ <code>WAD</code>, <code>floor(1·r/W) ≥ 1</code> for every nonzero unit — there is no &quot;zero-burn&quot; call available at all; the leak is bounded to the sub-1-wei fractional remainder per call. Extracting even one whole drop-token of surplus this way requires on the order of <code>10^18</code> separate <code>unlock</code> transactions, which is economically and practically infeasible regardless of how cheap gas is. The severe &quot;recover everything for zero burn&quot; variant only becomes meaningfully dangerous if a future <code>LockDrop</code> deployment used a <code>DROP_RATIO</code> many orders of magnitude below <code>WAD</code> — an unusual parameter choice this contract doesn&#39;t prevent, but not the case here. <strong>Separately confirmed on-chain: the live instance&#39;s lock window closed around February 2025 (<code>isLockingEnabled() == false</code>), so <code>lock</code>/<code>unlock</code> are both currently uncallable</strong> — this issue cannot be triggered against the live deployment at all right now.</p>
+<p><strong>Recommendation:</strong> Still worth fixing for defense-in-depth and for any future deployment with a different ratio: track the exact drop-token amount minted per locker (e.g. <code>mintedDropOf[msg.sender] += dropAmount</code> in <code>lock</code>) and burn the proportional recorded amount in <code>unlock</code> rather than recomputing <code>calculateDropAmount(lockTokenAmount)</code> from scratch, so mint and burn stay conserved regardless of how the unlock is batched.</p>
+<hr>
+<h3 id="6-cortexmigrator-may-offer-a-parallel-transfer-freeze-escape-via">[6] <code>CortexMigrator</code> may offer a parallel transfer-freeze escape via burn-CX/mint-SYN</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: general checklist agent (noted as part of the broader &quot;two bridges bypass the lock&quot; pattern); phase2: raised as a lead by 4 agents (access-control, first-principles, boundary, trust-gap-hunter).</p>
+<p><strong>Location:</strong> <code>CortexMigrator.cxToSYN()</code> — burns CX via <code>burnFrom</code> (passes the freeze-exempt burn path in <code>_update</code>) and mints SYN.</p>
+<p><strong>Description:</strong> Same root cause as Finding 1 — CX&#39;s freeze only lives in <code>_giveToken</code>/<code>_takeToken</code>, not at the mint/burn layer. <code>cxToSYN</code> burns CX (allowed while frozen) and mints liquid SYN; if SYN is transferable during CX&#39;s freeze, this converts a locked position into a liquid one via a second channel. <strong>Confirmed on-chain</strong>: <code>CortexMigrator</code> currently holds <code>MINTER_ROLE</code> on CX. As with Finding 1, this is currently moot in practice since CX&#39;s freeze is already lifted on the live deployment, but the code-level gap is real.</p>
+<p><strong>Recommendation:</strong> Gate <code>cxToSYN</code>&#39;s CX-burn leg on <code>_transfersEnabled</code> (mirroring Finding 1&#39;s fix), or only grant the migrator its CX minter rights after <code>enableTransfers()</code>.</p>
+<hr>
+<h3 id="7-lockdrop-owner-has-unbounded-control-over-lockendtime">[7] <code>LockDrop</code> owner has unbounded control over <code>lockEndTime</code></h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: general + access-control checklist agents; phase2: corroborated as a lead by the economic-security agent.</p>
+<p><strong>Location:</strong> <code>LockDrop.setLockEndTime()</code> — only enforces a rolling 1-week buffer on both the current and new value, no maximum.</p>
+<p><strong>Description:</strong> The buffer-boundary logic itself is correct, but with no upper bound the owner can extend the lock indefinitely (delaying finalization forever) or shorten a long advertised lockdrop down to ~7 days&#39; notice, then burn all still-locked tokens via <code>processFinishedLockdrop()</code>. Funds aren&#39;t redirected (burned, not stolen), so this is a trust/expectation issue rather than theft. <strong>On-chain note</strong>: this already happened on the live deployment in the sense that the window did run its full course and has since closed normally (no evidence of anomalous early shortening was checked, as event history is outside this audit&#39;s scope) — flagging the structural gap regardless.</p>
+<p><strong>Recommendation:</strong> Add a maximum extension cap and/or disallow shortening below the originally-advertised duration.</p>
+<hr>
+<h3 id="8-custom-interchain-remotesend-burns-cx-to-a-zero-recipient-with">[8] Custom Interchain <code>remoteSend</code> burns CX to a zero recipient with no check (asymmetric with <code>CortexAdapter</code>&#39;s guard)</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: bridges checklist agent; phase2: corroborated as a lead by 2 agents (execution-trace, periphery).</p>
+<p><strong>Location:</strong> <code>TokenController._remoteSend()</code>/<code>_remoteSendWithHook()</code> vs. <code>CortexAdapter._send()</code> (which explicitly checks <code>_sendParam.to == 0</code>).</p>
+<p><strong>Description:</strong> A caller passing a zero recipient burns real CX on the source chain, and the resulting message can never execute on the destination (mint-to-zero reverts), so it&#39;s permanently stuck — every retry fails identically.</p>
+<p><strong>Recommendation:</strong> Add <code>require(recipient != 0)</code> in <code>_remoteSend</code>/<code>_remoteSendWithHook</code>, mirroring <code>CortexAdapter._send</code>.</p>
+<hr>
+<h3 id="9-unchecked-raw-mintburnfrom-calls-on-droptoken-with-no-code-len">[9] Unchecked raw <code>mint()</code>/<code>burnFrom()</code> calls on <code>DROP_TOKEN</code> with no code-length check</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — erc20 checklist agent.</p>
+<p><strong>Description:</strong> If a factory misconfigures <code>DROP_TOKEN</code> as an EOA, the raw <code>mint()</code> call silently no-ops — <code>lock()</code> would pull <code>LOCK_TOKEN</code> from users and mint nothing back, with no revert. Moot for the live deployment (<code>DROP_TOKEN</code> is CX itself, confirmed on-chain, a real contract).</p>
+<p><strong>Recommendation:</strong> Assert <code>DROP_TOKEN.code.length &gt; 0</code> (and <code>LOCK_TOKEN.code.length &gt; 0</code>) in the constructor, for future deployments via the factory.</p>
+<hr>
+<h3 id="10-lock-credits-the-lockers-redemption-right-while-minting-drop-">[10] <code>lock()</code> credits the locker&#39;s redemption right while minting drop tokens to an arbitrary <code>recipient</code></h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — phase1: erc20 + general checklist agents; phase2: corroborated as a lead by 2 agents (access-control, invariant).</p>
+<p><strong>Description:</strong> <code>lockedAmountOf[msg.sender]</code> is credited to the caller, but <code>dropAmount</code> is minted to a separate <code>recipient</code> parameter. If <code>recipient != msg.sender</code>, neither party can complete an <code>unlock</code> without the drop tokens being transferred back — a confusing accounting split that can strand redemption, though not a fund-theft vector.</p>
+<p><strong>Recommendation:</strong> Either key <code>lockedAmountOf</code> consistently with drop-token custody, or clearly document the gift-vs-redemption-right split.</p>
+<hr>
+<h3 id="11-linkremoteapp-silently-overwrites-an-active-chain-link-with-n">[11] <code>linkRemoteApp</code> silently overwrites an active chain link with no forced freeze; combined with uncapped minting, a compromised governor/minter role mints unlimited CX</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — bridges checklist agent.</p>
+<p><strong>Description:</strong> Freezing a chain link is opt-in and off by default. Combined with <code>addInterchainClient</code>/<code>setLatestInterchainClient</code> and CX&#39;s uncapped <code>mint()</code>, a compromised governor/minter key can add a malicious client, relink a chain, forge an incoming message, and mint unbounded CX.</p>
+<p><strong>Recommendation:</strong> Require an explicit unfreeze/timelock before <code>linkRemoteApp</code> can overwrite a non-zero existing link; add a timelock/multisig on <code>IC_GOVERNOR_ROLE</code>; introduce a per-epoch mint rate limit shared across both mint authorities.</p>
+<hr>
+<h3 id="12-cxtosynsyntocx-round-to-zero-for-dust-amounts-with-no-zero-ou">[12] <code>cxToSYN</code>/<code>synToCX</code> round to zero for dust amounts with no zero-output guard</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [both]</strong> — found independently by 3 phase-1 agents (precision-math, general, access-control) and corroborated by the phase-2 math-precision agent.</p>
+<p><strong>Description:</strong> <code>amountSYN = amountCX * WAD / MIGRATION_RATIO</code> floors to 0 for <code>amountCX ≤ 5</code> wei; the function still burns the caller&#39;s CX and mints 0 SYN. Verified numerically not round-trip-exploitable in either direction (both directions round toward the protocol) — dust-scale self-harm only.</p>
+<p><strong>Recommendation:</strong> Add <code>if (amountOut == 0) revert</code> in both directions.</p>
+<hr>
+<h3 id="13-cortexadapter-uses-single-step-ownable-instead-of-ownable2ste">[13] <code>CortexAdapter</code> uses single-step <code>Ownable</code> instead of <code>Ownable2Step</code> (inconsistent with <code>LockDrop</code>)</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — access-control checklist agent.</p>
+<p><strong>Description:</strong> A mistyped <code>transferOwnership</code> permanently locks LayerZero peer/endpoint configuration with no recovery.</p>
+<p><strong>Recommendation:</strong> Switch to <code>Ownable2Step</code>.</p>
+<hr>
+<h3 id="14-no-app-level-replay-protection-in-appreceivereceivemessage-mu">[14] No app-level replay protection in <code>appReceive</code>/<code>_receiveMessage</code>; multi-registered-client dedup gap</h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — bridges checklist agent.</p>
+<p><strong>Description:</strong> Exactly-once delivery is delegated entirely to the external <code>IInterchainClientV1</code>; <code>_interchainClients</code> intentionally allows multiple simultaneously-registered clients with no in-contract dedup across them.</p>
+<p><strong>Recommendation:</strong> Add app-level idempotency keyed on <code>(srcChainId, dbNonce)</code> in <code>_receiveMessage</code>, marking each consumed before minting, independent of client-side guarantees.</p>
+<hr>
+<h3 id="15-isallowedsender-returns-true-for-an-unlinked-chain-when-sende">[15] <code>_isAllowedSender</code> returns true for an unlinked chain when <code>sender == 0</code></h3>
+<p><strong>Severity: Low</strong><br><strong>Origin: [phase1 only]</strong> — bridges checklist agent.</p>
+<p><strong>Description:</strong> For a never-linked chain, <code>_linkedApp[srcChainId] == 0</code>; if a client ever presented <code>sender == bytes32(0)</code>, the equality would pass. Defense-in-depth gap, not reachable through a correctly-behaving client.</p>
+<p><strong>Recommendation:</strong> <code>return _linkedApp[srcChainId] != 0 &amp;&amp; _linkedApp[srcChainId] == sender;</code></p>
+<hr>
+<h2 id="info-level-observations-no-action-required-or-informational-only">Info-level observations (no action required, or informational only)</h2>
+<ul>
+<li><strong>Two independent bridges produce non-fungible, non-interoperable CX representations per remote chain</strong> — asset-fragmentation/UX footgun, not a fund-loss bug. [both phases]</li>
+<li><strong><code>CortexAdapter.sharedDecimals()=9</code> truncates dust and caps effective bridgeable supply at ~18.4B CX</strong> — current supply (~6.2M, verified on-chain) is far under this. [both phases]</li>
+<li><strong><code>processFinishedLockdrop()</code> doesn&#39;t clear <code>lockedAmountOf</code></strong> — stale per-user view balances persist forever after finalization (functionally inert). [phase1]</li>
+<li><strong><code>CortexAdapter._credit</code> mints to <code>_to</code> with no zero-address fallback</strong> — standard LZ OFT substitutes <code>0xdead</code>; this override drops that safety net. [phase1]</li>
+<li><strong><code>setGasLimit</code> is an <code>IC_GOVERNOR_ROLE</code> lever with no freeze coverage</strong> — undermines the &quot;freeze everything&quot; governance-lock-in story. [phase1]</li>
+<li><strong><code>isAllowListed</code> becomes dead configuration after <code>enableTransfers()</code></strong> — confirmed not weaponizable (no deny-list path exists). [phase1]</li>
+<li><strong>Hardcoded 1e18-precision ratio math assumes 18-decimal tokens</strong> — safe for the current SYN/CX pair (both confirmed 18 decimals); unenforced for future factory deployments with other tokens. [both phases]</li>
+<li><strong>Cross-chain voting power is fragmented per chain</strong> — no double-vote path exists in CX itself; any future Governor must snapshot at a synchronized timepoint. [phase1]</li>
+<li><strong><code>MathLib.roundUpToWord</code> silently returns 0 on overflow</strong> — unreachable in practice (only realistic byte-array lengths are ever passed). [both phases]</li>
+<li><strong>Assembly <code>calldataload</code> reads in <code>TokenMessageLib.decodeMessage</code> depend on a later, separate bounds check</strong> — currently safe, but an implicit coupling worth making explicit. [phase1]</li>
+<li><strong>Standard ERC-2612 <code>permit()</code> front-running griefing</strong> — universal, unavoidable characteristic; no CX-specific exploitation path. [phase1]</li>
+</ul>
+<hr>
+<h2 id="items-explicitly-reviewed-and-cleared-no-finding">Items explicitly reviewed and cleared (no finding)</h2>
+<ul>
+<li>EIP-712 domain correctly includes <code>block.chainid</code> — <code>permit()</code>/<code>delegateBySig()</code> signatures cannot replay across the multiple EVM chains CX is deployed at the same address on.</li>
+<li><code>nonces()</code> diamond-inheritance override correctly resolves to one shared <code>Nonces</code> storage — no desync, no cross-function signature replay.</li>
+<li><code>clock()</code>/<code>CLOCK_MODE()</code> timestamp-mode override is fully supported by OZ&#39;s <code>Votes</code>/<code>Checkpoints</code> — no double-count risk.</li>
+<li><code>CX._update</code> verified to cover every balance-changing path with no diamond-inheritance MRO bypass.</li>
+<li><code>LockDrop.recover()</code> correctly excludes locked principal from owner sweeps at every boundary; the factory-constructor trust model is confirmed non-exploitable.</li>
+<li><code>CortexMigrator</code>/<code>CortexAdapter</code> misconfigured mint/burn authority fails atomically (clean revert) rather than corrupting state.</li>
+<li>All DoS surfaces (EnumerableSet growth, hook-call gas, chainGasLimit misconfiguration, ERC20Votes checkpoint growth) are governor-bounded, self-contained, or standard accepted OZ tradeoffs.</li>
+<li>No reentrancy found anywhere in the 4 contracts (checks-effects-interactions consistently followed).</li>
+<li><code>CortexMigrator</code>&#39;s 5.5:1 ratio math conserves value exactly in both directions — no round-trip extraction possible.</li>
+</ul>
+<hr>
+<blockquote>
+<p>This review was performed by AI audit agents (ethskills breadth pass + pashov-methodology depth pass, reconciled against live on-chain state where relevant). AI analysis cannot verify the complete absence of vulnerabilities and no guarantee of security is given. Finding 1 (the dual-bridge transfer-freeze bypass) and Findings 2-3 (uncapped/unilateral admin token-supply powers) are the items most worth addressing structurally, even though the specific freeze window that Finding 1 depended on has already closed for this deployment.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreie7btkczoddwzka53muxexcnolwmvrhwizidvr6abkewt4g7r4tnu.ipfs.community.bgipfs.com/"><code>https://bafkreie7btkczoddwzka53muxexcnolwmvrhwizidvr6abkewt4g7r4tnu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/318">#318</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

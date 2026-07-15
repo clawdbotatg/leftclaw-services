@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeliveryVersusPaymentV1 — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #386">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">DeliveryVersusPaymentV1</h1>
+    <p class="job-sub">Job #386 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/386"><b>Job page</b> #386</a>
+      <a class="chip" href="https://bafkreighu5krzeedprlt3onba6ywskwsvspupfivlmsob42cw2zzzt4moi.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#confirmed-clean-both-phases-high-corroboration">Confirmed clean (both phases, high corroboration)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — DeliveryVersusPaymentV1</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>0xb0d73b0559F260bc239FF2ffBc8676595601134c</code> — Ethereum mainnet</td>
+</tr>
+<tr>
+<td><strong>Verification</strong></td>
+<td>Sourcify exact match (creation + runtime), verified 2026-07-07T13:52:04Z</td>
+</tr>
+<tr>
+<td><strong>Compiler</strong></td>
+<td>solc 0.8.34, viaIR enabled, optimizer 200 runs, evmVersion prague</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>src/dvp/V1/DeliveryVersusPaymentV1.sol</code> (603 lines) · <code>src/dvp/V1/IDeliveryVersusPaymentV1.sol</code> (60 lines)</td>
+</tr>
+<tr>
+<td><strong>Out of scope</strong></td>
+<td>Vendored OpenZeppelin v5.2.0 library contracts (<code>Address</code>, <code>SafeERC20</code>, <code>ERC165Checker</code>, <code>ReentrancyGuardTransient</code>) — read as external-call context only</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context mapping (opus) → ethskills breadth (7 domains, opus) → pashov depth (12 attack agents, opus, blind to phase-1 findings) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>50 (findings below this line are listed as Leads, not scored findings)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Overlap:</strong> 9 · <strong>Phase-1-only:</strong> 1 (weak <code>_isERC20</code> heuristic as standalone item, folded into P2-1) · <strong>Phase-2-only:</strong> 4 new items (free-option economics, missing <code>to==address(this)</code> guard, NFT tokenId-0/nonexistent-tokenId view defects, dual-interface type-confusion) · <strong>Re-examined leads kept:</strong> 12, demoted: 0 · <strong>Coverage holes closed:</strong> 0 (both phases independently covered every privileged/value-moving entrypoint; see Coverage Gate below).</p>
+<p>Two items were escalated from phase-1 Medium/Lead to a higher-confidence unified finding because independent phase-2 agents produced full exploit proofs from different attack angles: the fee-on-transfer/no-op-token issue (phase-1 erc20 + phase-2 first-principles + phase-2 trust-gap-hunter, three independent proofs) and the ETH-escrow/token-allowance asymmetry (phase-2 economic-security, quantified, + phase-2 first-principles + phase-2 trust-gap-hunter, three independent framings of the same design gap).</p>
+<p><strong>Coverage Gate:</strong> 6 privileged/value-moving entrypoints in the phase-0 inventory (<code>createSettlement</code>, <code>approveSettlements</code>, <code>executeSettlement</code>, <code>executeSettlementInner</code>, <code>revokeApprovals</code>, <code>withdrawETH</code>); all 6 examined by both phases. 10 threat-catalog rows from phase 0; all 10 addressed below (either by a finding or an explicit &quot;invariant holds&quot; note). Holes closed this pass: 0 — both phases already covered the full inventory and catalog independently.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><em>(from phase-0 context mapping; no findings, structural record only)</em></p>
+<p>No owner, admin, pausable, or upgrade role exists anywhere in this contract — it inherits only its own interface and OpenZeppelin&#39;s <code>ReentrancyGuardTransient</code>. Every state-changing entrypoint is permissionless, gated only by business-logic checks:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who can call</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>createSettlement</code> (L260)</td>
+<td>cutoff≥now, non-empty flows, valid addresses, token-type validation</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>approveSettlements</code> (L182)</td>
+<td><code>nonReentrant</code>; exists/not-settled/before-cutoff/not-already-approved; caller must be a <code>from</code> in ≥1 flow; exact <code>msg.value</code></td>
+<td>anyone who is a <code>from</code> party</td>
+<td>yes (accepts ETH; may cascade to execution)</td>
+</tr>
+<tr>
+<td><code>executeSettlement</code> (L305)</td>
+<td><code>nonReentrant</code>; delegates to inner</td>
+<td>anyone</td>
+<td>yes (via inner)</td>
+</tr>
+<tr>
+<td><code>executeSettlementInner</code> (L332)</td>
+<td><strong><code>msg.sender == address(this)</code> only</strong> (L334-336)</td>
+<td>self-call only, from the two functions above</td>
+<td>yes: ETH <code>sendValue</code>, token <code>safeTransferFrom</code></td>
+</tr>
+<tr>
+<td><code>revokeApprovals</code> (L444)</td>
+<td><code>nonReentrant</code>; exists/not-settled/approval-granted</td>
+<td>any party who previously approved</td>
+<td>yes (refund)</td>
+</tr>
+<tr>
+<td><code>withdrawETH</code> (L477)</td>
+<td><code>nonReentrant</code>; exists/cutoff-passed/not-settled</td>
+<td>any party with a positive deposit</td>
+<td>yes (refund)</td>
+</tr>
+<tr>
+<td><code>receive()</code> (L505)</td>
+<td>none — unconditionally reverts</td>
+<td>anyone (always fails)</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p>The sole privileged mechanism in the entire contract is the <code>executeSettlementInner</code> self-call gate, confirmed airtight by two independent phase-2 agents (access-control, trust-gap-hunter): unreachable except via genuine <code>this.</code> self-calls from the two guarded wrappers, and the caller-supplied <code>originalCaller</code> parameter plays no role in any authorization decision.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<p><em>(from phase-0 context mapping, cross-referenced against findings below)</em></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain / affect</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary non-party caller</td>
+<td><code>createSettlement</code>, naming others as from/to</td>
+<td>No fund access; spam surface only</td>
+<td>Invariant holds — creation moves nothing, execution still requires each named <code>from</code> to independently approve</td>
+</tr>
+<tr>
+<td>From-party</td>
+<td><code>approveSettlements</code></td>
+<td>Deposits own ETH only</td>
+<td>Invariant holds — <code>msg.value==totalEthRequired</code> (L220), keyed strictly per-<code>msg.sender</code></td>
+</tr>
+<tr>
+<td>Arbitrary executor</td>
+<td><code>executeSettlement</code> / auto-settle</td>
+<td>Triggers movement of all approved assets to fixed recipients; cannot redirect</td>
+<td>Invariant holds — recipients/amounts fixed at creation, confirmed by access-control + trust-gap-hunter agents</td>
+</tr>
+<tr>
+<td>From-party</td>
+<td><code>revokeApprovals</code></td>
+<td>Reclaims own ETH deposit</td>
+<td>Invariant holds</td>
+</tr>
+<tr>
+<td>From-party (post-cutoff)</td>
+<td><code>withdrawETH</code></td>
+<td>Reclaims own stranded ETH</td>
+<td>Invariant holds</td>
+</tr>
+<tr>
+<td>Malicious/fee-on-transfer/no-op <code>flow.token</code></td>
+<td>validation + <code>safeTransferFrom</code></td>
+<td>Under-delivers or delivers nothing while settlement finalizes as fully executed</td>
+<td><strong>Addressed by Finding 1</strong></td>
+</tr>
+<tr>
+<td>Token-side party vs. ETH-side party</td>
+<td>approval-to-execution window</td>
+<td>Costless option to walk away or time execution at ETH depositor&#39;s expense</td>
+<td><strong>Addressed by Finding 2</strong></td>
+</tr>
+<tr>
+<td>Settlement creator/from-party</td>
+<td>flow with <code>to == address(this)</code></td>
+<td>Permanently strands ERC20/NFT with no rescue</td>
+<td><strong>Addressed by Finding 3</strong></td>
+</tr>
+<tr>
+<td>Off-chain integrator</td>
+<td><code>getSettlementPartyStatus</code> with NFT tokenId 0 or nonexistent tokenId</td>
+<td>Misleading or reverted readiness status</td>
+<td><strong>Addressed by Finding 4</strong></td>
+</tr>
+<tr>
+<td>Settlement creator (hybrid-token)</td>
+<td><code>isNFT</code> flag vs. execution&#39;s uniform transfer path</td>
+<td>amount/tokenId type confusion</td>
+<td><strong>Addressed by Finding 5</strong></td>
+</tr>
+<tr>
+<td>Any party controlling one flow endpoint</td>
+<td><code>executeSettlementInner</code>&#39;s all-or-nothing loop</td>
+<td>Can brick a settlement&#39;s completion (not funds)</td>
+<td><strong>Addressed by Finding 6</strong> — griefing only, ETH always recoverable</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[70] <strong>1. No balance-delta verification on token transfers — fee-on-transfer and no-op/fake tokens let a settlement finalize as &quot;successful&quot; while under-delivering or delivering nothing</strong></p>
+<p><code>DeliveryVersusPaymentV1.executeSettlementInner</code> · Confidence: 70</p>
+<p><strong>Description</strong><br><code>safeTransferFrom</code> (L358) is trusted at face value with no before/after balance check on <code>flow.to</code>, so a fee-on-transfer token under-delivers, or a creator-controlled fake token that returns <code>true</code> without moving anything delivers zero — while the reciprocal ETH/token leg completes in full and <code>isSettled=true</code>/<code>SettlementExecuted</code> certify the trade as cleanly executed. Confirmed with full concrete proofs by two independent phase-2 attack agents (first-principles: fee-on-transfer scenario; trust-gap-hunter: creator-controlled fake-token scenario) plus phase-1&#39;s erc20 checklist agent.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">       } else {
+         // ERC-721 or ERC-20 transfer in the same way (must cast to IERC20 for OZ safeTransfer for ERC-20)
+         IERC20 eitherToken = IERC20(flow.token);
+         // safeTransfer reverts if unsuccessful for ERC-20 and ERC-721
++        uint256 balBefore = flow.isNFT ? 0 : eitherToken.balanceOf(flow.to);
+         eitherToken.safeTransferFrom(flow.from, flow.to, flow.amountOrId);
++        if (!flow.isNFT) {
++          require(eitherToken.balanceOf(flow.to) - balBefore == flow.amountOrId, &quot;delivered amount mismatch&quot;);
++        }
+       }
+</code></pre>
+<hr>
+<p>[65] <strong>2. ETH-escrow vs. token-allowance asymmetry creates a costless, revocable, front-run-protected option for the token-side party</strong></p>
+<p><code>DeliveryVersusPaymentV1.approveSettlements</code> / <code>revokeApprovals</code> · Confidence: 65</p>
+<p><strong>Description</strong><br>ETH legs are fully escrowed at approval (L213-220) while ERC20/ERC721 legs are only backed by a revocable allowance pulled at execution, and <code>revokeApprovals</code> (L444) has no cutoff gate — so the token-side party holds a free, at-will option to let a favorable trade execute or costlessly walk away from an unfavorable one, while the ETH-side party&#39;s capital sits locked with only eventual refund (not completion) guaranteed. Quantified by the economic-security phase-2 agent at roughly 3%+ of notional extractable via standard option-value reasoning on a 7-day-to-cutoff fixed-price trade, and independently corroborated as the same design gap by first-principles and trust-gap-hunter agents.</p>
+<p><strong>Fix</strong></p>
+<p>This is a protocol-design-level gap rather than a single-line bug; two mitigation directions, present as alternatives:</p>
+<pre><code class="language-diff">Option A — symmetric escrow (strongest guarantee, requires holding third-party assets):
+  At approveSettlements time, additionally pull each non-ETH flow&#39;s asset into the
+  contract via safeTransferFrom (mirroring the ETH deposit), refundable on revoke/withdraw
+  exactly as ETH is. Removes the token-side party&#39;s ability to costlessly back out.
+
+Option B — disclosure only (no code change):
+  Document prominently, in the contract&#39;s own NatSpec and any front-end, that only the
+  ETH leg is escrowed; the token/NFT leg remains fully at the sending party&#39;s discretion
+  (revocable allowance) until the exact block of execution, and ETH depositors bear this
+  asymmetric risk for the full window until cutoff.
+</code></pre>
+<hr>
+<p>[55] <strong>3. Missing <code>flow.to == address(this)</code> validation — ERC20/NFT leg to the contract&#39;s own address permanently strands the asset with no rescue function</strong></p>
+<p><code>DeliveryVersusPaymentV1.createSettlement</code> / <code>executeSettlementInner</code> · Confidence: 55</p>
+<p><strong>Description</strong><br><code>createSettlement</code>&#39;s validation loop (L274-275) checks <code>from</code>/<code>to</code> are non-zero but never rejects <code>to == address(this)</code>; an ETH leg to the contract&#39;s own address bricks that settlement (<code>receive()</code> unconditionally reverts, L505-507 — recoverable via <code>revokeApprovals</code>), but an ERC20/ERC721 leg <em>succeeds</em>, delivering the asset into a contract with no sweep/rescue function anywhere — a permanent, unrecoverable loss. Requires the <code>from</code> party&#39;s own approval to reach (self-consented), which is why this is scored below the fund-loss findings above, but it is the only unrecoverable end-state in the entire contract.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">       // Validate addresses
+       if (flow.from == address(0)) revert InvalidFromAddress();
+       if (flow.to == address(0)) revert InvalidToAddress();
++      if (flow.to == address(this)) revert InvalidToAddress();
+</code></pre>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[70]</td>
+<td>No balance-delta verification — fee-on-transfer/no-op tokens silently mis-settle</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[65]</td>
+<td>ETH-escrow vs. token-allowance asymmetry — costless option for token-side party</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[55]</td>
+<td>Missing <code>flow.to == address(this)</code> guard — unrecoverable ERC20/NFT lock</td>
+</tr>
+</tbody></table></div>
+<hr>
+<p>[45] <strong>4. NFT tokenId-0 collides with the &quot;not ready&quot; sentinel in the status view; nonexistent/burned tokenId reverts the entire party-status view</strong></p>
+<p><code>DeliveryVersusPaymentV1._getTokenStatuses</code> · Confidence: 45</p>
+<p><strong>Description</strong><br><code>_getTokenStatuses</code> (L557-566) encodes NFT &quot;approved&quot;/&quot;held&quot; status as the tokenId value itself, which is indistinguishable from the &quot;not ready&quot; default of 0 whenever a settlement legitimately uses tokenId 0 (explicitly permitted at creation); separately, <code>getApproved</code>/<code>ownerOf</code> (L561, L565) revert per EIP-721 on a nonexistent/burned tokenId, so one bad NFT flow makes the entire <code>getSettlementPartyStatus</code> view revert and hides an otherwise-ready party&#39;s ETH/approval status. View-only, no fund impact, but breaks the off-chain readiness check the contract&#39;s own docs recommend using before approving.</p>
+<hr>
+<p>[40] <strong>5. <code>isNFT</code> flag validated at creation but unused at execution — amount/tokenId type confusion for dual-interface tokens</strong></p>
+<p><code>DeliveryVersusPaymentV1.createSettlement</code> / <code>executeSettlementInner</code> · Confidence: 40</p>
+<p><strong>Description</strong><br>Creation-time validation branches on <code>isNFT</code> (ERC165 check vs. <code>decimals()</code> heuristic, L278-282), but execution (L344-358) branches only on <code>token==address(0)</code> and uses one uniform <code>safeTransferFrom</code> regardless of <code>isNFT</code>; a hybrid token that passes both checks lets <code>amountOrId</code> be silently reinterpreted between &quot;amount&quot; and &quot;tokenId&quot; depending on the token&#39;s real implementation. Independently identified by two phase-2 agents (numerical-gap-hunter, asymmetry) via different reasoning paths; requires a purpose-built hybrid token and an approving party fooled by the mismatch, so confidence is moderate.</p>
+<hr>
+<p>&lt; items below reflect confirmed-clean areas and lower-signal observations; full detail in Leads &gt;</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path requires either a self-consenting victim, a purpose-built adversarial token, or produces no fund impact (griefing/observability only). These are corroborated across many independent agents in both phases — not false positives, but calibrated below the scored-finding threshold.</em></p>
+<ul>
+<li><p><strong>Atomic execution bricked by a single bad flow</strong> — <code>executeSettlementInner</code> (L344-360) — Code smells: no dedup check on flows (duplicate NFT ids), no re-check of token allowance/pause state between approval and execution, ETH recipient with a reverting <code>receive()</code> — Independently raised by 8 of 19 total sub-agents across both phases (general, erc20, erc721, dos in phase 1; dos, execution-trace, invariant, boundary, asymmetry, trust-gap-hunter in phase 2). Every agent that traced recovery confirmed ETH is always recoverable via <code>revokeApprovals</code> (no cutoff gate) or post-cutoff <code>withdrawETH</code> — griefing/delay only, not fund loss.</p>
+</li>
+<li><p><strong>Manual-execution catch blocks emit-then-revert; Panic re-throw burns all gas</strong> — <code>executeSettlement</code> (L309-324) — Code smells: <code>emit SettlementExecutionFailed*</code> immediately followed by <code>revert</code>/<code>invalid()</code>/assembly-revert in the same frame, so the event never persists; the <code>Panic</code> branch&#39;s <code>assembly { invalid() }</code> consumes all remaining gas and discards the specific panic code, unlike its sibling branches. Confirmed by 7 independent agents across both phases (general, assembly in phase 1; assembly, economic-security, execution-trace, asymmetry, trust-gap-hunter in phase 2).</p>
+</li>
+<li><p><strong><code>withdrawETH</code> double-emits <code>ETHWithdrawn</code></strong> — <code>withdrawETH</code> (L492, L499) — Code smells: per-settlement emit inside the loop plus a redundant aggregate emit after — off-chain indexers summing this event double-count withdrawals. Confirmed by 7 independent agents across both phases (general in phase 1; general, invariant, execution-trace, boundary, asymmetry in phase 2, plus the flow-gap-hunter). No fund impact.</p>
+</li>
+<li><p><strong><code>_isERC20</code>&#39;s <code>decimals()</code>-only heuristic is a weak proof of ERC20-ness</strong> — <code>_isERC20</code> (L599-602) — Code smells: accepts any address returning exactly 32 bytes from a <code>decimals()</code> staticcall, never probing <code>transfer</code>/<code>transferFrom</code>/<code>balanceOf</code>; both over-inclusive (non-token contracts with a coincidental match) and under-inclusive (legitimate ERC20s lacking <code>decimals()</code> are rejected, acknowledged in the contract&#39;s own NatSpec at L431-434). Feeds directly into Finding 1&#39;s exploit surface.</p>
+</li>
+<li><p><strong>Approval-to-execution window lets a token party revoke allowance or get blocklisted, DoS-ing execution</strong> — <code>isSettlementApproved</code> (L154-166) — Code smells: readiness is asserted purely from the <code>approvals</code> boolean, never re-checked against live allowance/balance before execution; a party can approve then quietly revoke allowance, causing every execution attempt to fail until corrected. Same underlying mechanism as the atomic-bricking lead above.</p>
+</li>
+<li><p><strong>Misleading code comment overstates the per-flow ETH-deposit invariant</strong> — <code>executeSettlementInner</code> (L348-351) — Code smells: comment claims <code>ethDeposits[flow.from] must == flow.amount</code>, which is false whenever a party is <code>from</code> in more than one ETH flow (the deposit is the <em>sum</em>); the subtraction is nonetheless provably safe (verified independently by 4 phase-2 agents: math-precision, invariant, numerical-gap-hunter, boundary), but the stated safety argument is wrong and could mislead a future refactor.</p>
+</li>
+</ul>
+<hr>
+<h2 id="confirmed-clean-both-phases-high-corroboration">Confirmed clean (both phases, high corroboration)</h2>
+<ul>
+<li><strong>Access control:</strong> zero exploitable findings across both phases (2 independent full passes). The ownerless, permissionless design is internally consistent; the sole privileged mechanism (<code>executeSettlementInner</code>&#39;s self-call gate) is airtight.</li>
+<li><strong>Reentrancy:</strong> 9 of 12 phase-2 agents independently traced and confirmed the transient <code>nonReentrant</code> guard set by the four outer entrypoints persists through the <code>this.executeSettlementInner</code> self-call, blocking reentry from malicious <code>flow.to</code>/<code>flow.token</code> callbacks. ERC721 transfers use plain <code>transferFrom</code> (no <code>onERC721Received</code>), removing that reentrancy surface entirely.</li>
+<li><strong>ETH accounting invariants:</strong> a dedicated invariant-hunter agent adversarially tested all 8 documented invariants (flow immutability, id monotonicity, one-way <code>isSettled</code>, ETH deposit-sum consistency, exact <code>msg.value</code> enforcement, ETH/token classification, self-only execution, direct-ETH rejection) — all 8 hold. Corroborated independently by math-precision, numerical-gap-hunter, boundary, and execution-trace agents, including the specific multi-ETH-flow-per-party netting edge case and the <code>approveSettlements</code> loop-local variable scoping (no cross-settlement leakage).</li>
+<li><strong>Boundary conditions:</strong> all timing (cutoff <code>&gt;</code> vs. <code>&lt;=</code>, disjoint and gapless), array (empty-array no-ops), and sentinel (id=0, <code>uint128</code> max) edges independently confirmed clean.</li>
+<li><strong>Precision/math:</strong> the contract is essentially arithmetic-free (no division, multiplication, or share/fee math); no overflow/underflow/rounding findings in either phase.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated audit pipeline (context-mapping + 7-domain breadth checklist + 12-agent attacker-mindset depth pass). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A team security review, bug bounty program, and on-chain monitoring are strongly recommended before this contract is used to settle material value, given Finding 1 (silent under-delivery with non-standard tokens) and Finding 2 (asymmetric economic risk to ETH depositors) in particular.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreighu5krzeedprlt3onba6ywskwsvspupfivlmsob42cw2zzzt4moi.ipfs.community.bgipfs.com/"><code>https://bafkreighu5krzeedprlt3onba6ywskwsvspupfivlmsob42cw2zzzt4moi.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/386">#386</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

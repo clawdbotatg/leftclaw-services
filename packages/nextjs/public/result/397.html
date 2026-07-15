@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReputationRegistry — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #397">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ReputationRegistry</h1>
+    <p class="job-sub">Job #397 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/397"><b>Job page</b> #397</a>
+      <a class="chip" href="https://bafkreicsvjcshhp6tyqyrnzwwky252pmcscl3kzsiumv7y6s3yhkm75ypq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#rejected">Rejected</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — ReputationRegistry</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>ReputationRegistry.sol</code>, 227 lines, <code>pragma solidity ^0.8.24</code></td>
+</tr>
+<tr>
+<td><strong>Source</strong></td>
+<td>Submitted inline as job description (leftclaw job 397) — pinned in <code>~/audits/397/repo/ReputationRegistry.sol</code></td>
+</tr>
+<tr>
+<td><strong>Out-of-scope dependencies</strong></td>
+<td><code>TreasuryRouter.sol</code>, <code>interfaces/IArbitrationRecovery.sol</code>, OZ <code>Ownable</code>/<code>Ownable2Step</code> — referenced but not provided; treated as black boxes per their call-site usage</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Single-file submission (no repo/address given)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context map → ethskills breadth (4 domains, sonnet) → pashov depth (12 agents, sonnet, blind) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>50 (below → Leads, not findings)</td>
+</tr>
+</tbody></table></div>
+<p>This job&#39;s target is byte-identical in structure to systems audited in prior jobs on this<br>platform (a task-registry / arbitration / reputation marketplace), but every finding below comes<br>from this job&#39;s own phase-0 map and phase-1/phase-2 agents, run fresh, blind to any prior report.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p>Overlap (found independently by both phases): <strong>6</strong> · Phase-1-only: <strong>2</strong> (renounceOwnership,<br>force-fed ETH) · Phase-2-only: <strong>2</strong> (unstake front-run, silent-skip-on-unset-treasury) · Phase-1<br>finding rejected at gate (admin-action, no unprivileged amplifier): <strong>1</strong> (unvalidated-setter<br>self-wire-drain) · Re-examined leads kept: <strong>1</strong>, demoted: <strong>1</strong> (CEI/reentrancy seam, demoted<br>Medium→Lead after phase-2&#39;s 5 independent agents could not complete an unprivileged exploit path)<br>· Coverage holes closed this pass: <strong>0</strong> (both phases already covered every entrypoint and threat<br>row).</p>
+<p><strong>Completeness:</strong> 13 unique (Contract, function, bug-class) tuples across both phases&#39; raw output,<br>13 covered in the final set below.</p>
+<p><strong>Confidence floor used:</strong> 50. All findings below meet or exceed it; two additional leads are<br>listed separately as sub-50-confidence trails.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Callers</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setAuthorized</code> (L68)</td>
+<td><code>onlyOwner</code> + one-time (<code>taskRegistry==0</code>, L69)</td>
+<td>owner, once</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>rotateArbitrationModule</code> (L78)</td>
+<td><code>onlyOwner</code> + 8-check cross-validation (L82-97)</td>
+<td>owner</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>setAgentDepositVault</code> (L101)</td>
+<td><code>onlyOwner</code> + one-time (L102)</td>
+<td>owner, once</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>setTreasury</code> (L107)</td>
+<td><code>onlyOwner</code> + one-time (L108)</td>
+<td>owner, once</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>resetSubject</code> (L114)</td>
+<td><code>onlyAuthorized</code> — Set A = {taskRegistry, arbitrationModule, agentDepositVault}</td>
+<td>Set A</td>
+<td>Yes → treasury (conditional)</td>
+</tr>
+<tr>
+<td><code>emitSignal</code> (L127)</td>
+<td><code>onlyAuthorized</code> (Set A)</td>
+<td>Set A</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>recordDisputeOutcome</code> (L160)</td>
+<td>inline <code>==arbitrationModule</code> — Set B</td>
+<td>arbitrationModule only</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>recordArbitratorRegistration</code> (L172)</td>
+<td>inline Set B</td>
+<td>arbitrationModule only</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>recordArbitratorResolution</code> (L178)</td>
+<td>inline Set B</td>
+<td>arbitrationModule only</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>recordCompletion</code> (L184)</td>
+<td><code>onlyAuthorized</code> (Set A)</td>
+<td>Set A</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>recordReplacementPenalty</code> (L191)</td>
+<td><code>onlyAuthorized</code> (Set A)</td>
+<td>Set A</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>stakeVerifierBond</code> (L195)</td>
+<td>none (<code>msg.value&gt;0</code> only)</td>
+<td>anyone</td>
+<td>Yes, in</td>
+</tr>
+<tr>
+<td><code>unstakeVerifierBond</code> (L201)</td>
+<td>none (self-balance-bounded)</td>
+<td>anyone</td>
+<td>Yes, out</td>
+</tr>
+<tr>
+<td><code>slashVerifierBond</code> (L210)</td>
+<td>inline <code>arbitrationModule‖taskRegistry</code> — Set C</td>
+<td>Set C</td>
+<td>Yes → treasury</td>
+</tr>
+<tr>
+<td><code>getSubjectSignalCount</code> (L224)</td>
+<td>view</td>
+<td>anyone</td>
+<td>No</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles:</strong> Owner — 2-step (Ownable2Step), gates all 4 wiring functions. <code>taskRegistry</code> /<br><code>agentDepositVault</code> / <code>treasury</code> — settable exactly once, permanent, no revoke/rotate.<br><code>arbitrationModule</code> — set once, then the only slot with a dedicated rotation path<br>(<code>rotateArbitrationModule</code>). Three non-nested authority sets coexist (A ⊃ nothing; B and C are<br>each proper subsets of A but not of each other) — this asymmetry is the root cause of Findings 1<br>and 3 below.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>taskRegistry / agentDepositVault</td>
+<td><code>emitSignal</code></td>
+<td>Forge arbitration-reserved signal types</td>
+<td><strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td>Any verifier (unprivileged)</td>
+<td><code>unstakeVerifierBond</code></td>
+<td>Evade a pending <code>slashVerifierBond</code>/<code>resetSubject</code></td>
+<td><strong>Finding 1</strong></td>
+</tr>
+<tr>
+<td>agentDepositVault</td>
+<td><code>resetSubject</code></td>
+<td>Bond-forfeiture power <code>slashVerifierBond</code> denies it</td>
+<td><strong>Finding 4</strong></td>
+</tr>
+<tr>
+<td>Set A</td>
+<td><code>resetSubject</code></td>
+<td>Full DoS via unbounded <code>subjectSignals</code> delete</td>
+<td><strong>Finding 2</strong></td>
+</tr>
+<tr>
+<td>Set A</td>
+<td><code>resetSubject</code> (treasury unset)</td>
+<td>Silent skip of forfeiture, false success</td>
+<td><strong>Finding 5</strong></td>
+</tr>
+<tr>
+<td>Owner</td>
+<td><code>rotateArbitrationModule</code></td>
+<td>Blocked by a hostile/buggy current module, no recovery</td>
+<td><strong>Finding 6</strong></td>
+</tr>
+<tr>
+<td>Owner (misconfiguration, not malice)</td>
+<td><code>setTreasury</code> → <code>resetSubject</code>/<code>slashVerifierBond</code></td>
+<td>Silent, permanent stranding of slashed ETH</td>
+<td><strong>Finding 7</strong></td>
+</tr>
+<tr>
+<td>Set A/C</td>
+<td><code>resetSubject</code>/<code>slashVerifierBond</code></td>
+<td>Blocked entirely if <code>TreasuryRouter</code> ever reverts</td>
+<td><strong>Finding 8</strong></td>
+</tr>
+<tr>
+<td>Owner</td>
+<td><code>renounceOwnership</code> (inherited)</td>
+<td>Permanently brick unset roles / foreclose rotation</td>
+<td><strong>Finding 9</strong></td>
+</tr>
+<tr>
+<td>Owner (deliberate malice)</td>
+<td>self-wire <code>taskRegistry</code>/<code>arbitrationModule</code>/<code>treasury</code> to own EOAs, then <code>slashVerifierBond</code> all stakers</td>
+<td>Drain every staker&#39;s bond</td>
+<td><strong>Rejected at Gate 3</strong> — no unprivileged amplifier named; admin-malice preconditions are out of this audit&#39;s scope per standard convention. Root, non-malicious cause (no code-check on <code>setTreasury</code>) is captured in Finding 7.</td>
+</tr>
+<tr>
+<td>treasury (if owner-aliased to Set A/B/C)</td>
+<td>reentry during <code>recordNativeSlash</code></td>
+<td>Observe stale <code>subjectSignals</code>/<code>arbitratorReputation</code> mid-call</td>
+<td><strong>Demoted to Lead</strong> — 5 independent phase-2 agents could not complete an unprivileged exploit path; requires an unusual owner wiring choice with no named amplifier</td>
+</tr>
+<tr>
+<td>Any (verifier)</td>
+<td><code>stakeVerifierBond</code>/<code>unstakeVerifierBond</code> self-drain</td>
+<td>—</td>
+<td>Invariant holds — CEI ordering confirmed correct by 3+ independent agents in both phases, no exploit path found</td>
+</tr>
+<tr>
+<td>Owner</td>
+<td><code>rotateArbitrationModule</code> to a malicious module</td>
+<td>Full Set A/B/C takeover</td>
+<td>Invariant holds by design — owner is the fully-trusted role for this action; standard admin-trust assumption, not a bug</td>
+</tr>
+<tr>
+<td>arbitrationModule</td>
+<td><code>recordArbitratorRegistration</code>/<code>Resolution</code> unbounded <code>points</code></td>
+<td>Inflate own/ally reputation</td>
+<td>Invariant holds by design — arbitrationModule is fully trusted for this value; no unprivileged amplifier</td>
+</tr>
+<tr>
+<td>Any observer</td>
+<td>stake/unstake pre-wiring</td>
+<td>ETH flows before full configuration</td>
+<td>Invariant holds — both functions are permissionless by design regardless of wiring state</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage:</strong> 15 entrypoints in inventory, 15 addressed. 13 threat-catalog rows, 13 answered.<br>Holes closed this pass: 0 (both phases already covered every entrypoint and threat row from the<br>phase-0 map).</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[88] <strong>1. <code>unstakeVerifierBond</code> has no lock, letting a verifier evade a pending slash or reset-forfeiture</strong></p>
+<p><code>ReputationRegistry.unstakeVerifierBond</code> (L201-208) · Confidence: 88 · <strong>[phase2-only]</strong> — found<br>independently by 4 of 12 pashov agents (economic-security, invariant, math-precision, trust-gap),<br>each with a full numeric trace; not surfaced by phase-1&#39;s checklist pass.</p>
+<p><strong>Description:</strong> <code>unstakeVerifierBond</code> checks only <code>amount&gt;0</code> (L202) and the caller&#39;s own balance<br>(<code>verifierBond[msg.sender] &gt;= amount</code>, L203) — no reference to arbitration/dispute state, no<br>cooldown, no &quot;frozen pending slash&quot; flag. A verifier who anticipates or observes (mempool-visible)<br>an incoming <code>slashVerifierBond</code>/<code>resetSubject</code> targeting them can call<br><code>unstakeVerifierBond(fullBond)</code> first: <code>verifierBond[subject]</code> drops to 0 (L204), so the<br>subsequent <code>slashVerifierBond</code> reverts at its balance check (<code>require(verifierBond[subject] &gt;= amount)</code>, L216) and <code>resetSubject</code>&#39;s forfeiture branch (<code>if (bond&gt;0 &amp;&amp; treasury!=0)</code>, L116)<br>silently no-ops — the punitive mechanism the bond exists to back is fully and freely defeated,<br>via a purely unprivileged action requiring no admin cooperation. <code>rotateArbitrationModule</code><br>elsewhere in this same file already checks <code>activeDisputeCount()==0</code> (L83), proving the codebase<br>has the concept of &quot;is there a live dispute&quot; available but never applies it to withdrawal.</p>
+<p><strong>Proof:</strong> Verifier V stakes 5 ETH → <code>verifierBond[V] = 5e18</code>. <code>arbitrationModule</code> submits<br><code>slashVerifierBond(V, 5e18, reason)</code>. V front-runs with <code>unstakeVerifierBond(5e18)</code> at higher gas:<br><code>verifierBond[V] -= 5e18</code> → 0 (L204), raw call succeeds (L205-206), V recovers the ETH. The<br>pending slash tx now evaluates <code>require(0 &gt;= 5e18)</code> → reverts. Identically, if <code>resetSubject(V)</code><br>is used instead, <code>bond = 0</code> (L115) makes the <code>if</code> at L116 false — forfeiture is skipped with no<br>revert, while <code>subjectSignals</code>/<code>arbitratorReputation</code> are still wiped, giving the appearance of a<br>completed punishment.</p>
+<p><strong>Fix:</strong></p>
+<pre><code class="language-diff">+ mapping(address =&gt; uint256) public lockedBond;
++
++ function lockBond(address subject, uint256 amount) external {
++     require(msg.sender == arbitrationModule || msg.sender == taskRegistry, &quot;ReputationRegistry: not slash authority&quot;);
++     lockedBond[subject] += amount;
++ }
+
+  function unstakeVerifierBond(uint256 amount) external {
+      require(amount &gt; 0, &quot;ReputationRegistry: zero unstake&quot;);
+-     require(verifierBond[msg.sender] &gt;= amount, &quot;ReputationRegistry: insufficient bond&quot;);
++     require(verifierBond[msg.sender] - lockedBond[msg.sender] &gt;= amount, &quot;ReputationRegistry: insufficient unlocked bond&quot;);
+      verifierBond[msg.sender] -= amount;
+</code></pre>
+<p>(Illustrative — the exact locking trigger/lifecycle should be designed with the arbitration<br>module&#39;s dispute-open/close flow in mind.)</p>
+<hr>
+<p>[85] <strong>2. Unbounded <code>subjectSignals</code> growth makes <code>resetSubject</code> permanently un-executable for high-activity subjects (DoS)</strong></p>
+<p><code>ReputationRegistry.resetSubject</code> (L122), <code>subjectSignals</code> (L36), push at L156 · Confidence: 70 ·<br><strong>[both]</strong> — phase-1 dos-domain finding D1, corroborated independently by the phase-2 periphery<br>agent.</p>
+<p><strong>Description:</strong> <code>subjectSignals[subject]</code> only grows — six entrypoints push to it<br>(<code>emitSignal</code>, <code>recordDisputeOutcome</code>, <code>recordArbitratorRegistration</code>, <code>recordArbitratorResolution</code>,<br><code>recordCompletion</code>, <code>recordReplacementPenalty</code>) with no bound — and is only ever cleared by a<br>whole-array <code>delete</code> in <code>resetSubject</code> (L122). Deleting a large dynamic storage array costs gas<br>linear in its length (every element slot is zeroed). A subject who has accumulated on the order of<br>several thousand signals — entirely reachable through normal, legitimate high-throughput usage by<br>trusted Set A callers, no attacker cooperation required — can push <code>resetSubject</code>&#39;s gas<br>requirement past the block gas limit, permanently blocking reset (and bond forfeiture) for that<br>subject. There is no chunked/paginated alternative.</p>
+<p><strong>Fix:</strong> Replace the whole-array delete with a lazy-invalidation scheme (e.g. a per-subject epoch<br>counter that <code>getSubjectSignalCount</code>/consumers check against, incremented on reset instead of<br>iterating the array), or provide a bounded, repeatable, paginated reset function.</p>
+<hr>
+<p>[82] <strong>3. <code>emitSignal</code> lets non-arbitration Set A callers forge arbitration-only signal types</strong></p>
+<p><code>ReputationRegistry.emitSignal</code> (L127-136) · Confidence: 90 · <strong>[both]</strong> — phase-1<br>access-control finding AC1, corroborated independently by <strong>10 of 12</strong> phase-2 attack agents (the<br>strongest-attested result across both phases).</p>
+<p><strong>Description:</strong> <code>recordDisputeOutcome</code> (L160-170), <code>recordArbitratorRegistration</code> (L172-176),<br>and <code>recordArbitratorResolution</code> (L178-182) hard-restrict <code>DISPUTE_WON</code>/<code>DISPUTE_LOST</code>/<br><code>ARBITRATOR_STANDBY</code>/<code>ARBITRATOR_RESOLVED</code> signals to <code>msg.sender == arbitrationModule</code> (L161,<br>173, 179) with fixed/derived weights. <code>emitSignal</code> (L127-136) is gated only by the broader<br><code>onlyAuthorized</code> (<code>taskRegistry ‖ arbitrationModule ‖ agentDepositVault</code>, L56-64) and forwards a<br>fully caller-controlled <code>signalType</code>/<code>weight</code> straight into <code>_recordSignal</code> (L138) — nothing ties<br>the signal type to the caller&#39;s identity. <code>taskRegistry</code> or <code>agentDepositVault</code> — both explicitly<br>excluded from the narrower gate — can call <code>emitSignal(victim, SignalType.DISPUTE_WON, taskId, 0x0, type(uint256).max, 0x0)</code> directly, producing a signal byte-for-byte indistinguishable from a<br>legitimate arbitration-issued one, with an unbounded weight the dedicated function would never<br>allow (hardcoded to 100). For the <code>ARBITRATOR_*</code> types, the forged signal additionally desyncs<br>from <code>arbitratorReputation</code> (untouched by <code>emitSignal</code>, only updated at L174/L180), corrupting the<br>very &quot;evidence layer for off-chain aggregation&quot; the contract&#39;s own header comment (L9) states is<br>its purpose.</p>
+<p><strong>Fix:</strong></p>
+<pre><code class="language-diff">  function emitSignal(
+      address subject,
+      SignalType signalType,
+      uint256 taskId,
+      bytes32 taskTypeHash,
+      uint256 weight,
+      bytes32 payloadHash
+  ) external onlyAuthorized returns (uint256 signalId) {
++     require(
++         signalType != SignalType.DISPUTE_WON &amp;&amp;
++         signalType != SignalType.DISPUTE_LOST &amp;&amp;
++         signalType != SignalType.ARBITRATOR_STANDBY &amp;&amp;
++         signalType != SignalType.ARBITRATOR_RESOLVED,
++         &quot;ReputationRegistry: reserved signal type&quot;
++     );
+      return _recordSignal(subject, signalType, taskId, taskTypeHash, weight, payloadHash);
+  }
+</code></pre>
+<hr>
+<p>[80] <strong>4. <code>resetSubject</code> grants <code>agentDepositVault</code> bond-forfeiture power <code>slashVerifierBond</code> deliberately withholds from it</strong></p>
+<p><code>ReputationRegistry.resetSubject</code> (L114-125) vs. <code>slashVerifierBond</code> (L210-222) · Confidence: 82 ·<br><strong>[both]</strong> — phase-1 access-control finding AC2, corroborated at FINDING level by 2 of 12 phase-2<br>agents (boundary, trust-gap) with concrete traces, plus 2 more phase-2 agents flagging the same<br>area as leads.</p>
+<p><strong>Description:</strong> <code>slashVerifierBond</code> deliberately excludes <code>agentDepositVault</code> from its caller<br>set (<code>arbitrationModule ‖ taskRegistry</code> only, L211-214). <code>resetSubject</code> performs a strictly<br>larger action on the same <code>verifierBond</code> state — unconditional full-bond forfeiture, no<br>caller-chosen amount (L115-119) — yet is reachable by the broader <code>onlyAuthorized</code> (Set A), which<br>includes <code>agentDepositVault</code>. A verifier stakes 10 ETH; <code>agentDepositVault</code> — excluded from<br><code>slashVerifierBond</code> — calls <code>resetSubject(verifier)</code> and achieves the identical<br><code>TreasuryRouter.recordNativeSlash</code> seizure of the full 10 ETH that <code>slashVerifierBond</code> would have<br>reverted for the same caller. The narrower Set C gate provides no real protection since the same<br>effect is reachable through the broader <code>resetSubject</code> door.</p>
+<p><strong>Fix:</strong> Scope <code>resetSubject</code>&#39;s bond-forfeiture branch to Set C (<code>arbitrationModule ‖ taskRegistry</code>) only, or split the bond-forfeiture piece from the signal/reputation-wipe piece.</p>
+<hr>
+<p>[68] <strong>5. <code>resetSubject</code> silently skips bond forfeiture (but still reports success) while <code>treasury</code> is unset</strong></p>
+<p><code>ReputationRegistry.resetSubject</code> (L116) · Confidence: 68 · <strong>[phase2-only]</strong> — 1 of 12 phase-2<br>agents (first-principles) raised this at FINDING level with a full trace; 5 more independently<br>flagged the identical mechanism as a lead, meeting the multi-agent-convergence promotion rule.</p>
+<p><strong>Description:</strong> The forfeiture branch is gated <code>if (bond&gt;0 &amp;&amp; treasury!=address(0))</code> (L116).<br><code>treasury</code> is an independent, optional, one-time setter (<code>setTreasury</code>, L107) with no ordering<br>dependency on <code>setAuthorized</code> — nothing requires it to ever be called before <code>resetSubject</code><br>becomes reachable. If a Set A caller invokes <code>resetSubject</code> while <code>treasury==address(0)</code>, the<br>forfeiture branch is skipped with <strong>no revert</strong>, while <code>subjectSignals</code>/<code>arbitratorReputation</code> are<br>still wiped (L122-123) and <code>ReputationReset</code> still emits (L124), giving the appearance of a<br>completed punishment. The subject keeps their full bond, later withdrawable via<br><code>unstakeVerifierBond</code>. <code>slashVerifierBond</code>&#39;s sibling check (<code>require(treasury != address(0), ...)</code>,<br>L217) reverts instead of silently proceeding — confirming this is an inconsistency, not intended<br>behavior, and directly contradicting <code>resetSubject</code>&#39;s own NatSpec (&quot;forfeit remaining verifier<br>bond&quot;, L112).</p>
+<p><strong>Fix:</strong></p>
+<pre><code class="language-diff">  function resetSubject(address subject) external onlyAuthorized {
+      uint256 bond = verifierBond[subject];
+-     if (bond &gt; 0 &amp;&amp; treasury != address(0)) {
++     if (bond &gt; 0) {
++         require(treasury != address(0), &quot;ReputationRegistry: no treasury&quot;);
+          verifierBond[subject] = 0;
+          TreasuryRouter(treasury).recordNativeSlash{value: bond}();
+          emit VerifierBondSlashed(subject, bond, bytes32(&quot;PLATFORM_PENALTY&quot;));
+      }
+</code></pre>
+<hr>
+<p>[75] <strong>6. <code>rotateArbitrationModule</code> can be permanently blocked by the current or replacement module, with no owner override</strong></p>
+<p><code>ReputationRegistry.rotateArbitrationModule</code> (L78-99) · Confidence: 75 · <strong>[both]</strong> — phase-1<br>dos-domain and access-control-domain findings (D3/AC4, merged within phase 1), corroborated<br>independently by the phase-2 periphery agent.</p>
+<p><strong>Description:</strong> Two of the eight gate checks (L82-83) require the <strong>current</strong> — potentially<br>compromised or malfunctioning — module to self-report <code>disputeOpeningPaused()==true</code> and<br><code>activeDisputeCount()==0</code> before a replacement can be installed. No owner override exists. A<br>compromised/buggy current module can revert, run out of gas, or simply always report &quot;not<br>paused&quot;/&quot;disputes active&quot; to permanently block its own replacement, defeating the apparent<br>recovery purpose of <code>IArbitrationRecovery</code>. <code>arbitrationModule</code> gates Set B entirely and half of<br>Set C, so this is a single point of permanent failure for a large share of the contract&#39;s trusted<br>surface.</p>
+<p><strong>Fix:</strong> Add an owner-gated emergency override that bypasses the <code>current.*</code> checks (e.g. a<br>timelocked force-rotate), or wrap each external view call in <code>try/catch</code> with a gas stipend.</p>
+<hr>
+<p>[60] <strong>7. Silent, irrecoverable fund loss if <code>treasury</code> is a codeless address</strong></p>
+<p><code>ReputationRegistry.setTreasury</code> (L107-110); <code>resetSubject</code> (L118); <code>slashVerifierBond</code> (L220) ·<br>Confidence: 60 · <strong>[both]</strong> — phase-1 general-domain finding G1 (originally rated High from<br>first principles), corroborated independently by the phase-2 boundary agent; confidence reduced<br>from phase-1&#39;s initial rating on hybrid re-examination because it requires an honest deployment<br>mistake (no malice) whose likelihood cannot be assessed without deployment-process context.</p>
+<p><strong>Description:</strong> <code>setTreasury</code> validates only non-zero (L109), no code-existence check, and is a<br>one-time permanent setter. <code>TreasuryRouter(treasury).recordNativeSlash{value:X}()</code> (L118, L220) is<br>a typed call to a function with no return value — Solidity omits the automatic codesize guard for<br>no-return-value calls, so a call to a codeless address (an EOA, an undeployed CREATE2 address, a<br>typo) returns <code>success=true</code> with the attached value effectively stranded, while <code>verifierBond</code> is<br>still decremented as if the slash succeeded. No malicious owner action is required — this can<br>happen from a single honest misconfiguration, and is permanent since <code>setTreasury</code> cannot be<br>re-run once set.</p>
+<p><strong>Fix:</strong></p>
+<pre><code class="language-diff">  function setTreasury(address _treasury) external onlyOwner {
+      require(treasury == address(0), &quot;ReputationRegistry: treasury set&quot;);
+      require(_treasury != address(0), &quot;ReputationRegistry: zero&quot;);
++     require(_treasury.code.length &gt; 0, &quot;ReputationRegistry: not a contract&quot;);
+      treasury = _treasury;
+  }
+</code></pre>
+<hr>
+<p>[55] <strong>8. <code>resetSubject</code>/<code>slashVerifierBond</code> fully dependent on <code>TreasuryRouter</code> never reverting</strong></p>
+<p><code>ReputationRegistry.resetSubject</code> (L118), <code>slashVerifierBond</code> (L220) · Confidence: 55 · <strong>[both]</strong><br>— phase-1 dos-domain finding D2, corroborated independently by the phase-2 economic-security<br>agent. Confidence capped below 60 because it is entirely contingent on the out-of-scope<br><code>TreasuryRouter</code>&#39;s actual revert behavior, which neither phase could inspect.</p>
+<p><strong>Description:</strong> Both calls are plain typed calls with no <code>try/catch</code>/isolation; a callee revert<br>bubbles and unwinds the whole caller tx. If <code>TreasuryRouter.recordNativeSlash()</code> can ever revert<br>for a given subject/amount (rate limit, blocklist, pause, downstream failure), both the bond<br>forfeiture <em>and</em> the unrelated <code>subjectSignals</code>/<code>arbitratorReputation</code> wipe in <code>resetSubject</code><br>become permanently blocked for that subject, since there&#39;s no independent path for the<br>non-monetary cleanup.</p>
+<p><strong>Fix:</strong> Decouple local state effects from the external call&#39;s success (pull-based accounting, or<br>proceed with cleanup regardless of the treasury call&#39;s outcome and emit a distinguishing event on<br>failure).</p>
+<hr>
+<p>[65] <strong>9. Premature <code>renounceOwnership</code> permanently bricks unset roles / forecloses future arbitration-module rotation</strong></p>
+<p>Inherited <code>Ownable</code>/<code>Ownable2Step</code>; interacts with <code>setAuthorized</code>/<code>setAgentDepositVault</code>/<br><code>setTreasury</code>/<code>rotateArbitrationModule</code> (all <code>onlyOwner</code>) · Confidence: 65 · Severity: Low ·<br><strong>[phase1-only]</strong> — access-control finding AC5.</p>
+<p><strong>Description:</strong> If the owner renounces before all one-time setters have run, those slots stay<br><code>address(0)</code> forever (no non-owner path sets them) — core <code>onlyAuthorized</code>/Set B/C functions<br>become permanently unreachable. Even after full wiring, renouncing forecloses any future<br><code>rotateArbitrationModule</code> call, removing the only mitigation for Finding 6.</p>
+<p><strong>Fix:</strong> Guard <code>renounceOwnership</code> (require wiring complete first), or accept as documented<br>operational risk under process control (e.g. multisig-gated deployment sequencing).</p>
+<hr>
+<p>[40] <strong>10. Force-fed ETH becomes untracked and unrecoverable</strong> (informational)</p>
+<p>Contract-wide, no <code>receive()</code>/<code>fallback()</code>/sweep function · Confidence: 40 · Severity: Info ·<br><strong>[phase1-only]</strong> — general-domain finding G3.</p>
+<p><strong>Description:</strong> <code>selfdestruct</code>-target or CREATE2-pre-fund ETH is not read by any logic (safe — no<br>mixed-accounting bug) but also has no recovery path. No security impact.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Trails with concrete code smells where the full exploit path could not be completed. Not scored.</em></p>
+<ul>
+<li><strong><code>resetSubject</code> CEI ordering / reentrancy seam</strong> — <code>ReputationRegistry.resetSubject</code> (L118<br>external call precedes L122-123 state writes). 5 of 12 phase-2 agents independently flagged this,<br>plus phase-1&#39;s general-domain agent (originally filed as Medium finding G2). <strong>Demoted from<br>finding to lead on hybrid re-examination</strong>: exploitability requires <code>treasury</code> to be<br>owner-aliased to a Set A/B/C address — an unusual wiring choice with no named unprivileged<br>amplifier — and <code>TreasuryRouter</code>&#39;s actual reentrancy surface is out of scope. No agent, across<br>either phase, could complete an unprivileged trigger.</li>
+<li><strong><code>resetSubject</code>&#39;s index wipe doesn&#39;t invalidate underlying <code>signals[id]</code> records or past<br>events</strong> — <code>ReputationRegistry.resetSubject</code> (L122 only deletes the index array, not the<br>underlying <code>signals</code> mapping or historical events). Whether this matters depends on the<br>out-of-scope off-chain aggregator&#39;s indexing strategy.</li>
+</ul>
+<h2 id="rejected">Rejected</h2>
+<ul>
+<li><strong>Unvalidated one-time setters let owner self-wire roles and drain staked bonds</strong> (originally<br>phase-1 access-control finding AC3). <strong>Rejected at Gate 3</strong> (admin-action rule): the harm<br>requires the owner to deliberately wire <code>taskRegistry</code>/<code>arbitrationModule</code>/<code>treasury</code> to<br>self-controlled addresses and then slash legitimate stakers — no unprivileged amplifier is<br>named, and per this audit&#39;s judging standard, admin-malice-requiring findings are rejected<br>outright rather than downgraded. The non-malicious root cause it shares with Finding 7 (no<br>code-existence check on <code>setTreasury</code>) remains captured there.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-mapping +<br>4 ethskills checklist domains + 12 pashov attack-specialist agents, cross-reconciled). AI<br>analysis can never verify the complete absence of vulnerabilities and no guarantee of security is<br>given. A human security review, bug bounty program, and on-chain monitoring are strongly<br>recommended before mainnet deployment, particularly given <code>TreasuryRouter.sol</code> and<br><code>interfaces/IArbitrationRecovery.sol</code> were not provided and could not be audited as part of this<br>engagement — several findings above (6, 7, 8) are contingent on their behavior.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicsvjcshhp6tyqyrnzwwky252pmcscl3kzsiumv7y6s3yhkm75ypq.ipfs.community.bgipfs.com/"><code>https://bafkreicsvjcshhp6tyqyrnzwwky252pmcscl3kzsiumv7y6s3yhkm75ypq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/397">#397</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

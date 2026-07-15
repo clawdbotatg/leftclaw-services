@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignalDriftMinterV9Phased — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #312">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">SignalDriftMinterV9Phased</h1>
+    <p class="job-sub">Job #312 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/312"><b>Job page</b> #312</a>
+      <a class="chip" href="https://bafkreiefvwa2oslajqmbwfscepamzrzcmhgvxeza2wlvltniqhpsfltbua.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope-note">Scope note</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#methodology-transparency-note">Methodology transparency note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Audit Report — SignalDriftMinterV9Phased</h1>
+<p><strong>Project</strong>: Signal Drift (Signals &amp; Fragments NFT collections)<br><strong>Contract</strong>: <code>SignalDriftMinterV9Phased</code><br><strong>Address</strong>: <a href="https://etherscan.io/address/0xBD08C4e4f544bfE638335DC2c8aA73CCb93EF3F9"><code>0xBD08C4e4f544bfE638335DC2c8aA73CCb93EF3F9</code></a> (Ethereum mainnet)<br><strong>File reviewed</strong>: <code>next/04_SD_Minter_VNext.sol</code> (210 lines, Solidity ^0.8.20)<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (5 ethskills checklists: general, precision-math, ERC721, DoS, access-control) → Phase 2 depth (12 blind pashov-style attacker agents) → hybrid reconciliation.</p>
+<h2 id="scope-note">Scope note</h2>
+<p>Only the Minter contract at the given address has verified source available. It is a thin payment/gatekeeper front-end that delegates all actual NFT minting/extraction logic to two external contracts, <code>signals</code> (<code>0x76a7A7ec5eb0da2534D2F3099145b9C8595A56aB</code>) and <code>fragments</code> (<code>0x0f4B01f1e985205BC3Cbc6fb8Bf479cCE501836f</code>), whose source was <strong>not</strong> provided for this engagement and is treated throughout as arbitrary/untrusted. Several findings below note where impact is contingent on those contracts&#39; internal behavior — this is a structural characteristic of the target, not a shortcut taken by this audit.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p>Overlap: 3 finding-groups corroborated by both phases · Phase-1-only: 10 · Phase-2-only: 3 · Re-examined leads kept: 3, demoted: 0.<br>Completeness: 10 unique (Contract, function) groups identified across both phases&#39; raw output, 10 covered in the unified findings below.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="f-1-high-owner-can-rug-in-flight-mintextract-transactions-via-se">[F-1] High — Owner can rug in-flight mint/extract transactions via <code>setContracts()</code>, decoupling payment from delivery, and can reset the &quot;sold out&quot; supply cap at will</h3>
+<p><strong>Origin</strong>: <code>[both]</code> — phase1: access-control H-1, erc721 M-1, general M-1 · phase2: agent-11 (trust-gap) FINDING, confidence 80, corroborated as a lead by 8 other agents<br><strong>Location</strong>: <code>setContracts()</code> lines 100-103; exploited via <code>mintParent()</code> (139-170), <code>extractSymbol()</code> (172-180), <code>mintLooseFragment()</code> (182-190)</p>
+<p><strong>Description</strong>: <code>setContracts()</code> lets <code>owner</code> repoint <code>signals</code>/<code>fragments</code> to any address, instantly, with no validation, no timelock, and no event. All three payable entry points capture ETH into this Minter directly (the interface calls are not <code>payable</code>, so <code>msg.value</code> is never forwarded downstream) and unconditionally trust whatever <code>uint256</code> the external call returns — no check that a real NFT was minted to the caller. This has two independently provable consequences, both requiring only an owner action (or a compromised owner key) with no cooperation needed from the external contracts&#39; internals:</p>
+<ol>
+<li><strong>Payment-without-delivery / front-running a specific victim.</strong> An owner can watch the mempool, front-run a user&#39;s already-broadcast <code>mintParent</code>/<code>extractSymbol</code>/<code>mintLooseFragment</code> transaction with <code>setContracts(stub, stub)</code>, let the victim&#39;s transaction execute against a stub that returns a fake id, then swap back and <code>withdraw()</code> the ETH. The victim&#39;s transaction succeeds, an event fires, but no NFT is delivered.</li>
+<li><strong>Supply-cap reset.</strong> <code>mintParent</code>&#39;s &quot;sold out&quot; guard (<code>require(signals.totalSupply() &lt; maxSupply, &quot;sold out&quot;)</code>, line 142) reads <code>totalSupply()</code> from whichever contract <code>signals</code> currently points to. Swapping to a fresh <code>signals</code> contract with <code>totalSupply()==0</code> immediately re-arms the mint gate regardless of how many units were sold under the original contract, silently breaking the advertised 1024-unit scarcity cap.</li>
+</ol>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Owner deploys <code>Fake</code>, whose <code>mintWithColors()</code> returns an incrementing counter with no real mint, and whose <code>totalSupply()</code> returns <code>0</code>.</li>
+<li>Alice broadcasts <code>mintParent{value: 0.001 ether}(...)</code>. Owner sees it in the mempool and submits <code>setContracts(address(Fake), fragments)</code> with higher gas so it lands first.</li>
+<li>Alice&#39;s transaction now executes against <code>Fake</code>: <code>totalSupply() &lt; maxSupply</code> passes trivially, her ETH is captured, <code>mintedByWallet[Alice]</code> increments, <code>SignalMinted</code> fires with a bogus id — no real Signal NFT is delivered.</li>
+<li>Owner calls <code>setContracts()</code> back to the real <code>signals</code>/<code>fragments</code> addresses (making the incident easy to miss after the fact, since no event is emitted on the change) and <code>withdraw()</code>s the ETH.</li>
+</ol>
+<p><strong>Recommendation</strong>: Add a timelock/two-step commit on <code>setContracts()</code> (e.g. <code>pendingSignals</code>/<code>pendingFragments</code> + a delayed <code>commitContracts()</code>), emit an event on every change, and validate the new addresses have code. Track mint count with a local monotonic counter (<code>totalMinted</code>, incremented pre-call in <code>mintParent</code>) rather than trusting a live, swappable external <code>totalSupply()</code> for the <code>maxSupply</code> gate. Consider a post-call sanity check on the returned id where feasible.</p>
+<pre><code class="language-diff">-    function setContracts(address signalsAddress, address fragmentsAddress) external onlyOwner {
+-        signals = ISignalDriftSignalsMintV6Colors(signalsAddress);
+-        fragments = ISignalDriftFragmentsMintV5(fragmentsAddress);
+-    }
++    address public pendingSignals;
++    address public pendingFragments;
++    uint256 public contractsChangeETA;
++    event ContractsUpdateProposed(address signals, address fragments, uint256 eta);
++    event ContractsUpdated(address indexed signals, address indexed fragments);
++
++    function proposeContracts(address signalsAddress, address fragmentsAddress) external onlyOwner {
++        require(signalsAddress.code.length &gt; 0 &amp;&amp; fragmentsAddress.code.length &gt; 0, &quot;not a contract&quot;);
++        pendingSignals = signalsAddress;
++        pendingFragments = fragmentsAddress;
++        contractsChangeETA = block.timestamp + 2 days;
++        emit ContractsUpdateProposed(signalsAddress, fragmentsAddress, contractsChangeETA);
++    }
++
++    function commitContracts() external onlyOwner {
++        require(contractsChangeETA != 0 &amp;&amp; block.timestamp &gt;= contractsChangeETA, &quot;too early&quot;);
++        signals = ISignalDriftSignalsMintV6Colors(pendingSignals);
++        fragments = ISignalDriftFragmentsMintV5(pendingFragments);
++        emit ContractsUpdated(pendingSignals, pendingFragments);
++        contractsChangeETA = 0;
++    }
+</code></pre>
+<hr>
+<h3 id="f-2-medium-mint-price-supply-cap-and-phase-flags-are-mutable-at-">[F-2] Medium — Mint price, supply cap, and phase flags are mutable at any time with no timelock, undermining marketed scarcity/pricing guarantees</h3>
+<p><strong>Origin</strong>: <code>[phase1 only]</code> — access-control M-2<br><strong>Location</strong>: <code>setMintConfig()</code> (105-110), <code>setFragmentPrices()</code> (112-116), <code>setMintState()</code> (118-124)</p>
+<p><strong>Description</strong>: <code>maxSupply</code> (marketed as 1024) and <code>mintPrice</code>/<code>maxSignalsPerWallet</code>/fragment prices can be changed instantly by the owner with no bound and no timelock — independent of the <code>setContracts()</code>-based cap reset in F-1, the owner can simply raise <code>maxSupply</code> directly. A buyer has no on-chain guarantee that the terms they see when submitting a transaction will still hold when it mines.</p>
+<p><strong>Proof of Concept</strong>: Owner calls <code>setMintConfig(mintPrice, 100000, maxSignalsPerWallet)</code> post-launch, silently expanding supply far beyond the advertised 1024.</p>
+<p><strong>Recommendation</strong>: Make <code>maxSupply</code> immutable after initial configuration (or only lowerable), and/or add a timelock + event-based notice window for price/supply changes.</p>
+<hr>
+<h3 id="f-3-medium-no-ownership-transfer-or-renounce-mechanism-single-po">[F-3] Medium — No ownership transfer or renounce mechanism — single point of permanent failure</h3>
+<p><strong>Origin</strong>: <code>[phase1 only]</code> — access-control M-1, erc721 I-3 (re-examined against source: confirmed — no <code>transferOwnership</code>/<code>renounceOwnership</code> function exists anywhere in the 210-line contract)<br><strong>Location</strong>: <code>owner</code> (line 48), constructor (94-98)</p>
+<p><strong>Description</strong>: <code>owner</code> is set once in the constructor with no function to ever change it. Every privileged action (<code>setContracts</code>, <code>setMintConfig</code>, <code>setFragmentPrices</code>, <code>setMintState</code>, <code>stopLooseFragmentMinting</code>, <code>setAllowlist</code>, <code>withdraw</code>) depends on this single immutable address. If the key is lost, all admin functions — including <code>withdraw()</code> — become permanently inaccessible and any ETH sent to the contract afterward is stuck forever. If the key is compromised, the attacker has permanent, irrevocable control with no way for the team to migrate to a new key or multisig.</p>
+<p><strong>Recommendation</strong>: Add a two-step ownership transfer mechanism (e.g. OpenZeppelin <code>Ownable2Step</code>) so keys can be rotated or migrated to a multisig.</p>
+<hr>
+<h3 id="f-4-medium-extractsymbolmintloosefragment-charge-for-fragment-ex">[F-4] Medium — <code>extractSymbol</code>/<code>mintLooseFragment</code> charge for fragment extraction with no on-chain ownership check</h3>
+<p><strong>Origin</strong>: <code>[both]</code> — phase1: erc721 (implicit in trust-delegation framing) · phase2: agents 2, 3, 5, 6, 9, 11 (6/12) independently converged; re-examined against source: confirmed<br><strong>Location</strong>: <code>extractSymbol()</code> lines 172-180, <code>mintLooseFragment()</code> lines 182-190</p>
+<p><strong>Description</strong>: <code>extractSymbol</code> charges a discounted <code>ownerFragmentPrice</code> (0.001 ETH, half of <code>looseFragmentPrice</code>) for any nonzero <code>parentTokenId</code> supplied by the caller. The Minter performs <strong>no</strong> check that <code>msg.sender</code> actually owns or is authorized for that parent token — it checks only <code>!fragments.lockedWallet(msg.sender)</code> and <code>parentTokenId != 0</code> — and never calls the <code>canExtract</code>/<code>extractionAllowance</code> views it itself exposes (lines 196-202) before spending the fee. All authorization is delegated entirely to the out-of-scope <code>fragments.extractFor</code>.</p>
+<p><strong>Proof of Concept</strong>: If <code>fragments.extractFor</code>&#39;s authorization is anything weaker than strict <code>msg.sender == owner-of(parentTokenId)</code> (unverifiable — its source is unavailable), any address can pay the cheap &quot;owner&quot; price to extract against a signal it doesn&#39;t own, undercutting the price-tier&#39;s premise and potentially consuming the real owner&#39;s rate-limited extraction allowance (griefing). This cannot be confirmed end-to-end without the <code>fragments</code> source, so it is reported at reduced confidence per the audit&#39;s verification standard — flagged for the client to confirm against the actual <code>fragments</code> deployment.</p>
+<p><strong>Recommendation</strong>: If ownership gating is meant to be enforced at the Minter layer at all, add an explicit check (e.g. <code>signals.ownerOf(input.parentTokenId) == msg.sender</code>, if <code>signals</code> exposes it) before forwarding to <code>fragments.extractFor</code>; otherwise explicitly document/confirm that this invariant is fully enforced inside <code>fragments</code>.</p>
+<hr>
+<h3 id="f-5-low-mintloosefragment-omits-the-parenttokenid-0-invariant-en">[F-5] Low — <code>mintLooseFragment</code> omits the <code>parentTokenId == 0</code> invariant enforced by its sibling <code>extractSymbol</code></h3>
+<p><strong>Origin</strong>: <code>[phase2 only]</code> — agents 4, 6, 8, 9, 12 (5/12) independently converged; re-examined against source: confirmed<br><strong>Location</strong>: <code>extractSymbol()</code> line 175 vs <code>mintLooseFragment()</code> lines 182-190</p>
+<p><strong>Description</strong>: <code>extractSymbol</code> enforces <code>require(input.parentTokenId != 0, &quot;use loose mint&quot;)</code> (line 175), establishing the contract&#39;s own sentinel invariant: <code>parentTokenId == 0</code> ⇔ loose path, non-zero ⇔ real-extraction path. <code>mintLooseFragment</code> has no mirrored <code>require(input.parentTokenId == 0, ...)</code> and forwards the identical <code>ExtractInput</code> struct — including any attacker-chosen <code>parentTokenId</code>, potentially belonging to a signal the caller doesn&#39;t own — verbatim to <code>fragments.mintLooseFor(msg.sender, input)</code>.</p>
+<p><strong>Proof of Concept</strong>: A caller invokes <code>mintLooseFragment</code> with <code>input.parentTokenId = &lt;any real signal id&gt;</code> and pays only <code>looseFragmentPrice</code>. Whether <code>fragments.mintLooseFor</code> acts on a populated <code>parentTokenId</code> it wasn&#39;t designed to receive (e.g. associating the fragment with, or bypassing that parent&#39;s per-token extraction cooldown/allowance normally gated via <code>extractFor</code>) is unverifiable without <code>fragments</code>&#39; source. The code-level asymmetry itself is fully provable from this file alone; downstream impact is contingent on the external contract.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">     function mintLooseFragment(ISignalDriftFragmentsMintV5.ExtractInput calldata input) external payable returns (uint256 fragmentId) {
+         require(!extractionPaused, &quot;extraction paused&quot;);
+         require(!looseFragmentMintingStopped, &quot;loose minting stopped&quot;);
+         require(!fragments.lockedWallet(msg.sender), &quot;wallet locked&quot;);
++        require(input.parentTokenId == 0, &quot;use extractSymbol&quot;);
+         require(msg.value &gt;= looseFragmentPrice, &quot;insufficient loose fragment value&quot;);
+</code></pre>
+<hr>
+<h3 id="f-6-low-no-reentrancy-guard-on-payable-functions-maxsupply-gate-">[F-6] Low — No reentrancy guard on payable functions; <code>maxSupply</code> gate specifically has no local backstop against a reentrant external call</h3>
+<p><strong>Origin</strong>: <code>[both]</code> — phase1: access-control L-2, erc721 L-2, general I-1 · phase2: 9/12 agents converged on the specific <code>mintParent</code> supply-cap variant<br><strong>Location</strong>: <code>mintParent()</code>, <code>extractSymbol()</code>, <code>mintLooseFragment()</code></p>
+<p><strong>Description</strong>: Checks-effects-interactions is followed correctly for local state — <code>mintedByWallet</code>/<code>allowlistAllowance</code> are updated before their respective external calls, so no reentrant bypass of wallet-level limits is possible. The one guard with no local backstop is <code>mintParent</code>&#39;s &quot;sold out&quot; check (line 142), which re-reads external <code>signals.totalSupply()</code> immediately before the state-changing <code>signals.mintWithColors()</code> call (line 153), with no <code>nonReentrant</code> modifier anywhere in the contract. Phase-2 agents traced a concrete (but unverifiable without <code>signals</code>&#39; source) path: if <code>mintWithColors</code> invokes any callback on the recipient before finalizing its own supply bookkeeping, a reentrant call could re-read a stale <code>totalSupply()</code> and mint past <code>maxSupply</code>. Note this reentrancy-dependent path achieves a strictly weaker version of the cap-reset already proven unconditionally in F-1/F-2 (which need no cooperation from <code>signals</code>&#39; internals) — reported here mainly as defense-in-depth guidance.</p>
+<p><strong>Recommendation</strong>: Add OpenZeppelin <code>ReentrancyGuard</code> / <code>nonReentrant</code> to all three payable entry points, and combine with a local <code>totalMinted</code> counter (see F-1) so the <code>maxSupply</code> invariant does not depend on external contract behavior at all.</p>
+<hr>
+<h3 id="f-7-low-core-mintextract-paths-unconditionally-trust-return-data">[F-7] Low — Core mint/extract paths unconditionally trust return data and availability of untrusted external <code>signals</code>/<code>fragments</code> contracts</h3>
+<p><strong>Origin</strong>: <code>[phase1 only]</code> — dos DOS-3; related phase2 lead &quot;unenforced-exclusive-minter-trust&quot; (agents 2, 12) — distinct confused-deputy angle, kept separate<br><strong>Location</strong>: <code>mintParent()</code> (142, 153-167), <code>extractSymbol()</code> (178), <code>mintLooseFragment()</code> (188)</p>
+<p><strong>Description</strong>: Every value-generating function makes a single, un-capped, non-try/catch&#39;d external call into <code>signals</code>/<code>fragments</code>. A misbehaving or compromised target could return an arbitrarily large return blob (memory-expansion gas griefing — state changes revert atomically so no funds are lost, only gas wasted), or the calls could simply revert, unconditionally bricking <code>mintParent</code> for all users with no fallback other than an owner-driven <code>setContracts()</code> repoint (which carries its own risk, see F-1).</p>
+<p>Separately (phase2-only lead, not independently re-verifiable): nothing in this file proves <code>signals.mintWithColors</code>/<code>fragments.extractFor</code>/<code>fragments.mintLooseFor</code> restrict their privileged entrypoints to <code>msg.sender == address(thisMinter)</code>. If they don&#39;t, any address could call them directly, bypassing every gate this Minter enforces (price, pause, allowlist, caps) — a classic confused-deputy risk for a front-end/router contract, worth confirming against the actual <code>signals</code>/<code>fragments</code> deployments.</p>
+<p><strong>Recommendation</strong>: Wrap external calls in <code>try/catch</code> where feasible, or use low-level <code>staticcall</code>/<code>call</code> with a gas cap and fixed-size return decoding. Confirm with the <code>signals</code>/<code>fragments</code> audit that their privileged entrypoints are restricted to this Minter&#39;s address.</p>
+<hr>
+<h3 id="f-8-low-unvalidated-caller-supplied-palettemetadata-fields-forwa">[F-8] Low — Unvalidated, caller-supplied palette/metadata fields forwarded with no on-chain cross-check against <code>paletteId</code></h3>
+<p><strong>Origin</strong>: <code>[phase1 only]</code> — erc721 M-2<br><strong>Location</strong>: <code>mintParent()</code> 153-167 (<code>paletteName</code>, <code>secondaryPaletteName</code>, <code>paletteColors</code>, <code>secondaryPaletteColors</code>); <code>extractSymbol()</code>/<code>mintLooseFragment()</code> 172-190 (analogous Fragments fields)</p>
+<p><strong>Description</strong>: The Minter forwards attacker-controlled string/array fields (palette name, colors) without validating them against the numeric <code>paletteId</code>/<code>secondaryPaletteId</code> they&#39;re supposed to describe. Unless <code>signals</code>/<code>fragments</code> independently re-validate these (unverifiable here), a minter could label their token with misleading/spoofed rare-sounding trait names or colors that don&#39;t correspond to the actual <code>paletteId</code>.</p>
+<p><strong>Recommendation</strong>: Validate palette name/colors against an on-chain registry keyed by <code>paletteId</code> before forwarding, or explicitly confirm this validation is enforced inside <code>signals</code>/<code>fragments</code>.</p>
+<hr>
+<h3 id="f-9-low-no-refund-of-eth-sent-above-the-required-mintextraction-">[F-9] Low — No refund of ETH sent above the required mint/extraction price</h3>
+<p><strong>Origin</strong>: <code>[phase1 only]</code> — erc721 L-1, general L-1 (2/5 phase-1 agents)<br><strong>Location</strong>: <code>mintParent()</code> line 143, <code>extractSymbol()</code> line 176, <code>mintLooseFragment()</code> line 186</p>
+<p><strong>Description</strong>: All three payable entry points use <code>require(msg.value &gt;= price, ...)</code> and never refund the excess; any overpayment is retained by the contract and only recoverable by the owner via <code>withdraw()</code>.</p>
+<p><strong>Recommendation</strong>: Require exact payment (<code>== price</code>) or refund the difference to the caller.</p>
+<hr>
+<h3 id="f-10-low-no-zero-address-code-existence-validation-on-signalsfra">[F-10] Low — No zero-address / code-existence validation on <code>signals</code>/<code>fragments</code></h3>
+<p><strong>Origin</strong>: <code>[phase1 only]</code> — access-control L-1, erc721 I-2, general L-2 (3/5 phase-1 agents)<br><strong>Location</strong>: constructor (94-98), <code>setContracts()</code> (100-103)</p>
+<p><strong>Description</strong>: Neither the constructor nor <code>setContracts()</code> validates that the supplied addresses are non-zero or contain code. A misconfiguration bricks minting (self-inflicted, owner-recoverable DoS) until corrected.</p>
+<p><strong>Recommendation</strong>: Add <code>require(addr != address(0) &amp;&amp; addr.code.length &gt; 0, ...)</code> checks.</p>
+<hr>
+<h3 id="f-11-low-setallowlist-unbounded-loop-over-caller-supplied-arrays">[F-11] Low — <code>setAllowlist()</code> unbounded loop over caller-supplied arrays</h3>
+<p><strong>Origin</strong>: <code>[phase1 only]</code> — dos DOS-1<br><strong>Location</strong>: <code>setAllowlist()</code> lines 131-137</p>
+<p><strong>Description</strong>: No length cap on <code>accounts</code>/<code>allowances</code>. Not third-party exploitable (<code>onlyOwner</code>-gated, arrays supplied fresh each call) — only a self-inflicted out-of-gas risk for the owner&#39;s own tooling on an oversized batch.</p>
+<p><strong>Recommendation</strong>: Optional: cap batch size (e.g. 500) for clearer tooling errors.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong><code>setContracts()</code> emits no event</strong> — every other owner-only state-changing function does; this is arguably the most consequential admin action in the contract (see F-1) and currently the hardest to monitor off-chain. <em>(<code>[phase1 only]</code>, access-control I-1)</em></li>
+<li><strong><code>allowlistMintOpen</code> has no effect once <code>publicMintOpen</code> is true</strong> — both flags are currently <code>true</code> on-chain, so the allowlist is presently dead weight. May not match the &quot;V9<strong>Phased</strong>&quot; naming&#39;s implied phase separation; worth confirming intent with the client. <em>(<code>[phase1 only]</code>, erc721 I-1)</em></li>
+<li><strong><code>withdraw()</code> external-call pattern is not exploitable</strong> — recipient <code>to</code> is owner-chosen per call (default <code>owner</code>), so the owner is never forced into a permanently bricked withdraw path. <em>(<code>[phase1 only]</code>, dos DOS-2)</em></li>
+<li><strong><code>looseFragmentMintingStopped</code> is a one-way switch</strong> — appears to be an intentional &quot;final phase ended&quot; lever rather than a bug. <em>(<code>[phase1 only]</code>, dos DOS-4)</em></li>
+<li><strong><code>mintPrice</code> defaults to 0 with <code>allowlistMintOpen</code> defaulting to <code>true</code></strong> — <code>[both]</code>, corroborated by all 5 phase-1 agents&#39; general checklist and effectively every phase-2 agent. If a deployment script called <code>setAllowlist</code> before <code>setMintConfig</code>, allowlisted addresses could mint for free during that window. Moot on the currently live contract, which already has <code>mintPrice = 0.001 ETH</code> configured — flagged as an operational/deployment-ordering note only.</li>
+</ul>
+<hr>
+<h2 id="methodology-transparency-note">Methodology transparency note</h2>
+<p>One phase-2 agent (periphery specialty) read <code>phase1-report.md</code> mid-scan despite the blind-phase-2 instruction, before independently reproducing findings [F-4]/[F-5]-adjacent conclusions. This is noted for transparency; those specific conclusions were also reached independently by 5+ other genuinely blind agents, so it did not materially bias the outcome.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI auditor agents (ethskills breadth checklists + pashov-style attacker-mindset depth agents, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Independent human review, a public bug bounty, and on-chain monitoring are recommended before relying on this contract for further high-value mints. In particular, the <code>signals</code>/<code>fragments</code> contracts this Minter delegates to were <strong>not</strong> in scope for this engagement and should be audited separately — several findings above (F-1, F-4, F-5, F-6, F-7) are contingent on their internal behavior.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiefvwa2oslajqmbwfscepamzrzcmhgvxeza2wlvltniqhpsfltbua.ipfs.community.bgipfs.com/"><code>https://bafkreiefvwa2oslajqmbwfscepamzrzcmhgvxeza2wlvltniqhpsfltbua.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/312">#312</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire VaultfireNameService (VNS) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #349">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire VaultfireNameService (VNS)</h1>
+    <p class="job-sub">Job #349 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/349"><b>Job page</b> #349</a>
+      <a class="chip" href="https://bafkreiha3joimwzaaic2u34ioq7effo5eipq7baqbz42fpelohhhbnpbjm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#high-severity">High Severity</a></li>
+      <li><a href="#medium-severity">Medium Severity</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#low-severity">Low Severity</a></li>
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report: Vaultfire VaultfireNameService (VNS)</h1>
+<p><strong>Target:</strong> <code>VaultfireNameService</code> at <code>0xA9e6c2c0a731F1f56F6720Dfac2eB1440Ab9453a</code> (Base, chain 8453)<br><strong>In-scope contract:</strong> <code>VaultfireNameService.sol</code> (source verified via Sourcify full match; compiler 0.8.25; single self-contained contract, 244 lines, no external calls, no admin functions)<br><strong>Methodology:</strong> Two-phase audit — Phase 1 breadth (4 parallel checklist-driven agents: general, precision-math, access-control, and a dedicated commit-reveal/front-running specialist) → Phase 2 depth (12 parallel attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation (this document).<br><strong>Reconciliation summary:</strong> Overlap: 5 findings independently confirmed by both phases · Phase-1-only: 5 · Phase-2-only: 3 (all re-examined against source and confirmed; two of the three are High-severity findings phase 1 missed entirely) · Demoted on re-examine: 0.<br><strong>Completeness:</strong> every unique (contract, function, bug-class) raised by either phase&#39;s raw agent output is represented below.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<p>This is a small, ENS-style name registry: users register a <code>.vaultfire</code> name via a commit-reveal scheme (documented as an &quot;AUDIT-H1 fix&quot; for front-running), can transfer their name to another address, or release it back to the pool. It has no admin functions, no external calls, and holds no funds — a genuinely minimal-risk-surface contract on its face.</p>
+<p>Despite this, the two-phase methodology surfaced two significant findings that neither phase&#39;s dedicated specialists caught on their first pass. <strong>Phase 1 assigned a dedicated agent specifically to interrogate the commit-reveal scheme&#39;s front-running resistance, and a separate dedicated agent specifically to &quot;ownership transfer authorization&quot; per the client&#39;s stated focus — both concluded the relevant mechanisms were sound.</strong> Phase 2&#39;s independent, blind attacker-mindset agents found that both conclusions were incomplete: (1) <code>transferName</code> has <strong>no consent mechanism at all</strong> for the recipient, letting any name-holder force-assign a name onto an arbitrary, unconsenting address — found independently by 6 of 12 phase-2 agents, and (2) the commit-reveal scheme correctly defeats a <em>reactive</em> front-runner but has no defense against a <em>patient</em> one who pre-stages matured commitments for desirable names in advance — a realistic, real-world squatting-bot threat model that neither phase-1&#39;s specialist nor 11 of 12 phase-2 agents considered, caught by exactly one agent and independently re-verified against source by the orchestrator. Both are now confirmed, High-severity findings.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>3</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="high-severity">High Severity</h2>
+<h3 id="h-1-transfername-has-no-recipient-consent-mechanism-any-name-hol">[H-1] <code>transferName</code> has no recipient-consent mechanism — any name-holder can force-assign a name onto an arbitrary, unconsenting address</h3>
+<p><strong>Origin:</strong> <code>[phase2 only]</code> — 6/12 agents independently reached this as an explicit FINDING (trust-gap, periphery, math-precision, invariant, asymmetry, flow-gap), despite phase 1 running a dedicated agent specifically tasked with reviewing &quot;ownership transfer authorization&quot; that did not catch it — re-examined against source and confirmed<br><strong>Location:</strong> <code>transferName</code> (149-166)</p>
+<pre><code class="language-solidity">function transferName(address newOwner) external {
+    require(_hasName[msg.sender], &quot;No name to transfer&quot;);
+    require(newOwner != address(0), &quot;Cannot transfer to zero address&quot;);
+    require(newOwner != msg.sender, &quot;Cannot transfer to self&quot;);
+    require(!_hasName[newOwner], &quot;New owner already has a name&quot;);
+    ...
+    _reverseNames[newOwner] = name;
+    _hasName[newOwner] = true;
+    ...
+}
+</code></pre>
+<p>All four checks reference only the <em>sender&#39;s</em> state and the <em>recipient&#39;s default (empty) state</em> — none require any action, signature, or acceptance from <code>newOwner</code>. This is a fundamental asymmetry with <code>registerName</code>, which cryptographically requires the recipient themselves to have committed and revealed a matching secret (true self-authorization). <code>transferName</code> lets a completely unrelated third party unilaterally flip the same <code>_hasName</code> flag for an address that never took any action.</p>
+<p><strong>Proof of Concept:</strong> Attacker registers any cheap throwaway name for themselves via the normal, legitimate commit-reveal flow (gas-only cost), then calls <code>transferName(victim)</code> for any address that has never interacted with the contract — the overwhelming majority of all addresses. Every check passes trivially. After the call: <code>_hasName[victim] = true</code>, <code>_reverseNames[victim] = &lt;attacker&#39;s chosen name&gt;</code>, <code>_names[nameHash].owner = victim</code> — none of which the victim authorized. Consequences:</p>
+<ol>
+<li>Victim&#39;s own future <code>registerName</code> calls now revert on <code>require(!_hasName[msg.sender], &quot;Address already has a name&quot;)</code> until they notice and spend an extra transaction on <code>releaseName()</code>.</li>
+<li>This can be timed to specifically front-run a victim&#39;s own pending <code>registerName</code> reveal (visible in plaintext in the mempool), forcing that specific transaction to revert.</li>
+<li><code>resolveAddressToName(victim)</code> — a public, trusted-looking reverse-resolution API — now reports an attacker-chosen string as the victim&#39;s registered identity. Since the character set (<code>a-z0-9-</code>) still permits arbitrary words, this is weaponizable for reputational spoofing/defamation against any address, including protocol treasuries or well-known contracts that never opted into having any name at all.</li>
+</ol>
+<p>Repeatable indefinitely against unlimited targets at near-zero cost, since registration itself is free (&quot;Free to register — users only pay gas&quot; per the contract&#39;s own doc comment).</p>
+<p><strong>Recommendation:</strong> Require recipient consent via a two-step pattern: <code>transferName</code> records a pending transfer, and a separate <code>acceptTransfer()</code> call from <code>newOwner</code> (itself checking <code>!_hasName[newOwner]</code> at accept time) completes it.</p>
+<hr>
+<h3 id="h-2-commit-reveal-front-running-protection-defends-against-a-rea">[H-2] Commit-reveal front-running protection defends against a <em>reactive</em> attacker but not a <em>patient</em> one who pre-stages matured commitments for desirable names in advance</h3>
+<p><strong>Origin:</strong> <code>[phase2 only]</code> — found by exactly 1 of 12 agents (flow-gap); this directly qualifies phase 1&#39;s explicit &quot;scheme HOLDS&quot; conclusion from its dedicated commit-reveal specialist agent, and was not raised by any of the other 11 phase-2 agents either — independently re-verified against source by the orchestrator and confirmed<br><strong>Location:</strong> <code>registerName</code> (103-142)</p>
+<p><code>registerName</code> verifies only that the <em>caller&#39;s own</em> commitment for <code>(name, msg.sender, secret)</code> is matured (past <code>COMMITMENT_MIN_AGE</code>) and unexpired (within <code>COMMITMENT_MAX_AGE</code>), and that the name is currently unclaimed. <strong>Nothing ties registration priority to which commitment for a given name existed first</strong> — priority is decided purely by the order in which <code>registerName</code> transactions land on-chain (a public, front-runnable event), not by the order of the (private, hash-opaque) <code>commitName</code> calls.</p>
+<p><strong>Proof of Concept:</strong> An attacker calls <code>commitName(keccak256(name, attacker, secret))</code> for any number of desirable candidate names (e.g., every short/dictionary-word string) at any time — entirely speculatively, since the commitment hash reveals nothing about which name it targets. This costs only gas and can be done in parallel for arbitrarily many names, refreshed every ~23 hours to stay within <code>COMMITMENT_MAX_AGE</code>. This is exactly how real-world ENS/domain squatting bots operate. Later, victim Bob independently and correctly follows the documented protocol exactly: commits to <code>&quot;eth&quot;</code>, waits the required minimum age, and broadcasts <code>registerName(&quot;eth&quot;, bobSecret)</code> — plaintext <code>&quot;eth&quot;</code> now sits in the public mempool. The attacker, who has held a matured commitment for <code>&quot;eth&quot;</code> since long before Bob ever acted, simply submits <code>registerName(&quot;eth&quot;, attackerSecret)</code> with competitive gas. Every check on the attacker&#39;s transaction passes (their commitment matured long ago, well within its 24h window). The attacker&#39;s transaction can land first and claim <code>&quot;eth&quot;</code>; Bob&#39;s identical-looking, fully protocol-compliant transaction then reverts on <code>&quot;Name already taken&quot;</code>. <strong>Bob did everything the documentation instructs and still lost the name to front-running — the exact failure mode the &quot;AUDIT-H1 fix&quot; claims to prevent.</strong></p>
+<p><strong>Why the &quot;scheme holds&quot; conclusion from both phase-1&#39;s dedicated specialist and 11 of 12 phase-2 agents is correct but incomplete:</strong> every one of those analyses considered only a <em>reactive</em> attacker — one who first learns of a target name by observing a victim&#39;s specific pending transaction, and must then start fresh (commit, wait 60s, reveal), which is correctly and provably too slow to win. None considered a <em>patient</em> attacker who already held a matured commitment for that exact name from an unrelated, earlier point in time. Since commitments are free, unlimited, and content-opaque, maintaining such a standing inventory for every desirable name is realistic and low-cost — and for any name actually worth contesting (which is precisely the set of names this protection is meant to matter for), this is arguably the primary real-world threat, not an edge case.</p>
+<p><strong>Recommendation:</strong> Bind registration priority to commit order, not reveal order — e.g., record the first commitment timestamp <em>per name</em> (requires a separate, non-secret-bound name-commitment layer, or a two-layer commit scheme) and reject a reveal if an earlier commitment for the same name exists from a different committer; or require a meaningful, forfeitable stake on <code>commitName</code> so speculative portfolio-squatting carries a real cost.</p>
+<hr>
+<h2 id="medium-severity">Medium Severity</h2>
+<h3 id="m-1-transfername-never-refreshes-registeredat-enabling-tenurerep">[M-1] <code>transferName</code> never refreshes <code>registeredAt</code>, enabling tenure/reputation spoofing</h3>
+<p><strong>Origin:</strong> <code>[phase2 only]</code> — 1/12 agents (invariant), distinct from H-1 — re-examined against source and confirmed<br><strong>Location:</strong> <code>transferName</code> (149-166), <code>registerName</code> (131-135)</p>
+<p><code>registerName</code> sets <code>registeredAt: block.timestamp</code> once, at initial registration; <code>transferName</code> mutates only <code>.owner</code>, never touching <code>.registeredAt</code>. An attacker can register a name, hold it idle for an extended period, then transfer it to a buyer or victim — <code>resolveNameToAddress</code> continues to report the <em>original</em> registration timestamp alongside the <em>new</em> owner, making the name appear to have been held by its current controller far longer than it actually has, exploitable for fake &quot;verified since&quot; social-engineering claims.</p>
+<p><strong>Recommendation:</strong> Either update <code>registeredAt</code> on transfer to mean &quot;current owner since,&quot; or add a separate <code>originalRegisteredAt</code> field so the two concepts (name-existed-since vs. current-owner-since) aren&#39;t conflated in one struct field.</p>
+<hr>
+<h2 id="low-severity">Low Severity</h2>
+<h3 id="l-1-commitname-is-not-bound-to-the-committer-enabling-hash-copy-">[L-1] <code>commitName</code> is not bound to the committer, enabling hash-copy griefing of a victim&#39;s commit slot (gas-waste only, no escalation to name theft)</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (all 4 agents touched on this) · Phase 2 (8/12 agents, near-unanimous, all reaching the identical &quot;gas-waste only&quot; conclusion via independent traces)<br><strong>Location:</strong> <code>commitName</code> (87-91)</p>
+<p><code>commitments[commitment]</code> is keyed purely by the hash value with no binding to who submitted it. Since the raw hash is visible in mempool calldata before confirmation, any observer can front-run a victim&#39;s <code>commitName(H)</code> with their own <code>commitName(H)</code> call, forcing the victim&#39;s transaction to revert and wasting their gas. Confirmed unanimously across every agent that examined it: the victim&#39;s subsequent <code>registerName</code> reveal still succeeds using the attacker-set timestamp, since <code>registerName</code> never checks <em>who</em> wrote the commitment slot, only that a valid one exists. No path to escalate this into name theft or permanent denial was found by any agent.</p>
+<p><strong>Recommendation:</strong> Bind the commitment slot to its submitter (e.g., a struct storing both timestamp and committer address) so a copied hash from a third party is rejected rather than silently claimed.</p>
+<hr>
+<h3 id="l-2-expired-never-revealed-commitments-are-never-pruned-permanen">[L-2] Expired, never-revealed commitments are never pruned — permanently blocks reuse of the exact same commitment hash</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (3/4 agents) · Phase 2 (5/12 agents)<br><strong>Location:</strong> <code>commitName</code> (88), <code>registerName</code> (109)</p>
+<p><code>commitments[commitment]</code> is deleted only on successful reveal. An expired (&gt;24h, never revealed) commitment permanently blocks reuse of that exact <code>(name, sender, secret)</code> triple. Confirmed by every agent that examined it to be trivially self-resolved by choosing a new random secret, with no third-party attack vector (an attacker cannot predict a victim&#39;s future commitment hash without knowing both their intended name and secret in advance).</p>
+<p><strong>Recommendation:</strong> Allow re-commit once expired: <code>require(commitments[commitment] == 0 || block.timestamp &gt; commitments[commitment] + COMMITMENT_MAX_AGE, ...)</code>.</p>
+<hr>
+<h3 id="l-3-consecutive-hyphens-are-permitted-in-names-creating-a-squatt">[L-3] Consecutive hyphens are permitted in names, creating a squatting-adjacent lookalike-name risk</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (general agent) — re-examined against source and confirmed<br><strong>Location:</strong> character-validation loop, <code>registerName</code> (116-126)</p>
+<p>The validation loop only checks character-class membership and that the first/last byte isn&#39;t a hyphen — it never checks adjacency to the preceding byte, so <code>&quot;a--b&quot;</code> passes validation and registers as a name fully independent of, and visually confusable with, <code>&quot;a-b&quot;</code>/<code>&quot;ab&quot;</code>. Real DNS reserves <code>--</code> in this position specifically to disambiguate ASCII labels from punycode-encoded IDN labels; this contract has no equivalent restriction, though it does correctly reject all non-ASCII bytes (closing the broader Unicode-homograph class).</p>
+<p><strong>Recommendation:</strong> Add an adjacency check: <code>require(!(isHyphen &amp;&amp; i &gt; 0 &amp;&amp; nameBytes[i-1] == 0x2D), &quot;Consecutive hyphens not allowed&quot;)</code>.</p>
+<hr>
+<h3 id="l-4-secret-reuse-across-multiple-pending-commitments-creates-a-p">[L-4] Secret reuse across multiple pending commitments creates a post-reveal guessing oracle</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (commit-reveal specialist) — re-examined against source and confirmed<br><strong>Description:</strong> If a user reuses the same <code>secret</code> across two different pending commitments, the first reveal publishes <code>secret</code> in plaintext on-chain. An attacker can then test guesses for the user&#39;s <em>other</em> pending name by checking <code>keccak256(guessed_name2, user, revealed_secret)</code> against the public <code>commitments</code> mapping — degrading secrecy for guessable names, though still not enabling theft since the reveal remains bound to the original user&#39;s <code>msg.sender</code>.</p>
+<p><strong>Recommendation:</strong> Document clearly that a fresh random secret must be used per commitment, never reused across names.</p>
+<hr>
+<h3 id="l-5-transfername-has-no-guard-against-transferring-to-the-contra">[L-5] <code>transferName</code> has no guard against transferring to the contract&#39;s own address; no two-step confirmation</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (general, access-control agents) — re-examined against source and confirmed<br><strong>Location:</strong> <code>transferName</code> (149-166)</p>
+<p>Two related, minor gaps: (a) no check against <code>newOwner == address(this)</code>, which would permanently strand a name (self-inflicted, not third-party exploitable); (b) no two-step accept pattern, so a typo&#39;d or uncontrolled recipient address permanently loses the name with no recovery path (partially superseded by H-1&#39;s fix, which would also need to address this).</p>
+<p><strong>Recommendation:</strong> Add <code>require(newOwner != address(this), ...)</code>; consider a two-step transfer as part of the H-1 remediation.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li>Commitment hash lacks <code>block.chainid</code>/<code>address(this)</code> domain separation — not exploitable today given <code>commitments</code> is purely local per-contract storage, but recommended as defense-in-depth hygiene for any future extension (e.g., relayed/meta-transaction commit submission). <code>[phase1 only]</code></li>
+<li><code>keccak256(abi.encodePacked(name, msg.sender, secret))</code> is collision-safe — confirmed unanimously by all 16 agents across both phases (only one dynamic-length argument, followed by fixed-width <code>address</code>/<code>bytes32</code>, making the encoding provably injective).</li>
+<li><code>_hasName</code>/<code>_reverseNames</code>/<code>_names[...].exists</code> triple consistency and the <code>totalNames</code> invariant both hold across every reachable state transition; no desync path found by any agent across either phase.</li>
+<li>No admin/owner/privileged role exists anywhere — the &quot;fully permissionless&quot; NatSpec claim is verified accurate; permanent name loss on private-key loss is a deliberate, documented design tradeoff, not a bug.</li>
+<li>No reentrancy surface exists anywhere in the contract (zero external calls).</li>
+</ul>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<ul>
+<li>Both phases audited the same single in-scope file independently; Phase 2 was run with no visibility into Phase 1&#39;s findings to avoid anchoring.</li>
+<li><strong>This is the clearest demonstration in this audit batch of why the blind two-phase methodology matters.</strong> Phase 1 dedicated one full agent specifically to interrogating the commit-reveal scheme&#39;s front-running resistance (the client&#39;s own stated focus area) and a separate full agent specifically to &quot;ownership transfer authorization&quot; (also client-requested). Both concluded, with detailed and individually correct reasoning for the specific scenarios they tested, that the relevant mechanisms held. Both conclusions were incomplete in ways that only became visible when 12 independent, blind attacker-mindset agents re-approached the same code from different angles — one of which (out of 12) found the pre-staged-commitment squatting bypass, and six of twelve independently found the <code>transferName</code> consent gap. Neither finding was a result of &quot;trying harder&quot; on the same analysis; both required a genuinely different framing of the threat model (patient vs. reactive attacker; third-party-forced state change vs. self-authorized state change) that the first pass&#39;s framing didn&#39;t surface.</li>
+<li>Out of scope: no other Vaultfire contracts consume <code>resolveNameToAddress</code>/<code>isAgentRecognized</code>-style name lookups for authorization in this repository; if any downstream Vaultfire contract is ever built to trust this registry&#39;s name resolution for access control or identity purposes, both H-1 and H-2 would transitively affect that consumer&#39;s security model too.</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiha3joimwzaaic2u34ioq7effo5eipq7baqbz42fpelohhhbnpbjm.ipfs.community.bgipfs.com/"><code>https://bafkreiha3joimwzaaic2u34ioq7effo5eipq7baqbz42fpelohhhbnpbjm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/349">#349</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

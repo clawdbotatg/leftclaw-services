@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VaultID Smart Contract Security Audit — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #120">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VaultID Smart Contract Security Audit</h1>
+    <p class="job-sub">Job #120 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/120"><b>Job page</b> #120</a>
+      <a class="chip" href="https://bafkreihonxz25fz7mipxotzugjfivvnumywntvsnpvmxakzq3v4z4mhrty.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">7</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">4</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#non-findings-explicitly-verified-safe">Non-Findings (Explicitly Verified Safe)</a></li>
+      <li><a href="#severity-summary">Severity Summary</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>VaultID Smart Contract Security Audit</h1>
+<p><strong>Contract:</strong> <code>0x6252F44e1C92F3dD614B11Cc6e8699a8cCf26558</code> on Base (chain 8453)<br><strong>Audited File:</strong> <code>contracts/VaultID.sol</code> (740 lines, Solidity 0.8.30, EVM: prague, optimizer: 200 runs)<br><strong>Date:</strong> 2026-05-08<br><strong>Methodologies:</strong> Ethskills (7 domain checklists, 500+ items) + Pashov Solidity Auditor (8 parallel agents)<br><strong>Auditor:</strong> leftclaw.services automated audit agent</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>VaultID is a soulbound ERC-721 identity vault for the LeftClaw ecosystem. Tokens are non-transferable (ERC-5192), minted by paying CLAWD or CV ERC-20 fees, and carry an encrypted IPFS bundle CID plus a backup wallet address as on-chain metadata. The contract is architecturally sound — it uses Ownable2Step, ReentrancyGuard, SafeERC20, and enforces soulbound semantics through an <code>_update</code> override.</p>
+<p>Two <strong>Medium</strong> findings require attention before the contract is widely integrated: the most significant is that <strong>any caller can mint a soulbound vault to any address without the recipient&#39;s consent</strong>, permanently associating attacker-controlled identity metadata with the victim. The second Medium is a <strong>JSON-escaping gap</strong> that can corrupt marketplace metadata for entire token categories.</p>
+<p>No Critical or High severity findings were identified.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>7</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>4</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="m-1-unsolicited-third-party-minting-enables-soulbound-identity-p">[M-1] Unsolicited Third-Party Minting Enables Soulbound Identity Poisoning</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: High — confirmed independently by ethskills (ERC721 domain) and pashov (economic-security + access-control agents)<br><strong>Location</strong>: <code>_mintVault()</code> L301–347, <code>mintWithCLAWD()</code> L273–281, <code>mintWithCV()</code> L289–299  </p>
+<p><strong>Description</strong>: <code>mintWithCLAWD</code> and <code>mintWithCV</code> allow any <code>msg.sender</code> to mint a soulbound vault to an arbitrary recipient (<code>to</code>), paying the fee from their own token balance. No consent, authorization, or signature from <code>to</code> is required. The minter has full control over every vault attribute: <code>encryptedContentURI</code>, <code>contentHash</code>, <code>backupWallet</code>, and <code>category</code>.</p>
+<p>Because the token is soulbound (<code>_update</code> reverts on transfer) and only a soft-burn is exposed (<code>burn()</code> sets <code>active = false</code> but does not call <code>_burn</code>, leaving the struct permanently in storage), the recipient cannot fully remove the vault or its contents. <code>getVault(tokenId)</code> will return the attacker-supplied IPFS CID and <code>backupWallet</code> forever, even after soft-burn.</p>
+<p><strong>Attack Vectors</strong>:</p>
+<ol>
+<li><p><strong>Identity poisoning</strong>: Attacker calls <code>mintWithCLAWD(victim, 0, attackerAddr, &quot;ipfs://malicious-cid&quot;, attackerHash)</code>. Any ecosystem service that resolves identity by querying <code>getVault()</code> for vaults where <code>holder == victim</code> now sees attacker-supplied content and an attacker-controlled <code>backupWallet</code>. If any downstream contract grants recovery/access rights based on <code>backupWallet</code>, the attacker has injected a privileged address into the victim&#39;s identity record.</p>
+</li>
+<li><p><strong>Permanent <code>balanceOf</code> inflation</strong> (related): No per-recipient mint cap exists and <code>burn()</code> does not call ERC-721 <code>_burn</code>, so <code>balanceOf(victim)</code> grows monotonically regardless of how many soft-burns the victim performs. Downstream systems using <code>balanceOf(VaultID, user) &gt;= N</code> for access control or Sybil-resistance can be permanently spoofed.</p>
+</li>
+<li><p><strong>Zero-fee amplification</strong>: <code>clawdMintFee</code> can be set to 0 by the owner (valid since 0 ≤ MAX_MINT_FEE). At zero fee, the attack costs only gas (~150k per mint on Base ≈ fractions of a cent), making large-scale spam economically trivial.</p>
+</li>
+</ol>
+<p><strong>Proof of Concept</strong> (concrete exploit, fee = 0):</p>
+<pre><code>// Attacker
+for (uint i = 0; i &lt; 10000; i++) {
+    vault.mintWithCLAWD(
+        victim,          // to
+        0,               // category
+        attackerAddr,    // backupWallet
+        &quot;ipfs://Qmfake&quot;, // encryptedContentURI
+        keccak256(&quot;fake&quot;) // contentHash
+    );
+}
+// victim.balanceOf(vault) == 10000, can never be reduced
+// getVault(any of those tokenIds).backupWallet == attackerAddr
+</code></pre>
+<p><strong>Recommendation</strong>:</p>
+<ol>
+<li>Require <code>msg.sender == to</code> inside <code>_mintVault</code> (vaults must be self-requested), or require an EIP-712 authorization signature from <code>to</code>.</li>
+<li>Implement a hard-burn: override <code>burn()</code> to call ERC-721 <code>_burn(tokenId)</code> (removing <code>_owners[tokenId]</code> and decrementing <code>balanceOf</code>) and <code>delete _vaults[tokenId]</code> so the vault data is fully purged.</li>
+</ol>
+<pre><code class="language-solidity">// Option 1 — self-mint only (simplest)
+function _mintVault(address to, ...) internal {
+    if (to != msg.sender) revert Unauthorized();
+    // ...
+}
+
+// Option 2 — hard burn
+function burn(uint256 tokenId) external {
+    Vault storage v = _vaults[tokenId];
+    if (v.holder == address(0)) revert TokenNotFound(tokenId);
+    if (ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
+    if (!v.active) revert TokenAlreadyBurned(tokenId);
+    delete _vaults[tokenId];
+    _burn(tokenId);  // requires _update to allow auth == owner
+    emit VaultBurned(tokenId, msg.sender);
+}
+</code></pre>
+<hr>
+<h3 id="m-2-jsonescape-omits-ascii-control-characters-owner-can-corrupt-">[M-2] <code>_jsonEscape</code> Omits ASCII Control Characters — Owner Can Corrupt All Marketplace Metadata for a Category</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: High — flagged by both ethskills (dos + general domains) and 3 pashov agents<br><strong>Location</strong>: <code>_jsonEscape()</code> L558–574, <code>setCategoryLabel()</code> L241–246  </p>
+<p><strong>Description</strong>: <code>_jsonEscape</code> only escapes <code>&quot;</code> (0x22) and <code>\</code> (0x5C). RFC 8259 §7 mandates that all code points U+0000–U+001F be escaped in JSON strings. <code>setCategoryLabel</code> validates only byte length (≤ 32). A category label containing a raw newline (0x0A), tab (0x09), carriage return (0x0D), or NUL (0x00) will be embedded unescaped into the <code>tokenURI</code> JSON. Strictly-conforming JSON parsers (as used by most NFT marketplaces and indexers) will reject the resulting data URI.</p>
+<p>Similarly, <code>_svgBody</code> embeds <code>_safeCategoryLabel(v.category)</code> directly into the SVG <code>&lt;text&gt;</code> element without XML escaping (<code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>). A label like <code>&lt;/text&gt;&lt;rect .../&gt;</code> would corrupt the SVG structure. The same trusted owner controls both surfaces.</p>
+<p><strong>Impact</strong>: A single <code>setCategoryLabel(categoryId, &quot;Label\n&quot;)</code> call breaks metadata display for every vault in that category across all marketplace integrations, silently and persistently until the owner corrects the label. If cached metadata has already propagated, restoration may require active cache-busting.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<pre><code class="language-solidity">// Owner (accidentally or maliciously):
+vault.setCategoryLabel(0, &quot;Personal\nDev&quot;);
+// All token IDs with category 0 now return malformed tokenURI JSON.
+// JSON.parse() throws: SyntaxError: Bad control character in string literal
+</code></pre>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">function _jsonEscape(string memory s) internal pure returns (string memory) {
+    bytes memory b = bytes(s);
+    bytes memory out = new bytes(b.length * 6); // worst case: \uXXXX per byte
+    uint256 j = 0;
+    for (uint256 i = 0; i &lt; b.length; i++) {
+        bytes1 c = b[i];
+        if (c == 0x22 || c == 0x5c) {
+            out[j++] = 0x5c; out[j++] = c;
+        } else if (c == 0x0a) {
+            out[j++] = 0x5c; out[j++] = 0x6e; // \n
+        } else if (c == 0x0d) {
+            out[j++] = 0x5c; out[j++] = 0x72; // \r
+        } else if (c == 0x09) {
+            out[j++] = 0x5c; out[j++] = 0x74; // \t
+        } else if (c &lt; 0x20) {
+            // \u00XX
+            out[j++] = 0x5c; out[j++] = 0x75; out[j++] = 0x30; out[j++] = 0x30;
+            out[j++] = _hexNibble(uint8(c) &gt;&gt; 4); out[j++] = _hexNibble(uint8(c) &amp; 0xf);
+        } else {
+            out[j++] = c;
+        }
+    }
+    bytes memory trimmed = new bytes(j);
+    for (uint256 k = 0; k &lt; j; k++) trimmed[k] = out[k];
+    return string(trimmed);
+}
+</code></pre>
+<p>Alternatively, add a content guard in <code>setCategoryLabel</code>:</p>
+<pre><code class="language-solidity">for (uint256 i = 0; i &lt; bytes(label).length; i++) {
+    require(bytes(label)[i] &gt;= 0x20, &quot;Label contains control character&quot;);
+}
+</code></pre>
+<hr>
+<h3 id="l-1-extendexpiry-allows-finite-to-permanent-conversion-documente">[L-1] <code>extendExpiry</code> Allows Finite-to-Permanent Conversion — Documented Invariant Violated</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: High — confirmed by 3 independent agents (invariant, execution-trace, access-control)<br><strong>Location</strong>: <code>extendExpiry()</code> L373–382  </p>
+<p><strong>Description</strong>: The NatSpec explicitly states <em>&quot;Setting <code>newExpiresAt</code> to 0 is NOT allowed once a finite expiry was set.&quot;</em> The guard conditions are:</p>
+<pre><code>if (v.expiresAt == 0 &amp;&amp; newExpiresAt != 0) revert InvalidExpiryExtension();   // (1)
+if (newExpiresAt != 0 &amp;&amp; newExpiresAt &lt;= v.expiresAt) revert InvalidExpiryExtension();  // (2)
+</code></pre>
+<p>When <code>v.expiresAt = T &gt; 0</code> and <code>newExpiresAt = 0</code>: guard (1) fails (<code>v.expiresAt != 0</code>) and guard (2) fails (<code>newExpiresAt == 0</code>). <code>v.expiresAt</code> is overwritten with 0, making the vault permanent.</p>
+<p><strong>Proof of Concept</strong>: Vault minted with 365-day expiry → <code>extendExpiry(tokenId, 0)</code> → vault is now permanent. <code>isExpired(tokenId)</code> always returns false thereafter.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-solidity">if (v.expiresAt != 0 &amp;&amp; newExpiresAt == 0) revert InvalidExpiryExtension();
+</code></pre>
+<p>Add this as the first check in <code>extendExpiry</code>.</p>
+<hr>
+<h3 id="l-2-extendexpiry-does-not-enforce-maxvalidityperiod">[L-2] <code>extendExpiry</code> Does Not Enforce <code>MAX_VALIDITY_PERIOD</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>extendExpiry()</code> L381  </p>
+<p><strong>Description</strong>: <code>setDefaultValidityPeriod</code> enforces <code>newPeriod &lt;= MAX_VALIDITY_PERIOD</code> (100 years), but <code>extendExpiry</code> places no upper bound on <code>newExpiresAt</code>. Owner can set <code>newExpiresAt = type(uint64).max</code> (~year 584 billion), effectively making any finite-expiry vault permanent without using the explicitly-permanent path.</p>
+<p><strong>Recommendation</strong>: </p>
+<pre><code class="language-solidity">if (newExpiresAt != 0 &amp;&amp; newExpiresAt &gt; uint64(block.timestamp) + MAX_VALIDITY_PERIOD) 
+    revert ValidityPeriodTooLarge();
+</code></pre>
+<hr>
+<h3 id="l-3-setcvtoken-accepts-address0-one-shot-guarantee-inconsistentl">[L-3] <code>setCvToken</code> Accepts <code>address(0)</code> — One-Shot Guarantee Inconsistently Enforced</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: High — 3 independent agents<br><strong>Location</strong>: <code>setCvToken()</code> L211–215  </p>
+<p><strong>Description</strong>: The one-shot gate checks <code>address(cvToken) != address(0)</code>. Calling <code>setCvToken(address(0))</code> while <code>cvToken</code> is unset is a logical no-op (0 → 0), but it emits a <code>CvTokenUpdated(address(0))</code> event and the function can be called again with any address, including <code>address(0)</code> again. Off-chain event consumers believing the CV token is now configured are misled.</p>
+<p><strong>Recommendation</strong>: Add <code>if (newCvToken == address(0)) revert ZeroAddress();</code> at the top of <code>setCvToken</code>.</p>
+<hr>
+<h3 id="l-4-instant-fee-changes-enable-front-running-against-users-with-">[L-4] Instant Fee Changes Enable Front-Running Against Users with Unlimited Allowances</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>setClawdMintFee()</code> L217, <code>setCvMintFee()</code> L222, <code>_mintVault()</code> L333–341  </p>
+<p><strong>Description</strong>: Fee setters take effect immediately with no timelock or delay. A user who has approved <code>type(uint256).max</code> CLAWD can be front-run: owner calls <code>setClawdMintFee(MAX_MINT_FEE)</code>, then the user&#39;s pending mint transaction executes at the inflated fee, draining up to <code>MAX_MINT_FEE</code> (1 billion CLAWD) from the user&#39;s wallet.</p>
+<p><strong>Recommendation</strong>: Add a slippage parameter to mint functions:</p>
+<pre><code class="language-solidity">function mintWithCLAWD(
+    address to, uint8 category, address backupWallet,
+    string calldata encryptedContentURI, bytes32 contentHash,
+    uint256 maxFee  // NEW
+) external nonReentrant returns (uint256 tokenId) {
+    if (clawdMintFee &gt; maxFee) revert FeeTooLarge();
+    tokenId = _mintVault(to, category, backupWallet, encryptedContentURI, contentHash, false);
+}
+</code></pre>
+<hr>
+<h3 id="l-5-unbounded-encryptedcontenturi-on-chain-integrators-can-be-do">[L-5] Unbounded <code>encryptedContentURI</code> — On-Chain Integrators Can Be DoS&#39;d by Large Vaults</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>_mintVault()</code> L312, L320  </p>
+<p><strong>Description</strong>: No upper-length bound on <code>encryptedContentURI</code>. A caller can store a multi-kilobyte string (paying gas themselves). <code>getVault()</code> returns the full struct; on-chain integrators calling <code>getVault()</code> with a gas limit may revert OOG when the URI is excessively large.</p>
+<p><strong>Recommendation</strong>: Cap at a reasonable bound: <code>if (bytes(encryptedContentURI).length &gt; 256) revert UriTooLong();</code></p>
+<hr>
+<h3 id="l-6-feerecipient-can-be-set-to-addressthis-fee-tokens-permanentl">[L-6] <code>feeRecipient</code> Can Be Set to <code>address(this)</code> — Fee Tokens Permanently Locked</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>setFeeRecipient()</code> L229–233  </p>
+<p><strong>Description</strong>: Only <code>address(0)</code> is rejected. If <code>feeRecipient = address(this)</code>, all subsequent CLAWD/CV fees are sent to the contract, which has no sweep or rescue function.</p>
+<p><strong>Recommendation</strong>: Add <code>if (newRecipient == address(this)) revert ZeroAddress();</code>, or add an owner-restricted <code>rescueERC20(address token, address to)</code> function.</p>
+<hr>
+<h3 id="l-7-soft-burn-leaves-erc-721-ownership-intact-balanceof-permanen">[L-7] Soft-Burn Leaves ERC-721 Ownership Intact — <code>balanceOf</code> Permanently Inflated</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>burn()</code> L357–364  </p>
+<p><strong>Description</strong>: <code>burn()</code> only sets <code>v.active = false</code> without calling <code>_burn(tokenId)</code>. <code>ownerOf</code> and <code>balanceOf</code> are unchanged. No <code>Transfer(holder, address(0), tokenId)</code> event is emitted. Standard ERC-721 tooling (wallets, indexers) continues to display the token as held. This is the intentional soft-burn design, but it diverges from ERC-721 conventions and enables the <code>balanceOf</code> inflation described in [M-1].</p>
+<p><strong>Recommendation</strong>: Either implement a hard-burn path (see [M-1] recommendation) or emit a synthetic <code>Transfer(holder, address(0), tokenId)</code> in <code>burn()</code> so indexers update, and document prominently that <code>balanceOf</code> includes soft-burned tokens.</p>
+<hr>
+<h3 id="i-1-isexpired-reverts-for-non-existent-tokens-while-isactive-ret">[I-1] <code>isExpired</code> Reverts for Non-Existent Tokens While <code>isActive</code> Returns <code>false</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>isExpired()</code> L397, <code>isActive()</code> L403  </p>
+<p><strong>Description</strong>: Callers checking both functions on the same non-existent tokenId get inconsistent results — <code>isActive</code> returns <code>false</code> gracefully; <code>isExpired</code> reverts <code>TokenNotFound</code>. Standardize to one convention.</p>
+<hr>
+<h3 id="i-2-renounceownership-incorrectly-marked-view">[I-2] <code>renounceOwnership</code> Incorrectly Marked <code>view</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>renounceOwnership()</code> L253  </p>
+<p><strong>Description</strong>: The override is declared <code>public view override onlyOwner</code>. Dropping <code>view</code> matches the parent signature exactly and avoids reader confusion. Functionally equivalent since the function always reverts.</p>
+<hr>
+<h3 id="i-3-receiver-hook-self-burn-inverts-event-ordering-vaultburned-b">[I-3] Receiver-Hook Self-Burn Inverts Event Ordering (<code>VaultBurned</code> Before <code>VaultMinted</code>)</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>_mintVault()</code> L344–347, <code>burn()</code> L357  </p>
+<p><strong>Description</strong>: A contract recipient can call <code>burn(tokenId)</code> from within <code>onERC721Received</code> (since <code>burn</code> lacks <code>nonReentrant</code> and ownership is set by <code>_update</code> before the callback fires), emitting <code>VaultBurned</code> before <code>Locked</code>/<code>VaultMinted</code>. This is self-harm only, but produces reversed event ordering for indexers.</p>
+<p><strong>Recommendation</strong>: Add <code>nonReentrant</code> to <code>burn()</code>, or emit <code>Locked</code>/<code>VaultMinted</code> before the <code>_safeMint</code> call.</p>
+<hr>
+<h3 id="i-4-vault-state-briefly-inconsistent-with-erc-721-ownership-duri">[I-4] Vault State Briefly Inconsistent with ERC-721 Ownership During Fee Transfer</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: <code>_mintVault()</code> L319–344  </p>
+<p><strong>Description</strong>: <code>_vaults[tokenId]</code> is written before <code>safeTransferFrom</code> and <code>_safeMint</code>. During a fee-transfer hook (e.g., ERC-777-style CV token), <code>getVault(tokenId)</code> succeeds while <code>ownerOf(tokenId)</code> reverts. <code>nonReentrant</code> blocks re-entering mint; <code>burn()</code> is also blocked (ownerOf fails). No concrete exploit path identified with standard ERC-20 tokens; relevant only if <code>cvToken</code> is set to a hook-bearing token.</p>
+<p><strong>Recommendation</strong>: Document that <code>clawdToken</code> and <code>cvToken</code> must be standard ERC-20s (already noted for FOT tokens in NatSpec). No code change required.</p>
+<hr>
+<h2 id="non-findings-explicitly-verified-safe">Non-Findings (Explicitly Verified Safe)</h2>
+<ul>
+<li><strong>Soulbound enforcement</strong>: <code>_update</code> override correctly reverts on all post-mint movement. <code>approve</code>/<code>setApprovalForAll</code> revert at entry points. No bypass path found.</li>
+<li><strong>Reentrancy on mint</strong>: <code>nonReentrant</code> on both <code>mintWithCLAWD</code>/<code>mintWithCV</code> prevents re-entry. Fee-pull-before-<code>_safeMint</code> follows CEI for the reentrancy-sensitive path.</li>
+<li><strong>Downcast overflow (<code>uint64(block.timestamp) + defaultValidityPeriod</code>)</strong>: Both operands uint64, sum ~5e9 seconds, uint64 max ~1.84e19. No overflow risk for centuries. Solidity 0.8 checked arithmetic would revert before silent wrap.</li>
+<li><strong>Token counter overflow</strong>: <code>_nextTokenId</code> is uint256; would require ~2^256 mints.</li>
+<li><strong><code>_shortAddr</code> bounds</strong>: 42-char hex input correctly indexed; 13-byte output correctly filled.</li>
+<li><strong><code>burn()</code> authorization</strong>: Checks <code>v.holder != 0</code> first, then <code>ownerOf == msg.sender</code>. Correct ordering — <code>ownerOf</code> would revert for un-minted tokens.</li>
+<li><strong><code>extendExpiry</code> on burned vaults</strong>: Guarded by <code>!v.active</code>.</li>
+<li><strong>Math/precision</strong>: No division operations, no oracle math, no share/asset accounting — flat fee transfers only. No precision issues.</li>
+<li><strong>Chain-specific (Base/OP Stack)</strong>: <code>block.timestamp</code> suitable for long-term expiry. PUSH0 supported on Base mainnet. No sequencer-dependent logic. No <code>block.number</code> for timing. No ETH transfers.</li>
+</ul>
+<hr>
+<h2 id="severity-summary">Severity Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M-1</td>
+<td><strong>Medium</strong></td>
+<td>Unsolicited minting enables identity poisoning + balanceOf inflation</td>
+</tr>
+<tr>
+<td>M-2</td>
+<td><strong>Medium</strong></td>
+<td><code>_jsonEscape</code> missing control chars → invalid tokenURI JSON</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td><code>extendExpiry</code> finite→permanent loophole (spec violation)</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td><code>extendExpiry</code> lacks MAX_VALIDITY_PERIOD bound</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td><code>setCvToken(address(0))</code> bypasses one-shot guarantee</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td><span class="pill low">Low</span></td>
+<td>Instant fee changes enable front-running</td>
+</tr>
+<tr>
+<td>L-5</td>
+<td><span class="pill low">Low</span></td>
+<td>Unbounded <code>encryptedContentURI</code> can DoS integrators</td>
+</tr>
+<tr>
+<td>L-6</td>
+<td><span class="pill low">Low</span></td>
+<td><code>feeRecipient</code> can be <code>address(this)</code> — fee lockup</td>
+</tr>
+<tr>
+<td>L-7</td>
+<td><span class="pill low">Low</span></td>
+<td>Soft-burn leaves <code>balanceOf</code> permanently inflated</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td><code>isExpired</code>/<code>isActive</code> inconsistent null behavior</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><span class="pill info">Info</span></td>
+<td><code>renounceOwnership</code> marked <code>view</code></td>
+</tr>
+<tr>
+<td>I-3</td>
+<td><span class="pill info">Info</span></td>
+<td>Receiver-hook self-burn inverts event ordering</td>
+</tr>
+<tr>
+<td>I-4</td>
+<td><span class="pill info">Info</span></td>
+<td>Vault state / ERC-721 ownership transient mismatch</td>
+</tr>
+</tbody></table></div>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihonxz25fz7mipxotzugjfivvnumywntvsnpvmxakzq3v4z4mhrty.ipfs.community.bgipfs.com/"><code>https://bafkreihonxz25fz7mipxotzugjfivvnumywntvsnpvmxakzq3v4z4mhrty.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/120">#120</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

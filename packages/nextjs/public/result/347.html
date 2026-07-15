@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire VaultfireTeleporterBridge — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #347">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire VaultfireTeleporterBridge</h1>
+    <p class="job-sub">Job #347 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/347"><b>Job page</b> #347</a>
+      <a class="chip" href="https://bafkreibks2ads3j2lx6b6srhk4sjvksiv5mt67tvz7k6j346um2g3pofhq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#critical-severity">Critical Severity</a></li>
+      <li><a href="#high-severity">High Severity</a></li>
+      <li><a href="#medium-severity">Medium Severity</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#low-severity">Low Severity</a></li>
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#methodology-notes">Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report: Vaultfire VaultfireTeleporterBridge</h1>
+<p><strong>Target:</strong> <code>VaultfireTeleporterBridge</code> at <code>0x62edf0cBc8Fa3d98B6A07197DFE9cb1c128a7eC7</code> (Base, chain 8453)<br><strong>In-scope contracts:</strong> <code>VaultfireTeleporterBridge.sol</code>, <code>ITeleporterMessenger.sol</code>, <code>ITeleporterReceiver.sol</code> (source verified via Sourcify full match; compiler 0.8.25)<br><strong>Methodology:</strong> Two-phase audit — Phase 1 breadth (5 parallel checklist-driven agents: general, bridges, access-control, dos, precision-math) → Phase 2 depth (12 parallel attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation (this document).<br><strong>Reconciliation summary:</strong> Overlap: 7 findings independently confirmed by both phases · Phase-1-only: 7 · Phase-2-only: 2 (both re-examined against source and confirmed) · Demoted on re-examine: 0.<br><strong>Completeness:</strong> every unique (contract, function, bug-class) raised by either phase&#39;s raw agent output is represented below.</p>
+<p><strong>Independent on-chain verification performed by the orchestrator:</strong> <code>teleporterMessenger() = 0x0</code>, <code>remoteBridgeAddress() = 0x0</code>, <code>remoteChainId() = 0</code>, <code>owner() = 0xfA15Ee28939B222B0448261A22156070f0A7813C</code>, <code>getRelayerCount() = 1</code>. The bridge is deployed but not yet configured to any remote chain — a pre-launch state. The code-level design below is the actual audit target, since this configuration is expected to be completed before the bridge goes live.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<p>This contract syncs AI-agent trust metadata (registrations, partnership/accountability bonds, reputation, validation status — no token/value transfer) between Base and Avalanche C-Chain, and per the client&#39;s description, eventually Arbitrum and Polygon too. It has two inbound paths with starkly different security properties: <code>receiveTeleporterMessage</code>, gated by Avalanche&#39;s own cryptographically-verified Teleporter/ICM infrastructure, and <code>relayMessage</code>, gated only by an owner-managed relayer whitelist with <strong>zero cryptographic proof</strong> that a submitted message reflects anything that actually happened on the claimed source chain. Because Base, Arbitrum, and Polygon all lack native Avalanche ICM, <code>relayMessage</code> is not a fallback for any of those deployments — it is the entire bridge. Both audit phases converged overwhelmingly (in Phase 2, essentially every one of the 12 independent agents reached the same conclusions from different angles) on this being the dominant risk, compounded by a second, independently serious defect: none of the five state-sync handlers enforce message ordering or freshness, so out-of-order delivery — which can happen with <strong>zero adversary</strong>, purely from ordinary asynchronous relay/ICM behavior — silently rolls back an agent&#39;s trust state to a stale, more favorable snapshot.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>7</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>2</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="critical-severity">Critical Severity</h2>
+<h3 id="c-1-relaymessage-the-sole-functioning-inbound-path-on-any-non-av">[C-1] <code>relayMessage</code> — the sole functioning inbound path on any non-Avalanche deployment — has zero cryptographic source-chain authenticity, enabling arbitrary trust-state injection</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (bridges agent rates Critical; general and access-control agents rate High for the same root cause) · Phase 2 (12/12 agents raised this in some form; 2 as explicit Critical/High-framed findings, the rest as leads with identical substance)<br><strong>Location:</strong> <code>relayMessage</code> (489-493) → <code>_processInboundMessage</code> (592-629)</p>
+<p><code>relayMessage</code> is gated only by <code>onlyAuthorizedRelayer</code> — an owner-managed whitelist. The relayer supplies an arbitrary ABI-encoded <code>BridgeMessage</code> containing a self-declared <code>sourceChainId</code> field, and the <em>only</em> &quot;source verification&quot; is <code>require(bridgeMsg.sourceChainId == remoteChainId)</code> — a comparison against a value the relayer typed inside their own submitted blob. There is no signature, no Merkle/state proof, no light client — nothing cryptographically binding the payload to anything that actually happened on the real source chain. Contrast this with <code>receiveTeleporterMessage</code>, which enforces both <code>sourceBlockchainID == remoteBlockchainID</code> and <code>originSenderAddress == remoteBridgeAddress</code>, delegating real authentication to Avalanche&#39;s Teleporter/Warp messaging infrastructure. Because Base, Arbitrum, and Polygon all lack native Avalanche ICM — confirmed live on this Base deployment, where <code>teleporterMessenger=0x0</code> makes <code>onlyTeleporter</code> unconditionally unsatisfiable — <code>relayMessage</code> is not a fallback for any of those chains; it is the entire bridge.</p>
+<p><strong>Proof of Concept:</strong> Any authorized relayer key (or the owner, auto-whitelisted at construction) calls:</p>
+<pre><code>relayMessage(abi.encode(BridgeMessage{
+  messageType: SYNC_ACCOUNTABILITY_BOND, sourceChainId: remoteChainId, nonce: N, timestamp: now,
+  sender: anything,
+  payload: abi.encode(AccountabilityBondPayload{
+     bondId: X, aiCompany: attacker, companyName: &quot;FakeCo&quot;,
+     quarterlyRevenue: 1e18, stakeAmount: 1e18, createdAt: now, active: true })
+}))
+</code></pre>
+<p>This passes every check and writes fabricated collateral/reputation/registration state directly into <code>syncedAccountabilityBonds</code>, <code>syncedReputations</code>, <code>syncedAgents</code>, etc. — with no possibility for any on-chain observer to distinguish it from a genuine cross-chain sync. Any downstream Vaultfire contract that treats <code>isAgentRecognized</code>/<code>getSyncedReputation</code>/<code>getSyncedAccountabilityBond</code> as cross-chain-verified ground truth is fully spoofable by a single relayer key.</p>
+<p><strong>Recommendation:</strong> Do not treat the relayer path as cryptographically authentic. Require the relayer to submit a source-chain proof (light-client header + Merkle/storage proof of the emitting event), an EIP-712 signature from a source-side authorized signer bound to both chain IDs and the destination bridge address, or route through a real message-verification protocol (CCIP/LayerZero/Wormhole/Hyperlane) for non-Avalanche legs. At minimum, require N-of-M relayer quorum rather than a single key, and prominently document that the relayer path is a fully trusted model with no cryptographic minimization.</p>
+<hr>
+<h2 id="high-severity">High Severity</h2>
+<h3 id="h-1-no-freshnessordering-check-on-any-synced-state-handler-out-o">[H-1] No freshness/ordering check on any synced-state handler — out-of-order (but fully authentic) message delivery silently rolls back trust state</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (general and bridges agents, with concrete before/after traces) · Phase 2 (12/12 agents — the single most unanimously-confirmed finding of this engagement; 7 as explicit FINDINGs)<br><strong>Location:</strong> all 5 <code>_handleXxx</code> functions (635-691); <code>lastProcessedNonce</code> (169, 601-603)</p>
+<p>Every handler unconditionally overwrites stored state (<code>syncedReputations[p.agentAddress] = p;</code> etc.) with no comparison against the already-stored <code>registeredAt</code>/<code>createdAt</code>/<code>lastUpdated</code>/<code>timestamp</code>. <code>lastProcessedNonce</code> is written but never read to gate or reject anything — a passive high-water-mark with no enforcement power. Critically, this requires <strong>no adversary whatsoever</strong>: Avalanche ICM/Teleporter guarantees single execution of a message but not cross-message ordering, so this can occur on the fully honest delivery path via ordinary asynchronous relay behavior, retries, or re-processing of an old event batch.</p>
+<p><strong>Proof of Concept:</strong> Source emits reputation update nonce=5 (rating=90) then nonce=6 (rating=20, after the agent misbehaved). Both are distinct, genuine messages with distinct hashes, so both independently pass replay-dedup. If nonce=6 is delivered first (<code>syncedReputations[agent].averageRating=20</code>), then nonce=5 arrives later — <code>5 &gt; 6</code> is false so <code>lastProcessedNonce</code> is untouched, but nothing prevents the subsequent write — <code>_handleReputation</code> still unconditionally overwrites back to the stale rating=90. The identical mechanism can silently reactivate a revoked partnership/accountability bond (a stale <code>active:true</code> overwriting a legitimately-later <code>active:false</code>) or revert a validation from rejected back to approved.</p>
+<p><strong>Recommendation:</strong> Store and compare a per-entity highest-nonce-or-timestamp before writing; reject or no-op any incoming record that is not strictly newer than what&#39;s currently stored. A single global <code>lastProcessedNonce</code> cannot do this since independent entities&#39; update streams interleave.</p>
+<hr>
+<h3 id="h-2-bridgemessage-has-no-destination-binding-genuine-messages-ca">[H-2] <code>BridgeMessage</code> has no destination binding — genuine messages can replay across sibling bridge instances sharing the same <code>remoteChainId</code></h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (bridges agent, with general agent corroboration) — re-examined against source and confirmed; the specific cross-instance framing was not independently re-derived by phase 2 (though [2-2]&#39;s root cause — a self-declared, unauthenticated <code>sourceChainId</code> — is the same underlying gap)<br><strong>Location:</strong> <code>BridgeMessage</code> struct (74-81); <code>_processInboundMessage</code> (592-606)</p>
+<p>The message envelope binds only to its claimed <em>origin</em> (<code>sourceChainId</code>) — never to an intended destination chain or destination bridge address. <code>processedMessages</code> is a per-contract-instance mapping, so the identical encoded message shows as &quot;unprocessed&quot; on every other deployed instance. Under the client&#39;s own described topology — a hub-and-spoke where Avalanche is the trust anchor and Base/Arbitrum/Polygon are spokes, all naturally configured with <code>remoteChainId = 43114</code> — a single genuine Avalanche-origin message legitimately relayed to one spoke passes the identical source check on every sibling spoke, and none of their independent <code>processedMessages</code> maps have seen it. <strong>No owner error is required</strong> — this is the natural consequence of the shared-remote-anchor configuration the architecture itself implies. Any relayer authorized on more than one spoke can fan a single message out to, or replay it against, all siblings.</p>
+<p><strong>Recommendation:</strong> Add <code>destinationChainId</code> and <code>destinationBridgeAddress</code> fields to <code>BridgeMessage</code>, set at send time, and enforce <code>destinationChainId == block.chainid</code> / <code>destinationBridgeAddress == address(this)</code> on receipt; fold both into the dedup hash.</p>
+<hr>
+<h2 id="medium-severity">Medium Severity</h2>
+<h3 id="m-1-bondid-0-requestid-0-sentinel-collision-duplicate-pushes-int">[M-1] <code>bondId == 0</code> / <code>requestId == 0</code> sentinel collision — duplicate pushes into tracking arrays on every re-sync of a legitimately-zero-valued ID</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (4/5 agents, near-unanimous) · Phase 2 (12/12 agents in some form, with the invariant agent splitting it into three separate per-handler findings)<br><strong>Location:</strong> <code>_handlePartnershipBond</code> (651), <code>_handleAccountabilityBond</code> (662), <code>_handleValidation</code> (685)</p>
+<p>&quot;Is this a new ID&quot; is decided by reading the stored struct&#39;s own key field (<code>syncedPartnershipBonds[p.bondId].bondId == 0</code>), which is indistinguishable from &quot;not yet seen&quot; when the ID is genuinely 0. The address-keyed handlers (<code>_handleAgentRegistration</code>, <code>_handleReputation</code>) avoid this by additionally requiring <code>agentAddress != address(0)</code> — the ID-keyed handlers have no equivalent guard. If the source-chain ID counters ever start at 0 (plausible and unverified from these files alone), every single re-sync of that entity — an <code>active</code> flag toggling, an approval count incrementing — re-pushes <code>0</code> into the tracking array indefinitely, corrupting <code>getSyncedXxxCount()</code> and any consumer that assumes count equals distinct entries. This occurs even with a fully honest relayer syncing fully honest data.</p>
+<p><strong>Recommendation:</strong> Track membership with an explicit <code>mapping(uint256 =&gt; bool)</code> presence flag rather than overloading the ID field as a sentinel.</p>
+<hr>
+<h3 id="m-2-transferownership-does-not-revoke-the-outgoing-owners-relaye">[M-2] <code>transferOwnership</code> does not revoke the outgoing owner&#39;s relayer privilege</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (access-control agent, general agent) · Phase 2 (access-control agent, independent full PoC)<br><strong>Location:</strong> <code>transferOwnership</code> (275-279) vs. constructor relayer grant (267-268)</p>
+<p>The constructor auto-authorizes the deployer as a relayer permanently. <code>transferOwnership</code> mutates only the <code>owner</code> variable — it neither revokes the old owner&#39;s relayer status nor grants the new owner one. After a key rotation (including one done because the old key is suspected compromised), the old address retains full C-1-style state-injection power indefinitely, until someone remembers to <code>removeRelayer(oldOwner)</code>.</p>
+<p><strong>Recommendation:</strong> In <code>transferOwnership</code>, explicitly reconcile the relayer set, or clearly document that relayer membership is managed independently of ownership and must be handled separately on every rotation.</p>
+<hr>
+<h3 id="m-3-single-step-transferownership-with-no-two-step-accept">[M-3] Single-step <code>transferOwnership</code> with no two-step accept</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control) — re-examined against source and confirmed<br><strong>Location:</strong> <code>transferOwnership</code> (275-279)</p>
+<p>Only a zero-address check guards the new owner. A typo or paste of an uncontrolled address permanently forfeits every privileged function — relayer management, pause, remote-bridge configuration — with no secondary admin/guardian role anywhere to recover from it.</p>
+<p><strong>Recommendation:</strong> Adopt an <code>Ownable2Step</code>-style pattern.</p>
+<hr>
+<h3 id="m-4-instant-non-timelocked-relayer-additions-and-remote-bridge-r">[M-4] Instant, non-timelocked relayer additions and remote-bridge reconfiguration</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control) — re-examined against source and confirmed<br><strong>Location:</strong> <code>addRelayer</code> (310-316), <code>setRemoteBridge</code> (288-298), <code>setTeleporterMessenger</code> (304-306)</p>
+<p>All take effect in the same transaction with no delay or observation window, unlike more defensive patterns seen in sibling Vaultfire contracts (48h timelocks on less-sensitive parameters). A compromised owner key escalates instantly to full C-1-style state-injection power via <code>addRelayer</code>.</p>
+<p><strong>Recommendation:</strong> Add a timelock or queue-then-apply pattern for <code>addRelayer</code> and remote-configuration changes; route admin through a multisig.</p>
+<hr>
+<h2 id="low-severity">Low Severity</h2>
+<h3 id="l-1-abi-trailing-byte-non-canonical-encoding-malleability-defeat">[L-1] ABI trailing-byte / non-canonical encoding malleability defeats the sole replay guard</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (precision-math agent, empirically confirmed via Foundry harness against solc 0.8.25) · Phase 2 (5/12 agents, all as leads with matching substance)<br><strong>Location:</strong> <code>_processInboundMessage</code> (596-598)</p>
+<p><code>abi.decode</code> does not require the input length to exactly match the encoded payload — trailing bytes past the consumed region are silently ignored, so many distinct byte strings decode to the identical <code>BridgeMessage</code> but hash differently. Since <code>processedMessages[keccak256(encoded)]</code> is the <em>only</em> replay guard (nonce is never enforced, only tracked as a max), an authorized relayer can take any already-processed blob, append arbitrary trailing bytes, and resubmit it indefinitely — each pass re-runs the handler and re-emits events, and combined with M-1, replaying an ID-0 message compounds the duplicate-push growth. <strong>Empirically confirmed</strong>, not merely theoretical: a Foundry test showed <code>enc</code> and <code>enc || 0x00...</code> decode to the identical struct but hash differently, both passing the dedup check.</p>
+<p><strong>Recommendation:</strong> Derive the dedup key from canonical decoded content (e.g. hash <code>(sourceChainId, nonce, messageType, payload)</code> post-decode) rather than the raw input bytes.</p>
+<hr>
+<h3 id="l-2-setteleportermessenger-has-no-code-presence-check-and-emits-">[L-2] <code>setTeleporterMessenger</code> has no code-presence check and emits no event</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (access-control) — re-examined against source and confirmed<br><strong>Location:</strong> <code>setTeleporterMessenger</code> (304-306)</p>
+<p>No zero-address or <code>extcodesize</code> check (unlike the defensive pattern used in sibling Vaultfire verifier contracts), and no event emitted. If ever misconfigured to an attacker-controlled address, that address could call <code>receiveTeleporterMessage</code> with arbitrary <code>sourceBlockchainID</code>/<code>originSenderAddress</code> claims.</p>
+<p><strong>Recommendation:</strong> Add a code-presence check and emit a configuration-change event.</p>
+<hr>
+<h3 id="l-3-unbounded-append-only-synced-state-arrays-a-single-relayer-k">[L-3] Unbounded append-only synced-state arrays — a single relayer-key compromise can cheaply bloat the entire dataset</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (dos, bridges) — re-examined against source and confirmed<br><strong>Description:</strong> No on-chain function iterates these arrays (so no on-chain out-of-gas DoS), but a compromised relayer can cheaply fabricate thousands of unique entries to degrade off-chain consumers, and there&#39;s no owner-level pruning/reset capability to recover.</p>
+<p><strong>Recommendation:</strong> Add owner-only pruning functions, or avoid on-chain enumerable arrays entirely in favor of off-chain event-log reconstruction.</p>
+<hr>
+<h3 id="l-4-requiredgaslimit-has-no-minmax-bound">[L-4] <code>requiredGasLimit</code> has no min/max bound</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (dos) — re-examined against source and confirmed<br><strong>Location:</strong> <code>setRequiredGasLimit</code> (300-302)</p>
+<p>No validation on the owner-settable gas limit forwarded to Teleporter. Too low silently makes outbound messages permanently unexecutable on the destination chain; too high may make delivery economically unattractive to ICM relayers. Moot on the current Base deployment since <code>teleporterMessenger=0x0</code> skips this path entirely.</p>
+<p><strong>Recommendation:</strong> Add sane bounds (e.g. 100k–5M gas).</p>
+<hr>
+<h3 id="l-5-sendviateleporter-discards-the-returned-messageid-and-hardco">[L-5] <code>_sendViaTeleporter</code> discards the returned <code>messageID</code> and hardcodes a zero relayer fee</h3>
+<p><strong>Origin:</strong> <code>[both]</code> — Phase 1 (bridges agent) · Phase 2 (economic-security agent, corroborating the fee-liveness angle)<br><strong>Location:</strong> <code>_sendViaTeleporter</code> (579-590)</p>
+<p>The returned <code>bytes32 messageID</code> is never captured, precluding later retry/fee-top-up correlation. <code>feeInfo</code> is hardcoded to <code>{feeTokenAddress: address(0), amount: 0}</code> — on Avalanche, ICM relayers are reward-driven, so a zero-fee message may never be picked up, silently stalling outbound sync (a liveness issue, not a security bug).</p>
+<p><strong>Recommendation:</strong> Capture and store/emit <code>messageID</code>; make the fee configurable.</p>
+<hr>
+<h3 id="l-6-source-chain-check-is-trivially-satisfiable-while-remotechai">[L-6] Source-chain check is trivially satisfiable while <code>remoteChainId == 0</code> (current unconfigured state)</h3>
+<p><strong>Origin:</strong> <code>[phase1 only]</code> (general) — re-examined against source and confirmed<br><strong>Location:</strong> <code>_processInboundMessage</code> (606); <code>setRemoteBridge</code> (288-298)</p>
+<p>No <code>remoteChainId != 0</code> guard exists anywhere. While unconfigured (the current live state), any authorized relayer can pass the source check trivially with <code>sourceChainId=0</code>. This adds no defense beyond what C-1 already concedes.</p>
+<p><strong>Recommendation:</strong> Require <code>remoteChainId != 0</code> both in <code>setRemoteBridge</code> and defensively in <code>_processInboundMessage</code>.</p>
+<hr>
+<h3 id="l-7-cross-channel-dedup-poisoning-a-relayer-can-pre-empt-native-">[L-7] Cross-channel dedup poisoning — a relayer can pre-empt native Teleporter delivery of the same message, causing it to permanently revert</h3>
+<p><strong>Origin:</strong> <code>[phase2 only]</code> — re-examined against source and confirmed as a plausible mechanism<br><strong>Location:</strong> <code>relayMessage</code> / <code>receiveTeleporterMessage</code> shared <code>processedMessages</code> mapping</p>
+<p>Both inbound paths share a single dedup mapping. An authorized relayer can call <code>relayMessage</code> with the exact bytes Teleporter will later deliver for the same logical message; once processed via the relay path, the subsequent native Teleporter delivery of the identical bytes reverts on &quot;already processed.&quot; No state corruption results (the state ends up identical either way), but it could strand Teleporter-side delivery/retry/fee accounting for that message.</p>
+<p><strong>Recommendation:</strong> Consider separate dedup namespaces per inbound channel, or accept this as low-severity given no state divergence results.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li>Outbound <code>send*</code> functions have no binding to any real source-chain event either — the relayer specifies fully arbitrary payload fields on the outbound side too, mirroring C-1&#39;s trust gap in the opposite direction. <code>[phase2 only]</code></li>
+<li><code>isAgentRecognized</code>&#39;s NatSpec claims &quot;either native or synced&quot; but the body only checks synced state — there is no native registry in this contract. <code>[both phases]</code></li>
+<li>Dead-code <code>else { revert(&quot;unknown message type&quot;) }</code> fallback is genuinely unreachable — <code>abi.decode</code> of the <code>MessageType</code> enum reverts first on any out-of-range value (confirmed empirically on solc 0.8.25 by multiple agents). No action needed.</li>
+<li><code>onlyTeleporter</code> modifier is sound; <code>msg.sender</code> cannot be spoofed short of controlling the real address, and correctly disables the native path entirely when <code>teleporterMessenger=0x0</code> (as on this live deployment). <code>[phase1]</code></li>
+<li>Pause coverage is complete on every inbound and outbound state-mutating entry point; no bypass path found. <code>[phase1]</code></li>
+</ul>
+<hr>
+<h2 id="methodology-notes">Methodology Notes</h2>
+<ul>
+<li>Both phases audited the same three in-scope files independently; Phase 2 was run with no visibility into Phase 1&#39;s findings to avoid anchoring.</li>
+<li>This engagement showed the highest degree of cross-agent convergence of any of the Vaultfire contracts audited in this batch: on H-1 (stale-overwrite), all 12 of 12 independent Phase 2 agents — using entirely different reasoning lenses — reached the identical root cause and constructed matching concrete exploit traces, and Phase 1&#39;s precision-math agent independently confirmed L-1 via live Foundry testing rather than static inference.</li>
+<li>Out of scope: the concrete source-chain registries that assign <code>bondId</code>/<code>requestId</code> values (relevant to M-1&#39;s precondition) were not available for review; the real Avalanche <code>TeleporterMessenger</code>/ICM infrastructure&#39;s exact retry/fee semantics (relevant to L-5, L-7) were reasoned about from the provided interfaces and general knowledge of Avalanche ICM, not independently verified against live Avalanche state.</li>
+</ul>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibks2ads3j2lx6b6srhk4sjvksiv5mt67tvz7k6j346um2g3pofhq.ipfs.community.bgipfs.com/"><code>https://bafkreibks2ads3j2lx6b6srhk4sjvksiv5mt67tvz7k6j346um2g3pofhq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/347">#347</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

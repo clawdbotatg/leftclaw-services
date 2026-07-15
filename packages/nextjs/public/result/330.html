@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OwnerManagedRangeHook — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #330">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">OwnerManagedRangeHook</h1>
+    <p class="job-sub">Job #330 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/330"><b>Job page</b> #330</a>
+      <a class="chip" href="https://bafkreierm5jlc4g3bjr5pz5vq5bgcdvjmfzqopixc2tgxb4v77cwfji5sq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — OwnerManagedRangeHook</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>OwnerManagedRangeHook</code> — deployed contract <code>0x89c8F28F9A048A62EF5A968c3892F874674B6a40</code> on <strong>Base</strong> (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Default — single in-scope file (library/interface code excluded)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>src/OwnerManagedRangeHook.sol</code> (665 lines)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Two-phase: ethskills breadth (7 checklist agents) → pashov depth (12 blind attack agents) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Compiler</strong></td>
+<td>solc 0.8.26, <code>evmVersion: cancun</code>, optimizer 200 runs</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>75</td>
+</tr>
+</tbody></table></div>
+<p><strong>Source provenance note:</strong> the contract is <strong>not</strong> indexed on Sourcify or Blockscout (both report unverified across all major EVM chains checked). Full verified source (Solidity Standard-JSON-Input, 46 files including the <code>@openzeppelin/uniswap-hooks</code> and <code>@uniswap/v4-core</code> dependency tree) was retrieved directly from BaseScan&#39;s verified-contract record for this address and reconstructed locally for audit. Bytecode presence was independently confirmed via <code>eth_getCode</code> on Base only (absent on Ethereum mainnet, Arbitrum, Optimism, Polygon, BNB Chain, Avalanche, zkSync, Scroll, Linea, Blast, Gnosis).</p>
+<p><strong>What this contract is:</strong> a single-owner, hook-owned-liquidity Uniswap v4 hook for one specific SLEUTH/USDC pool on Base. The owner manages a concentrated &quot;MAIN&quot; range position and a single-sided USDC &quot;BID&quot; band below the market price, routed through a custom raw-salt <code>unlock</code>/<code>unlockCallback</code> dispatcher. Public liquidity provision is disabled (<code>addLiquidity</code>/<code>removeLiquidity</code> always revert) — the hook is the pool&#39;s sole LP. On every swap, <code>_afterSwap</code> may permissionlessly trigger an auto-compound of accrued MAIN fees back into the position, threshold-gated and wrapped in <code>try/catch</code> so it can never revert the swap.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Phase 1 (breadth, 7 checklist agents):</strong> general, precision-math, defi-amm, erc20, access-control, dos, chain-specific.</li>
+<li><strong>Phase 2 (depth, 12 blind attack agents):</strong> math-precision, access-control, economic-security, execution-trace, invariant, periphery, first-principles, asymmetry, boundary, numerical-gap, trust-gap, flow-gap.</li>
+<li><strong>Overlap:</strong> the in-swap auto-compound slippage gap (Finding 1) was independently surfaced by <strong>10 of 12</strong> phase-2 agents (1 as a full FINDING, 9 as LEADs) plus 2 phase-1 agents (general, defi-amm) — the single highest-corroboration issue in this audit, promoted per multi-agent-convergence rule. The <code>topUpBid</code> missing-deadline gap was independently surfaced by <strong>7 of 12</strong> phase-2 agents plus 2 phase-1 agents.</li>
+<li><strong>Phase-1-only:</strong> 4 findings (fee-on-transfer/rebasing SLEUTH risk to <code>seedMain</code>/withdraw paths, <code>rescue()</code> missing <code>nonReentrant</code>, sandwichability of owner-triggered <code>reanchor</code>/<code>seedMain</code>/<code>compound</code> despite their <code>minLiquidity</code> floor, DoS/chain-specific informational items). Re-examined against source directly by the orchestrator — all confirmed at stated severity.</li>
+<li><strong>Phase-2-only:</strong> 5 findings (CEI ordering in <code>_doWithdraw</code>/<code>_doWithdrawBid</code>, <code>_doReanchor</code> incomplete positive-delta branch, in-swap-compound rounding-shortfall edge case, untracked-claims accounting gap on one-sided fee accrual, threshold OR-gate scale mismatch). Re-examined against source directly by the orchestrator — all confirmed at stated severity.</li>
+<li><strong>Completeness:</strong> 15 unique (Contract, function/mechanism) areas identified across both phases; all 15 are covered in the unified findings/notes below.</li>
+<li><strong>Re-examined leads kept:</strong> 15 (all phase-unique items above). <strong>Demoted:</strong> 0 — no phase-unique lead was refuted by source re-read; several were already self-limited by their originating agent to Info/Low.</li>
+</ul>
+<p>No Critical or High severity findings. The design is unusually tight for a single-owner hook: every fund-moving entrypoint is <code>onlyOwner</code>, the only permissionless write path (<code>_afterSwap</code> → <code>compoundInSwap</code>) moves value exclusively through the hook&#39;s own already-earned fees via ERC-6909 claims (never a third party&#39;s tokens), and the <code>mainLiquidity</code>/<code>bidLiquidity</code> mirrors were independently proven synced to on-chain liquidity by at least 6 separate agents across both phases.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[70] <strong>1. Permissionless in-swap auto-compound has no slippage floor — accrued fees redeploy at attacker-influenceable spot price</strong></p>
+<p><code>OwnerManagedRangeHook._afterSwap() / compoundInSwap() / _compoundLogic()</code> · Confidence: 70 · <strong>[both]</strong> — phase1: evm-audit-general (GEN-1), evm-audit-defi-amm (AMM-2) · phase2: FINDING (execution-trace, agent 4) + LEADs (math-precision, access-control, economic-security, periphery, first-principles, asymmetry, boundary, trust-gap, flow-gap — 9 of 12 agents)</p>
+<p><strong>Description</strong><br>The owner-triggered <code>compound()</code> path enforces a <code>minLiquidity</code> slippage floor (<code>_doCompound</code>, line 553: <code>if (addedL &lt; minLiquidity) revert InsufficientLiquidity()</code>), and the code&#39;s own comment (lines 246-249) states this restriction exists specifically so &quot;a non-owner [cannot force] a fee re-add at a price/time of their choosing.&quot; The permissionless in-swap path — any swap triggers <code>_afterSwap</code> → <code>this.compoundInSwap()</code> → <code>_compoundLogic()</code> once accrued fees cross an owner-set threshold — calls <code>_compoundLogic()</code> directly with <strong>no slippage floor and no deadline</strong>. <code>_compoundLogic()</code> reads the <strong>post-swap</strong> spot price via <code>_slot0()</code> (line 361) and re-adds the hook&#39;s collected fees as MAIN liquidity at that price. A swapper can skew price toward a MAIN range boundary within their own swap so that <code>LiquidityAmounts.getLiquidityForAmounts</code> collapses to a single-sided (or near-zero) add, stranding the other side as idle ERC-6909 claims and degrading the position the owner would otherwise have grown.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Owner has <code>autoCompound = true</code> and a nonzero <code>compoundThreshold0</code>/<code>compoundThreshold1</code>; MAIN has accrued fees ≥ threshold.</li>
+<li>Attacker (any address, no privilege) submits a swap that pushes <code>sqrtP</code> toward <code>mainTickLower</code> or <code>mainTickUpper</code>.</li>
+<li><code>_afterSwap</code> fires; <code>compoundInSwap()</code> sees <code>owed ≥ threshold</code>; <code>_compoundLogic()</code> collects fees, computes <code>addedL = getLiquidityForAmounts(sqrtP_skewed, ...)</code>, and re-adds at that skewed ratio with zero floor.</li>
+<li>Outcome: the hook&#39;s already-earned fees are converted to liquidity at an off-market ratio; the unused side sits as owner-rescuable-but-idle ERC-6909 claims until a future compound or manual <code>rescue()</code>.</li>
+</ol>
+<p>Every agent that attempted to trace attacker <em>profit</em> from this path (economic-security, first-principles, invariant, boundary, asymmetry) independently concluded that under the pool&#39;s current 1% fee tier (<code>EXP_FEE = 10000</code>), the round-trip cost of manipulating price materially exceeds the extractable value from the bounded, threshold-gated fee amount — so this is not a clean third-party-theft primitive today. However, per this audit&#39;s severity rubric (&quot;Medium: degraded behavior... or owner-only fund loss&quot;), the finding stands as Medium: it is a real, unprivileged, repeatable degradation of the owner&#39;s capital efficiency with no guard at all (versus a real guard on the sibling owner path), and severity would scale directly with the pool&#39;s fee tier or threshold configuration.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function _compoundLogic() internal returns (uint128 addedL, uint256 used0, uint256 used1) {
+     int24 lower = mainTickLower;
+     int24 upper = mainTickUpper;
+
+     (BalanceDelta cd,) =
+         poolManager.modifyLiquidity(poolKey(), ModifyLiquidityParams(lower, upper, 0, MAIN_SALT), &quot;&quot;);
+     uint256 fee0 = cd.amount0() &gt; 0 ? uint256(uint128(cd.amount0())) : 0;
+     uint256 fee1 = cd.amount1() &gt; 0 ? uint256(uint128(cd.amount1())) : 0;
+     if (fee0 &gt; 0) EXP_C0.take(poolManager, address(this), fee0, true);
+     if (fee1 &gt; 0) EXP_C1.take(poolManager, address(this), fee1, true);
+
+     (uint160 sqrtP,) = _slot0();
+     addedL = LiquidityAmounts.getLiquidityForAmounts(
+         sqrtP, TickMath.getSqrtPriceAtTick(lower), TickMath.getSqrtPriceAtTick(upper), fee0, fee1
+     );
++    // reject compounding at a manipulated spot price / degenerate ratio
++    if (addedL &lt; minCompoundLiquidityBps_of(fee0, fee1)) return (0, 0, 0);
+     if (addedL == 0) return (0, 0, 0);
+     ...
+</code></pre>
+<p>Practical options: (a) require the post-swap tick to sit strictly inside <code>[mainTickLower, mainTickUpper]</code> before compounding (skip otherwise — fees simply remain as claims for the next attempt), or (b) compare <code>_slot0()</code> against a short TWAP / last-good <code>sqrtP</code> checkpoint and skip the re-add if deviation exceeds an owner-set bound. Either check must sit <strong>inside</strong> the <code>try</code>-wrapped call so a skip never reverts the swap.</p>
+<hr>
+<p>[65] <strong>2. <code>reanchor</code>/<code>seedMain</code>/<code>compound</code> deploy liquidity at live spot price with no TWAP or calm-period check — sandwichable despite <code>minLiquidity</code></strong></p>
+<p><code>OwnerManagedRangeHook.reanchor() / seedMain() / compound()</code> via <code>_doReanchor()</code> / <code>_doSeed()</code> / <code>_compoundLogic()</code> · Confidence: 65 · <strong>[phase1 only: evm-audit-defi-amm]</strong> — re-examined and confirmed by the orchestrator against source.</p>
+<p><strong>Description</strong><br>Every owner rebalance op reads the <em>current</em> pool price (<code>_slot0()</code>) at execution time and deploys liquidity at that price, bounded only by a <code>minLiquidity</code> floor — a bound on resulting <code>L</code>, not on price fairness. An attacker who observes an owner&#39;s <code>reanchor</code>/<code>seedMain</code>/<code>compound</code> transaction in the mempool can front-run it with a large swap to move price, let the owner&#39;s tx deploy liquidity into a range straddling the manipulated price (a manipulated price can still yield <code>L2 ≥ minLiquidity</code>), then back-run to restore price and extract value from the freshly-placed, mis-priced liquidity. Because the hook is the pool&#39;s sole LP, any such loss falls entirely on the hook/owner. This clears the audit&#39;s admin-action gate because the harm requires an <em>unprivileged</em> front-runner/sandwicher acting against the owner&#39;s normal-course transaction (the &quot;race&quot; amplifier pattern), not the owner acting maliciously.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Owner submits <code>reanchor(newLower, newUpper, minLiquidity, deadline)</code>.</li>
+<li>Attacker front-runs with a large SLEUTH buy, moving <code>sqrtP</code> up.</li>
+<li><code>_doReanchor</code> removes MAIN (composition skewed by the manipulated price) and re-adds <code>L2</code> computed at the manipulated <code>sqrtP</code> into <code>[newLower, newUpper]</code>; <code>L2 ≥ minLiquidity</code> still passes.</li>
+<li>Attacker back-runs, trading back through the freshly-placed liquidity at the favorable manipulated price, capturing the spread. The atomic remove+add in one <code>unlock()</code> removes the classic two-tx MEV window but does not remove single-tx sandwich risk around the owner&#39;s tx itself.</li>
+</ol>
+<p><strong>Recommendation</strong><br>Add a calm-period / deviation check before deploying liquidity in <code>_doReanchor</code>, <code>_doSeed</code>, and <code>_compoundLogic</code> (owner path): compare <code>_slot0()</code> spot to a short TWAP (or a recent-tick checkpoint) and revert if divergence exceeds an owner-configured bound, e.g.:</p>
+<pre><code class="language-solidity">function _requireCalm() internal view {
+    (uint160 spot,) = _slot0();
+    uint160 twap = _twapSqrtPrice(twapInterval);
+    uint256 devBps = spot &gt; twap
+        ? uint256(spot - twap) * 10_000 / twap
+        : uint256(twap - spot) * 10_000 / twap;
+    if (devBps &gt; maxDeviationBps) revert PriceOutOfRange();
+}
+</code></pre>
+<p>Enforce sane bounds on <code>maxDeviationBps</code>/<code>twapInterval</code> themselves so they cannot be configured to be a no-op.</p>
+<hr>
+<p>[60] <strong>3. Fee-on-transfer SLEUTH permanently DoSes <code>seedMain</code>; rebasing SLEUTH silently leaks value</strong></p>
+<p><code>OwnerManagedRangeHook.seedMain() / _doSeed()</code> (via <code>CurrencySettler.settle</code>) · Confidence: 60 · <strong>[phase1 only: evm-audit-erc20]</strong> — re-examined and confirmed by the orchestrator against <code>CurrencySettler.sol</code> in the dependency tree.</p>
+<p><strong>Description</strong><br>SLEUTH (currency0) is an arbitrary, owner-chosen ERC20 at deploy time — nothing in the hook validates its transfer behavior. When seeding MAIN, <code>_doSeed</code> settles the owed SLEUTH principal via <code>EXP_C0.settle(poolManager, payer, amount, false)</code>, which performs <code>safeTransferFrom(payer, poolManager, amount)</code> then <code>poolManager.settle()</code>. Uniswap v4&#39;s <code>settle()</code> credits the delta by the PoolManager&#39;s <strong>measured balance increase</strong>, not the <code>amount</code> argument. If SLEUTH is fee-on-transfer, the PoolManager receives less than <code>amount</code>, the currency0 debt is only partially cleared, and the transaction reverts with <code>CurrencyNotSettled</code> at unlock finalization — this is a hard, permanent revert (fail-safe, not silent corruption) that makes <code>seedMain</code> entirely unusable for such a token. Separately, if SLEUTH is a rebasing token, neither the PoolManager&#39;s <code>L</code>-based position accounting nor the <code>mainLiquidity</code>/<code>bidLiquidity</code> mirrors resync to <code>balanceOf</code> — a positive rebase becomes externally arbitrageable, a negative rebase silently under-collateralizes the hook&#39;s banked ERC-6909 claims, and the hook has no mechanism to reconcile either (<code>rescue()</code> only reaches stray balances/claims, not deployed positions).</p>
+<p><strong>Proof of Concept</strong><br>Deploy with a fee-on-transfer SLEUTH as <code>c0</code>. Owner calls <code>seedMain(a0, a1, lower, upper, minL, deadline)</code> with <code>lower &lt; currentTick &lt; upper</code>. <code>modifyLiquidity</code> produces <code>d.amount0() &lt; 0</code>; <code>EXP_C0.settle(..., amount, false)</code> pulls <code>amount</code> from the owner but the PoolManager only nets <code>amount - fee</code>; unlock finalization reverts <code>CurrencyNotSettled</code>. MAIN can never be seeded with this token. (<code>reanchor</code>/<code>compound</code> settle from ERC-6909 claims with <code>burn = true</code>, which skips the ERC20 transfer, so only owner-funded settles on currency0 are exposed.)</p>
+<p><strong>Recommendation</strong><br>Document that SLEUTH MUST NOT be fee-on-transfer or rebasing, and validate at/before deployment — there is no in-contract fix that preserves exact 1:1 liquidity math for such tokens:</p>
+<pre><code class="language-solidity">// off-chain / pre-deploy check, or a one-time guarded probe in the constructor
+require(_isStandardErc20(Currency.unwrap(c0)), &quot;unsupported token behavior&quot;);
+</code></pre>
+<hr>
+<p>[Below-threshold findings — description only]</p>
+<p><strong>4. <code>rescue()</code> omits <code>nonReentrant</code>, inconsistent with every other state-changing owner entrypoint</strong></p>
+<p><code>OwnerManagedRangeHook.rescue()</code> · <strong>[phase1 only: evm-audit-access-control]</strong> (AC-1). Every other mutating owner op carries <code>nonReentrant</code>; <code>rescue()</code> performs external calls (<code>poolManager.transfer</code> / <code>IERC20.safeTransfer</code>) to an owner-supplied <code>to</code> without the guard. Not currently exploitable — <code>rescue</code> is <code>onlyOwner</code>, and neither SLEUTH nor USDC nor ERC-6909 claim transfers carry a receiver callback in this flow — but it is a latent consistency/defense-in-depth gap. Add <code>nonReentrant</code> for consistency.</p>
+<p><strong>5. <code>_doWithdraw</code>/<code>_doWithdrawBid</code> transfer funds out before updating the liquidity mirror (CEI ordering)</strong></p>
+<p><code>OwnerManagedRangeHook._doWithdraw() / _doWithdrawBid()</code> · <strong>[phase2 only: first-principles-agent]</strong>. <code>EXP_C0/1.take(poolManager, to, amount, false)</code> executes before <code>mainLiquidity -= liquidity</code> / <code>bidLiquidity -= liquidity</code>. Re-examined: exploitation would require SLEUTH to carry a transfer/receive callback (it is stated to be a standard owner-chosen ERC20, not verified hook-free in source), and even a reentrant swap→<code>_afterSwap</code>→compound keeps the mirror/on-chain-L invariant consistent (compound increments both before any pending decrement lands), so no desync or value-extraction path was constructed. Reorder to update mirrors before external transfers as defense-in-depth:</p>
+<pre><code class="language-diff">-    if (amount0 &gt; 0) EXP_C0.take(poolManager, to, amount0, false);
+-    if (amount1 &gt; 0) EXP_C1.take(poolManager, to, amount1, false);
+-
+-    mainLiquidity -= liquidity;
++    mainLiquidity -= liquidity;
++
++    if (amount0 &gt; 0) EXP_C0.take(poolManager, to, amount0, false);
++    if (amount1 &gt; 0) EXP_C1.take(poolManager, to, amount1, false);
+</code></pre>
+<p><strong>6. <code>topUpBid()</code> is missing the <code>deadline</code> guard present on every sibling owner entrypoint</strong></p>
+<p><code>OwnerManagedRangeHook.topUpBid()</code> · <strong>[both]</strong> — phase1: evm-audit-defi-amm (AMM-3), evm-audit-general (GEN-3) · phase2: LEADs from economic-security, periphery, first-principles, boundary, trust-gap, flow-gap agents (6 of 12). <code>seedMain</code>, <code>reanchor</code>, <code>withdrawMain</code>, <code>withdrawBid</code>, and <code>compound</code> all revert <code>Expired()</code> past a caller-supplied <code>deadline</code>; <code>topUpBid</code> has neither <code>deadline</code> nor <code>minLiquidity</code>. Impact is bounded — <code>getLiquidityForAmount1</code> depends only on fixed band ticks and the USDC amount (price-independent), and the only price-dependent guard (<code>bu &gt; tick</code>) fails safe (reverts) if price has since moved into/through the band — so a stale execution reverts rather than fills badly. Add a <code>deadline</code> parameter for consistency:</p>
+<pre><code class="language-diff">-function topUpBid(uint256 usdcAmount, int24 bandLower, int24 bandUpper)
++function topUpBid(uint256 usdcAmount, int24 bandLower, int24 bandUpper, uint256 deadline)
+     external onlyOwner whenNotPaused nonReentrant returns (uint128 added)
+ {
++    if (block.timestamp &gt; deadline) revert Expired();
+     _validTicks(bandLower, bandUpper);
+</code></pre>
+<p><strong>7. <code>withdrawMain</code>/<code>withdrawBid</code>/<code>rescue</code> report and slippage-check pre-fee amounts if currency0 is fee-on-transfer</strong></p>
+<p><code>OwnerManagedRangeHook._doWithdraw() / _doWithdrawBid()</code> · <strong>[phase1 only: evm-audit-erc20]</strong> (ERC20-2). Same root token-behavior assumption as Finding 3 — the <code>amount0Min</code> floor and <code>Withdrawn</code>/<code>BidWithdrawn</code> events use the pre-fee <code>d.amount0()</code>, not what actually lands at <code>to</code>. Subsumed by the &quot;SLEUTH must be a standard token&quot; recommendation in Finding 3.</p>
+<p><strong>8. Rebasing SLEUTH is untracked by the pool or the liquidity mirrors</strong></p>
+<p>Whole contract · <strong>[phase1 only: evm-audit-erc20]</strong> (ERC20-3). Folded into Finding 3&#39;s recommendation — reject rebasing tokens at deploy.</p>
+<p><strong>9. <code>_compoundLogic</code> can revert on a 1-wei rounding shortfall when the hook holds zero spare working capital</strong></p>
+<p><code>OwnerManagedRangeHook._compoundLogic()</code> · <strong>[phase2 only]</strong> — boundary-agent and invariant-agent independently (2 of 12). <code>addedL</code> is computed via down-rounded <code>getLiquidityForAmounts</code>, but the pool&#39;s actual add-cost can round up by up to 1 wei per side; if the hook holds no pre-existing claim balance on that side, <code>settle(...,true)</code> (claim burn) could underflow-revert. Self-limiting: caught by <code>try/catch</code> in the in-swap path (emits <code>CompoundFailed</code>, swap unaffected) and retryable in the owner path as fees continue to accrue. No fix required; documented for completeness.</p>
+<p><strong>10. Auto-compound externalizes its gas cost onto whichever swapper happens to cross the fee threshold</strong></p>
+<p><code>OwnerManagedRangeHook._afterSwap()</code> · <strong>[both]</strong> — phase1: evm-audit-dos (DOS-1) · phase2: invariant-agent LEAD. An owner-set low <code>compoundThreshold0/1</code> makes the compound fire on effectively every swap, taxing an arbitrary unrelated swapper with the gas of two <code>modifyLiquidity</code> calls plus settle/take. Recommend enforcing a sane minimum in <code>setCompoundThresholds</code> so the owner cannot configure it to fire every swap.</p>
+<p><strong>11. One-sided fee accrual can leave collected fees as claims outside the <code>mainLiquidity</code>/<code>bidLiquidity</code> mirror, recoverable only via <code>rescue</code></strong></p>
+<p><code>OwnerManagedRangeHook._compoundLogic()</code> · <strong>[phase2 only: numerical-gap-agent]</strong>. When <code>addedL == 0</code> (e.g. price parked at one edge of MAIN so one leg&#39;s implied liquidity is zero), the just-collected fees are banked as ERC-6909 claims but tracked by no state variable and not swept by <code>reanchor</code> (which re-adds only the removed principal, per its own inline comment). Funds are not lost — recoverable by the owner via <code>rescue()</code> — but the &quot;auto-compound converts fees back into position&quot; invariant silently no-ops. Consider tracking un-recompounded claim balances explicitly, or documenting that <code>rescue()</code> is the intended recovery path for this case.</p>
+<p><strong>12. <code>compoundInSwap</code>&#39;s per-token OR threshold can fire the compound path for a no-op re-add</strong></p>
+<p><code>OwnerManagedRangeHook.compoundInSwap()</code> · <strong>[phase2 only: numerical-gap-agent]</strong>. The threshold check (<code>owed0 &gt;= compoundThreshold0 || owed1 &gt;= compoundThreshold1</code>) evaluates two independently-scaled tokens (SLEUTH 18-dec, USDC 6-dec) with OR logic; a swap that crosses only the SLEUTH-side threshold can still yield <code>addedL == 0</code> if the binding leg is USDC, resulting in a collect-and-rebank with no actual liquidity added. Cosmetic/gas-inefficiency only — no funds at risk. No action required beyond awareness.</p>
+<p><strong>13. <code>_doReanchor</code>&#39;s re-add settlement has no positive-delta branch (currently unreachable, fragile if invariants change)</strong></p>
+<p><code>OwnerManagedRangeHook._doReanchor()</code> · <strong>[phase2 only: asymmetry-agent]</strong>. Unlike <code>_doSeed</code> (which handles both delta signs on both currencies), the reanchor re-add only settles the negative-delta case. This holds today because MAIN has exactly one position that was just fully removed before the re-add, so a positive delta cannot currently occur — but the omission would cause a DoS (<code>CurrencyNotSettled</code>) rather than fund loss if a future change ever produced one. Recommend adding the symmetric <code>take</code> branch defensively:</p>
+<pre><code class="language-diff">     if (ad.amount0() &lt; 0) EXP_C0.settle(poolManager, address(this), uint256(uint128(-ad.amount0())), true);
++    else if (ad.amount0() &gt; 0) EXP_C0.take(poolManager, address(this), uint256(uint128(ad.amount0())), true);
+     if (ad.amount1() &lt; 0) EXP_C1.settle(poolManager, address(this), uint256(uint128(-ad.amount1())), true);
++    else if (ad.amount1() &gt; 0) EXP_C1.take(poolManager, address(this), uint256(uint128(ad.amount1())), true);
+</code></pre>
+<p><strong>14. USDC blacklist of the hook itself can strand raw (non-claim) USDC sent directly to the contract</strong></p>
+<p><code>OwnerManagedRangeHook.rescue()</code> · <strong>[phase1 only: evm-audit-erc20]</strong> (ERC20-4). Pool funds are never lockable this way — deployed liquidity and withdrawals move exclusively through the PoolManager (<code>take</code>), which is blacklist-agnostic with respect to the hook. Only stray raw USDC accidentally sent directly to the hook address would be stranded if the hook itself is blacklisted, since <code>rescue</code>&#39;s <code>claims=false</code> branch requires the hook to be a valid <code>safeTransfer</code> sender. Low-likelihood, low-impact; no action required beyond awareness.</p>
+<p><strong>15. Pause does not protect against a compromised/malicious owner key; <code>mainLiquidity</code>/<code>bidLiquidity</code> mirror invariants hold under adversarial re-analysis</strong></p>
+<p><strong>[both, informational]</strong> — phase1: evm-audit-access-control (AC-2), evm-audit-dos (DOS-4) · phase2: independently re-verified safe by at least 6 of 12 agents (access-control, invariant, asymmetry, boundary, numerical-gap, flow-gap), one of which (access-control) still logged it as a LEAD for completeness. <code>unpause()</code>/<code>withdrawMain</code>/<code>withdrawBid</code>/<code>rescue</code> are all <code>onlyOwner</code>, so pause provides no mitigation against a compromised owner key by design (it is an operational kill-switch, not a compromise safeguard) — accepted single-owner trust model, not a bug. Separately, every writer of the <code>mainLiquidity</code>/<code>bidLiquidity</code> mirrors (<code>seedMain +=</code>, <code>reanchor =</code>, <code>withdraw -=</code>, <code>compound +=</code>) was traced by multiple independent agents and shown to move the mirror by the exact same delta as the corresponding on-chain liquidity change on every reachable path — no desync/underflow-DoS path exists today.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[70]</td>
+<td>Permissionless in-swap auto-compound has no slippage floor</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[65]</td>
+<td>Owner rebalance ops sandwichable — no TWAP/calm-period check</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[60]</td>
+<td>Fee-on-transfer/rebasing SLEUTH breaks <code>seedMain</code> / leaks value</td>
+</tr>
+<tr>
+<td>4</td>
+<td>—</td>
+<td><code>rescue()</code> omits <code>nonReentrant</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>—</td>
+<td>CEI ordering in <code>_doWithdraw</code>/<code>_doWithdrawBid</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>—</td>
+<td><code>topUpBid()</code> missing <code>deadline</code> guard</td>
+</tr>
+<tr>
+<td>7</td>
+<td>—</td>
+<td>Pre-fee amount reporting on FoT currency0 withdrawals</td>
+</tr>
+<tr>
+<td>8</td>
+<td>—</td>
+<td>Rebasing SLEUTH untracked (see #3)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>—</td>
+<td>1-wei rounding edge in <code>_compoundLogic</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>—</td>
+<td>Auto-compound gas externalized onto swappers</td>
+</tr>
+<tr>
+<td>11</td>
+<td>—</td>
+<td>Untracked claims on one-sided fee accrual</td>
+</tr>
+<tr>
+<td>12</td>
+<td>—</td>
+<td>Threshold OR-gate scale mismatch (no-op compound)</td>
+</tr>
+<tr>
+<td>13</td>
+<td>—</td>
+<td><code>_doReanchor</code> missing positive-delta branch (unreachable today)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>—</td>
+<td>USDC blacklist of hook strands stray raw balance</td>
+</tr>
+<tr>
+<td>15</td>
+<td>—</td>
+<td>Pause/mirror-invariant informational notes</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. These are not false positives — they are high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><strong><code>topUpBid</code> narrow-band SafeCast revert</strong> — <code>OwnerManagedRangeHook.topUpBid</code>/<code>_doBid</code> — Code smells: <code>LiquidityAmounts.getLiquidityForAmount1</code> truncates via <code>SafeCast.toUint128()</code>; a sufficiently narrow band with large USDC input reverts on the cast. Owner-only self-inflicted configuration error (recoverable by widening the band), not attacker-exploitable — math-precision-agent.</li>
+<li><strong>Init-time token/config correctness is an off-chain deploy responsibility</strong> — <code>constructor()</code> / <code>_beforeInitialize()</code> — Code smells: none in-contract; <code>c0</code>/<code>c1</code>/<code>fee_</code>/<code>spacing_</code>/<code>sqrtPrice_</code> are immutable constructor inputs hard-checked against the pool key. Purely a deploy-checklist item: confirm the intended Base SLEUTH and <strong>native</strong> USDC (<code>0x8335...</code>, not bridged USDC.e) addresses before broadcasting — chain-specific-agent (phase 1).</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant (two-phase orchestration: 7 breadth agents + 12 blind depth agents + hybrid reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Independent human security review, and if applicable a bug bounty program and on-chain monitoring, are strongly recommended before this hook is trusted with significant TVL.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreierm5jlc4g3bjr5pz5vq5bgcdvjmfzqopixc2tgxb4v77cwfji5sq.ipfs.community.bgipfs.com/"><code>https://bafkreierm5jlc4g3bjr5pz5vq5bgcdvjmfzqopixc2tgxb4v77cwfji5sq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/330">#330</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

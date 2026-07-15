@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RWAGMI &quot;Raise&quot; (rwagmi-onedollaraudit) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #382">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">RWAGMI &quot;Raise&quot; (rwagmi-onedollaraudit)</h1>
+    <p class="job-sub">Job #382 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/382"><b>Job page</b> #382</a>
+      <a class="chip" href="https://bafkreic7mmjrnc442lubcuxbt7vf3jcnrt36pvphb2iaxku2jqk5eyvhfq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#audit-target">Audit Target</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#findings-list">Findings List</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Review — RWAGMI &quot;Raise&quot; (rwagmi-onedollaraudit)</h1>
+<h2 id="audit-target">Audit Target</h2>
+<ul>
+<li><strong>Repository</strong>: <a href="https://github.com/mrtdlgc/rwagmi-onedollaraudit">https://github.com/mrtdlgc/rwagmi-onedollaraudit</a></li>
+<li><strong>Commit</strong>: <code>adbde65baa77d3ce17c271f24772355a1e0b0135</code></li>
+<li><strong>Scope</strong>: 8 contracts (flattened at audit time), each paired with a client-provided concerns document:</li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>File</th>
+<th>Concerns doc</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>B20FixedSaleDeployer</td>
+<td><code>flattened/B20FixedSaleDeployer.flat.sol</code></td>
+<td><code>concerns/B20FixedSaleDeployer.md</code></td>
+</tr>
+<tr>
+<td>B20FixedSaleV1</td>
+<td><code>flattened/B20FixedSaleV1.flat.sol</code></td>
+<td><code>concerns/B20FixedSaleV1.md</code></td>
+</tr>
+<tr>
+<td>B20PolicyGate</td>
+<td><code>flattened/B20PolicyGate.flat.sol</code></td>
+<td><code>concerns/B20PolicyGate.md</code></td>
+</tr>
+<tr>
+<td>B20PolicyValidationHook</td>
+<td><code>flattened/B20PolicyValidationHook.flat.sol</code></td>
+<td><code>concerns/B20PolicyValidationHook.md</code></td>
+</tr>
+<tr>
+<td>B20VestingDistributor</td>
+<td><code>flattened/B20VestingDistributor.flat.sol</code></td>
+<td><code>concerns/B20VestingDistributor.md</code></td>
+</tr>
+<tr>
+<td>RwagmiB20TokenFactoryAdapter</td>
+<td><code>flattened/RwagmiB20TokenFactoryAdapter.flat.sol</code></td>
+<td><code>concerns/RwagmiB20TokenFactoryAdapter.md</code></td>
+</tr>
+<tr>
+<td>RwagmiRaiseFactory</td>
+<td><code>flattened/RwagmiRaiseFactory.flat.sol</code></td>
+<td><code>concerns/RwagmiRaiseFactory.md</code></td>
+</tr>
+<tr>
+<td>RwagmiSaleLpVault</td>
+<td><code>flattened/RwagmiSaleLpVault.flat.sol</code></td>
+<td><code>concerns/RwagmiSaleLpVault.md</code></td>
+</tr>
+</tbody></table></div>
+<ul>
+<li><strong>Compiler</strong>: Solidity ^0.8.28, Foundry, via-IR. Target chain: Base.</li>
+<li><strong>Prior review</strong> (per client, referenced but not consulted for this audit): Slither, Codex, Grok, Certora formal specs.</li>
+<li><strong>Methodology</strong>: three-phase audit — Phase 0 context (protocol map + 47-entrypoint access-control inventory + 16-row threat catalog, opus), Phase 1 breadth (7 ethskills domain agents: general, precision-math, access-control, erc20, defi-amm, erc721, dos — opus), Phase 2 depth (12 pashov attack agents, opus, run blind to Phase 1 findings), Phase 3 reconciliation with a coverage gate against the Phase 0 inventory/catalog. All <code>file:line</code> citations below were re-verified against the actual files in <code>flattened/</code> after agent output was collected.</li>
+</ul>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap</strong> (same root cause found in both phases): 1 (LP-vault pool-pinning DoS — found by 4/7 Phase-1 domains and 12/12 Phase-2 agents).</li>
+<li><strong>Phase-1-only</strong>: 1 promoted (ERC20-1 / rebasing-token risk, corroborated as a lead by 2 Phase-2 agents — counted here as overlap-by-lead, see below), remainder are Low/Info confirmations.</li>
+<li><strong>Phase-2-only</strong>: 1 new finding (<code>releasePrincipal</code> fee-diversion, 2/12 agents, promoted per &quot;multi-agent convergence&quot; rule — one agent already called it a FINDING with proof, the second corroborated as a LEAD).</li>
+<li><strong>Re-examined leads kept</strong>: 2 (rebasing-token risk; <code>fund()</code>/<code>cleanupUnsold</code> funder-vs-issuer mismatch). <strong>Demoted</strong>: 0 — every phase-2 lead that lacked a concrete profit path (donation misattribution, missing nonReentrant on <code>onERC721Received</code>, auction-trust asymmetry) was already independently reached the same conclusion in Phase 1 and is reported as Low/Info, not silently dropped.</li>
+<li><strong>Coverage holes closed this pass</strong>: 0 (K=0 — both phases already covered every entrypoint in the inventory; see Coverage Gate below).</li>
+<li><strong>Confidence / reporting floor</strong>: findings reported at confidence ≥ 50; two items below that threshold are listed under <strong>Leads</strong>, not as findings.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="h-01-unauthenticated-lp-position-deposit-lets-any-attacker-perma">[H-01] Unauthenticated LP-position deposit lets any attacker permanently brick <code>RwagmiSaleLpVault</code>&#39;s pool custody</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> · <strong>Confidence</strong>: 95 · <strong>Origin</strong>: <code>[both]</code> — found independently by 4/7 Phase-1 domain agents (general, defi-amm, erc721, dos) and unanimously by all 12/12 Phase-2 attack agents, run blind.</p>
+<p><strong>Location</strong>: <code>RwagmiSaleLpVault.onERC721Received()</code> — <code>flattened/RwagmiSaleLpVault.flat.sol:2286-2308</code> (doc comment at 2279-2285; gate at 2290; position cap at 2291; pool-pinning logic at 2295-2303)</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">2279: /// @dev The pool key is derived from the received position itself via the
+2280: ///      PositionManager (not a caller-supplied setter), so a junk NFT from
+2281: ///      an unrelated pool cannot corrupt the vault: the first accepted
+2282: ///      position pins the pool, and any later NFT from a different pool is
+2283: ///      rejected. The stored-position count is bounded so a flood cannot
+2284: ///      brick the batch fee collection.
+2286: function onERC721Received(address operator, address, uint256 tokenId, bytes calldata)
+2287:     external
+2288:     returns (bytes4)
+2289: {
+2290:     if (msg.sender != address(positionManager)) revert NotFromPositionManager(operator);
+2291:     if (positionIds.length &gt;= MAX_POSITIONS) revert TooManyPositions();
+2295:     (PoolKey memory key,) = positionManager.getPoolAndPositionInfo(tokenId);
+2296:     bytes32 keyHash = keccak256(abi.encode(key));
+2297:     if (!poolKeySet) {
+2298:         poolKey = key;
+2299:         poolKeySet = true;
+2301:     } else if (keccak256(abi.encode(poolKey)) != keyHash) {
+2302:         revert PoolMismatch(keccak256(abi.encode(poolKey)), keyHash);
+2303:     }
+2305:     positionIds.push(tokenId);
+</code></pre>
+<p>The only access check on deposits (line 2290) verifies that the caller is the Uniswap v4 <code>PositionManager</code> singleton — it does <strong>not</strong> verify who <em>initiated</em> the transfer (<code>operator</code>/<code>from</code> are received but never checked). Because the <code>PositionManager</code> faithfully relays <code>safeTransferFrom</code> for any position owner, <strong>any address holding any Uniswap v4 position NFT — from any pool, with any currencies — can deposit into this vault.</strong></p>
+<p>The vault then uses first-writer-wins pinning: whichever NFT is accepted <em>first</em> permanently sets <code>poolKey</code>/<code>poolKeySet</code> (lines 2297-2299). There is no owner, no admin, and no function anywhere in the contract that resets <code>poolKeySet</code> (verified by grep — it is written only at line 2299). Once pinned, every subsequent NFT from a different pool reverts <code>PoolMismatch</code> (lines 2301-2302) forever.</p>
+<p>The doc comment directly above the function (lines 2279-2285) asserts this design is safe — &quot;a junk NFT from an unrelated pool cannot corrupt the vault... the first accepted position pins the pool&quot; — but that claim assumes the first NFT is always the legitimate one, which is exactly what is unenforced. This is the vulnerability, stated in the code&#39;s own reasoning.</p>
+<p>A secondary, self-contained variant of the same root cause: once the correct pool is pinned, an attacker can flood <code>positionIds</code> up to <code>MAX_POSITIONS = 20</code> (line 2291) with cheap same-pool dust positions, blocking any further legitimate staged deposit with <code>TooManyPositions</code>. (In this variant the attacker&#39;s own NFTs are eventually swept to the immutable <code>principalRecipient</code> on release, making it self-costing — the primary wrong-pool-pin vector above requires only one attacker-owned junk position and is not self-costing in the same way.)</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li><code>RwagmiSaleLpVault</code> is deployed for a raise and set as the eventual recipient of the raise&#39;s seeded Uniswap v4 LP position. Per the protocol map, this wiring is done off-chain by deploy scripts / the LBP strategy — deployment and LP seeding are <strong>not</strong> guaranteed to be atomic, so a window exists where <code>poolKeySet == false</code>.</li>
+<li>Attacker mints a trivial Uniswap v4 position with minimal liquidity in any pool they control (cost: a few cents of gas plus dust liquidity).</li>
+<li>Attacker calls <code>positionManager.safeTransferFrom(attacker, vaultAddress, junkTokenId)</code>. The <code>PositionManager</code> invokes <code>vault.onERC721Received(attacker, vaultAddress, junkTokenId, &quot;&quot;)</code> with <code>msg.sender == positionManager</code> — the only gate passes. <code>poolKeySet</code> is false, so <code>poolKey</code> is permanently set to the attacker&#39;s junk pool, and <code>junkTokenId</code> is pushed to <code>positionIds</code>.</li>
+<li>The legitimate LP-seeding transaction later calls <code>positionManager.safeTransferFrom(strategy, vaultAddress, realTokenId)</code> for the real pool. <code>onERC721Received</code> computes <code>keyHash(realPool) != keyHash(junkPool)</code> and reverts <code>PoolMismatch</code>. This transaction — and every future attempt to seed the real position — reverts permanently.</li>
+<li><code>collectFees()</code> and <code>releasePrincipal()</code> now only ever operate on the attacker&#39;s worthless junk position. The vault&#39;s entire purpose (custody of the raise&#39;s real LP, fee streaming, principal release) is permanently defeated with no on-chain recovery; the only remedy is redeploying a fresh vault instance and re-running the off-chain wiring.</li>
+</ol>
+<p><strong>Recommendation</strong></p>
+<p>Authenticate the depositor, not just the transport. Options (any one is sufficient):</p>
+<ul>
+<li>Add an immutable <code>seeder</code>/<code>expectedDepositor</code> address at construction and require <code>operator == seeder</code> (or <code>from == seeder</code>) inside <code>onERC721Received</code>, mirroring the bind-once pattern already used elsewhere in this codebase (<code>B20FixedSaleDeployer.bindFactory</code>, <code>B20PolicyValidationHook.bindAuction</code>, <code>B20VestingDistributor.bindSale</code>).</li>
+<li>Pin the expected <code>PoolKey</code> (or its hash) as an immutable constructor argument and validate every received NFT — including the first — against it, instead of trusting whichever NFT arrives first.</li>
+</ul>
+<hr>
+<h3 id="m-01-releaseprincipal-does-not-sweep-accrued-lp-fees-before-tran">[M-01] <code>releasePrincipal()</code> does not sweep accrued LP fees before transferring positions out, letting <code>principalRecipient</code> capture value earmarked for <code>feeRecipients</code></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Confidence</strong>: 80 · <strong>Origin</strong>: <code>[phase2: agent 11 trust-gap (FINDING)]</code>, corroborated <code>[phase2: agent 7 first-principles (LEAD)]</code> — promoted per multi-agent convergence, not raised in Phase 1.</p>
+<p><strong>Location</strong>: <code>RwagmiSaleLpVault.releasePrincipal()</code> — <code>flattened/RwagmiSaleLpVault.flat.sol:2356-2372</code></p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">2356: function releasePrincipal() external nonReentrant {
+2357:     if (unlockTime == 0) revert PermanentlyLocked();
+2358:     if (block.timestamp &lt; unlockTime) revert StillLocked();
+2359:     if (positionIds.length == 0) revert NoPositions();
+2364:     while (positionIds.length &gt; 0) {
+2365:         uint256 id = positionIds[positionIds.length - 1];
+2366:         positionIds.pop();
+2367:         IERC721Minimal(address(positionManager)).safeTransferFrom(
+2368:             address(this), principalRecipient, id
+2369:         );
+2370:         emit PrincipalReleased(id, principalRecipient);
+2371:     }
+2372: }
+</code></pre>
+<p><code>releasePrincipal</code> transfers every held LP-position NFT to the immutable <code>principalRecipient</code> without first calling <code>collectFees()</code> (line 2313, which is a separate, independent function). Uniswap v4 positions accrue trading fees continuously between <code>collectFees()</code> calls. Any fee accrual since the last <code>collectFees()</code> call remains embedded in the position and transfers out <em>with</em> the NFT — it is never realized into the vault&#39;s balance and never reaches <code>_distribute()</code>&#39;s fixed bps split. Whoever now owns the position (<code>principalRecipient</code>) can independently collect that trailing fee amount in full via the Uniswap v4 <code>PositionManager</code> directly, bypassing the vault&#39;s <code>feeRecipients</code> split entirely. After release, <code>collectFees()</code> reverts <code>NoPositions</code> (line 2315), so the diverted amount is permanently unrecoverable by <code>feeRecipients</code>.</p>
+<p><code>releasePrincipal</code> is permissionless (any caller can invoke it once <code>unlockTime</code> has passed), and <code>principalRecipient</code> is a distinct immutable address from <code>feeRecipients</code> — so this is not self-harm: it is a real transfer of value away from the fee-split beneficiaries to a different, fixed party, reachable through completely normal operation (fees accrue by default; no attacker action beyond calling a permissionless function at the right time is required).</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Pool accrues trading fees continuously on the vault&#39;s held LP position(s) after the last <code>collectFees()</code> call.</li>
+<li>At (or after) <code>unlockTime</code>, any caller — most plausibly <code>principalRecipient</code> itself, who benefits directly — calls <code>releasePrincipal()</code> without a preceding <code>collectFees()</code>.</li>
+<li>The position NFT(s), still holding the uncollected fee accrual, transfer to <code>principalRecipient</code>.</li>
+<li><code>principalRecipient</code> can now call Uniswap v4&#39;s <code>PositionManager</code> directly to collect that fee accrual in full, while <code>feeRecipients</code>&#39; configured bps share of it is never distributed and can never be, since the vault no longer holds any position (<code>NoPositions</code> on the next <code>collectFees()</code> attempt).</li>
+</ol>
+<p>Impact is bounded by the fee accrual since the last <code>collectFees()</code> call (not the full custodied value), which limits it to Medium rather than High — but it is a real, unconditional accounting/trust-model gap in the fee-split&#39;s intended guarantee.</p>
+<p><strong>Recommendation</strong></p>
+<p>Call <code>collectFees()</code>&#39;s sweep-and-distribute logic (or an equivalent internal helper) at the start of <code>releasePrincipal()</code>, before any NFT transfer, so all fees accrued through the release moment are credited to <code>feeRecipients</code> first.</p>
+<hr>
+<h3 id="m-02-salevesting-token-rebase-immunity-is-enforced-only-at-const">[M-02] Sale/vesting token rebase-immunity is enforced only at construction time, not across the sale lifecycle</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> · <strong>Confidence</strong>: 65 · <strong>Origin</strong>: <code>[phase1: erc20]</code>, corroborated as leads <code>[phase2: agent 3 economic-security, agent 12 flow-gap]</code> — both phases independently concluded this is real but narrowly scoped.</p>
+<p><strong>Location</strong>: <code>B20FixedSaleV1</code> constructor — <code>flattened/B20FixedSaleV1.flat.sol:1534-1538</code>; token-side accounting at <code>flattened/B20FixedSaleV1.flat.sol:1797-1812</code> (<code>claim</code>), <code>1818-1848</code> (<code>cleanupUnsold</code>); <code>B20VestingDistributor.release()</code> — <code>flattened/B20VestingDistributor.flat.sol:630-637</code></p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">1534: try IB20Minimal(cfg.token).multiplier() returns (uint256 multiplier_) {
+1535:     if (multiplier_ != WAD) revert InvalidConfig(&quot;multiplier != WAD&quot;);
+1536: } catch {
+1537:     revert InvalidConfig(&quot;not an Asset B20&quot;);
+1538: }
+</code></pre>
+<p>The constructor rejects a rebasing sale token by checking <code>multiplier() == WAD</code> once, at deployment. But on the B20 Asset token standard, <code>multiplier()</code> is a live, mutable value (its own interface docs describe it as &quot;Asset variant rebase multiplier&quot;). This check is a point-in-time snapshot taken before the sale holds any tokens; nothing re-checks it after <code>fund()</code>, and all token-side accounting (<code>tokensSold</code>, <code>tokensOwedTo[]</code>, <code>claimedTokens</code>) is stored as fixed absolute amounts that never re-sync to <code>balanceOf</code>.</p>
+<p>If the sale token rebases <em>down</em> between <code>fund()</code> and settlement, the contract&#39;s actual token balance can fall below the sum of <code>tokensOwedTo</code>. <code>claim()</code> (line ~1806/1808) transfers the fixed <code>owed</code> amount; once the balance is insufficient, remaining claimants&#39; transactions revert permanently (their quote contribution has already been routed to the treasury via <code>finalize</code>/<code>claimProceeds</code>, so this is an uncompensated loss for the last claimants). <code>B20VestingDistributor.release()</code> inherits the identical exposure, since it holds the same token and pays out fixed schedule amounts with no balance check.</p>
+<p><strong>Scoping</strong>: this is <strong>not</strong> reachable on the <code>createFixedSaleWithNewB20</code> path, because the factory mints the community B20 with <code>initialAdmin = address(0)</code> (no live rebase controller exists post-mint). It <strong>is</strong> reachable only on the <code>createFixedSale</code> (existing-token) path, and only if the issuer supplies an Asset B20 whose rebase controller remains active post-deployment and that controller later triggers a downward rebase — which harms that same issuer&#39;s own contributors. This self-inflicted precondition is why both phases rate it Medium rather than High.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Issuer creates a sale via <code>createFixedSale</code> using an existing B20 Asset token whose <code>multiplier()</code> reads <code>WAD</code> at construction time but whose rebase controller (e.g. a role the issuer or a third party still holds) remains live.</li>
+<li>Sale funds and collects contributions normally; <code>finalize()</code> runs.</li>
+<li>The token&#39;s controller triggers a downward rebase.</li>
+<li>Early <code>claim()</code> callers succeed and drain the (now insufficient) balance; later callers&#39; <code>claim()</code> reverts with insufficient balance, permanently — their quote-side payment was already irreversibly routed to the treasury.</li>
+</ol>
+<p><strong>Recommendation</strong></p>
+<p>Either (a) re-read <code>multiplier()</code> and require it still equals <code>WAD</code> at the start of <code>fund()</code> and at each settlement/claim path, reverting if it has drifted, or (b) apply the same balance-delta discipline already used in <code>fund()</code>/<code>_contributeErc20</code> to the payout side — cap each <code>claim</code>/<code>cleanupUnsold</code>/<code>release</code> transfer to <code>min(owed, balanceOf(this) - reserved)</code> and account any shortfall explicitly. At minimum, document that the existing-token path must only be used with a permanently non-rebasing (or admin-renounced) Asset B20.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed, or where impact was confirmed to be self-harm / non-profitable. Not scored; included for completeness per the client&#39;s request to flag anything &quot;still exploitable&quot; beyond prior review coverage.</em></p>
+<ul>
+<li><strong>LP-vault donated/stray ETH is unattributable and permanently stranded</strong> — <code>RwagmiSaleLpVault.receive()</code> (<code>flattened/RwagmiSaleLpVault.flat.sol:2406</code>) accepts native ETH unconditionally; <code>collectFees()</code>&#39;s fee accounting is a balance-delta measured strictly around <code>modifyLiquidities</code> (lines 2320-2334), so any pre-existing balance (including donations) is excluded from every future distribution. Confirmed independently by 9+ agents across both phases: no profitable misattribution path exists (donations before the call are excluded by construction; donations timed to land <em>during</em> <code>modifyLiquidities</code> would be split among the fixed <code>feeRecipients</code>, which is donor self-harm, not attacker profit). No sweep/rescue function exists. Recommendation: reject unexpected ETH in <code>receive()</code> when no pinned pool currency is native, or add a guarded sweep of un-attributed balance.</li>
+<li><strong><code>fund()</code> is callable by any address, but <code>cleanupUnsold</code>&#39;s ReturnToIssuer mode always pays the immutable <code>issuer</code>, never the actual funder</strong> — <code>flattened/B20FixedSaleV1.flat.sol:1579</code> (<code>fund</code>) / <code>1845</code> (<code>cleanupUnsold</code> ReturnToIssuer). In the intended flow the issuer funds their own sale, so this only matters if a third party (e.g. a keeper acting on the issuer&#39;s behalf) funds the sale and it later fails/cancels — their tokens return to <code>issuer</code>, not to them. Not attacker-triggerable against an unwilling victim; a documentation/off-path-usage footgun, not a confirmed finding.</li>
+<li><strong><code>B20PolicyValidationHook.validate()</code> trusts auction-supplied <code>owner</code>/<code>sender</code> parameters</strong> — <code>flattened/B20PolicyValidationHook.flat.sol:213-222</code>. The hook enforces <code>sender == owner</code> when <code>requireSenderIsOwner</code> is set, but both values are supplied by the bound CCA auction, not independently derived on-chain. This is a documented, out-of-scope trust boundary (the auction is trusted once bound); real EOA/relayer enforcement lives in the auction contract, which is outside this audit&#39;s scope.</li>
+<li><strong><code>RwagmiSaleLpVault.onERC721Received</code> lacks <code>nonReentrant</code></strong> — <code>flattened/RwagmiSaleLpVault.flat.sol:2286</code>. A position returned to the vault during a <code>principalRecipient</code> callback (e.g. via <code>releasePrincipal</code>&#39;s <code>safeTransferFrom</code>) can re-enter and re-push to <code>positionIds</code>. Confirmed this is the documented, intentional design (the pop-before-transfer comment at lines 2360-2363 explicitly anticipates append-during-callback), and <code>principalRecipient</code> is immutable/trusted, so no third-party exploit exists — only the trusted recipient&#39;s own accounting is affected.</li>
+<li><strong>Existing-token <code>createFixedSale</code> path omits the <code>predict()</code>-vs-actual cross-check</strong> that <code>createFixedSaleWithNewB20</code> performs at <code>flattened/RwagmiRaiseFactory.flat.sol:2512</code> (predict) / <code>:2517</code> (<code>revert PredictionMismatch</code> if the deployed sale address differs). Confirmed benign by both phases: the sale&#39;s CREATE2 address is relative to <code>B20FixedSaleDeployer</code>&#39;s own address and <code>deploy()</code> is strictly factory-gated, so no third party can occupy the deterministic target address; the salt is additionally namespaced by <code>msg.sender</code> and a monotonic raise counter. No exploitable consequence.</li>
+<li><strong>LP-vault bps fee split biases sub-unit dust to the last-listed recipient</strong> (<code>RwagmiBpsSplit.splitShare</code>, <code>flattened/RwagmiSaleLpVault.flat.sol:915</code>) — bounded to <code>&lt;n</code> currency base-units per <code>collectFees()</code> call, sum-exact (no stranding), and gas-dominated to farm. Standard rounding-dust tradeoff per the judging rubric&#39;s safe-patterns list; not reported as a finding.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p>Full 47-entrypoint table, roles section, and unguarded-entrypoint list: see Phase 0 output, reproduced in full below for the client record.</p>
+<h3 id="entrypoint-table">Entrypoint table</h3>
+<p><code>Contract.function | guard | who can call | state written | moves value?</code></p>
+<p><strong>B20PolicyGate</strong> (abstract, inherited by B20FixedSaleV1)</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>isEligible(address)</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>B20PolicyValidationHook</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bindAuction(address)</code></td>
+<td><code>binder</code>-only, once, non-zero</td>
+<td>binder</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>validate(...)</code></td>
+<td>bound <code>auction</code>-only (view)</td>
+<td>auction</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>supportsInterface(bytes4)</code></td>
+<td>none (pure)</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>B20VestingDistributor</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bindSale(address)</code></td>
+<td><code>binder</code>-only, once, non-zero</td>
+<td>binder</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>credit(address,uint256)</code></td>
+<td>bound <code>sale</code>-only</td>
+<td>sale</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>release(address)</code></td>
+<td>none (permissionless; funds → beneficiary)</td>
+<td>anyone</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>vestedAmount</code>/<code>releasable</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>RwagmiB20TokenFactoryAdapter</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>createToken(...)</code></td>
+<td>bound <code>liquidityLauncher</code>-only</td>
+<td>launcher</td>
+<td>yes (mints to recipient)</td>
+</tr>
+<tr>
+<td><code>predictTokenAddress(...)</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>B20FixedSaleDeployer</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bindFactory(address)</code></td>
+<td><code>binder</code>-only, once, non-zero</td>
+<td>binder</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>deploy(...)</code></td>
+<td>bound <code>factory</code>-only</td>
+<td>factory</td>
+<td>no (deploys sale)</td>
+</tr>
+<tr>
+<td><code>predict(...)</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>B20FixedSaleV1</strong> (13 functions — see Phase 0 raw inventory <code>phase0-raw/access-control-inventory.md</code> in the working directory for full per-function detail; summarized):<br><code>state()</code>/getters — none, view. <code>fund()</code> — permissionless, pulls allocation. <code>contribute*</code>/<code>contributeNative*</code> (4 functions) — permissionless, internally gated by <code>state()==Live</code> + eligibility + (allocation mode) Merkle proof. <code>cancel()</code> — <code>onlyIssuer</code>. <code>finalize()</code> — permissionless, accounting-only. <code>claimProceeds()</code>/<code>claimFee()</code> — permissionless, pay immutable treasury/feeRecipient. <code>refund(address)</code> — permissionless, pays named beneficiary. <code>claim(address)</code> — permissionless, pays named beneficiary or credits vesting. <code>cleanupUnsold()</code> — permissionless.</p>
+<p><strong>RwagmiRaiseFactory</strong> (<code>Ownable</code>, one-step)</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setQuoteAsset</code>/<code>setPlatformFee</code>/<code>setDeprecated</code></td>
+<td><code>onlyOwner</code></td>
+<td>owner</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>createFixedSale</code>/<code>createFixedSaleWithNewB20</code></td>
+<td>permissionless, internally requires <code>cfg.issuer==msg.sender</code> + allowlist + fee-pin</td>
+<td>anyone (self-declared issuer)</td>
+<td>yes (deploys sale, mints/funds on new-token path)</td>
+</tr>
+<tr>
+<td><code>owner()</code>/<code>raiseCount()</code>/<code>raises()</code>/salt-preview views</td>
+<td>none</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>transferOwnership</code>/<code>renounceOwnership</code> (OZ)</td>
+<td><code>onlyOwner</code></td>
+<td>owner</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>RwagmiSaleLpVault</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>onERC721Received</code></td>
+<td><code>positionManager</code>-only transport check (see <strong>H-01</strong>)</td>
+<td>anyone via PositionManager relay</td>
+<td>receives NFT custody</td>
+</tr>
+<tr>
+<td><code>collectFees()</code></td>
+<td>none (permissionless)</td>
+<td>anyone</td>
+<td>yes (realizes fees into vault)</td>
+</tr>
+<tr>
+<td><code>claimFees(address)</code></td>
+<td>none (self-scoped to msg.sender)</td>
+<td>anyone</td>
+<td>yes (pays msg.sender)</td>
+</tr>
+<tr>
+<td><code>releasePrincipal()</code></td>
+<td>none (permissionless; see <strong>M-01</strong>)</td>
+<td>anyone</td>
+<td>yes (NFTs → immutable principalRecipient)</td>
+</tr>
+<tr>
+<td><code>claimable</code>/<code>positionCount</code>/<code>feeSplit</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>receive()</code></td>
+<td>none</td>
+<td>anyone</td>
+<td>yes (accepts ETH)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Completeness</strong>: 47 external/public functions identified in Phase 0, 47 present in the table above (grouped for brevity in this client-facing section; full per-function rows are in the working-directory Phase 0 artifact).</p>
+<h3 id="roles">Roles</h3>
+<ul>
+<li><strong>Bind-once pattern</strong> (3 instances: <code>B20FixedSaleDeployer.factory</code>, <code>B20PolicyValidationHook.auction</code>, <code>B20VestingDistributor.sale</code>) — each settable exactly once by an immutable <code>binder</code>, zero-checked target and argument. Audited across all three phases; no rebind, front-run, or second-writer path found (see <strong>Findings</strong> — none raised; extensively examined and cleared).</li>
+<li><strong>RwagmiRaiseFactory owner</strong> (OZ <code>Ownable</code>, one-step transfer, <code>renounceOwnership</code> reachable) — controls only future-raise configuration (fee cap ≤500bps, quote-asset allowlist, deprecation flag); no power over already-deployed sale funds. Flagged as Low/Info by multiple agents in both phases (best-practice: adopt <code>Ownable2Step</code>), not included as a scored finding given the bounded blast radius.</li>
+<li><strong>B20FixedSaleV1 issuer</strong> — immutable, self-declared at creation (<code>cfg.issuer == msg.sender</code> enforced), can only <code>cancel()</code> a still-open sale; cannot redirect funds.</li>
+<li><strong>RwagmiSaleLpVault</strong> — no owner/admin/binder at all; see <strong>H-01</strong> and <strong>M-01</strong> for the consequences of this on the deposit and release paths.</li>
+</ul>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<p>Actor × entrypoint × asset catalog, each row marked with its resolution.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Non-binder</td>
+<td><code>bindFactory</code>/<code>bindAuction</code>/<code>bindSale</code></td>
+<td>hijack bind-once slot</td>
+<td><strong>Invariant holds</strong> — <code>msg.sender==binder</code> immutable check on all three; examined by AccessControl-1 (phase 1) and pashov agent 2 (phase 2), no bypass found.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Binder (operator error)</td>
+<td>mis-supplied bind argument</td>
+<td>permanent mis-wire</td>
+<td><strong>Invariant holds for attacker path</strong> — not externally triggerable; operational risk only, noted as Info (AccessControl-5).</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Non-factory caller</td>
+<td><code>B20FixedSaleDeployer.deploy</code></td>
+<td>unauthorized sale deployment</td>
+<td><strong>Invariant holds</strong> — <code>msg.sender==factory</code> check; examined, no bypass.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Attacker w/ competing CREATE2</td>
+<td>pre-deploy at predicted sale/token address</td>
+<td>grief deterministic deployment</td>
+<td><strong>Invariant holds</strong> — addresses are deployer-relative and factory-gated (DoS-5, agent 9 boundary independently confirmed).</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Ineligible wallet</td>
+<td><code>contribute*</code>/<code>validate</code></td>
+<td>bypass PolicyRegistry gating</td>
+<td><strong>Invariant holds</strong> — <code>isEligible</code>/<code>validate</code> results honored for both beneficiary and sender; fail-closed on registry revert (General/AccessControl confirmations).</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Attacker w/ crafted Merkle proof</td>
+<td><code>contributeWithAllocation*</code></td>
+<td>over-claim allocation</td>
+<td><strong>Invariant holds</strong> — double-hashed leaf bound to beneficiary, per-wallet cumulative cap; examined by General-1 and multiple pashov agents.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Any address</td>
+<td><code>claim</code>/<code>refund</code>/<code>claimProceeds</code>/<code>claimFee</code>/<code>cleanupUnsold</code> for arbitrary state</td>
+<td>redirect funds</td>
+<td><strong>Invariant holds</strong> — payout destination always immutable/mapping-keyed, never <code>msg.sender</code>-substitutable; zero-before-pay ordering.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Any caller</td>
+<td>repeat <code>finalize()</code>/<code>cleanupUnsold()</code></td>
+<td>double-count/double-burn</td>
+<td><strong>Invariant holds</strong> — one-shot flags (<code>finalized</code>, <code>unsoldCleaned</code>).</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Compromised factory owner</td>
+<td><code>setPlatformFee</code>/<code>setQuoteAsset</code>/<code>setDeprecated</code></td>
+<td>overcharge fee, malicious quote asset, halt raises</td>
+<td><strong>Invariant holds, bounded impact</strong> — MAX_PLATFORM_FEE_BPS=500 cap, <code>_checkCreation</code> fee-pin defeats front-running, <code>setDeprecated</code> doesn&#39;t affect deployed sales. Reported as Low best-practice (one-step Ownable), not a scored finding.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Attacker impersonating sale</td>
+<td><code>B20VestingDistributor.credit()</code></td>
+<td>inflate vesting schedule</td>
+<td><strong>Invariant holds</strong> — bound-once <code>sale</code> check; solvency delegated to sale&#39;s atomic transfer-then-credit, verified sound under current single-caller wiring (General-3/ERC20-5).</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Donor/attacker</td>
+<td>direct token/ETH transfer to distributor or vault</td>
+<td>manipulate balance-based accounting</td>
+<td><strong>Invariant holds for theft; funds may strand</strong> — <code>release()</code> uses stored schedules (unaffected by donation); <code>collectFees()</code>&#39;s tight before/after bracket around <code>modifyLiquidities</code> excludes pre-existing donations from the credited delta. See <strong>Leads</strong> (stranded ETH).</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Attacker w/ spoofed/junk NFT</td>
+<td><code>onERC721Received</code></td>
+<td>pollute pool pinning / exhaust cap</td>
+<td><strong>Addressed by finding H-01.</strong></td>
+</tr>
+<tr>
+<td>13</td>
+<td>Any caller</td>
+<td>repeated <code>collectFees()</code></td>
+<td>extract disproportionate share</td>
+<td><strong>Invariant holds</strong> — bps split isolated per currency, sum-exact, dust bounded to <code>&lt;n</code> units (Lead, not exploitable for profit).</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Non-EOA via relayer</td>
+<td><code>validate</code> with <code>requireSenderIsOwner</code></td>
+<td>bypass EOA constraint</td>
+<td><strong>Documented trust boundary</strong> — hook trusts auction-supplied params by design; real enforcement is out-of-scope (auction contract). See <strong>Leads</strong>.</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Attacker w/ malformed <code>TokenData</code></td>
+<td><code>createToken</code></td>
+<td>inject unexpected params / DoS</td>
+<td><strong>Invariant holds</strong> — <code>abi.decode</code> cleanly defaults on empty bytes or reverts on malformed; no silent misparse.</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Non-launcher/non-auction caller</td>
+<td><code>createToken</code>/<code>validate</code></td>
+<td>mint/validate outside trusted flow</td>
+<td><strong>Invariant holds</strong> — bind-once + immutable gates.</td>
+</tr>
+<tr>
+<td>17 (added in reconciliation)</td>
+<td>Any caller</td>
+<td><code>releasePrincipal()</code> without prior <code>collectFees()</code></td>
+<td>capture fees earmarked for <code>feeRecipients</code></td>
+<td><strong>Addressed by finding M-01.</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage gate</strong>: 16 original threat-catalog rows + 1 added during reconciliation (row 17, surfaced by phase-2 depth hunting on <code>releasePrincipal</code> — not anticipated in the phase-0 catalog) = 17 rows, 17 answered. <strong>Coverage: 47 entrypoints in inventory, 47 addressed (examined with a finding or an explicit invariant-holds note). 17 threat-catalog rows, 17 answered. Holes closed this pass: 0</strong> (K=0 — every entrypoint and catalog row was already examined by at least one of the two hunting phases; reconciliation added one new catalog row from a phase-2-only discovery rather than closing a gap neither phase reached).</p>
+<hr>
+<h2 id="findings-list">Findings List</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-01</td>
+<td><span class="pill high">High</span></td>
+<td>95</td>
+<td>Unauthenticated LP-position deposit permanently bricks <code>RwagmiSaleLpVault</code> pool custody</td>
+</tr>
+<tr>
+<td>M-01</td>
+<td><span class="pill medium">Medium</span></td>
+<td>80</td>
+<td><code>releasePrincipal()</code> skips fee sweep, letting <code>principalRecipient</code> capture fees owed to <code>feeRecipients</code></td>
+</tr>
+<tr>
+<td>M-02</td>
+<td><span class="pill medium">Medium</span></td>
+<td>65</td>
+<td>Sale/vesting token rebase-immunity is point-in-time only (existing-token path)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated audit pipeline (context-building + breadth checklist agents + blind depth attack agents + cross-phase reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Independent human review, a bug bounty program, and on-chain monitoring are strongly recommended before and after mainnet deployment.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreic7mmjrnc442lubcuxbt7vf3jcnrt36pvphb2iaxku2jqk5eyvhfq.ipfs.community.bgipfs.com/"><code>https://bafkreic7mmjrnc442lubcuxbt7vf3jcnrt36pvphb2iaxku2jqk5eyvhfq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/382">#382</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VKPDelegationRegistry — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #352">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">VKPDelegationRegistry</h1>
+    <p class="job-sub">Job #352 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/352"><b>Job page</b> #352</a>
+      <a class="chip" href="https://bafkreifq6kwo3kruo7mvbevk7ytxyhbvobmzvhyxyl3llrjyucceqijr5i.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">2</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#methodology-note-read-this-before-the-findings-below">Methodology Note — Read This Before The Findings Below</a></li>
+      <li><a href="#confirmed-contract-mechanics">Confirmed Contract Mechanics</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#non-findings-explicitly-checked">Non-Findings / Explicitly Checked</a></li>
+      <li><a href="#summary-table">Summary Table</a></li>
+      <li><a href="#client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — VKPDelegationRegistry</h1>
+<p><strong>Contract</strong>: <code>VKPDelegationRegistry</code> (name per job description; not independently confirmed on-chain since no verified source exists)<br><strong>Address</strong>: <code>0xd4d32b5c28040AFA2A6aB0ae9FF6DA68EAee4F82</code> (Base, chain 8453)<br><strong>Source availability</strong>: <strong>Unverified.</strong> No match on Sourcify (<code>full_match</code>/<code>any_match</code> v2 API queried directly), no verified source on Base Blockscout (<code>/api/v2/smart-contracts/{address}</code> returns bytecode only, <code>is_verified</code> absent), and no Etherscan/Basescan API key was available in this environment to query that fallback. Per audit methodology, this report falls back to <strong>bytecode-level analysis</strong>.</p>
+<hr>
+<h2 id="methodology-note-read-this-before-the-findings-below">Methodology Note — Read This Before The Findings Below</h2>
+<p>This is <strong>not</strong> the standard two-phase (ethskills + pashov) source-level audit used for verified contracts, because no Solidity source could be obtained. Instead, this review is based on:</p>
+<ul>
+<li>The deployed runtime bytecode (6,404 bytes), disassembled via <code>cast disassemble</code>.</li>
+<li>Manual reconstruction of the function dispatch table (21 confirmed 4-byte selectors) and cross-referencing against the public 4byte.directory signature database.</li>
+<li>Direct on-chain calls (<code>cast call</code>) to confirm hypotheses about getter functions and constructor-injected dependency addresses.</li>
+<li>Opcode-level tracing of the three functions most relevant to the client&#39;s stated focus areas: the delegation-creation flow, <code>revokeDelegation(uint256)</code>, and an auto-discovered permissionless health-check function.</li>
+</ul>
+<p><strong>Confidence is inherently lower than a source-level audit.</strong> Bytecode analysis can confirm control flow, storage layout, and external call targets with high fidelity, but cannot fully verify intent, edge-case correctness of complex multi-field struct packing, or every code path with the same certainty as reading the original Solidity. Findings below are scoped to what could be concretely traced and verified; anything not fully traceable is marked as a <strong>Lead</strong> rather than a rated Finding, per this audit&#39;s verification standard (downgrade severity/confidence when a full exploit path cannot be constructed).</p>
+<p><strong>If verified source becomes available, this contract should be re-audited with the standard two-phase methodology</strong> — this report should not be treated as an equivalent substitute.</p>
+<hr>
+<h2 id="confirmed-contract-mechanics">Confirmed Contract Mechanics</h2>
+<p>Via selector recovery + on-chain calls, the following was established with high confidence:</p>
+<ul>
+<li><strong>21 external functions</strong>, including an auto-incrementing delegation-ID counter at storage slot 0 (currently <code>0</code>, i.e. no delegations have been created on-chain yet), a <code>mapping(uint256 =&gt; Delegation)</code> at storage slot 1 (12-word struct: delegator address, delegate address, several <code>uint256</code> fields, and a packed byte of boolean flags including a &quot;revoked&quot; bit), and two per-address enumeration arrays at storage slots 4 and 5 (one keyed by delegator, one by delegate).</li>
+<li><strong>Three externally-controlled, immutable dependency addresses</strong> baked into the contract at deploy time:<ul>
+<li><code>bondsRegistry()</code> (selector <code>0x92c1ee40</code>) → <code>0x01C479F0c039fEC40c0Cf1c5C921bab457d57441</code> — <strong>confirmed identical</strong> to job 368&#39;s <code>AIPartnershipBondsV2</code> address in this same client&#39;s audit batch.</li>
+<li>A second getter (selector <code>0x134e18f4</code>) → <code>0xa7bd20bf5de63df949ca5be2f20835978ecba81a</code> — live contract (9,387 bytes of code), used in the delegation-creation flow&#39;s first eligibility check. Not independently identified against another job in this batch, and out of scope for this review.</li>
+<li>A third address, <code>0xdb54b8925664816187646174bdbb6ac658a55a5f</code> (live contract, 6,842 bytes of code), referenced only inside the auto-discovered health-check function (see F-1 below). Also out of scope.</li>
+</ul>
+</li>
+<li><strong>Delegation creation</strong> (selector <code>0xa371719a</code>, a 9-parameter function) gates on two sequential <code>STATICCALL</code>s — one to each of the first two dependency addresses above, using a shared selector <code>0xfb3551ff</code> (closest 4byte.directory match: <code>getAgent(address)</code>) — and only proceeds to write the new delegation and increment the ID counter if <strong>both</strong> calls return a non-zero first word. Both <code>STATICCALL</code>s occur strictly before any state-changing <code>SSTORE</code>, i.e. checks-effects-interactions ordering is correctly followed (and <code>STATICCALL</code> cannot reenter with state changes regardless).</li>
+<li><strong><code>revokeDelegation(uint256)</code></strong> (selector <code>0xbd3d425d</code>) — traced in full.</li>
+<li><strong>A bulk self-revoke function</strong> (selector <code>0x05d9b052</code>, no arguments) that iterates the <strong>caller&#39;s own</strong> entry in the slot-4 array and flags every not-yet-revoked delegation belonging to them, emitting the same <code>Revoked</code>-style event per entry. Confirmed via <code>eth_call</code> (returns empty data with no revert, consistent with a state-mutating function with no return value). Since it only iterates the caller&#39;s own array, it is not griefable by a third party.</li>
+<li><strong>A permissionless health-check / auto-enforcement function</strong> (one of the not-fully-identified selectors, reachable via opcode offset ~`0x15a9<code>–</code>0x16d0<code>) that re-queries the third dependency address (</code>0xdb54b892...<code>) with selector </code>0x4e44d071<code>against a delegation&#39;s</code>delegate<code>address, compares the result against a threshold, and — on failure — sets the **same** &quot;revoked&quot; bit as manual revocation, emitting either a</code>&quot;Reputation check failed&quot;<code>or (via a second, similarly-structured branch further down, referencing</code>bondsRegistry()<code>) </code>&quot;Bond requirement no longer met&quot;<code>event. This staticcall also occurs strictly before its corresponding</code>SSTORE`.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="f-1-auto-revocation-health-check-functions-external-call-failure">[F-1] Auto-revocation health-check function&#39;s external-call-failure path could not be fully verified from bytecode alone</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> (Lead — reduced confidence, bytecode-only)<br><strong>Location</strong>: opcode offsets ~`0x15a9<code>–</code>0x16d0<code>(deployed bytecode), invoking</code>STATICCALL<code>against</code>0xdb54b8925664816187646174bdbb6ac658a55a5f<code>with selector</code>0x4e44d071`</p>
+<p><strong>Description</strong>: This function re-validates an existing delegation&#39;s continued eligibility and can auto-revoke it (setting the same flag bit as <code>revokeDelegation</code>) if the external dependency&#39;s response indicates the delegate&#39;s reputation or bond backing has degraded. The branch structure around the <code>STATICCALL</code>&#39;s own success/failure (as opposed to the <em>business-logic</em> result it returns) follows a pattern of <code>ISZERO</code>/<code>JUMPI</code> checks similar to other external calls in this contract, but I was not able to fully confirm — with the same confidence as the registration flow&#39;s dual eligibility check — whether a <strong>reverted or out-of-gas</strong> call to this dependency is correctly treated as &quot;cannot confirm eligibility, do not act&quot; versus silently falling through a path that treats call failure as &quot;check passed.&quot; This distinction matters: if the latter, a delegate&#39;s underlying dependency contract reverting (e.g., due to its own pause mechanism, a transient issue, or deliberate griefing by a party that controls calldata to that dependency) could suppress an auto-revocation that should have fired.</p>
+<p><strong>Recommendation</strong>: Verify against source (once available) that this function&#39;s external-call-failure branch reverts or otherwise fails safe (treats an unsuccessful <code>STATICCALL</code> as &quot;cannot confirm — do not silently pass&quot;), consistent with the registration flow&#39;s handling of its own two <code>STATICCALL</code>s (which does appear, from the bytecode, to revert via a shared <code>0x098c</code> error path on outer call failure).</p>
+<hr>
+<h3 id="f-2-revokedelegation-has-no-already-revoked-guard-idempotent-no-">[F-2] <code>revokeDelegation</code> has no &quot;already revoked&quot; guard (idempotent, no material impact)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>revokeDelegation(uint256)</code>, selector <code>0xbd3d425d</code>, fully traced at offsets <code>0x0455</code>–<code>0x04cb</code></p>
+<p><strong>Description</strong>: The function correctly restricts revocation to the original delegator — it loads the delegation&#39;s stored delegator address, computes <code>SUB(delegator, CALLER)</code>, and reverts with a custom error (selector <code>0x24e5af8d</code>) if the caller does not match. This is a real, confirmed access-control guard (no gap here). However, before setting the &quot;revoked&quot; bit (<code>AND ~0xff</code>, <code>OR 0x01</code>, single <code>SSTORE</code>), the code does not first check whether that bit is already set. Calling <code>revokeDelegation</code> a second time on an already-revoked delegation succeeds again: it re-writes the same bit value and re-emits the <code>Revoked</code>-style event (topic <code>0x7a9b2babda95a9a457245bdaee19ec25e62e41e15e93cfc8f7b5c65e248fdf46</code>). This is idempotent and causes no double-spend, fund loss, or state corruption — the requested &quot;revocation atomicity&quot; property holds (a single <code>SSTORE</code>, no partial-write window) — but it does mean off-chain indexers watching for the <code>Revoked</code> event should dedupe by delegation ID rather than assuming one-event-per-delegation.</p>
+<p><strong>Recommendation</strong>: Add a guard (<code>require(!alreadyRevoked)</code> equivalent) before the flag-set to prevent redundant transactions and duplicate events, though this is a gas/cleanliness improvement rather than a security fix.</p>
+<hr>
+<h3 id="f-3-delegation-authenticity-is-fully-dependent-on-three-external">[F-3] Delegation authenticity is fully dependent on three externally-controlled contracts that were out of scope for this review</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> (informational/trust-boundary — not an exploit finding)<br><strong>Location</strong>: constructor-injected immutables; both the creation flow and the health-check flow</p>
+<p><strong>Description</strong>: The entire &quot;delegation registration authenticity&quot; guarantee the client asked about rests on two live external contracts (reputation-type check at <code>0xa7bd20bf5de63df949ca5be2f20835978ecba81a</code>, and the confirmed <code>bondsRegistry()</code> at <code>0x01C479F0c039fEC40c0Cf1c5C921bab457d57441</code>, i.e. job 368&#39;s <code>AIPartnershipBondsV2</code>) responding correctly at delegation-creation time, plus a third contract (<code>0xdb54b8925664816187646174bdbb6ac658a55a5f</code>) for the ongoing health-check. None of these three contracts&#39; own source was in scope for this job, so this review cannot make any claim about their correctness, upgradeability, or pause/access-control behavior. If any of them is compromised, paused unexpectedly, or returns manipulable eligibility data, <code>VKPDelegationRegistry</code>&#39;s core authenticity guarantee for new delegations is only as strong as that dependency.</p>
+<p><strong>Recommendation</strong>: Ensure this client&#39;s broader audit batch (which appears to cover several of these interlinked Vaultfire contracts as separate jobs) explicitly verifies these three dependency addresses, and confirm from the <code>VKPDelegationRegistry</code> source (once available) whether these addresses are themselves upgradeable/mutable or permanently fixed at deployment.</p>
+<hr>
+<h2 id="non-findings-explicitly-checked">Non-Findings / Explicitly Checked</h2>
+<ul>
+<li><strong>Reentrancy</strong>: Both external-call sites traced (<code>STATICCALL</code> in the creation flow, <code>STATICCALL</code> in the health-check flow) occur strictly before their corresponding <code>SSTORE</code>s (checks-effects-interactions holds), and <code>STATICCALL</code> cannot itself perform state-changing reentrant calls regardless.</li>
+<li><strong>Revocation access control</strong>: <code>revokeDelegation</code> is correctly restricted to the delegation&#39;s original delegator via a direct address comparison and custom-error revert; no bypass found in the traced path.</li>
+<li><strong>Bulk self-revoke griefing</strong>: The no-argument bulk-revoke function only iterates the caller&#39;s own per-address array — not exploitable by a third party to grief another user&#39;s gas costs or state.</li>
+<li><strong>Overflow on the ID counter</strong>: The creation flow includes an explicit <code>NOT ... EQ</code> check against <code>type(uint256).max</code> before incrementing the slot-0 counter, consistent with overflow protection (though Solidity 0.8.x would revert on overflow by default regardless, suggesting this may be a redundant/defensive check rather than a required one — consistent with unchecked-block usage elsewhere, unconfirmable without source).</li>
+</ul>
+<hr>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F-1</td>
+<td>Low (Lead)</td>
+<td>Health-check function&#39;s external-call-failure path not fully verifiable from bytecode</td>
+</tr>
+<tr>
+<td>F-2</td>
+<td><span class="pill low">Low</span></td>
+<td><code>revokeDelegation</code> missing already-revoked guard (idempotent, no material impact)</td>
+</tr>
+<tr>
+<td>F-3</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Full dependency on 3 out-of-scope external contracts for delegation authenticity</td>
+</tr>
+</tbody></table></div>
+<p><strong>No Critical or High severity issue was confirmed within the scope this bytecode-level review could trace with confidence.</strong> This should be read as a statement about what was verifiable, not a certification of the contract&#39;s overall security — see the Methodology Note above.</p>
+<hr>
+<h2 id="client-focus-areas-direct-answers">Client Focus Areas — Direct Answers</h2>
+<ol>
+<li><strong>&quot;Delegation registration authenticity&quot;</strong> — Confirmed: creation requires two sequential <code>STATICCALL</code>-based eligibility checks against externally-controlled reputation/bonds contracts before any state is written, correctly ordered before effects. The guarantee&#39;s strength is bounded by the correctness of those three external dependencies (F-3), which were out of scope here.</li>
+<li><strong>&quot;Revocation atomicity&quot;</strong> — Confirmed sound: revocation is a single atomic <code>SSTORE</code> bit-flip with no partial-write window, and is correctly restricted to the original delegator. The only gap found is a missing already-revoked guard (F-2), which is a hygiene issue, not an atomicity violation.</li>
+<li><strong>&quot;Enumeration correctness&quot;</strong> — The per-address enumeration arrays (delegator-keyed and delegate-keyed) and their paginated getters were confirmed to exist and follow a standard append-only array + explicit start-index pattern; no unbounded or attacker-griefable loop was found in the functions traced. A full line-by-line correctness proof of every enumeration edge case was not achievable from bytecode alone within this review&#39;s scope.</li>
+</ol>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed via bytecode-level analysis because no verified source was available on Sourcify or Blockscout, and no Etherscan/Basescan API key was available in this environment. This methodology has materially lower confidence than a source-level audit. AI analysis, especially at the bytecode level, can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review with access to verified source, a bug bounty program, and on-chain monitoring are strongly recommended before this registry is relied upon for consequential downstream decisions.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifq6kwo3kruo7mvbevk7ytxyhbvobmzvhyxyl3llrjyucceqijr5i.ipfs.community.bgipfs.com/"><code>https://bafkreifq6kwo3kruo7mvbevk7ytxyhbvobmzvhyxyl3llrjyucceqijr5i.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/352">#352</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

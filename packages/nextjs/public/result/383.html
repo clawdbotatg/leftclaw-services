@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RWAGMI &quot;Raise&quot; (rwagmi-onedollaraudit) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #383">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">RWAGMI &quot;Raise&quot; (rwagmi-onedollaraudit)</h1>
+    <p class="job-sub">Job #383 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/383"><b>Job page</b> #383</a>
+      <a class="chip" href="https://bafkreibzlnhzsn3rk6s4a3vau4hvwpo7wp5luajonyl2otaloxutc74dh4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#findings-list">Findings List</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    <ol start="6">
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#coverage-gate">Coverage Gate</a></li>
+      <li><a href="#scope-note">Scope Note</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Review — RWAGMI &quot;Raise&quot; (rwagmi-onedollaraudit)</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><a href="https://github.com/mrtdlgc/rwagmi-onedollaraudit">https://github.com/mrtdlgc/rwagmi-onedollaraudit</a></td>
+</tr>
+<tr>
+<td><strong>Commit</strong></td>
+<td><code>9b70ac5b7ce91eb0217694506653332b6add7b9d</code></td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>ALL — 8 flattened contracts + client concern briefs</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>flattened/B20FixedSaleDeployer.flat.sol</code> · <code>flattened/B20FixedSaleV1.flat.sol</code><br><code>flattened/B20PolicyGate.flat.sol</code> · <code>flattened/B20PolicyValidationHook.flat.sol</code><br><code>flattened/B20VestingDistributor.flat.sol</code> · <code>flattened/RwagmiB20TokenFactoryAdapter.flat.sol</code><br><code>flattened/RwagmiRaiseFactory.flat.sol</code> · <code>flattened/RwagmiSaleLpVault.flat.sol</code></td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context map (opus) → ethskills breadth (8 domain agents, opus) → pashov depth (12 attack agents, opus, blind to breadth findings) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>75</td>
+</tr>
+</tbody></table></div>
+<p><strong>Prior review noted by client</strong>: Slither, Codex, Grok, Certora formal specs. This review is independent — no prior audit output was read; every finding below comes from this engagement&#39;s own context-building, breadth, and depth passes.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p>Overlap (found by both phase 1 and phase 2, or by 2+ phase-2 agents): <strong>4</strong> clusters · Phase-1-only: <strong>~20</strong> (mostly Low/Info confirmations) · Phase-2-only: <strong>2</strong> new findings (1 High, 1 Medium) · Re-examined leads kept: 2, demoted: 3 · Coverage holes closed this pass: <strong>0</strong> (both phases independently covered the full access-control inventory and threat catalog; see Coverage Gate below).</p>
+<p>Confidence floor for this report: <strong>50</strong>. Everything below 50 is omitted; findings 50–74 are listed as Leads (no fix block, no confidence score per pashov convention); findings ≥75 are scored Findings with a fix.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[90] <strong>1. Proceeds and platform fee can be pulled to the treasury/fee recipient with no check that purchased tokens remain deliverable — and no refund path exists after finalization</strong></p>
+<p><code>B20FixedSaleV1.finalize</code> / <code>claimProceeds</code> / <code>claimFee</code> / <code>claim</code> / <code>refund</code> · Confidence: 90 · <strong>[both]</strong> — independently found by phase-1 <code>dos</code> agent (DoS-1, Low) and 5 of 12 phase-2 attack agents (<code>math-precision</code>, <code>first-principles</code> as a full FINDING, <code>numerical-gap</code>, <code>trust-gap</code>, <code>flow-gap</code>); promoted to High here given the corroboration depth, two independent full numeric traces, and the second (receiver-policy) trigger phase-1 didn&#39;t have.</p>
+<p><strong>Description</strong><br>On the existing-token sale-creation path (<code>RwagmiRaiseFactory.createFixedSale</code>), the sale only snapshots <code>IB20Minimal(token).multiplier() == WAD</code> once, at construction (<code>B20FixedSaleV1.flat.sol:1544</code>), and never reads the token&#39;s transfer-pause or transfer-receiver-policy state at all. <code>finalize()</code> (<code>B20FixedSaleV1.flat.sol:1757-1766</code>) and <code>claimProceeds()</code>/<code>claimFee()</code> (<code>:1771-1790</code>) contain <strong>no</strong> deliverability check — they release quote to the immutable <code>treasury</code>/<code>feeRecipient</code> unconditionally once the sale is <code>Successful</code>. <code>claim()</code> (<code>:1808-1824</code>) is the <em>only</em> value-moving exit that re-checks <code>_requireUnrebased()</code> (<code>:1810</code>, guard defined at <code>:1873</code>), reverting <code>MultiplierDrift</code> if the token&#39;s rebase multiplier has since moved off <code>WAD</code>; the same <code>safeTransfer</code> (<code>:1818</code> or <code>:1820</code>) is also subject to the token&#39;s own pause/receiver-policy logic, which the sale never inspects. <code>refund()</code> (<code>:1793-1803</code>) is gated <code>state() ∈ {Failed, Cancelled}</code> — unreachable once a sale is <code>Finalized</code>, because <code>state()</code>&#39;s priority ordering returns <code>Finalized</code> first (confirmed structurally by 3 independent agents). Net effect: if the issuer supplies an existing B20 Asset whose rebase controller, pause switch, or receiver-policy admin is still live (a documented, supported configuration — the client&#39;s own concern doc for <code>B20FixedSaleV1</code> explicitly discusses the existing-token path), a legitimate post-sale token-state change permanently strands every unclaimed contributor with neither tokens nor a refund, while the treasury and fee recipient have already been paid in full.</p>
+<p><strong>Concrete trace</strong> (from the phase-2 <code>first-principles</code> agent, independently reproduced by <code>flow-gap</code>): price = 1e6 quote-units/token, tokenDecimals = 18, one contributor pays 1,000 USDC; sale reaches <code>softCap</code>, <code>finalize()</code> runs, <code>claimProceeds()</code> sends ≈950 USDC to <code>treasury</code>. The token&#39;s controller then performs a routine rebase to <code>multiplier = 1.01e18</code>. <code>claim(contributor)</code> now reverts <code>MultiplierDrift()</code> permanently; <code>refund(contributor)</code> reverts <code>SaleNotRefundable()</code> because <code>state()</code> is <code>Finalized</code>. The contributor&#39;s 1,000 USDC is gone and their tokens are unrecoverable.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function finalize() external nonReentrant {
+     if (finalized) revert AlreadyFinalized();
+     if (state() != SaleState.Successful) revert SaleNotSuccessful();
++    _requireUnrebased();
+     finalized = true;
+     ...
+ }
+</code></pre>
+<p>This closes the rebase-drift trigger by refusing to start the one-way settlement while delivery is already broken. The receiver-policy/pause trigger cannot be fully closed with a single check (a token can be paused <em>after</em> <code>finalize()</code> succeeds); consider additionally exposing a permissionless &quot;claim-failed → refund&quot; path for a <code>Finalized</code> sale where a specific beneficiary&#39;s <code>claim()</code> has reverted, drawing from any still-unclaimed <code>proceedsClaimable</code>, so proceeds cannot be fully extracted while a beneficiary&#39;s allocation is provably undeliverable.</p>
+<hr>
+<p>[85] <strong>2. A sub-token-price residual at the hard cap can permanently strand an all-or-nothing (<code>softCap == hardCap</code>) sale into <code>Failed</code></strong></p>
+<p><code>B20FixedSaleV1._checkAndClamp</code> / <code>_recordContribution</code> · Confidence: 85 · <strong>[phase2, agents: 2 FINDING + 4 corroborating LEADs]</strong> — independently found with concrete numeric proofs by the <code>math-precision</code> and <code>numerical-gap-hunter</code> agents; the same fragility (the hard-cap tail is structurally hard to fill) was independently flagged from a different angle (a fresh wallet blocked by <code>minContribution</code>, not by <code>mulDiv</code> flooring) by the <code>invariant</code>, <code>first-principles</code>, <code>boundary</code>, and <code>trust-gap</code> agents.</p>
+<p><strong>Description</strong><br><code>_checkAndClamp</code> (<code>B20FixedSaleV1.flat.sol:1669-1690</code>) clamps an incoming contribution to <code>capacity = hardCap - totalRaised</code> (<code>:1679-1682</code>), i.e. once anyone&#39;s contribution leaves a small enough remaining <code>capacity</code>, every subsequent contributor is force-clamped to exactly that residual — they have no freedom to contribute a different amount. <code>_recordContribution</code> (<code>:1693-1706</code>) then computes <code>owed = Math.mulDiv(accepted, 10**tokenDecimals, price)</code> (<code>:1696</code>) and reverts <code>ZeroTokenEntitlement()</code> (<code>:1699</code>) if that floors to zero. If the residual <code>capacity</code> is smaller than <code>price / 10**tokenDecimals</code> quote-units, <code>owed</code> floors to 0 for <strong>every</strong> possible contributor (not just new ones — <code>accepted</code> is forced to exactly <code>capacity</code>), and the hard cap can never be reached. For a <code>softCap == hardCap</code> sale (a fully supported configuration — the sale constructor only requires <code>softCap &lt;= hardCap</code>), the sale rides to <code>endTime</code> and settles <code>Failed</code>, refunding everyone.</p>
+<p><strong>Proof</strong>: token decimals = 6, price = 2e9 (2e9 quote units per whole token) ⇒ <code>owed = accepted / 2000</code>. Let <code>hardCap = softCap = H</code>. A contribution landing <code>totalRaised</code> at <code>H - 1999</code> leaves <code>capacity = 1999</code>. Every later contributor is clamped to <code>accepted = 1999</code>, giving <code>owed = floor(1999/2000) = 0</code> ⇒ revert. No amount can add the final 1999 units — a smaller amount only leaves an even smaller, still-unfillable residual. <code>totalRaised</code> is pinned below <code>hardCap</code> forever; at <code>endTime</code>, <code>H - 1999 &lt; softCap(H)</code> ⇒ the sale settles <code>Failed</code>. This is reachable by any ordinary contributor (deliberately, as an attacker, or by simple bad luck in contribution sizing) and requires no privileged action.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function state() public view returns (SaleState) {
+     if (finalized) return SaleState.Finalized;
+     if (cancelled) return SaleState.Cancelled;
+     if (!funded || block.timestamp &lt; startTime) return SaleState.Pending;
+-    if (totalRaised &gt;= hardCap) return SaleState.Successful;
++    if (totalRaised &gt;= hardCap) return SaleState.Successful;
++    // Treat a residual too small to mint even one token base-unit as cap-reached.
++    if ((hardCap - totalRaised) * (10 ** tokenDecimals) &lt; price) return SaleState.Successful;
+     if (block.timestamp &lt; endTime) return SaleState.Live;
+     return totalRaised &gt;= softCap ? SaleState.Successful : SaleState.Failed;
+ }
+</code></pre>
+<p>(Exact placement/gas cost of the extra multiplication should be reviewed; the intent is that an unfillable residual counts as &quot;cap reached,&quot; not &quot;cap unreached forever.&quot;)</p>
+<p>A related, distinct mechanism at the same two functions: when remaining <code>capacity</code> is below <code>minContribution</code> but still large enough to mint ≥1 token, a <strong>fresh</strong> wallet (with <code>contributionOf == 0</code>) is rejected by the cumulative-min check at <code>:1687-1689</code>, while an <strong>existing</strong> contributor topping up can still fill it — an asymmetry between wallet classes. This is bounded to a liveness/UX nuisance (the sale still settles <code>Successful</code> via the soft-cap/end-time door) rather than the harder <code>Failed</code>-forcing bug above, so it is not separately scored but is folded into the fix consideration.</p>
+<hr>
+<h2 id="findings-list">Findings List</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[90]</td>
+<td>Proceeds/fee released with no deliverability check; no refund after finalization</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[85]</td>
+<td>Hard-cap residual can brick an all-or-nothing sale to <code>Failed</code></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed, or where reachability/impact was judged insufficient for a scored finding. Not false positives — high-signal leads for manual review.</em></p>
+<ul>
+<li><strong>LP vault best-effort fee sweep can bypass the bps split on <code>releasePrincipal</code></strong> — <code>RwagmiSaleLpVault._sweepFees</code> / <code>releasePrincipal</code> (<code>RwagmiSaleLpVault.flat.sol:2390-2399</code>, <code>:2428-2450</code>) — Code smells: the <code>try/catch</code> around <code>positionManager.modifyLiquidities</code> swallows a revert and, in at least one agent&#39;s trace, the fee-crediting logic itself sits partly outside what the <code>catch</code> actually guards; on any sweep failure, embedded uncollected fees leave the vault attached to the LP NFTs, going to <code>principalRecipient</code> instead of <code>feeRecipients</code>. <strong>5 of 12 phase-2 agents independently converged on this</strong> (economic-security, execution-trace, periphery, asymmetry, flow-gap), matching phase-1&#39;s <code>DefiAMM-1</code> (Low) — but every agent that examined it, across both phases, explicitly could not construct a way for an external party to force the sweep to revert (the vault owns the position; only the trusted, bound <code>seeder</code> ever deposits; the PositionManager is a trusted canonical singleton). Reachability under normal operation is unconfirmed — retained as a lead, not scored, despite the unusually strong convergence.</li>
+<li><strong>LP vault fee accounting has no rebase guard for pool currencies</strong> — <code>RwagmiSaleLpVault.collectFees</code> / <code>claimFees</code> (<code>RwagmiSaleLpVault.flat.sol:2378-2418</code>) — Code smells: unlike the sale/distributor, which re-check <code>multiplier()==WAD</code> on every token-moving path, the vault credits a fixed absolute <code>_claimable[recipient][currency]</code> at collection time and pays from live balance later, with zero rebase awareness. <strong><code>[both]</code></strong> — phase-1 <code>erc20</code> agent (ERC20-1, Medium) and phase-2 <code>invariant</code> agent independently found this; a downward rebase of a pool currency between collection and claim can strand later recipients&#39; shares (their <code>safeTransfer</code> reverts on insufficient balance), an upward rebase permanently strands the surplus. Depends on the LP-seeding wiring (external to this bundle) actually using a rebasing currency, which could not be confirmed either way.</li>
+<li><strong>Native ETH / arbitrary ERC-20 sent directly to the LP vault is permanently stranded</strong> — <code>RwagmiSaleLpVault.receive</code> (<code>:2489-2497</code>) — self-harm only (a voluntary donor loses their own funds; no cross-party extraction); <code>[both]</code>, matches phase-1 DefiAMM-2/3.</li>
+<li><strong>Contribute-on-behalf refund misdirection</strong> — <code>B20FixedSaleV1.contribute</code> / <code>refund</code> — a third-party payer funding another address&#39;s beneficiary slot has no refund claim if the sale later fails or is cancelled; matches the documented &quot;callable by anyone for any beneficiary&quot; gift model, not exploitable against an unwilling victim (2 phase-2 agents independently noted this).</li>
+<li><strong>Eligibility is not re-checked at claim/refund time</strong> — <code>B20FixedSaleV1.claim</code> / <code>refund</code> — an address whose PolicyRegistry membership is revoked after contributing can still claim tokens or a refund; re-checking would strand a paid contributor&#39;s funds, so this is very likely intended, not a defect.</li>
+<li><strong>Outbound token transfer to the vesting distributor has no balance-delta check</strong> — <code>B20FixedSaleV1.claim</code> (<code>:1820-1821</code>) — asymmetric with the inbound <code>fund</code>/<code>contribute</code> delta guards; closed in practice because <code>fund()</code> already established the specific token transfers standardly before any claim can occur.</li>
+<li><strong>PolicyRegistry behavior on a deleted/retired policy is undefined in-bundle</strong> — <code>B20PolicyGate</code> / <code>B20PolicyValidationHook</code> — whether a since-deleted <code>policyId</code> reverts (bricking contributions/bids) or silently returns <code>true</code> (fail-open) depends on the external Base singleton, not verifiable from this repo.</li>
+<li><strong>Merkle allocation mode has no uncapped escape or minContribution guarantee</strong> — <code>B20FixedSaleV1._allocationWalletCap</code> — a whitelisted beneficiary whose off-chain-assigned <code>allocation</code> is below <code>minContribution</code> is structurally unable to ever contribute; an issuer configuration footgun, not a fund-safety issue.</li>
+<li><strong>Existing-token path relies on the token&#39;s transfer-receiver policy matching the sale&#39;s own eligibility policy, with no enforcement that they align</strong> — <code>B20FixedSaleV1.claim</code> — a contributor who passes the sale&#39;s own bid-time gate can still fail the token&#39;s independent claim-time receiver policy; this is the second (non-rebase) trigger for Finding 1 above and is folded into that finding&#39;s fix discussion rather than scored separately.</li>
+<li><strong>Cosmetic error-selector mismatch</strong> — <code>B20VestingDistributor.bindSale</code> reverts <code>NotSale()</code> where the three sibling bind-once functions (<code>bindFactory</code>, <code>bindAuction</code>, <code>bindSeeder</code>) revert <code>NotBinder()</code> — no security impact.</li>
+<li><strong>High-frequency permissionless <code>collectFees</code> calls can skew bps-split dust toward the last recipient</strong> — <code>RwagmiSaleLpVault._distribute</code> — bounded strictly by real per-call fee accrual; dust-level, not a meaningful drain.</li>
+<li><strong><code>B20VestingDistributor</code>&#39;s NatSpec claims <code>binder</code> is &quot;zeroed afterwards&quot; but it is <code>immutable</code></strong> — cosmetic doc/code mismatch; the one-shot bind guarantee actually comes from the independent <code>sale != address(0)</code> check and holds regardless.</li>
+<li><strong>Single-step <code>Ownable</code> on <code>RwagmiRaiseFactory</code>, no timelock on config setters</strong> — blast radius is limited by design to future sale creation (fee capped at 5% on every path; existing sales are fully immutable and unaffected by owner state) — a governance-hardening suggestion, not a fund-safety finding.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p><em>(condensed from the phase-0 context map; full per-function table with line citations is in the working files)</em></p>
+<p><strong>Roles:</strong></p>
+<ul>
+<li><code>owner</code> (<code>RwagmiRaiseFactory</code> only, OZ one-step <code>Ownable</code>) → <code>setQuoteAsset</code>, <code>setPlatformFee</code> (≤500 bps), <code>setDeprecated</code>. Cannot touch existing sales — all fee/vesting/quote-asset parameters are stamped immutably onto each sale at creation.</li>
+<li><code>issuer</code> (immutable per-sale, set from <code>cfg.issuer</code>) → <code>cancel()</code> only. Must equal <code>msg.sender</code> at sale creation — self-declared, not a separately-granted privilege.</li>
+<li>Four <strong>bind-once</strong> roles, identical idiom across <code>B20FixedSaleDeployer</code> (→<code>factory</code>), <code>B20PolicyValidationHook</code> (→<code>auction</code>), <code>B20VestingDistributor</code> (→<code>sale</code>), <code>RwagmiSaleLpVault</code> (→<code>seeder</code>): immutable <code>binder</code> set at construction, write-once mutable target slot, guard = <code>msg.sender==binder &amp;&amp; slot==0 &amp;&amp; arg!=0</code>. Verified by an independent phase-2 agent: none of the four is double-callable or front-runnable by a non-binder.</li>
+</ul>
+<p><strong>Unguarded (no <code>msg.sender</code> check) state-changing entrypoints</strong> — all intentionally permissionless pull-payment design, verified safe because every destination is either immutable or the explicit function argument (never <code>msg.sender</code>-implied):<br><code>fund</code>, <code>contribute*</code>, <code>finalize</code>, <code>claimProceeds</code>, <code>claimFee</code>, <code>refund</code>, <code>claim</code>, <code>cleanupUnsold</code> (sale); <code>release</code> (distributor); <code>collectFees</code>, <code>claimFees</code>, <code>releasePrincipal</code>, <code>receive</code> (vault).</p>
+<p><strong>Access-controlled (bound-caller-only):</strong> <code>bindFactory</code>/<code>bindAuction</code>/<code>bindSale</code>/<code>bindSeeder</code> (binder-only); <code>deploy</code> (factory-only); <code>credit</code> (sale-only); <code>createToken</code> (launcher-only); <code>onERC721Received</code> (positionManager + seeder); <code>cancel</code> (issuer-only); owner setters.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary contributor</td>
+<td><code>_checkAndClamp</code>/<code>_recordContribution</code> at the hard-cap boundary</td>
+<td>Permanently brick an all-or-nothing sale to <code>Failed</code></td>
+<td><strong>Addressed by Finding 2</strong></td>
+</tr>
+<tr>
+<td>Issuer choosing an existing token with a live rebase/pause/policy controller</td>
+<td><code>finalize</code>/<code>claimProceeds</code>/<code>claimFee</code> vs <code>claim</code>/<code>refund</code></td>
+<td>Extract all proceeds while contributors&#39; tokens become permanently undeliverable with no refund</td>
+<td><strong>Addressed by Finding 1</strong></td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>fund()</code></td>
+<td>Force-fund a sale early/never</td>
+<td>Invariant holds — caller pays via <code>safeTransferFrom</code>, no incentive-misaligned gain</td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>contribute*</code></td>
+<td>Front-run/grief another&#39;s Merkle claim</td>
+<td>Invariant holds — per-wallet cap + cumulative-min clamp; Merkle leaf is beneficiary-bound</td>
+</tr>
+<tr>
+<td>Contract-recipient griefer</td>
+<td><code>_contributeNative</code> excess refund</td>
+<td>Revert a legitimate contribution</td>
+<td>Confirmed real but self-inflicted (refund goes to <code>msg.sender</code>, the payer, not the beneficiary) — see Leads in the working files (<code>General-1</code>), Low severity, not separately scored here</td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>finalize()</code></td>
+<td>Force premature/blocked finalization</td>
+<td>Invariant holds — <code>state()</code> is deterministic, re-derived, no caller-supplied params</td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>claimProceeds</code>/<code>claimFee</code>/<code>refund</code>/<code>claim</code>/<code>cleanupUnsold</code></td>
+<td>Redirect funds to self</td>
+<td>Invariant holds — all pay to fixed immutable addresses or the explicit <code>beneficiary</code> argument, never <code>msg.sender</code>-implied</td>
+</tr>
+<tr>
+<td>Issuer</td>
+<td><code>cancel()</code></td>
+<td>Cancel a Successful sale to grief contributors</td>
+<td>Invariant holds — <code>cancel()</code> forbidden once <code>state()==Successful</code>, no TOCTOU window found (state re-derived live on every call)</td>
+</tr>
+<tr>
+<td>Attacker w/ CREATE2 knowledge</td>
+<td><code>predict()</code>/<code>predictNewB20Address</code></td>
+<td>Front-run a deployment by occupying the predicted address</td>
+<td>Invariant holds — <code>deploy</code>/<code>createB20</code> gated to single trusted callers; deployer has no <code>selfdestruct</code>, cannot become metamorphic; verified by an independent phase-2 agent</td>
+</tr>
+<tr>
+<td>Non-bound address</td>
+<td><code>bindFactory</code>/<code>bindAuction</code>/<code>bindSale</code>/<code>bindSeeder</code></td>
+<td>Hijack the bind</td>
+<td>Invariant holds — <code>binder</code> immutable, fixed at construction</td>
+</tr>
+<tr>
+<td>Owner</td>
+<td><code>setPlatformFee</code></td>
+<td>Raise fee above 5% or redirect recipient for future sales</td>
+<td>Invariant holds — <code>MAX_PLATFORM_FEE_BPS=500</code> hard cap; existing sales unaffected</td>
+</tr>
+<tr>
+<td>Owner</td>
+<td><code>setDeprecated</code></td>
+<td>Brick existing sales</td>
+<td>Invariant holds — <code>deprecated</code> only gates new creation; confirmed by an independent phase-2 agent, no coupling to deployed sales found</td>
+</tr>
+<tr>
+<td>Random v4-position holder</td>
+<td><code>onERC721Received</code> (LP vault)</td>
+<td>Deposit a spoofed/wrong-pool position</td>
+<td>Invariant holds — gated <code>operator==seeder</code></td>
+</tr>
+<tr>
+<td>Any caller</td>
+<td><code>collectFees()</code>/<code>releasePrincipal()</code> (LP vault)</td>
+<td>Reenter via <code>modifyLiquidities</code>/NFT callback</td>
+<td>Invariant holds — <code>nonReentrant</code> on all three vault mutators + pop-before-transfer; residual best-effort-sweep-bypass leak is a <strong>Lead</strong>, not confirmed reachable</td>
+</tr>
+<tr>
+<td>Rebasing/FoT currency reaching LP vault</td>
+<td><code>_distribute</code>/<code>claimFees</code></td>
+<td>Over-credit vs. actual balance</td>
+<td><strong>Lead</strong> — no rebase guard exists in the vault (unlike sale/distributor); unconfirmed whether the LP-seeding wiring could ever pin such a currency</td>
+</tr>
+<tr>
+<td>CCA auction impersonator</td>
+<td><code>validate()</code></td>
+<td>Bypass validation</td>
+<td>Invariant holds — gated <code>msg.sender==auction</code> (bound-once); the bound auction&#39;s own honesty in what it passes is a documented trust assumption, not a code bug</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="coverage-gate">Coverage Gate</h2>
+<ul>
+<li>Entrypoints: 8 contracts, ~50 external/public functions in the phase-0 inventory, all addressed above or in the working per-domain files.</li>
+<li>Threat-catalog rows: 17 rows in the phase-0 catalog, all answered above (addressed by a finding, or invariant-holds with reasoning).</li>
+<li>Coverage holes closed this pass: <strong>0</strong> — both the breadth phase (8 domain agents) and the depth phase (12 attack agents, blind) independently re-derived and confirmed the same access-control inventory and threat catalog; no entrypoint or threat row was left unexamined by either phase.</li>
+</ul>
+<hr>
+<h2 id="scope-note">Scope Note</h2>
+<p><code>RwagmiSaleLpVault</code>, <code>B20PolicyValidationHook</code>, and <code>RwagmiB20TokenFactoryAdapter</code> form a second trust island (&quot;subsystem B&quot;) that is <strong>not wired to <code>RwagmiRaiseFactory</code></strong> anywhere in this codebase (confirmed by exhaustive grep across all 8 files). These three contracts are evidently deployed and bound by an external script outside this repository&#39;s scope. Their internal logic was fully audited; their correspondence to any specific presale (&quot;Raise&quot;) is a deployment-time assumption this codebase provides no on-chain guarantee for.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated three-phase audit (context mapping → breadth checklist agents → depth attack agents, all blind-cross-checked). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human-led audit, bug bounty program, and on-chain monitoring are strongly recommended before mainnet deployment, particularly given the client&#39;s stated intent to compare this review against prior Slither/Codex/Grok/Certora passes.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibzlnhzsn3rk6s4a3vau4hvwpo7wp5luajonyl2otaloxutc74dh4.ipfs.community.bgipfs.com/"><code>https://bafkreibzlnhzsn3rk6s4a3vau4hvwpo7wp5luajonyl2otaloxutc74dh4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/383">#383</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TurboFaithStaking — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #389">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">TurboFaithStaking</h1>
+    <p class="job-sub">Job #389 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/389"><b>Job page</b> #389</a>
+      <a class="chip" href="https://bafkreidi5pxbgowuptkj4xhh5llybgko6hcfintd5nkhfsauczc5cid7vm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#audit-target">Audit Target</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#findings-below-confidence-threshold">Findings below confidence threshold</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#explicitly-ruled-out-verified-during-phase-012-not-repeated-as-f">Explicitly Ruled Out (verified during phase 0/1/2, not repeated as findings)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — TurboFaithStaking</h1>
+<hr>
+<h2 id="audit-target">Audit Target</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Contract</strong></td>
+<td><code>TurboFaithStaking</code></td>
+</tr>
+<tr>
+<td><strong>Address</strong></td>
+<td><code>0x2958489b3132f0c9B04d499C21017a8289B021bc</code></td>
+</tr>
+<tr>
+<td><strong>Chain</strong></td>
+<td>Base mainnet (chain ID 8453)</td>
+</tr>
+<tr>
+<td><strong>Verification</strong></td>
+<td>Verified source, Sourcify exact match (matchId 42166178), pulled 2026-07-14</td>
+</tr>
+<tr>
+<td><strong>In-scope file</strong></td>
+<td><code>TurboFaithStaking.sol</code> (159 lines; imports OpenZeppelin <code>IERC20</code>/<code>SafeERC20</code>/<code>ReentrancyGuard</code> — library code, out of scope)</td>
+</tr>
+<tr>
+<td><strong>Staking token (context, out of scope)</strong></td>
+<td><code>0x3d5e487B21E0569048c4D1A60E98C36e1B09DB07</code> — &quot;₸USD&quot; / TurboUSD Unstablecoin, a Clanker-launchpad <code>ClankerToken</code> (OZ <code>ERC20</code>+<code>Votes</code>+<code>Permit</code>+<code>Burnable</code>+<code>IERC7802</code>), 18 decimals, total supply 1e29. Verified source pulled and reviewed for context; confirmed no fee-on-transfer, no rebasing, no transfer hooks (<code>_update()</code> is a bare passthrough).</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: Phase 0 context (protocol map, access-control inventory, threat catalog) → Phase 1 breadth (5 ethskills domain agents: general, precision-math, erc20, defi-staking, dos) → Phase 2 depth (12 pashov attack agents, blind to phase 1) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1–100)</strong></td>
+<td>50 (findings below appear as Leads)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Overlap: 3 · Phase-1-only: 2 · Phase-2-only: 3 · Re-examined leads kept: 8, demoted: 0 · Coverage holes closed: 0</strong></p>
+<p>One candidate escalated to FINDING status by the phase-2 economic-security agent (<code>flash-loan-spoofable-tvl-signal</code>) was run through all four judging gates and <strong>rejected at Gate 4 (Impact)</strong> — no identifiable victim exists in this single-contract scope, since <code>totalSupplyStaked</code>/<code>totalStaked</code> are never read by any function in the contract itself and no other in-scope component consumes them. The underlying fact (these two counters are momentarily manipulable within one atomic transaction at zero net cost) is retained below as an Info-level design note rather than a vulnerability, since it may matter to a future external integrator.</p>
+<p><strong>Coverage: 6 entrypoints in inventory (constructor, stake, unstake, getFaith, getStakeFaith, getStakeCount, getActiveStakes — 7 total including constructor), 7 addressed. 8 threat-catalog rows, 8 answered. Holes closed this pass: 0</strong> (both phases independently covered every entrypoint and catalog row; the phase-2 12-agent panel converged on the same items phase-1 raised, plus 3 new Info-level observations, with zero net new coverage holes to close).</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract.function</th>
+<th>Guard</th>
+<th>Who can call</th>
+<th>State written</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>constructor(address)</code> (L69–72)</td>
+<td><code>require(_stakingToken != address(0))</code> (L70)</td>
+<td>deployer, one-time</td>
+<td><code>stakingToken</code> (immutable, L71)</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>stake(uint256)</code> (L75–87)</td>
+<td><code>nonReentrant</code> (L75); <code>require(amount &gt;= MIN_STAKE)</code> (L76)</td>
+<td>anyone</td>
+<td><code>stakes[msg.sender]</code> (push, L81), <code>totalStaked[msg.sender]</code> (L82), <code>totalSupplyStaked</code> (L83), <code>weightedStakeSum[msg.sender]</code> (L84)</td>
+<td>Yes — pulls <code>amount</code> from caller via <code>safeTransferFrom</code> (L78)</td>
+</tr>
+<tr>
+<td><code>unstake(uint256)</code> (L91–111)</td>
+<td><code>nonReentrant</code> (L91); index bound (L92); <code>require(s.amount &gt; 0)</code> (L94)</td>
+<td>anyone, own positions only</td>
+<td><code>faithAccrued[msg.sender]</code> (L101), <code>totalStaked[msg.sender]</code> (L102), <code>weightedStakeSum[msg.sender]</code> (L103), <code>stakes[msg.sender][i].amount = 0</code> (L104), <code>totalSupplyStaked</code> (L105)</td>
+<td>Yes — pays <code>amount</code> to caller via <code>safeTransfer</code> (L108); destination is hardcoded to <code>msg.sender</code>, no <code>to</code> parameter exists</td>
+</tr>
+<tr>
+<td><code>getFaith(address)</code> / <code>getStakeFaith(address,uint256)</code> / <code>getStakeCount(address)</code> / <code>getActiveStakes(address)</code></td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>none</td>
+<td>No</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles:</strong> none exist. No <code>Ownable</code>/<code>AccessControl</code>, no owner variable, no privileged setter, no pause, no rescue/sweep function, no upgrade path. <code>stakingToken</code> (immutable) and <code>MIN_STAKE</code> (constant) cannot change post-deploy. The only distinguished caller is the one-time constructor deployer, who holds no ongoing privilege afterward.</p>
+<p><strong>Unguarded (state-changing, arbitrary caller, no permission beyond <code>msg.sender</code>-scoping):</strong> <code>stake</code>, <code>unstake</code> — both write exclusively to storage keyed by the caller&#39;s own address.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Invariant that must hold</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary attacker (non-depositor)</td>
+<td><code>unstake(idx)</code> targeting another user&#39;s position</td>
+<td>Steal another user&#39;s staked tokens</td>
+<td>Positions/payouts keyed and hardcoded to <code>msg.sender</code> (no <code>to</code>/<code>user</code> parameter on either mutating function)</td>
+<td><strong>Invariant holds</strong> — verified structurally impossible by 4+ independent phase-2 agents (access-control, first-principles, invariant, trust-gap); no address parameter exists on either function</td>
+</tr>
+<tr>
+<td>Depositor (self)</td>
+<td>Repeat <code>unstake(sameIdx)</code></td>
+<td>Double-withdraw the same position</td>
+<td><code>require(s.amount &gt; 0)</code> (L94) gated on <code>s.amount = 0</code> (L104) set before any re-entry is possible</td>
+<td><strong>Invariant holds</strong> — confirmed by every phase-2 agent that traced it</td>
+</tr>
+<tr>
+<td>Depositor (self) or malicious token</td>
+<td>Reentrant call during <code>stake()</code>&#39;s external call (L78, before bookkeeping)</td>
+<td>Re-enter <code>stake</code>/<code>unstake</code> mid-update, corrupt accounting</td>
+<td><code>nonReentrant</code> shared lock across both functions + confirmed hook-free deployed token</td>
+<td><strong>Invariant holds</strong> — no reentrancy path exists; both defenses independently sufficient</td>
+</tr>
+<tr>
+<td>Deployer&#39;s original token choice (fee-on-transfer / rebasing / hook token)</td>
+<td><code>stake</code>/<code>unstake</code> accounting</td>
+<td>Desync <code>balanceOf(this)</code> vs <code>totalSupplyStaked</code></td>
+<td>Accounting trusts the caller-supplied <code>amount</code> rather than measuring balance delta — not enforced on-chain</td>
+<td><strong>Invariant holds for this deployment</strong> — <code>stakingToken</code> is immutable, already fixed to the confirmed plain-vanilla ClankerToken; structural design gap only, not live-exploitable</td>
+</tr>
+<tr>
+<td>Any address</td>
+<td><code>getActiveStakes</code>/<code>getStakeCount</code> on a heavily self-inflated array</td>
+<td>Grief that same address&#39;s own read-path gas cost</td>
+<td>None enforced — unbounded array by design</td>
+<td><strong>Self-scoped only</strong> — 7 of 12 phase-2 agents independently confirmed no cross-user impact is possible</td>
+</tr>
+<tr>
+<td>Any address</td>
+<td><code>getFaith</code>/<code>getStakeFaith</code> at extreme <code>amount</code>/timestamp</td>
+<td>Force a revert via arithmetic overflow</td>
+<td>Bounded in practice by the real token&#39;s fixed 1e29 total supply</td>
+<td><strong>Invariant holds</strong> — numeric proof shown by 3 independent agents; overflow requires ~1e48 seconds since epoch, unreachable</td>
+</tr>
+<tr>
+<td>N/A — no admin/owner exists</td>
+<td>—</td>
+<td>—</td>
+<td>&quot;No admin can withdraw&quot;</td>
+<td><strong>Holds trivially</strong> — no admin-class function exists anywhere in the source</td>
+</tr>
+<tr>
+<td>Hypothetical external integrator</td>
+<td>Reads <code>totalSupplyStaked</code>/<code>totalStaked</code> mid-transaction as a trust signal</td>
+<td>Be misled by a momentarily-inflated same-block stake/unstake round trip</td>
+<td>No such integrator exists in this scope</td>
+<td><strong>Not applicable to current deployment</strong> — documented as an Info note for future integrators (see findings)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[90] <strong>1. Unbounded <code>stakes[user]</code> array degrades <code>getActiveStakes()</code>/<code>getStakeCount()</code> for that address only</strong></p>
+<p><code>TurboFaithStaking.getActiveStakes</code> · Confidence: 90 · Severity: Low</p>
+<p><strong>Description</strong><br><code>stakes[user]</code> (L43) only ever grows via <code>push()</code> (L81); <code>unstake()</code> zeroes a slot&#39;s <code>amount</code> (L104) but never removes it. <code>getActiveStakes()</code> (L135–158) does two full passes over the array. Growth is strictly self-inflicted — <code>stake()</code> always writes to <code>stakes[msg.sender]</code> (L80–81), so no attacker can bloat another user&#39;s array — but it&#39;s cheap: since <code>unstake()</code> returns the full principal (L108), an attacker can recycle a single <code>MIN_STAKE</code> (1000 tokens) through repeated <code>stake()</code>→<code>unstake()</code> cycles at pure gas cost (no capital lockup), growing their own array by one slot per cycle. On Base&#39;s low gas, reaching ~7,000–15,000 entries (enough to exceed a ~30M gas read ceiling) is estimated at tens-to-low-hundreds of dollars. <code>stake()</code> and <code>unstake()</code> themselves remain O(1) regardless of array length — no funds are ever at risk, only the convenience view degrades, and only for its own owner (or a third-party integrator that batch-enumerates users on-chain without per-call isolation — no such integrator exists in scope, see Leads).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">-    function getActiveStakes(address user)
++    function getActiveStakes(address user, uint256 offset, uint256 limit)
+         external
+         view
+         returns (uint256[] memory amounts, uint256[] memory stakedAts, uint256[] memory indices)
+     {
+-        Stake[] storage userStakes = stakes[user];
+-        uint256 len = userStakes.length;
++        Stake[] storage userStakes = stakes[user];
++        uint256 len = Math.min(userStakes.length, offset + limit);
+         // iterate from `offset` to `len` instead of `0` to `userStakes.length`
+     }
+</code></pre>
+<hr>
+<p>[90] <strong>2. <code>stake()</code> violates checks-effects-interactions — mitigated by shared <code>nonReentrant</code> lock and a hook-free token</strong></p>
+<p><code>TurboFaithStaking.stake</code> · Confidence: 90 · Severity: Info</p>
+<p><strong>Description</strong><br><code>stake()</code> pulls tokens via <code>safeTransferFrom</code> (L78) before writing <code>stakes</code>/<code>totalStaked</code>/<code>totalSupplyStaked</code>/<code>weightedStakeSum</code> (L80–86), unlike <code>unstake()</code> which correctly writes state before its external call (L101–105 vs L108). Not exploitable today: OpenZeppelin&#39;s <code>ReentrancyGuard</code> uses one shared <code>_status</code> slot across every <code>nonReentrant</code> function in the contract, so a reentrant call into either <code>stake()</code> or <code>unstake()</code> during the transfer reverts regardless of entry point (independently confirmed by 6 of 12 phase-2 agents); and the actual deployed <code>stakingToken</code> (verified <code>ClankerToken</code> source) has a hook-free <code>_update()</code> — a bare passthrough — so no callback can fire during the transfer in the first place.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function stake(uint256 amount) external nonReentrant {
+         require(amount &gt;= MIN_STAKE, &quot;Below minimum stake&quot;);
+-        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+-
+         uint256 stakeIndex = stakes[msg.sender].length;
+         stakes[msg.sender].push(Stake({ amount: amount, stakedAt: block.timestamp }));
+         totalStaked[msg.sender] += amount;
+         totalSupplyStaked += amount;
+         weightedStakeSum[msg.sender] += amount * block.timestamp;
++        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+
+         emit Staked(msg.sender, amount, stakeIndex, block.timestamp);
+     }
+</code></pre>
+<hr>
+<p>[90] <strong>3. No balance-delta accounting — structural gap, not exploitable against the deployed token</strong></p>
+<p><code>TurboFaithStaking.stake</code> · Confidence: 90 · Severity: Info</p>
+<p><strong>Description</strong><br>Accounting credits the caller-supplied <code>amount</code> parameter (L82–84) rather than measuring <code>balanceOf(this)</code> before/after the transfer. Would matter against a fee-on-transfer or rebasing token (later unstakers could find the pool short of what&#39;s recorded). <code>stakingToken</code> is <code>immutable</code> (fixed at deploy, cannot be swapped) and the actual deployed token is a plain, non-fee, non-rebasing ERC20 — confirmed via its <code>_update()</code> override being an unmodified passthrough, and via an on-chain snapshot at audit time showing <code>stakingToken.balanceOf(stakingContract) == totalSupplyStaked</code> exactly (4,635,026.129...e18 both sides). Not exploitable against this specific, already-deployed instance.</p>
+<p><strong>Fix</strong>: For any future redeployment of this bytecode against a different token, measure the balance delta around the transfer instead of trusting the parameter.</p>
+<hr>
+<p>[85] <strong>4. <code>MIN_STAKE</code> hardcodes an 18-decimal assumption</strong></p>
+<p><code>TurboFaithStaking.MIN_STAKE</code> (L35) · Confidence: 85 · Severity: Info</p>
+<p><strong>Description</strong><br><code>MIN_STAKE = 1_000e18</code> assumes an 18-decimal token; the constructor never validates <code>decimals()</code>. Confirmed correct for the live, immutable deployment (<code>stakingToken.decimals() == 18</code>, verified on-chain via <code>cast call</code>). Would misbehave only if this exact bytecode were redeployed against a non-18-decimal token — a template-reuse fragility, not a live bug.</p>
+<p><strong>Fix</strong>: For future redeployments, derive <code>MIN_STAKE</code> from <code>stakingToken.decimals()</code> instead of hardcoding.</p>
+<hr>
+<p>[85] <strong>5. No rescue/sweep for stray tokens sent directly to the contract</strong></p>
+<p><code>TurboFaithStaking</code> (contract-wide) · Confidence: 85 · Severity: Info</p>
+<p><strong>Description</strong><br>Tokens sent via a bare <code>transfer()</code> (bypassing <code>stake()</code>) become permanently unclaimable — no admin/sweep function exists. This is intentional given the no-admin design goal (adding a sweep function would reintroduce a privileged role); documented here as an accepted tradeoff, not a defect.</p>
+<p><strong>Fix</strong>: None required — consistent with the contract&#39;s documented no-admin design. Consider noting this behavior for users/integrators.</p>
+<hr>
+<p>[75] <strong>6. Constructor doesn&#39;t validate <code>_stakingToken</code> has code</strong></p>
+<p><code>TurboFaithStaking.constructor</code> (L69–72) · Confidence: 75 · Severity: Info</p>
+<p><strong>Description</strong><br>The constructor checks only <code>_stakingToken != address(0)</code> (L70), not <code>_stakingToken.code.length &gt; 0</code>. Traced both OpenZeppelin <code>SafeERC20</code> major-version implementations (4.x, 5.x) and confirmed each independently guards against no-code targets and reverts cleanly rather than silently no-op-succeeding — so this is not exploitable even in the worst case, and moot regardless since the actual deployed <code>stakingToken</code> is a real, verified contract.</p>
+<p><strong>Fix</strong>: None required for this instance; optionally add an explicit <code>code.length &gt; 0</code> check for defense-in-depth in future deployments.</p>
+<hr>
+<h2 id="findings-below-confidence-threshold">Findings below confidence threshold</h2>
+<p><em>The following are documented for completeness but scored below the report&#39;s confidence-for-fix threshold (still ≥50, so listed as findings rather than Leads per the reporting floor) — description only, no fix block.</em></p>
+<p>[65] <strong>7. <code>totalSupplyStaked</code> is a write-only variable — never read by any function in this contract</strong></p>
+<p><code>TurboFaithStaking.totalSupplyStaked</code> (L49) · Confidence: 65</p>
+<p>Incremented in <code>stake()</code> (L83) and decremented in <code>unstake()</code> (L105) but consumed by no calculation anywhere in the contract — purely an informational public tally (e.g., for an off-chain dashboard). Confirmed to feed no on-chain logic, so it cannot itself be a vector for cross-user harm within this contract; flagged only because a hypothetical companion contract elsewhere that reads this getter as a trust signal is not something a single-contract audit can rule out.</p>
+<p>[65] <strong>8. Same-block stake/unstake momentarily inflates public TVL counters (rejected as a Finding — no identifiable victim in scope)</strong></p>
+<p><code>TurboFaithStaking.stake</code> / <code>unstake</code> · Confidence: 65</p>
+<p>An attacker can <code>stake(X)</code> then <code>unstake(sameIndex)</code> within one transaction; <code>totalSupplyStaked</code>/<code>totalStaked[attacker]</code> are genuinely inflated by <code>X</code> for the duration between the two calls (these are simple running counters with no time-lock). This was raised as a FINDING by one phase-2 agent but <strong>rejected at Gate 4 (Impact)</strong>: no identifiable victim exists — <code>TurboFaithStaking.sol</code> itself never reads <code>totalSupplyStaked</code> in any calculation, and no other in-scope contract reads these getters. Documented here as a design note: these two counters are unsafe for any future external integrator to trust as an instantaneous, same-block signal.</p>
+<p>[60] <strong>9. <code>getFaith()</code>&#39;s multiplication uses absolute <code>block.timestamp</code> rather than a bounded duration</strong></p>
+<p><code>TurboFaithStaking.getFaith</code> (L115) · Confidence: 60</p>
+<p><code>unstake()</code> multiplies <code>amount</code> by a bounded elapsed duration (<code>block.timestamp - stakedAt</code>, L98), while <code>getFaith()</code> multiplies <code>totalStaked[user]</code> by the unbounded, ever-growing absolute <code>block.timestamp</code> (L115). Constructed the theoretical overflow threshold explicitly: requires <code>block.timestamp &gt; ~1.15e48</code> seconds since epoch (~3.6e40 years) at the token&#39;s actual max supply (1e29) to matter — not reachable within any real blockchain&#39;s lifetime. Purely structural/architectural note.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[90]</td>
+<td>Unbounded <code>stakes[user]</code> array degrades <code>getActiveStakes()</code>/<code>getStakeCount()</code> for that address only</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[90]</td>
+<td><code>stake()</code> violates checks-effects-interactions — mitigated by shared <code>nonReentrant</code> lock and a hook-free token</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[90]</td>
+<td>No balance-delta accounting — structural gap, not exploitable against the deployed token</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[85]</td>
+<td><code>MIN_STAKE</code> hardcodes an 18-decimal assumption</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[85]</td>
+<td>No rescue/sweep for stray tokens sent directly to the contract</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[75]</td>
+<td>Constructor doesn&#39;t validate <code>_stakingToken</code> has code</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[65]</td>
+<td><code>totalSupplyStaked</code> is a write-only variable — never read by any function in this contract</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[65]</td>
+<td>Same-block stake/unstake momentarily inflates public TVL counters (rejected as a Finding)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[60]</td>
+<td><code>getFaith()</code>&#39;s multiplication uses absolute <code>block.timestamp</code> rather than a bounded duration</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed. These are not false positives — they are high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><strong>Third-party batch-enumeration DoS via self-griefed array</strong> — <code>getActiveStakes</code> — Code smells: if any external integrator batch-enumerates <code>getActiveStakes()</code> across many users on-chain without per-user try/catch isolation, one self-griefed user (Finding #1) could revert that integrator&#39;s entire batch call. No integrator contract exists in this audit&#39;s scope to confirm or refute this — raised at confidence 40 by the originating agent (below the reporting floor).</li>
+<li><strong><code>crosschainBurn</code> reachability against the staking contract&#39;s own token balance</strong> — external, <code>ClankerToken.crosschainBurn</code> / <code>SuperchainTokenBridge</code> — Code smells: IERC7802&#39;s <code>crosschainBurn</code> is gated to the official <code>SuperchainTokenBridge</code> predeploy; reasoning (not independently verified against the predeploy&#39;s bytecode) indicates standard burn-from-caller-only semantics, and the staking contract never initiates a bridge call or grants any allowance, so this is assessed as unreachable — but flagged since it rests on standard-but-not-bytecode-verified bridge semantics rather than a direct read of this audit&#39;s in-scope source.</li>
+</ul>
+<hr>
+<h2 id="explicitly-ruled-out-verified-during-phase-012-not-repeated-as-f">Explicitly Ruled Out (verified during phase 0/1/2, not repeated as findings)</h2>
+<ul>
+<li>Cross-user fund theft, double-unstake, read-only/cross-contract reentrancy — blocked by <code>msg.sender</code>-scoped storage keys + shared <code>nonReentrant</code> lock + hook-free token. Confirmed independently by 4+ phase-2 specialty agents (access-control, first-principles, invariant, trust-gap) with concrete call-sequence traces.</li>
+<li>Precision/arithmetic bugs — the contract contains <strong>zero division operations</strong>; every subtraction was proven non-underflowing via the I2/I3 accounting invariants; every multiplication was proven ~35+ orders of magnitude below <code>uint256</code> overflow given the real token&#39;s fixed 1e29-base-unit supply (full numeric proof by the phase-1 precision-math agent, independently re-verified by phase-2 math-precision and numerical-gap agents).</li>
+<li>Faith-formula gaming via stake-chunking, interleaving, or unstake-ordering — proven algebraically chunk-invariant and order-invariant by 3 independent agents with concrete worked numeric examples; realized Faith can never exceed Σ(amount_i × duration_i) for a user&#39;s true history.</li>
+<li>Blocklist/pause/rebase/fee-on-transfer/hook token classes — all confirmed N/A against the actual deployed token via its verified source (<code>ClankerToken</code>: plain OZ <code>ERC20</code>/<code>Votes</code>/<code>Permit</code>/<code>Burnable</code>, no such extensions, <code>_update()</code> bare passthrough).</li>
+<li>First-depositor / share-price inflation attack (ERC4626-style) — structurally impossible; there is no share/asset conversion ratio anywhere in the contract, confirmed by the trust-gap agent.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit system (phase 0 context-building + 5 breadth agents + 12 depth agents across two independent methodologies, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A traditional human security review is recommended for any contract managing significant value, alongside on-chain monitoring.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidi5pxbgowuptkj4xhh5llybgko6hcfintd5nkhfsauczc5cid7vm.ipfs.community.bgipfs.com/"><code>https://bafkreidi5pxbgowuptkj4xhh5llybgko6hcfintd5nkhfsauczc5cid7vm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/389">#389</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

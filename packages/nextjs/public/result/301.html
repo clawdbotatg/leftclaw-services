@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Danceparty Protocol (Base Mainnet) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #301">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Danceparty Protocol (Base Mainnet)</h1>
+    <p class="job-sub">Job #301 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/301"><b>Job page</b> #301</a>
+      <a class="chip" href="https://bafkreicmqi6vktiwzurcxv2h6jfktogqobpttc6hxh7j6zhf5r62o4ubmy.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">10</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#summary">Summary</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Audit — Danceparty Protocol (Base Mainnet)</h1>
+<p>Two-phase audit: Phase 1 breadth (ethskills, 7 domain checklists) → Phase 2 depth (pashov, 12 blind attacker-mindset agents) → hybrid reconciliation.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Network</strong></td>
+<td>Base mainnet, chainId 8453</td>
+</tr>
+<tr>
+<td><strong>Contracts</strong></td>
+<td><code>DancepartyEpochManager</code> <code>0xd4E05971Af46b4551b206C55541C5479BCAd2f8e</code><br><code>DancepartyEntryNFT</code> <code>0xBe2aF85eED5122a2067E7e7Fbc5453E3D86bFEe9</code><br><code>GuildRegistry</code> <code>0x3489CE5F34B6A117C5163B35275f22FE21289b43</code><br><code>GuildVoting</code> <code>0x0B7E8c0A7b2fc2C450fA2Bb937E8eB1047C20d51</code><br><code>NatureSplitRouter</code> <code>0x4a4a7459B9e0056b6b88b42287042eBf4568e0DA</code></td>
+</tr>
+<tr>
+<td><strong>Compiler</strong></td>
+<td>0.8.24 (Sourcify v2 <code>exact_match</code> for all 5 contracts)</td>
+</tr>
+<tr>
+<td><strong>Source retrieval</strong></td>
+<td>Sourcify v2 API (<code>sourcify.dev/server/v2/contract/8453/&lt;addr&gt;</code>) — v1 API was in a scheduled brownout for the full audit window</td>
+</tr>
+<tr>
+<td><strong>In-scope LOC</strong></td>
+<td>~1,730 (5 contracts + interfaces)</td>
+</tr>
+<tr>
+<td><strong>Agents/model</strong></td>
+<td>7 phase-1 breadth agents + 12 phase-2 depth agents, opus (large multi-contract scope)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Note on &quot;PayoutModule&quot;</strong>: the engagement brief mentions auditing &quot;the internal PayoutModule library/source used by EpochManager.&quot; No <code>PayoutModule.sol</code> file exists in Sourcify&#39;s verification metadata for <code>DancepartyEpochManager</code>, and no <code>library</code> construct appears anywhere in the retrieved source — this matches the build note &quot;PayoutModule is linked/internal/no runtime.&quot; All payout logic (<code>_splitEpochParticipation</code>, <code>_safeCreditEth</code>, <code>_safeCreditUsdc</code>, <code>claimPayout</code>, etc.) is implemented as ordinary internal functions directly inside <code>DancepartyEpochManager</code> and was audited as such.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Completeness</strong>: 21 unique (Contract, function) issue groups identified across both phases; <strong>21 of 21 covered</strong> in this unified report.</li>
+<li><strong>Overlap</strong>: 9 issue groups found independently by both phases (<code>[both]</code>) — including the two headline findings below, each corroborated by 6–12 of the 21 total agents.</li>
+<li><strong>Phase-1-only</strong>: 8 issue groups (re-examined against source in reconciliation; all confirmed as stated, none demoted).</li>
+<li><strong>Phase-2-only</strong>: 4 new issue groups surfaced by the blind depth pass that Phase 1 did not raise (re-examined and confirmed below).</li>
+<li><strong>Severity reassessment</strong>: one finding (voter Sybil gate) was raised from Medium (Phase 1) to <strong>High</strong> during reconciliation — see rationale in Finding 2. One finding (entry-slot exhaustion) was raised from Low to <strong>Medium</strong> after Phase 2 proved it also strips voting rights, not just submission.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="f-01-single-guild-agent-has-unilateral-irreversible-control-over">[F-01] Single guild agent has unilateral, irreversible control over winner verification, rejection, and crowning</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 access-control (AC-1) + Phase 2 access-control/economic-security/execution-trace/periphery/boundary/trust-gap (6 of 12 agents)<br><strong>Location</strong>: <code>DancepartyEpochManager._onlyDisputeOpener()</code> L174-180; <code>recordEntryVerificationDecision()</code> L873-884; <code>crownWinner()</code> L886-901; <code>closeNoWinner()</code> L903-913; <code>guildReview()</code> L732-768</p>
+<p><strong>Description</strong>: <code>onlyDisputeOpener</code> passes for <strong>any</strong> address with <code>guildRegistry.agentIdOf(msg.sender) &gt; 0</code> — no quorum, no dedicated reviewer sub-role, no multi-sig. On the undisputed path, one agent alone decides which finalists are <code>Rejected</code> (<strong>irreversibly</strong> — no code path ever un-rejects an entry) vs <code>VerifiedEligible</code>, and then crowns the winner. The 2/3 <code>GuildVoting</code> supermajority only engages if a <em>different</em> agent proactively opens a dispute within the 1-day window. A related mechanism found independently by Phase 2 (execution-trace, trust-gap): during a dispute, a finalist still in <code>Submitted</code> state is auto-promoted to <code>VerifiedEligible</code> and crowned on a <strong>single</strong> <code>compliant</code> vote (<code>guildReview</code> L753-759) — the verification gate is one agent deep even in the &quot;supervised&quot; path.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Attacker (itself a registered guild agent, or colluding with one) submits an entry via <code>submitEntryForRecipient(url, attacker, ...)</code>.</li>
+<li>Sockpuppet wallets (each with <code>userEntryCount &gt; 0</code> from their own low-cost entries) <code>vote()</code> the attacker&#39;s entry into the top-5 finalists.</li>
+<li>After <code>closeEpochForVerification</code>, during the <code>VerificationPending</code> window (and before anyone else disputes), the attacker agent calls <code>recordEntryVerificationDecision(higherRankedFinalist, false, false)</code> for every finalist ranked above its own — each starts <code>Submitted</code> so the <code>require(state == Submitted)</code> guard passes — marking them permanently <code>Rejected</code>, and marks its own entry <code>VerifiedEligible</code>.</li>
+<li>After the <code>DISPUTE_WINDOW</code> (1 day) with no one else disputing, <code>crownWinner(epoch, attackerToken)</code> passes <code>_requireNextCrownableFinalist</code> (all higher-ranked finalists are <code>Rejected</code>) and the <code>VerifiedEligible</code> check.</li>
+<li><code>claimPayout(epoch)</code> pays the entire <code>epochPool</code> (ETH) and <code>epochUsdcPool</code> (USDC) — 25% of every participant&#39;s fee plus all boosts for the epoch — to <code>entryPayoutRecipient[attackerToken] = attacker</code>.</li>
+</ol>
+<p><strong>Recommendation</strong>: Require a quorum/threshold of distinct agents (or an on-chain tally mirroring <code>GuildVoting</code>) for <code>recordEntryVerificationDecision</code>, <code>crownWinner</code>, and <code>closeNoWinner</code>, rather than any single <code>agentIdOf &gt; 0</code>. Restrict to a smaller, more tightly controlled reviewer sub-role. Consider allowing a rejected decision to be appealed/reversed via the same dispute mechanism used for crowned winners.</p>
+<hr>
+<h3 id="f-02-voter-funding-age-anti-sybil-requirement-is-fully-implement">[F-02] Voter funding-age anti-Sybil requirement is fully implemented in storage but never enforced — unanimous cross-phase, cross-agent finding</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> <em>(escalated from Phase 1&#39;s Medium during reconciliation — see rationale below)</em><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 general (GEN-1) + <strong>all 12 of 12</strong> Phase 2 depth agents independently converged on this identical root cause (9 as a direct FINDING, 3 as a LEAD)<br><strong>Location</strong>: <code>vote()</code> L533-551; <code>_isWalletVoteEligibleForEpoch()</code> L219-221; <code>isWalletVoteEligible()</code> L223-225; <code>VOTER_FUNDING_AGE_REQUIREMENT</code> (L22, declared, zero reads); <code>firstQualifiedFundingTimestamp</code> (L59) / <code>setWalletFundingTimestamp()</code> (L862-871, the only writer — zero readers elsewhere)</p>
+<p><strong>Description</strong>: The contract ships a complete anti-Sybil scaffold — a <code>VOTER_FUNDING_AGE_REQUIREMENT = 10 days</code> constant, a <code>firstQualifiedFundingTimestamp</code> mapping, an owner-only setter <code>setWalletFundingTimestamp</code>, and a <code>WalletFundingTimestampRecorded</code> event — clearly intended to require that a voting wallet was funded/attested at least 10 days before it may vote. None of it is ever consulted: <code>_isWalletVoteEligibleForEpoch</code> checks exclusively <code>userEntryCount[epoch][wallet] &gt; 0</code>. A wallet funded and entered in the same block votes with full weight.</p>
+<p><strong>Severity rationale for escalation</strong>: Phase 1 rated this Medium (weakened Sybil resistance, general framing). Twelve independently-reasoning Phase 2 attacker agents, working from different specialties (economic-security, execution-trace, invariant, boundary, trust-gap, numerical-gap, etc.), all constructed the identical concrete, low-cost, no-collusion-required exploit chain that directly captures pooled third-party funds. Because the attacker&#39;s own submitted content can be genuine (the attack is purely on vote-counting, not on content legitimacy), it does not depend on defeating guild content review — the stated &quot;precondition&quot; is materially just &quot;attacker has ~$190–960 of capital,&quot; which is a very low bar for a fund-extraction path. This satisfies the High bar (&quot;loss of funds requiring specific conditions&quot;) rather than Medium.</p>
+<p><strong>Proof of Concept</strong> (as independently constructed by 9+ agents with concrete numbers):</p>
+<ol>
+<li>Attacker funds N fresh wallets (no age requirement blocks this — the gate doesn&#39;t run).</li>
+<li>Each wallet calls <code>submitEntry</code> (0.0013 ETH or $2.99 USDC each) — this is genuine, legitimate content, so it will pass guild verification normally.</li>
+<li>N−1 of the wallets <code>vote()</code> for the attacker&#39;s chosen entry (self-vote is blocked, cross-sockpuppet voting is not). <code>MAX_ENTRIES_PER_EPOCH = 64</code> caps this at 63 sockpuppet votes for ≈0.082 ETH / ≈$188 USDC total.</li>
+<li><code>_recordTopFinalists</code> ranks by raw <code>entryVotes</code>, guaranteeing the attacker&#39;s entry is <code>epochFinalists[epoch][0]</code> / <code>tentativeWinner</code>.</li>
+<li>The entry is genuine content, so it passes normal (even honest, undisputed) guild verification and is crowned.</li>
+<li><code>claimPayout</code> pays the attacker the full winner pool — 25% of every fee and boost contributed by all other participants that epoch, which can substantially exceed the attacker&#39;s ~$188–960 outlay whenever the epoch has meaningful organic participation/boosting.</li>
+</ol>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff"> function _isWalletVoteEligibleForEpoch(address wallet, uint256 epoch) internal view returns (bool) {
+-    return userEntryCount[epoch][wallet] &gt; 0;
++    return userEntryCount[epoch][wallet] &gt; 0
++        &amp;&amp; firstQualifiedFundingTimestamp[wallet] != 0
++        &amp;&amp; block.timestamp - firstQualifiedFundingTimestamp[wallet] &gt;= VOTER_FUNDING_AGE_REQUIREMENT;
+ }
+</code></pre>
+<p>If the funding-age gate was intentionally deprecated in favor of the entry-fee-only model, remove the dead constant/mapping/setter/event to avoid a false sense of protection, and separately harden vote eligibility (e.g. a much higher fee, or a distinct non-Sybil-cheap credential).</p>
+<hr>
+<h3 id="f-03-winnerpayoutrouter-contradicts-its-documented-guild-control">[F-03] <code>winnerPayoutRouter</code> contradicts its documented &quot;guild-controlled, 72h-updatable&quot; model — owner can permanently redirect all winner payouts</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 general/access-control (GEN-2, AC-4) + Phase 2 access-control/trust-gap<br><strong>Location</strong>: state var comment L54 (&quot;Guild-controlled winner payout target (updatable every 72h)&quot;); <code>setWinnerPayoutRouter()</code> L963-970; <code>claimPayout()</code> L824-835; <code>_creditWinnerUsdc()</code> L993-999; <code>lockPayoutRecipients()</code> L972-991</p>
+<p><strong>Description</strong>: The only setter is <code>onlyOwner</code> with no guild involvement and no timelock, directly contradicting the inline documentation. <code>_validatePayoutRecipient</code> only blocks <code>this</code>/<code>usdc</code>/<code>nft</code>/<code>natureRouter</code>/self — any owner-chosen EOA is accepted, and once <code>lockPayoutRecipients()</code> is called the value is frozen forever (one-way).</p>
+<p><strong>Proof of Concept</strong>: Owner calls <code>setWinnerPayoutRouter(ownerEOA)</code> then <code>lockPayoutRecipients()</code>. Every subsequent <code>claimPayout</code> sends the crowned winner&#39;s entire ETH+USDC prize to <code>ownerEOA</code> instead of the dancer, permanently and irreversibly.</p>
+<p><strong>Recommendation</strong>: Implement the documented guild-controlled/72h-throttled mechanism, or correct the misleading comment and add a timelock + event delay; require <code>winnerPayoutRouter == address(0)</code> at lock time, or validate it against a known-good, immutable router so users can verify the guarantee before it&#39;s frozen.</p>
+<hr>
+<h3 id="f-04-guildregistry-has-unbounded-admin-controlled-agent-minting-">[F-04] <code>GuildRegistry</code> has unbounded, admin-controlled agent minting and no revocation/key-rotation path</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 access-control/general/governance (AC-2, AC-3, GEN-4, GOV-3) + Phase 2 invariant<br><strong>Location</strong>: <code>GuildRegistry._registerAgent()</code> L98-106; <code>registerEnsuranceAgent()</code>/<code>registerEnsuranceAgentLegacy()</code> L114-142 (<code>onlyMembershipAdminOrOwner</code>); no de-register/rotate function exists anywhere in the contract</p>
+<p><strong>Description</strong>: Two compounding gaps in the same trust surface: (1) <code>membershipAdmin</code> — a role the owner can delegate — can mint an unlimited number of agents with no cap, and every minted agent immediately gains full <code>onlyDisputeOpener</code> authority (F-01) and a vote in every guild decision; (2) <code>agentIdOf</code>/<code>agentAddress</code> are only ever set, never cleared — a leaked, compromised, or malicious agent key retains permanent power with no on-chain remedy short of abandoning the entire registry (which also requires redeploying <code>GuildVoting</code>, per <code>_validateGuildVotingPair</code>&#39;s immutable binding).</p>
+<p><strong>Proof of Concept</strong>: <code>membershipAdmin</code> (or a compromised holder of that role) pre-registers N colluding addresses via <code>registerEnsuranceAgent</code> before any dispute/proposal snapshot is taken (snapshots correctly block <em>mid-flight</em> registration, but not pre-registration). The N agents collectively clear the 2/3 threshold in <code>GuildVoting.isOverride</code> or <code>NatureSplitRouter.canExecute</code>, or individually exercise F-01&#39;s unilateral crown power — with no way for the owner to later evict any of them.</p>
+<p><strong>Recommendation</strong>: Restrict agent minting to <code>owner</code> only (or a timelocked multisig); cap agent count or require per-agent governance approval. Add an owner/membership-admin <code>deregisterAgent(uint256 agentId)</code> clearing <code>agentIdOf</code>/<code>agentAddress</code> (and ensurance reverse-mappings), plus an address-rotation function, with events.</p>
+<hr>
+<h3 id="f-05-naturesplitrouter-proposals-never-expire-and-have-no-voting">[F-05] <code>NatureSplitRouter</code> proposals never expire and have no voting deadline — a stale, small-snapshot proposal can be executed much later to hijack the nature recipient</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 governance (GOV-1) + Phase 2 numerical-gap (lead)<br><strong>Location</strong>: <code>canExecute()</code>/<code>execute()</code>/<code>vote()</code> L80-134</p>
+<p><strong>Description</strong>: <code>canExecute</code> has a lower time bound (<code>openedAt + UPDATE_INTERVAL</code>, <code>lastRecipientUpdateAt + UPDATE_INTERVAL</code>) but no upper bound and no <code>round == currentRound()</code> check; <code>vote()</code> has no deadline. A proposal opened when the guild was small (small <code>totalAgentsSnapshot</code> denominator) can sit dormant, accumulate votes indefinitely, and be executed much later against a stale, un-representative snapshot.</p>
+<p><strong>Proof of Concept</strong>: Guild has 3 agents; attacker <code>propose(X)</code> and gets 3 yes-votes (<code>3*3 &gt; 3*2</code> passes), but doesn&#39;t execute. Guild grows to 100 legitimate agents over the following months. At any later point (once 3 days have passed since the last update), attacker calls <code>execute(oldRound)</code>, flipping <code>recipient</code> to <code>X</code> using the stale 3-agent snapshot and redirecting ~70-74% of all participation fees. Gated only by <code>X</code> still being in <code>approvedRecipients</code>.</p>
+<p><strong>Recommendation</strong>: Require <code>round == currentRound()</code> or an explicit execution deadline in <code>canExecute</code>/<code>execute</code>; add a voting deadline; consider re-reading <code>guildRegistry.totalAgents()</code> for the quorum denominator instead of a frozen snapshot.</p>
+<hr>
+<h3 id="f-06-naturesplitrouterpropose-per-round-candidate-lock-lets-a-si">[F-06] <code>NatureSplitRouter.propose</code> per-round candidate lock lets a single guild member permanently grief recipient governance</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 governance (GOV-2) + Phase 2 periphery/boundary/flow-gap (3 of 12 agents)<br><strong>Location</strong>: <code>propose()</code> L84-97</p>
+<p><strong>Description</strong>: The first <code>propose()</code> caller in a 3-day round locks that round&#39;s candidate (<code>require(p.candidate == candidate, &quot;Round candidate locked&quot;)</code>); there is no cancellation, replacement, or admin fallback, and <code>recipient</code> can <strong>only</strong> change via this vote path.</p>
+<p><strong>Proof of Concept</strong>: A malicious/obstinate agent calls <code>propose(A)</code> (an approved-but-never-passing candidate) at the start of every 3-day round, permanently blocking <code>propose(B)</code> for the guild&#39;s actually-desired candidate B. Cost: one cheap tx per round, indefinitely.</p>
+<p><strong>Recommendation</strong>: Key proposals by candidate (allow multiple concurrent proposals per round) rather than one-slot-per-round, or provide a bounded, timelocked admin override.</p>
+<hr>
+<h3 id="f-07-entry-slot-exhaustion-griefing-simultaneously-denies-submis">[F-07] Entry-slot exhaustion griefing simultaneously denies submission AND voting for an entire epoch</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> <em>(escalated from Phase 1&#39;s Low — Phase 2 proved the same attack also strips honest voting rights, not just submission)</em><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 dos (DOS-2) + Phase 2 economic-security (direct FINDING with costed PoC)<br><strong>Location</strong>: <code>_submitEntry()</code> L473-474 (<code>MAX_ENTRIES_PER_EPOCH=64</code>, <code>MAX_ENTRIES_PER_WALLET_PER_EPOCH=1</code>); <code>_isWalletVoteEligibleForEpoch()</code> (vote eligibility derives solely from <code>userEntryCount</code>)</p>
+<p><strong>Description</strong>: Only the trivially-Sybil-bypassed per-wallet cap gates entries. Because vote eligibility (F-02&#39;s mechanism) is based purely on having an entry, an attacker who fills all 64 global entry slots at epoch start doesn&#39;t just block legitimate submissions — they also strip <strong>every</strong> honest wallet of voting rights for the full 3-day epoch, since no non-attacker wallet can obtain the <code>userEntryCount &gt; 0</code> required to vote at all.</p>
+<p><strong>Proof of Concept</strong>: 64 funded wallets each submit a unique-URL entry (≈0.083 ETH / ≈$191 USDC total + Base gas), exhausting <code>epochEntries[epoch].length &lt; MAX_ENTRIES_PER_EPOCH</code>. Honest users get <code>MaxEntriesPerWalletReached</code>/<code>MaxEntriesPerEpochReached</code> on submission and <code>NotEnoughVotes</code> on voting — full governance takeover of that epoch&#39;s winner selection, not merely a submission DoS. Honest users can still <code>boost</code>/<code>boostWithUSDC</code> (no slot required), so their contributed funds are only winnable by attacker-controlled entries.</p>
+<p><strong>Recommendation</strong>: Decouple vote eligibility from entry-slot occupancy (e.g., require the funding-age gate from F-02 instead of/in addition to entry count); consider reserving capacity or adding a per-wallet Sybil cost independent of the shared 64-slot cap.</p>
+<hr>
+<h3 id="f-08-front-running-url-squatting-of-submissions-including-canoni">[F-08] Front-running / URL-squatting of submissions, including canonicalization-based variants</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 general/dos (GEN-3, DOS-3) + Phase 2 periphery/first-principles/boundary/invariant/numerical-gap (5 of 12 agents)<br><strong>Location</strong>: <code>_submitEntry()</code> dedup L480-486; <code>sourceHash()</code> L442-444; <code>_xCanonical()</code> L390-398; <code>_youtubeCanonical()</code> L360-388</p>
+<p><strong>Description</strong>: Uniqueness is enforced on a deterministic, public <code>sourceHash(url, platform)</code> with no on-chain proof of content ownership/authorship. An attacker watching the mempool can front-run a victim&#39;s <code>submitEntry</code> with the identical (or canonicalization-equivalent) URL, seizing <code>entrySubmitter</code>/<code>entryPayoutRecipient</code> for content they didn&#39;t create. Phase 2 additionally identified canonicalization-specific variants: (a) <code>_xCanonical</code> extracts a tweet ID via the first <code>/status/</code> occurrence regardless of host or username, so a bare/crafted URL can pre-compute and squat a legitimate tweet&#39;s canonical hash before the real permalink is submitted; (b) <code>twitter.com</code>/<code>x.com</code> non-<code>/status/</code> URLs (e.g. profile links) do <strong>not</strong> normalize to the same hash, allowing the identical content to occupy multiple entry slots under different hosts (under-inclusive dedup, opposite direction); (c) unlisted URL shapes (<code>/embed/</code>, <code>/live/</code>) fall through to near-raw-URL hashing, similarly allowing duplicate representation of the same video.</p>
+<p><strong>Proof of Concept</strong>: Victim broadcasts <code>submitEntry(&quot;https://youtube.com/watch?v=ABC&quot;)</code>; attacker front-runs with the identical URL and canonical hash, minting the entry as themselves; victim&#39;s tx reverts <code>AlreadySubmitted</code>. Bounded by <code>MAX_ENTRIES_PER_WALLET_PER_EPOCH=1</code> and expected to be caught by guild content verification as a backstop for outright misattribution, but the canonicalization-variant attacks can also be used purely for slot-duplication/vote-splitting griefing rather than misattribution.</p>
+<p><strong>Recommendation</strong>: Bind submission to an off-chain ownership attestation the guild can validate, or make attribution disputes explicit in <code>recordEntryVerificationDecision</code>. Harden <code>_xCanonical</code> to require the full expected path structure (not just substring presence) and normalize <code>twitter.com</code>/<code>x.com</code> hosts consistently for all path shapes, not just <code>/status/</code>.</p>
+<hr>
+<h3 id="f-09-single-registered-agent-can-force-a-1-day-payout-delay-on-a">[F-09] Single registered agent can force a ~1-day payout delay on any epoch via repeated disputes</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 dos (DOS-4) + Phase 2 economic-security/trust-gap<br><strong>Location</strong>: <code>dispute()</code> L707-719 (<code>onlyDisputeOpener</code>)</p>
+<p><strong>Description</strong>: Any single agent can open a dispute within the window, forcing <code>crownWinner</code>/<code>closeNoWinner</code> to wait out the full <code>DISPUTE_WINDOW</code> (1 day) guild-review period, once per epoch (<code>require(!disputedEpochs[epoch])</code>).</p>
+<p><strong>Proof of Concept</strong>: Rogue/compromised agent calls <code>dispute(E)</code> on every finalized epoch, delaying settlement ~1 day each time. Always eventually resolvable (bounded delay, not permanent lock).</p>
+<p><strong>Recommendation</strong>: Require a bond/quorum to open a dispute, or restrict <code>dispute()</code> to a subset of agents.</p>
+<hr>
+<h3 id="f-10-ecosystemrecipientprotocolrecipient-are-read-live-per-trans">[F-10] <code>ecosystemRecipient</code>/<code>protocolRecipient</code> are read live per-transaction while <code>natureRecipient</code> is snapshotted per-epoch — inconsistent settlement-recipient freezing</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase2 only]</code> — invariant, trust-gap agents (2 of 12); re-examined against source and confirmed<br><strong>Location</strong>: <code>_recordEthParticipation()</code>/<code>_recordUsdcParticipation()</code> L582-604; <code>_requireCommittedShareRecipients()</code> L575-580; <code>setEcosystem()</code>/<code>setProtocol()</code> L846-860</p>
+<p><strong>Description</strong>: <code>settlementNatureRecipient[epoch]</code> is frozen at first participation via <code>_recordSettlementNatureRecipient</code> specifically to guarantee epoch-consistent settlement, but <code>ecosystemRecipient</code>/<code>protocolRecipient</code> are read live from state on every credit, with no equivalent per-epoch snapshot. Pre-<code>lockPayoutRecipients</code>, the owner (already broadly trusted per F-03/F-04) can change <code>setEcosystem</code>/<code>setProtocol</code> mid-epoch, causing different participants in the same epoch to have their 4%/1% shares routed to different addresses — an internal inconsistency relative to the nature-recipient design, though bounded to the same owner-trust level already assumed elsewhere.</p>
+<p><strong>Recommendation</strong>: Snapshot <code>ecosystemRecipient</code>/<code>protocolRecipient</code> per-epoch the same way <code>natureRecipient</code> already is, for design consistency.</p>
+<hr>
+<h3 id="f-11-nature-router-recipient-resolving-to-a-forbidden-address-ca">[F-11] Nature-router recipient resolving to a forbidden address can brick all participation for an epoch</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase2 only]</code> — execution-trace, flow-gap agents (2 of 12); re-examined against source and confirmed<br><strong>Location</strong>: <code>_liveNatureRecipient()</code> L188-195; <code>_recordSettlementNatureRecipient()</code> L197-204</p>
+<p><strong>Description</strong>: <code>_liveNatureRecipient()</code>&#39;s call to <code>natureRouter.recipient()</code> is wrapped in try/catch, but the resolved address then flows into <code>_validatePayoutRecipient</code> inside <code>_recordSettlementNatureRecipient</code> with <strong>no</strong> catch. If <code>NatureSplitRouter</code>&#39;s guild-voted <code>recipient()</code> ever resolves to a <code>_validatePayoutRecipient</code>-forbidden value (e.g. the router&#39;s own address or <code>winnerPayoutRouter</code>), every <code>submitEntry</code>/<code>vote</code>/<code>boost</code> in that epoch reverts, since the settlement-recipient write can never succeed and the same revert is hit on every subsequent call.</p>
+<p><strong>Proof of Concept</strong>: Requires multi-party misconfiguration — <code>NatureSplitRouter</code>&#39;s <code>recipientAdmin</code> must have approved a colliding candidate in <code>approvedRecipients</code>, and the guild must vote it through via <code>execute()</code>. Once triggered, the affected epoch cannot accept any new participation until governance executes a corrective proposal.</p>
+<p><strong>Recommendation</strong>: On a forbidden/invalid resolved recipient, fall back to the stored <code>natureRecipient</code> rather than reverting the entire participation call.</p>
+<hr>
+<h3 id="f-12-tinysmall-guild-snapshots-make-the-23-supermajority-trivial">[F-12] Tiny/small guild snapshots make the 2/3 supermajority trivial for one or two agents</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — governance (GOV-4); re-examined against source and confirmed<br><strong>Location</strong>: <code>GuildVoting.isOverride()</code> L63-74; <code>NatureSplitRouter.canExecute()</code> L115-124</p>
+<p><strong>Description</strong>: Both use <code>votes*3 &gt; snapshot*2</code> with no minimum-quorum floor. With <code>snapshot==1</code>, one vote passes. Division-by-zero is correctly guarded (<code>totalAgents==0</code> short-circuits false) — the only gap is the lack of an absolute quorum floor.</p>
+<p><strong>Proof of Concept</strong>: Guild has 1 agent; that agent disputes a crowned epoch and votes non-compliant once → override triggers, real pooled funds are rolled to the next epoch, on a single vote.</p>
+<p><strong>Recommendation</strong>: Enforce a minimum absolute agent count/vote count before an override or recipient change can take effect.</p>
+<hr>
+<h3 id="f-13-cascading-pauseunpause-between-epochmanager-and-nft-can-bri">[F-13] Cascading pause/unpause between EpochManager and NFT can brick the intended pause entrypoint</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — access-control (AC-5); re-examined against source and confirmed<br><strong>Location</strong>: <code>EpochManager.pause()</code>/<code>unpause()</code> L941-949; <code>DancepartyEntryNFT.pause()</code>/<code>unpause()</code> (<code>onlyOwnerOrManager</code>)</p>
+<p><strong>Description</strong>: The NFT can be paused/unpaused independently by its own owner or manager. If its pause state diverges from EpochManager&#39;s, EpochManager&#39;s cascading <code>nft.pause()</code>/<code>nft.unpause()</code> call reverts (OZ&#39;s already-in-state guard), reverting the whole tx and leaving EpochManager&#39;s own pause entrypoint unusable until manually realigned.</p>
+<p><strong>Recommendation</strong>: Guard the cascading call (e.g. <code>if (!nft.paused()) nft.pause();</code>) so EpochManager&#39;s pause state is never hostage to the NFT&#39;s independent state.</p>
+<hr>
+<h3 id="f-14-setmanager-has-no-cross-check-against-the-real-epochmanager">[F-14] <code>setManager</code> has no cross-check against the real EpochManager; <code>renounceOwnership</code> can brick critical setters; <code>setGuildRegistry</code> to an empty registry silently removes the owner&#39;s fallback authority</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 access-control (AC-6) + Phase 2 access-control/economic-security (setGuildRegistry sub-issue)<br><strong>Location</strong>: <code>DancepartyEntryNFT.setManager()</code> L48-53; inherited <code>Ownable.renounceOwnership()</code> on all 5 contracts; <code>DancepartyEpochManager._onlyDisputeOpener()</code>/<code>setGuildRegistry()</code> L172-178, 925-932</p>
+<p><strong>Description</strong>: Three related operator-misconfiguration footguns: (1) <code>setManager</code> accepts any non-zero address with no verification it is the real EpochManager; (2) every contract still exposes single-step <code>renounceOwnership()</code> despite inheriting <code>Ownable2Step</code> — calling it on EpochManager while paused permanently disables <code>unpause()</code>, and on GuildRegistry freezes the agent set forever (compounding F-04); (3) <code>_onlyDisputeOpener</code>&#39;s owner-fallback branch only applies when <code>guildRegistry == address(0)</code> — once <code>setGuildRegistry</code> is called (with no check that the registry has any registered agents), the owner permanently loses that fallback, and if the registry is empty or inaccessible, no address can call <code>dispute</code>/<code>recordEntryVerificationDecision</code>/<code>crownWinner</code>/<code>closeNoWinner</code> until the owner separately registers itself as an agent on that registry.</p>
+<p><strong>Proof of Concept</strong>: All three require operator error rather than external attack. Example: owner calls <code>setGuildRegistry(freshEmptyRegistry)</code> — all <code>onlyDisputeOpener</code> functions revert for everyone, including the owner, until <code>registerAgent(owner)</code> is called on the new registry (recoverable only if the owner controls that registry).</p>
+<p><strong>Recommendation</strong>: Sanity-check the manager candidate in <code>setManager</code>; override <code>renounceOwnership()</code> to revert where a live owner is required for recovery; have <code>setGuildRegistry</code> verify <code>totalAgents() &gt; 0</code> (or auto-register the owner) before accepting a new registry.</p>
+<hr>
+<h3 id="f-15-no-permissionless-timeoutresolution-path-if-guild-and-owner">[F-15] No permissionless timeout/resolution path if guild and owner go inactive during <code>VerificationPending</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — general (GEN-5); re-examined against source and confirmed<br><strong>Location</strong>: <code>closeEpochForVerification()</code> (public) vs <code>crownWinner()</code>/<code>closeNoWinner()</code> (<code>onlyDisputeOpener</code>); <code>claimPayout()</code></p>
+<p><strong>Description</strong>: Once <code>VerificationPending</code>, only a registered agent (or owner if no registry set) can advance the epoch. If the guild/owner become inactive, that epoch&#39;s winner-pool ETH/USDC (and anything later rolled into it) has no time-based fallback and is stuck indefinitely.</p>
+<p><strong>Recommendation</strong>: Add a permissionless timeout path (e.g., auto-rollover to <code>closeNoWinner</code> after a bounded window, or allow the tentative winner to claim if no guild action occurs within N days).</p>
+<hr>
+<h3 id="f-16-tokenuri-accepts-non-asciiinvalid-utf-8-bytes-risking-metad">[F-16] <code>tokenURI</code> accepts non-ASCII/invalid-UTF-8 bytes, risking metadata-parser breakage (JSON structural injection confirmed NOT possible)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — erc721 (NFT-1); re-examined against source and confirmed<br><strong>Location</strong>: <code>DancepartyEntryNFT.tokenURI()</code> L82-102; <code>_hasInvalidUrlCharacter()</code> (EpochManager L349-358, blocks only <code>&quot;</code>, <code>\</code>, and bytes <code>&lt;0x20</code>)</p>
+<p><strong>Description</strong>: The blocked byte set exactly matches RFC 8259&#39;s mandatory-escape set, so structural JSON injection is confirmed impossible. However bytes <code>0x7F</code> and <code>0x80</code>-<code>0xFF</code> are still accepted and interpolated raw into base64-encoded JSON metadata, risking rejection/garbling by strict UTF-8-validating parsers.</p>
+<p><strong>Recommendation</strong>: Restrict <code>_hasInvalidUrlCharacter</code> to a printable-ASCII allowlist (0x20-0x7E), or escape non-ASCII bytes in <code>tokenURI</code>.</p>
+<hr>
+<h3 id="f-17-usdc-blacklistpause-can-cause-temporary-recoverable-reverts">[F-17] USDC blacklist/pause can cause temporary (recoverable) reverts on hard <code>safeTransfer</code> push paths</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — erc20 (ERC20-1); re-examined against source and confirmed<br><strong>Location</strong>: <code>NatureSplitRouter.flushERC20()</code> L144-150; <code>DancepartyEpochManager._withdrawClaimableUsdcTo()</code> L1076-1086</p>
+<p><strong>Description</strong>: Both use hard-reverting <code>SafeERC20.safeTransfer</code> with no try/catch. If the target is Circle-blacklisted (or USDC is globally paused), the call reverts.</p>
+<p><strong>Recommendation</strong>: Acceptable as-is for canonical USDC; document the recipient-rotation (router) / redirect-destination (<code>withdrawClaimableUsdcTo</code>) recovery paths as the operational mitigation.</p>
+<hr>
+<h3 id="f-18-truncation-dust-from-percentage-splits-is-swept-entirely-to">[F-18] Truncation dust from percentage splits is swept entirely to the protocol share</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[both]</code> — Phase 1 precision-math (MATH-1) + Phase 2 math-precision (lead)<br><strong>Location</strong>: <code>_splitEpochParticipation()</code> L564-573; <code>boostWithUSDC()</code> split L622-628</p>
+<p><strong>Description</strong>: All percentage shares multiply-before-divide (no division-before-multiplication bug), and conservation holds exactly (protocol share = residual). At sub-100-unit deposit sizes (only reachable via <code>boost()</code>&#39;s arbitrary <code>msg.value</code>), nature/winner/eco shares floor to zero and protocol absorbs 100% of the dust — not exploitable, no profit motive.</p>
+<p><strong>Recommendation</strong>: None required; optionally document the intentional dust-absorption behavior.</p>
+<hr>
+<h3 id="f-19-uservotescount-is-a-dead-write-only-counter">[F-19] <code>userVotesCount</code> is a dead write-only counter</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase2 only]</code> — asymmetry agent; re-examined against source and confirmed<br><strong>Location</strong>: <code>vote()</code> L542; <code>userVotesCount</code> mapping L65</p>
+<p><strong>Description</strong>: <code>userVotesCount[epoch][msg.sender] += 1</code> is written every vote but only <code>userTotalVotesCount</code> is ever read to enforce <code>MAX_VOTES_PER_USER</code>. <code>userVotesCount</code> has no other reader in contract logic (it remains externally readable via its auto-generated public getter). The divergence suggests a partially-completed refactor in the same area as F-02&#39;s dead funding-age gate.</p>
+<p><strong>Recommendation</strong>: None required for security; consider removing if genuinely unused, or document its intended (e.g., off-chain analytics) purpose.</p>
+<hr>
+<h3 id="f-20-minor-erc721general-hygiene-notes-verified-sound-no-exploit">[F-20] Minor ERC721/general hygiene notes (verified sound, no exploit)</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1 only]</code> — erc721/erc20/dos/general (NFT-2, NFT-3, ERC20-2, DOS-1, GEN-6)</p>
+<p><strong>Description</strong>: Verified as sound / no exploit found: NFT ownership carries no economic rights (payouts bind to mint-time <code>entrySubmitter</code>/<code>entryPayoutRecipient</code>, not current <code>ownerOf</code>); <code>_mint</code> (not <code>_safeMint</code>) correctly avoids reentrancy via <code>onERC721Received</code>; <code>_safeCreditUsdc</code>&#39;s try/catch correctly handles all non-standard token return behaviors; the fallback-to-claimable pattern correctly prevents a reverting recipient from blocking the rest of a multi-recipient credit batch or the outer transaction; cosmetic items (<code>_liveNatureRecipient</code>&#39;s <code>catch {}</code>, unused third parameter on <code>recordEntryVerificationDecision</code>, &quot;weekly epochs&quot; comment vs. actual 3-day <code>EPOCH_DURATION</code>).</p>
+<p><strong>Recommendation</strong>: None required; documentation/cosmetic cleanup only.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>High</strong></td>
+<td>2 (F-01, F-02)</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>5 (F-03 – F-07)</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>10 (F-08 – F-17)</td>
+</tr>
+<tr>
+<td><strong>Info</strong></td>
+<td>3 (F-18 – F-20)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Top priority</strong>: F-02 (unenforced voter Sybil gate) and F-01 (single-agent unilateral crowning) both enable an external attacker or a single guild agent to redirect an epoch&#39;s pooled ETH/USDC winner prize with a concrete, walked, low-cost exploit path — these should be fixed before any further mainnet participation. F-03 through F-07 (all governance/access-control) compound the same underlying trust-model gaps (undifferentiated agent authority, no revocation, ungated single-signer governance actions) and should be addressed as a batch.</p>
+<blockquote>
+<p>⚠️ This review was performed by an AI-driven two-phase audit pipeline (ethskills breadth + pashov depth, 19 total analysis passes). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human-led review and/or bug bounty program is strongly recommended before this protocol handles material additional value.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreicmqi6vktiwzurcxv2h6jfktogqobpttc6hxh7j6zhf5r62o4ubmy.ipfs.community.bgipfs.com/"><code>https://bafkreicmqi6vktiwzurcxv2h6jfktogqobpttc6hxh7j6zhf5r62o4ubmy.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/301">#301</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

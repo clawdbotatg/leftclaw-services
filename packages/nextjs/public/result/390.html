@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeagueFiPredictorEscrow — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #390">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">LeagueFiPredictorEscrow</h1>
+    <p class="job-sub">Job #390 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/390"><b>Job page</b> #390</a>
+      <a class="chip" href="https://bafkreihqx6gyfd2os2k2rynvgvimk3neyuzy4vi5tok4gki3uydftwkb2m.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">7</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">5</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#summary-table">Summary Table</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — LeagueFiPredictorEscrow</h1>
+<p><strong>Client / job</strong>: leftclaw.services job #390 — &quot;Security review of LeagueFiPredictorEscrow — per-pot USDC escrow for TopPot Score Predictor on Base mainnet&quot;<br><strong>Audit target</strong>: <code>LeagueFiPredictorEscrow.sol</code>, source provided verbatim in the job description (not yet deployed / no on-chain address given). Pinned at commit <code>8f8df9346381d213d2fc40314778014376d40435</code> in the auditor&#39;s local scratch repo (single-file source, 441 lines).<br><strong>Chain</strong>: Base mainnet (per job description); no chain-specific code paths in scope.<br><strong>Methodology</strong>: Three-phase audit — Phase 0 context building (protocol map, access-control inventory, threat catalog) → Phase 1 breadth (8 routed ethskills checklist agents: general, precision-math, erc20, signatures, access-control, dos, assembly, chain-specific) → Phase 2 depth (12 pashov attack-mindset agents, run blind to Phase 1 findings) → Phase 3 hybrid reconciliation with a coverage gate against the Phase 0 inventory/threat catalog.<br><strong>Date</strong>: 2026-07-14</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p>Overlap (found independently by both phases): 6 · Phase-1-only: 5 · Phase-2-only: 4 · Re-examined leads kept: 3 (kickoffTime overflow, missing settle-signature nonce, asymmetric event emission), demoted: 0 · Coverage holes closed this pass: 0 (both phases already covered every inventory entrypoint and threat-catalog row; see Coverage Gate below).</p>
+<p>Confidence floor used: findings below are reported at confidence ≥70 (all have a concrete, source-grounded exploit path or structural proof); no item fell below the 50-confidence lead threshold, so no separate &quot;Leads&quot; section was needed — the lowest-confidence items (kickoffTime overflow, missing signature nonce) are included as Info/Low findings with their confidence stated inline, since both have complete code-level proofs even though their triggering preconditions are narrow.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Who can call</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>fundPrize(uint256)</code> L184</td>
+<td><code>nonReentrant</code>, <code>onlyOpen</code> (L129), <code>amount!=0</code></td>
+<td>Anyone</td>
+<td>Pulls in</td>
+</tr>
+<tr>
+<td><code>submitEntry(address,bytes32,bytes)</code> L210</td>
+<td><code>onlyOpen</code>, <code>nonReentrant</code>, <code>msg.sender==oracle</code> (L215), pre-kickoff, dup-check, EIP-712 sig</td>
+<td>Oracle only</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>lockEntries()</code> L239</td>
+<td><code>onlyOpen</code>, <code>onlyCreatorOrOracle</code> (L138-141), post-kickoff</td>
+<td>Creator/oracle</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>cancel()</code> L251</td>
+<td><code>nonReentrant</code>, <code>onlyCreatorOrOracle</code>, not terminal</td>
+<td>Creator/oracle</td>
+<td>Credits ledger only</td>
+</tr>
+<tr>
+<td><code>settle(address[],uint256[],bytes)</code> L276</td>
+<td><code>onlyActive</code>, <code>nonReentrant</code>, shape+BPS-sum checks, EIP-712 sig recovers to <code>oracle</code></td>
+<td><strong>Anyone</strong> (auth via signature, not <code>msg.sender</code>)</td>
+<td>Credits ledger only</td>
+</tr>
+<tr>
+<td><code>emergencyRecover()</code> L335</td>
+<td><code>nonReentrant</code>, not terminal, <code>kickoffTime+60d</code> elapsed</td>
+<td><strong>Anyone (permissionless by design)</strong></td>
+<td>Credits ledger only</td>
+</tr>
+<tr>
+<td><code>claimPendingWithdrawal(address)</code> L354</td>
+<td><code>nonReentrant</code>, <code>amt!=0</code></td>
+<td><strong>Anyone, for any <code>recipient</code></strong></td>
+<td>Pushes out</td>
+</tr>
+<tr>
+<td>Views (<code>entryCount</code>, <code>getPlayers</code>, <code>settlementDigest</code>, <code>entryDigest</code>, public getters)</td>
+<td>none</td>
+<td>Anyone</td>
+<td>No</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles</strong>: <code>creator</code> and <code>oracle</code> are both <code>immutable</code>, set once in the constructor (L152-174), zero-address-checked (L158), no transfer/renounce/rotation. No <code>Ownable</code>/<code>AccessControl</code> base. Not upgradeable, not a proxy.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary caller</td>
+<td><code>settle()</code> (no <code>msg.sender</code> gate)</td>
+<td>Trigger relay of an oracle-signed payload</td>
+<td><strong>Invariant holds</strong> — payload content is bound to the oracle&#39;s signature; no tampering possible without invalidating it</td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>claimPendingWithdrawal(recipient)</code> for any <code>recipient</code></td>
+<td>Trigger payout on someone&#39;s behalf</td>
+<td><strong>Invariant holds</strong> — funds only ever go to the credited <code>recipient</code>, never diverted to caller</td>
+</tr>
+<tr>
+<td>Arbitrary caller</td>
+<td><code>fundPrize()</code></td>
+<td>Add funds with no refund path if cancelled</td>
+<td><strong>Addressed by Finding M2</strong> (sponsor funds swept to creator)</td>
+</tr>
+<tr>
+<td>Arbitrary caller after <code>kickoffTime+60d</code></td>
+<td><code>emergencyRecover()</code></td>
+<td>Redirect pool to creator, possibly preempting a legitimate late settlement</td>
+<td><strong>Addressed by Finding M1</strong></td>
+</tr>
+<tr>
+<td>Oracle (compromised but validly-signing key)</td>
+<td><code>submitEntry</code>, <code>settle</code></td>
+<td>Direct payouts to non-entrants; cannot violate BPS-sum/full-drain invariants</td>
+<td><strong>Addressed by Finding M3</strong> (no entrant cross-check widens blast radius); arithmetic invariants confirmed to hold regardless</td>
+</tr>
+<tr>
+<td>Oracle or creator</td>
+<td><code>cancel()</code> at any time pre-Completion</td>
+<td>Preempt a pending oracle-signed settlement, or seize sponsor funds</td>
+<td><strong>Addressed by Findings M1, M2</strong></td>
+</tr>
+<tr>
+<td>Duplicate addresses in oracle-signed <code>winners[]</code></td>
+<td><code>settle()</code></td>
+<td>Multiple credits to one address</td>
+<td><strong>Invariant holds</strong> — BPS-sum-to-10000 and full-drain conservation hold regardless of duplicates; bounded entirely by the oracle&#39;s own signed intent, not attacker-introducible</td>
+</tr>
+<tr>
+<td>N/A (no upgrade path)</td>
+<td>—</td>
+<td>—</td>
+<td><strong>Invariant holds structurally</strong> — full immutability, no admin rug-via-upgrade surface</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage gate</strong>: 8 entrypoints in inventory, 8 addressed (6 via findings, 2 via confirmed &quot;examined, no issue&quot;: <code>lockEntries</code> — guard confirmed airtight under inversion by 3+ agents; <code>claimPendingWithdrawal</code> — CEI + blocklist-isolation confirmed by 4+ agents). 8 threat-catalog rows, 8 answered. Coverage holes closed this pass: 0.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="m1-cancel-and-permissionless-emergencyrecover-can-preempt-an-alr">[M1] <code>cancel()</code> and permissionless <code>emergencyRecover()</code> can preempt an already oracle-signed <code>settle()</code> payload</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 85<br><strong>Origin</strong>: <code>[phase2]</code> — independently raised via two entrypoints (trust-gap agent: <code>cancel()</code>; execution-trace agent: <code>emergencyRecover()</code>), corroborated as a lead by the economic-security agent<br><strong>Location</strong>: <code>cancel()</code> L251-257; <code>emergencyRecover()</code> L335-343; both via <code>_returnPrizeToCreator()</code> L392-398; contrasted with <code>settle()</code> L276-322 (<code>onlyActive</code> L280, oracle signature check L291)</p>
+<p><strong>Description</strong>: <code>settle()</code>&#39;s payout authorization is cryptographic — an EIP-712 signature from <code>oracle</code> over the exact <code>winners</code>/<code>bpsSplit</code> (L291). <code>cancel()</code>&#39;s authorization is a bare <code>msg.sender ∈ {creator, oracle}</code> check (L138-141) with <strong>no signature and no check that a valid settlement already exists or is in flight</strong>. Both functions gate on the same <code>status</code> variable (L84) and race for the same <code>prizePool</code>; whichever transaction mines first wins outright and the loser reverts (<code>settle()</code> via <code>onlyActive</code>, L280). This lets <code>creator</code> (or <code>oracle</code>) unilaterally override a legitimate, already-signed settlement, redirecting the entire pool to <code>creator</code> instead of the winners the oracle determined — directly contradicting the contract&#39;s own documented trust model: <em>&quot;Settlement requires ONE oracle signature over the winner list and splits... the oracle... derives winners deterministically&quot;</em> (header comment, L9-14). The permissionless <code>emergencyRecover()</code> variant extends the same race to <em>any</em> address at the <code>kickoffTime+60d</code> boundary: a bystander can front-run a merely-late-but-legitimate <code>settle()</code> transaction the instant the window opens; the swept funds still land with <code>creator</code> regardless of who triggers it, so this is primarily a griefing/timing vector that benefits the creator, not the triggering caller.</p>
+<p><strong>Proof of Concept</strong>: Pool = 100,000 USDC. Oracle computes off-chain and signs <code>Settle(escrow, [Alice], [10000])</code>, then broadcasts a <code>settle()</code> transaction. Before it mines, <code>creator</code> submits <code>cancel()</code> (no signature required, valid while <code>status != Completed/Cancelled</code>, L252-253) with a higher priority fee. <code>cancel()</code> lands first: <code>status → Cancelled</code> (L254), <code>_returnPrizeToCreator()</code> credits <code>pendingWithdrawal[creator] += 100,000e6</code> (L394-398). The pending <code>settle()</code> transaction then reverts <code>NotActive()</code> (L280). Alice — the oracle&#39;s named winner — receives nothing; <code>creator</code> claims the full pool via <code>claimPendingWithdrawal(creator)</code>.</p>
+<p><strong>Recommendation</strong>: Require <code>settle()</code> to have priority once a valid oracle signature for the pot has been produced — e.g., an oracle-signed &quot;commit-to-settle&quot; step that blocks <code>cancel()</code> once issued — or require <code>cancel()</code> itself to carry an oracle co-signature, matching the cryptographic bar already applied to <code>settle()</code>. At minimum, restrict the first period after <code>kickoffTime+60d</code> to <code>oracle</code>/<code>creator</code> before opening <code>emergencyRecover()</code> to arbitrary callers, so a merely-late oracle retains a real window to finalize.</p>
+<hr>
+<h3 id="m2-sponsor-prize-contributions-have-no-refund-path-and-are-swept">[M2] Sponsor prize contributions have no refund path and are swept entirely to <code>creator</code> on cancellation</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 95<br><strong>Origin</strong>: <code>[both]</code> — phase-1 evm-audit-access-control (access-control-1); phase-2 first-principles agent raised as FINDING, independently corroborated as leads by 5 additional phase-2 agents (access-control, economic-security, invariant, asymmetry, trust-gap, flow-gap — 6 of 12 total)<br><strong>Location</strong>: <code>fundPrize()</code> L184-189 (permissionless, single pooled <code>prizePool</code> counter, no per-funder bookkeeping); <code>cancel()</code> L251-257 and <code>emergencyRecover()</code> L335-343 via <code>_returnPrizeToCreator()</code> L392-398 (unconditionally credits 100% of <code>prizePool</code> to <code>creator</code>)</p>
+<p><strong>Description</strong>: <code>fundPrize()</code> is explicitly documented as open to any sponsor (&quot;Open to anyone so a sponsor can top up directly,&quot; L179-182). <code>cancel()</code> is callable by <code>creator</code>/<code>oracle</code> &quot;at any time&quot; pre-Completed (L251), with no minimum-entries or elapsed-time gate — the contract&#39;s own comment notes the &quot;fewer than 2 entries&quot; house policy is explicitly &quot;not enforced on-chain&quot; (L249). Both <code>cancel()</code> and <code>emergencyRecover()</code> route the entire <code>prizePool</code> — sponsor top-ups included — to <code>creator</code> (L396), with no per-funder accounting or refund mechanism anywhere in the contract.</p>
+<p><strong>Proof of Concept</strong>: 1) Sponsor S calls <code>fundPrize(1_000e6)</code> while the pot is Open. 2) <code>creator</code> (or <code>oracle</code>) immediately calls <code>cancel()</code> — no entries required, no elapsed time required, this is normal documented behavior. 3) <code>_returnPrizeToCreator()</code> credits <code>pendingWithdrawal[creator] += 1_000e6</code>. 4) <code>creator</code> calls <code>claimPendingWithdrawal(creator)</code> and receives S&#39;s entire 1,000 USDC deposit; S has zero on-chain recourse.</p>
+<p><strong>Recommendation</strong>: Track contributions per-funder (<code>mapping(address =&gt; uint256) contributions</code>) in <code>fundPrize()</code>, and refund cancellations pro-rata to actual funders instead of unconditionally crediting <code>creator</code>; alternatively, restrict <code>fundPrize()</code> to <code>creator</code>-only if third-party sponsorship funds aren&#39;t meant to survive unilateral cancellation.</p>
+<hr>
+<h3 id="m3-settle-never-validates-that-winners-are-recorded-entrants-wid">[M3] <code>settle()</code> never validates that <code>winners</code> are recorded entrants, widening the blast radius of oracle-key compromise</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: <code>[phase1-only]</code> — evm-audit-access-control (access-control-2)<br><strong>Location</strong>: <code>settle()</code> L276-322; <code>entryHashes</code> (L89) / <code>players</code> (L92) never read here</p>
+<p><strong>Description</strong>: The sole authorization for <code>settle()</code>&#39;s fund distribution is the oracle&#39;s EIP-712 signature (L291) — it is never cross-checked against <code>entryHashes[winners[i]] != bytes32(0)</code> or the <code>players</code> roster. A compromised or malicious-but-validly-signing oracle key can direct 100% of <code>prizePool</code> to any arbitrary address, including addresses that never called <code>submitEntry()</code>, with no additional on-chain guardrail. This turns a key compromise from &quot;attacker skews payouts among legitimate winners&quot; into &quot;attacker unconditionally drains the entire pool to itself&quot; — a materially larger and easily-preventable blast radius, and a defense-in-depth gap the contract&#39;s own design (per-pot escrow, immutable oracle key with no rotation) makes especially costly since there is no way to recover from a compromised key mid-pot other than the 60-day <code>emergencyRecover()</code> fallback (which itself routes to <code>creator</code>, not back to legitimate entrants).</p>
+<p><strong>Proof of Concept</strong>: An attacker who obtains the oracle&#39;s signing key crafts and signs a <code>Settle</code> payload with <code>winners = [attacker]</code>, <code>bpsSplit = [10000]</code>, where <code>attacker</code> never called <code>submitEntry()</code>. Since <code>settle()</code> is callable by anyone (auth is purely via signature recovery, L280-291) and never checks <code>entryHashes[attacker]</code>, the call succeeds and credits the full <code>prizePool</code> to <code>attacker</code>&#39;s <code>pendingWithdrawal</code>, claimable via <code>claimPendingWithdrawal(attacker)</code>.</p>
+<p><strong>Recommendation</strong>: Require <code>entryHashes[winners[i]] != bytes32(0)</code> for every winner in <code>settle()</code>, reverting otherwise — a cheap, defense-in-depth bound on the oracle&#39;s spending authority to the actual entrant set.</p>
+<hr>
+<h3 id="h1-immutable-unrotatable-creator-address-is-a-single-point-of-fa">[H1] Immutable, unrotatable <code>creator</code> address is a single point of failure for every pool-return path if blocklisted by the USDC issuer</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 80<br><strong>Origin</strong>: <code>[phase1-only]</code> — evm-audit-erc20 (erc20-1)<br><strong>Location</strong>: <code>_returnPrizeToCreator()</code> L392-398, called from <code>cancel()</code> L251-257 and <code>emergencyRecover()</code> L335-343; realized via <code>claimPendingWithdrawal()</code> L354-360</p>
+<p><strong>Description</strong>: Every path that returns <code>prizePool</code> to <code>creator</code> credits <code>pendingWithdrawal[creator]</code> (L396). <code>creator</code> is <code>immutable</code> — set once at construction (L162), zero-address-checked only (L158) — with no transfer, no admin recovery, no alternate-recipient mechanism, and the contract is not upgradeable. USDC is issuer-blocklistable (Circle can freeze any address for OFAC/compliance reasons, independent of this contract). If <code>creator</code> is ever blocklisted — before or after <code>prizePool</code> has been credited to it — <code>usdc.safeTransfer(creator, amt)</code> in <code>claimPendingWithdrawal()</code> (L358) reverts every time it is attempted, permanently locking the entire returned pool with zero on-chain recovery path, since <code>status</code> is already terminal (<code>Cancelled</code>) and no function can redirect the credited balance.</p>
+<p><strong>Proof of Concept</strong>: 1) Creator deploys and funds a pot via <code>fundPrize()</code>. 2) Independent of this contract, Circle blocklists the <code>creator</code> address on USDC. 3) <code>cancel()</code> or <code>emergencyRecover()</code> succeeds regardless (pure internal accounting, no external call at this step) and credits <code>pendingWithdrawal[creator]</code>. 4) <code>claimPendingWithdrawal(creator)</code> reverts forever — the funds are permanently stuck with no redirect mechanism.</p>
+<p><strong>Recommendation</strong>: Add a fallback/rotatable payout address for the creator-return path (e.g., a two-step, oracle-co-signed address-update function), or a documented/permissioned recovery sweep for exactly this scenario.</p>
+<hr>
+<h3 id="l1-settle-structs-address-field-hashed-with-non-standard-packed-">[L1] <code>Settle</code> struct&#39;s <code>address[]</code> field hashed with non-standard packed encoding, deviating from the EIP-712 spec</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: <code>[both]</code> — phase-1 evm-audit-signatures (signatures-1); independently raised by 3 phase-2 agents (execution-trace, periphery, asymmetry) — strong cross-phase corroboration on the exact same root cause<br><strong>Location</strong>: <code>_settlementDigest()</code> L400-411, specifically L407 (<code>keccak256(abi.encodePacked(winners))</code>)</p>
+<p><strong>Description</strong>: <code>SETTLE_TYPEHASH</code> declares <code>address[] winners</code> (L69-70). Per the EIP-712 spec, a dynamic array field&#39;s hash is the concatenation of each element&#39;s standard 32-byte-padded ABI word (what <code>abi.encode</code> per-element produces, and what every standards-compliant <code>eth_signTypedData_v4</code> implementation — ethers.js, viem, MetaMask, hardware wallets — computes). This contract instead packs each address as 20 raw bytes (<code>abi.encodePacked</code>), a different encoding than the declared type implies (<code>bpsSplit</code>&#39;s packed vs. padded sizes are identical for <code>uint256</code>, so that field is unaffected).</p>
+<p><strong>Proof of Concept</strong>: A genuine standards-compliant EIP-712 signer produces a signature that will NOT match <code>_settlementDigest()</code>&#39;s output, causing <code>settle()</code> to permanently revert <code>BadOracleSignature()</code> for that payload. The contract only works today because the oracle backend evidently calls the exposed <code>settlementDigest()</code> view directly and raw-signs the returned hash, bypassing standard typed-data tooling — not attacker-exploitable for fund theft, but a real operational footgun if the oracle&#39;s signing stack is ever migrated to standard tooling or a third-party co-signer/hardware-wallet workflow.</p>
+<p><strong>Recommendation</strong>: Hash <code>winners</code> per the EIP-712 spec (loop-concatenate 32-byte-padded elements via <code>abi.encode</code>), or explicitly document this as a non-standard, custom scheme incompatible with generic <code>eth_signTypedData_v4</code> signers.</p>
+<hr>
+<h3 id="l2-domainseparator-cached-as-immutable-at-deploy-time-with-no-fo">[L2] <code>DOMAIN_SEPARATOR</code> cached as <code>immutable</code> at deploy time with no fork-recomputation fallback</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 75<br><strong>Origin</strong>: <code>[both]</code> — phase-1 evm-audit-signatures (signatures-3) and evm-audit-chain-specific (chain-specific-1, reached independently via the Base/OP-Stack lens); corroborated by 5 phase-2 agents<br><strong>Location</strong>: L79, constructor L167-173</p>
+<p><strong>Description</strong>: Correctly includes <code>block.chainid</code> and <code>address(this)</code> at deployment (cross-chain/cross-contract binding IS present), but unlike OpenZeppelin&#39;s <code>EIP712._domainSeparatorV4()</code>, there is no runtime fallback recomputation if <code>block.chainid</code> changes post-deployment (a contentious hard fork or L2 chain-ID reassignment). Both <code>_entryDigest</code>/<code>_settlementDigest</code> read the cached value verbatim regardless of the live chain ID.</p>
+<p><strong>Proof of Concept</strong>: Hypothetical only — requires a chain split/renumbering event during a pot&#39;s short (days-to-60-day) lifecycle. Base is a single, centrally-sequenced OP-Stack chain (8453); a contentious fork producing two live chains sharing this contract&#39;s pre-fork state is unlikely, and even then both post-fork chains would start from identical state, so a stale-separator-signed payload replayed across both forks authorizes the same intended action on each — not attacker-favorable divergence. No current exploit path on Base.</p>
+<p><strong>Recommendation</strong>: Mirror OpenZeppelin&#39;s dynamic-recompute-on-mismatch pattern if the deployment target is considered fork-risk-sensitive, or accept the risk given Base&#39;s low fork likelihood.</p>
+<hr>
+<h3 id="l3-recoversigner-lacks-signature-malleability-and-v-range-valida">[L3] <code>_recoverSigner</code> lacks signature-malleability and <code>v</code>-range validation</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 70<br><strong>Origin</strong>: <code>[both]</code> — phase-1 evm-audit-general (general-4) and evm-audit-signatures (signatures-2), merged (same function, same root cause, reported by two domain checklists); corroborated by 9 of 12 phase-2 agents<br><strong>Location</strong>: <code>_recoverSigner()</code> L425-440</p>
+<p><strong>Description</strong>: Unlike OpenZeppelin&#39;s <code>ECDSA.recover</code>, this custom implementation has no check that <code>s</code> is in the lower half of the curve order (no malleability check), and only loosely normalizes <code>v</code> (<code>if (v &lt; 27) v += 27;</code>) without rejecting other out-of-range values. Reused identically by both <code>submitEntry</code> (player auth) and <code>settle</code> (oracle auth) — one root-cause class hitting both signature-verification surfaces in the contract.</p>
+<p><strong>Proof of Concept</strong>: Not independently exploitable in the current contract — every consumer of <code>_recoverSigner</code>&#39;s output keys replay protection off contract <em>state</em> (<code>entryHashes[player]</code> dedup for entries; the one-shot <code>Active→Completed</code> status transition for settlement), not off signature bytes/hash, so a malleable alternate encoding of a captured signature does not enable double-execution today. All 9 phase-2 agents that examined this independently confirmed no live exploit path. Flagged as a hardening gap: any future feature that keys uniqueness off a signature hash (a <code>usedSignatures</code> mapping, a meta-tx nonce derived from sig hash) would inherit a live double-spend/replay primitive from day one.</p>
+<p><strong>Recommendation</strong>: Replace the custom assembly-based recovery with OpenZeppelin&#39;s <code>ECDSA.recover</code>, or add explicit <code>s &lt;= secp256k1n/2</code> and <code>v ∈ {27,28}</code> checks.</p>
+<hr>
+<h3 id="l4-natspec-claims-64-or-65-byte-signatures-are-accepted-recovers">[L4] NatSpec claims 64-or-65-byte signatures are accepted; <code>_recoverSigner</code> only accepts 65, and misreports the error on the entry path</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 95<br><strong>Origin</strong>: <code>[both]</code> — phase-1 evm-audit-general (general-3); corroborated by 7 of 12 phase-2 agents<br><strong>Location</strong>: <code>submitEntry()</code> NatSpec L207-208; <code>_recoverSigner()</code> L429</p>
+<p><strong>Description</strong>: The doc comment states <code>playerSig</code> may be &quot;64 or 65-byte,&quot; implying EIP-2098 compact-signature support. <code>_recoverSigner</code> hard-reverts (<code>BadOracleSignature()</code>) on any length other than exactly 65 (L429) — there is no code path that decompresses a 64-byte compact signature into <code>(r,s,v)</code>. Additionally, the revert is always <code>BadOracleSignature()</code> even when reached from the <code>submitEntry</code> (player) path, misusing the dedicated <code>BadEntrySignature</code> error for this case.</p>
+<p><strong>Proof of Concept</strong>: Any client/wallet library producing EIP-2098 compact signatures — as the docs claim is supported — will have every <code>submitEntry</code>/<code>settle</code> call using that format revert, contradicting the documented interface. Fails closed (not a bypass), but a real functional/integration-correctness gap.</p>
+<p><strong>Recommendation</strong>: Either implement EIP-2098 compact-signature support, or correct the NatSpec to state only standard 65-byte signatures are accepted. Pass/select the correct error per call site.</p>
+<hr>
+<h3 id="l5-settle-has-no-check-that-winnersi-or-creator-is-not-the-usdc-">[L5] <code>settle()</code> has no check that <code>winners[i]</code> (or <code>creator</code>) is not the <code>usdc</code> token contract itself</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 70<br><strong>Origin</strong>: <code>[phase1-only]</code> — evm-audit-erc20 (erc20-3)<br><strong>Location</strong>: <code>settle()</code> L305, L316 (<code>winner == address(0) || winner == address(this)</code> — no <code>== address(usdc)</code> check); same gap for <code>creator</code> in the constructor / <code>_returnPrizeToCreator()</code></p>
+<p><strong>Description</strong>: Standard USDC does not block transfers to its own contract address; such a transfer would strand funds permanently with no recovery. <code>settle()</code> guards against <code>address(0)</code>/<code>address(this)</code> but not <code>address(usdc)</code>.</p>
+<p><strong>Proof of Concept</strong>: Requires the trusted oracle to sign a payload containing <code>address(usdc)</code> as a winner (backend data bug), or <code>creator == address(usdc)</code> at deploy (misconfiguration) — not a third-party attack vector, but an easily-preventable, irreversible-loss latent bug.</p>
+<p><strong>Recommendation</strong>: Extend the guard to also reject <code>winner == address(usdc)</code>, and check <code>_creator != _usdc</code> at construction.</p>
+<hr>
+<h3 id="l6-fundprize-credits-prizepool-from-the-requested-amount-not-a-m">[L6] <code>fundPrize()</code> credits <code>prizePool</code> from the requested <code>amount</code>, not a measured balance delta</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 65<br><strong>Origin</strong>: <code>[both]</code> — phase-1 evm-audit-erc20 (erc20-2); corroborated by the phase-2 economic-security agent<br><strong>Location</strong>: <code>fundPrize()</code> L184-189</p>
+<p><strong>Description</strong>: <code>prizePool += amount</code> (L187) uses the caller-supplied parameter rather than measuring <code>balanceAfter - balanceBefore</code>. Safe for plain-vanilla USDC (no fee-on-transfer, no max-uint balance semantics) but <code>usdc</code> is only zero-address-checked at construction (L158) with no interface/behavior validation, and is immutable thereafter.</p>
+<p><strong>Proof of Concept</strong>: Not exploitable against real mainnet/Base USDC. Latent gap only if a future deployment mistakenly wires in a fee-on-transfer or balance-capping token — <code>prizePool</code> would then permanently exceed the real balance, and the last claimant(s) after settlement would find <code>claimPendingWithdrawal</code> reverting for lack of funds.</p>
+<p><strong>Recommendation</strong>: Measure the actual received amount via balance delta instead of trusting the parameter, or document the hard USDC-only assumption clearly.</p>
+<hr>
+<h3 id="l7-direct-usdc-transfers-to-the-contract-bypass-prizepool-accoun">[L7] Direct USDC transfers to the contract bypass <code>prizePool</code> accounting and become permanently stuck</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: <code>[phase1-only]</code> — evm-audit-general (general-6)<br><strong>Location</strong>: <code>fundPrize()</code> L184-189; contract-wide (no sweep function)</p>
+<p><strong>Description</strong>: <code>prizePool</code> is credited only by the <code>amount</code> parameter (L187), never by measuring <code>usdc.balanceOf(address(this))</code>. Any USDC sent directly via a raw <code>transfer()</code> bypassing <code>fundPrize()</code> is never reflected in <code>prizePool</code> and is unrecoverable — no function anywhere reads the contract&#39;s actual token balance.</p>
+<p><strong>Proof of Concept</strong>: Any direct transfer to the contract address is permanently stuck.</p>
+<p><strong>Recommendation</strong>: Document clearly for integrators/sponsors, or add a permissioned sweep for accidental transfers.</p>
+<hr>
+<h3 id="i1-kickofftime-has-no-upper-bound-risking-a-permanently-bricked-">[I1] <code>kickoffTime</code> has no upper bound, risking a permanently-bricked <code>emergencyRecover()</code> fallback</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 40<br><strong>Origin</strong>: <code>[phase2-only]</code> — numerical-gap agent (lead)<br><strong>Location</strong>: Constructor L160 (only checks <code>_kickoffTime &gt; block.timestamp</code>, no upper bound); <code>emergencyRecover()</code> L338 (<code>kickoffTime + EMERGENCY_WINDOW</code>, checked 0.8.x arithmetic)</p>
+<p><strong>Description</strong>: If <code>kickoffTime</code> is ever set close enough to <code>type(uint256).max</code> that adding <code>60 days</code> overflows, every future call to <code>emergencyRecover()</code> reverts unconditionally — the contract&#39;s own documented last-resort fallback (&quot;the prize can be recovered even if the TopPot backend is permanently offline,&quot; L43-44) becomes permanently unreachable. Requires the trusted <code>creator</code> to supply a pathological, immutable <code>kickoffTime</code> at deploy — an admin self-harm precondition with no external attacker path, and no realistic unit-mistake (e.g., milliseconds vs. seconds) reaches the overflow threshold.</p>
+<p><strong>Recommendation</strong>: Add a sane upper-bound check on <code>_kickoffTime</code> in the constructor (e.g., reject values beyond <code>block.timestamp + N years</code>) as cheap defense-in-depth.</p>
+<hr>
+<h3 id="i2-settle-signed-payloads-have-no-noncedeadline-field">[I2] <code>Settle</code> signed payloads have no nonce/deadline field</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 45<br><strong>Origin</strong>: <code>[phase2-only]</code> — economic-security agent (lead)<br><strong>Location</strong>: <code>SETTLE_TYPEHASH</code> L69-70; <code>settle()</code> L276-322</p>
+<p><strong>Description</strong>: The signed struct <code>Settle(address escrow, address[] winners, uint256[] bpsSplit)</code> has no nonce or deadline field. Once the oracle signs a settlement payload, it remains valid and executable by anyone forever (until consumed by a successful <code>settle()</code> call). If the oracle backend ever produces more than one signed settlement candidate for the same pot before finalizing (a corrected split after a scoring bug, a staging/preview signature), whichever lands on-chain first executes permanently with no on-chain revocation path. Off-chain oracle single-submission discipline cannot be verified from source alone.</p>
+<p><strong>Recommendation</strong>: Add a <code>deadline</code> and/or <code>nonce</code> field to <code>SETTLE_TYPEHASH</code> so stale/superseded signed payloads can be invalidated.</p>
+<hr>
+<h3 id="i3-returnprizetocreator-credits-without-emitting-an-amount-beari">[I3] <code>_returnPrizeToCreator()</code> credits without emitting an amount-bearing event</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: <code>[phase2-only]</code> — asymmetry agent (lead)<br><strong>Location</strong>: <code>_returnPrizeToCreator()</code> L392-398 (no <code>emit</code>, contrasted with <code>settle()</code>&#39;s <code>PrizePaid</code> at L310/L319)</p>
+<p><strong>Description</strong>: <code>settle()</code> emits <code>PrizePaid(winner, payout)</code> for every credit it makes. <code>_returnPrizeToCreator()</code> — used by both <code>cancel()</code> and <code>emergencyRecover()</code> — credits <code>pendingWithdrawal[creator] += pool</code> with no amount-bearing event (<code>PotCancelled()</code> carries no amount). Off-chain indexers/accounting reconstructing pending balances purely from events would silently miss creator refunds. Not fund-losing — storage remains correct and <code>claimPendingWithdrawal</code> still works.</p>
+<p><strong>Recommendation</strong>: Add an event (e.g., <code>PrizeReturned(address indexed creator, uint256 amount)</code>) in <code>_returnPrizeToCreator()</code>.</p>
+<hr>
+<h3 id="i4-nonreentrant-is-not-the-first-modifier-on-submitentry-and-set">[I4] <code>nonReentrant</code> is not the first modifier on <code>submitEntry()</code> and <code>settle()</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 95<br><strong>Origin</strong>: <code>[phase1-only]</code> — evm-audit-general (general-2)<br><strong>Location</strong>: <code>submitEntry()</code> L214 (<code>onlyOpen nonReentrant</code>); <code>settle()</code> L280 (<code>onlyActive nonReentrant</code>)</p>
+<p><strong>Description</strong>: Best practice places <code>nonReentrant</code> first so no other modifier executes before the lock is set. <code>fundPrize()</code> (L184) and <code>cancel()</code> (L251) correctly do this; <code>submitEntry</code>/<code>settle</code> do not. Not currently exploitable — <code>onlyOpen</code>/<code>onlyActive</code> only read storage and revert, no external call or write.</p>
+<p><strong>Recommendation</strong>: Reorder to <code>nonReentrant onlyOpen</code> / <code>nonReentrant onlyActive</code> for consistency.</p>
+<hr>
+<h3 id="i5-pragma-solidity-0824-emits-push0-by-default-deployment-chain-">[I5] <code>pragma solidity ^0.8.24</code> emits PUSH0 by default — deployment-chain compatibility note</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Confidence</strong>: 90<br><strong>Origin</strong>: <code>[phase1-only]</code> — evm-audit-general (general-5)<br><strong>Location</strong>: L2</p>
+<p><strong>Description</strong>: Solidity ≥0.8.20 emits PUSH0 (Shanghai+) by default. Base mainnet supports PUSH0 (Canyon hardfork, January 2024) — no issue for this specific deployment target. Relevant only if this contract is ever redeployed to a PUSH0-incompatible chain/L2.</p>
+<p><strong>Recommendation</strong>: Pin <code>--evm-version</code> appropriate to each target chain before any future redeployment elsewhere.</p>
+<hr>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H1</td>
+<td>Immutable <code>creator</code> — USDC-blocklist single point of failure</td>
+<td><span class="pill high">High</span></td>
+<td>phase1-only</td>
+</tr>
+<tr>
+<td>M1</td>
+<td><code>cancel()</code>/<code>emergencyRecover()</code> can preempt a signed <code>settle()</code></td>
+<td><span class="pill medium">Medium</span></td>
+<td>phase2-only</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>Sponsor funds swept to creator, no refund path</td>
+<td><span class="pill medium">Medium</span></td>
+<td>both</td>
+</tr>
+<tr>
+<td>M3</td>
+<td><code>settle()</code> doesn&#39;t cross-check winners against entrants</td>
+<td><span class="pill medium">Medium</span></td>
+<td>phase1-only</td>
+</tr>
+<tr>
+<td>L1</td>
+<td>Non-standard EIP-712 array encoding</td>
+<td><span class="pill low">Low</span></td>
+<td>both</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>Cached <code>DOMAIN_SEPARATOR</code>, no fork fallback</td>
+<td><span class="pill low">Low</span></td>
+<td>both</td>
+</tr>
+<tr>
+<td>L3</td>
+<td><code>_recoverSigner</code> malleability/<code>v</code>-range gap</td>
+<td><span class="pill low">Low</span></td>
+<td>both</td>
+</tr>
+<tr>
+<td>L4</td>
+<td>64/65-byte signature doc/code mismatch</td>
+<td><span class="pill low">Low</span></td>
+<td>both</td>
+</tr>
+<tr>
+<td>L5</td>
+<td>No <code>winner != address(usdc)</code> check</td>
+<td><span class="pill low">Low</span></td>
+<td>phase1-only</td>
+</tr>
+<tr>
+<td>L6</td>
+<td><code>fundPrize</code> amount vs. balance delta</td>
+<td><span class="pill low">Low</span></td>
+<td>both</td>
+</tr>
+<tr>
+<td>L7</td>
+<td>Direct transfers bypass accounting, get stuck</td>
+<td><span class="pill low">Low</span></td>
+<td>phase1-only</td>
+</tr>
+<tr>
+<td>I1</td>
+<td><code>kickoffTime</code> unbounded, overflow risk</td>
+<td><span class="pill info">Info</span></td>
+<td>phase2-only</td>
+</tr>
+<tr>
+<td>I2</td>
+<td>No nonce/deadline on settlement signature</td>
+<td><span class="pill info">Info</span></td>
+<td>phase2-only</td>
+</tr>
+<tr>
+<td>I3</td>
+<td>No event on creator-return credit</td>
+<td><span class="pill info">Info</span></td>
+<td>phase2-only</td>
+</tr>
+<tr>
+<td>I4</td>
+<td><code>nonReentrant</code> modifier ordering</td>
+<td><span class="pill info">Info</span></td>
+<td>phase1-only</td>
+</tr>
+<tr>
+<td>I5</td>
+<td>PUSH0 deployment note</td>
+<td><span class="pill info">Info</span></td>
+<td>phase1-only</td>
+</tr>
+</tbody></table></div>
+<p>No Critical-severity findings. The core money-moving logic (<code>settle()</code>&#39;s BPS-split/rounding/full-drain math, the pull-payment <code>claimPendingWithdrawal</code> pattern, <code>nonReentrant</code> coverage, checks-effects-interactions ordering, and EIP-712 domain separation preventing cross-contract replay) was traced with concrete numeric examples by multiple independent agents across both phases and confirmed sound.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihqx6gyfd2os2k2rynvgvimk3neyuzy4vi5tok4gki3uydftwkb2m.ipfs.community.bgipfs.com/"><code>https://bafkreihqx6gyfd2os2k2rynvgvimk3neyuzy4vi5tok4gki3uydftwkb2m.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/390">#390</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

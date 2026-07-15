@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ContestCatalyst — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #392">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ContestCatalyst</h1>
+    <p class="job-sub">Job #392 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/392"><b>Job page</b> #392</a>
+      <a class="chip" href="https://bafkreihfmgvbtbmysempeer4m537f352e6lecuc37kcgdrazxibd2hvrjy.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">9</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#what-was-checked-and-found-sound">What Was Checked and Found Sound</a></li>
+      <li><a href="#severity-legend">Severity Legend</a></li>
+      <li><a href="#summary-table">Summary Table</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — ContestCatalyst</h1>
+<p><strong>Target</strong>: <code>MagRelo/contestCatalyst</code> — <code>git rev-parse HEAD</code> = <code>6a93dc7adafa2984c7ede10f2eeaf19088ac8929</code><br><strong>Scope</strong>: <code>src/ContestController.sol</code>, <code>src/ContestFactory.sol</code>, <code>src/PrimaryContest.sol</code>, <code>src/SecondaryContest.sol</code>, <code>src/SecondaryPricing.sol</code> (1,039 LOC)<br><strong>Methodology</strong>: Three-phase audit — Phase 0 (context: protocol map, access-control inventory, threat catalog, opus) → Phase 1 (breadth: 7 ethskills domain checklists — general, precision-math, erc20, erc1155, access-control, dos, defi-amm — opus) → Phase 2 (depth: 12 pashov attacker-mindset agents, run blind to Phase 1 findings, opus) → hybrid reconciliation with a Phase-0-driven coverage gate.<br><strong>Note on prior audit</strong>: This repository contains a prior report (<code>audit-report.md</code>) from an earlier commit. Per this engagement&#39;s scope, every finding below comes from a fresh Phase 0 → Phase 1 → Phase 2 run against the current commit, independent of that prior report&#39;s conclusions.</p>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Overlap</strong> (found by both phases independently): 6 of 8 substantive findings.</li>
+<li><strong>Phase-1-only</strong>: 6 findings (oracle immutability, O(n²) duplicate-winner check, dust-burn-on-zero-payout, no slippage protection, unchecked int256 casts, blocklist/pause systemic risk, zero-deposit misconfiguration — 7 items, all Low/Info).</li>
+<li><strong>Phase-2-only</strong>: 1 lead (referral-fee-call reentrancy/state-desync, Info).</li>
+<li><strong>Re-examined leads kept</strong>: 7 (all Phase-1-only items above, confirmed against source on re-read). <strong>Demoted</strong>: 0.</li>
+<li><strong>Coverage</strong>: 22 entrypoints in the Phase-0 inventory, 22 addressed (either by a finding below or an explicit &quot;examined, no issue&quot; — see Coverage Gate). 9 threat-catalog rows, 9 answered. <strong>Coverage holes closed this pass: 0</strong> (both phases already covered every entrypoint and catalog row independently).</li>
+<li><strong>Confidence floor</strong>: all findings below have confidence ≥ 75 (multi-agent corroborated, source-verified, and cross-checked against the repo&#39;s own test suite where cited). No sub-50-confidence leads survived to reporting — the &quot;Leads&quot; subsections under each severity summarize what was investigated and not promoted, for transparency.</li>
+</ul>
+<p><strong>The standout result of this run</strong>: finding P2-1 (secondary-market fund-stranding) was independently raised by <strong>10 of 19 total hunting agents</strong> across both phases via completely different attack lenses (checklist-driven, execution-trace, invariant-violation, paired-function-asymmetry, boundary-condition, numerical-seam, flow-gap, and periphery-library analysis), and finding P2-2 (<code>cancelExpired</code> settlement race) was flagged by <strong>all 19</strong> agents in some form. Both are corroborated against the repository&#39;s own Foundry test suite (see each finding).</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<p>Exactly <strong>one</strong> privileged role exists: <code>oracle</code>, declared <code>address public immutable oracle</code> (<code>ContestController.sol:34</code>), set once in the constructor (<code>:141</code>, validated non-zero <code>:132</code>), with <strong>no transfer, renounce, or two-step handoff</strong> — see finding L-1. <code>PrimaryContest.sol</code>, <code>SecondaryContest.sol</code>, and <code>SecondaryPricing.sol</code> are pure/internal libraries with no external entrypoints of their own.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>addPrimaryPosition</code></td>
+<td><code>nonReentrant</code>; optional merkle proof</td>
+<td>any address</td>
+<td>pulls deposit</td>
+</tr>
+<tr>
+<td><code>removePrimaryPosition</code></td>
+<td><code>nonReentrant</code>; caller owns entry</td>
+<td>entry owner</td>
+<td>refunds deposit</td>
+</tr>
+<tr>
+<td><code>claimPrimaryPayout</code></td>
+<td><code>nonReentrant</code>; caller owns entry</td>
+<td>entry owner</td>
+<td>pays claimant</td>
+</tr>
+<tr>
+<td><code>addSecondaryPosition</code></td>
+<td><code>nonReentrant</code>; optional merkle proof</td>
+<td>any address</td>
+<td>pulls payment, mints ERC1155</td>
+</tr>
+<tr>
+<td><code>removeSecondaryPosition</code></td>
+<td><code>nonReentrant</code>; token holder, OPEN/CANCELLED</td>
+<td>any holder</td>
+<td>pays seller</td>
+</tr>
+<tr>
+<td><code>claimSecondaryPayout</code></td>
+<td><code>nonReentrant</code>; winning-entry holder, SETTLED</td>
+<td>any holder</td>
+<td>pays claimant</td>
+</tr>
+<tr>
+<td><code>activateContest</code> / <code>lockContest</code></td>
+<td><code>onlyOracle</code></td>
+<td>oracle</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>settleContest</code></td>
+<td><code>onlyOracle</code> + <code>nonReentrant</code></td>
+<td>oracle</td>
+<td>indirect (referral self-call)</td>
+</tr>
+<tr>
+<td><code>distributeReferralFee</code></td>
+<td><strong>self-call only</strong> (<code>msg.sender==address(this)</code>)</td>
+<td>self</td>
+<td>fans out referral fee</td>
+</tr>
+<tr>
+<td><code>cancelContest</code></td>
+<td><code>onlyOracle</code></td>
+<td>oracle</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>closeContest</code></td>
+<td><code>onlyOracle</code> + <code>nonReentrant</code></td>
+<td>oracle</td>
+<td>sweeps full balance to oracle</td>
+</tr>
+<tr>
+<td><code>setPrimaryMerkleRoot</code> / <code>setSecondaryMerkleRoot</code></td>
+<td><code>onlyOracle</code></td>
+<td>oracle</td>
+<td>no</td>
+</tr>
+<tr>
+<td><strong><code>cancelExpired</code></strong></td>
+<td><strong>none</strong> — time + state only</td>
+<td><strong>any address</strong>, post-expiry</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>pushPrimaryPayouts</code></td>
+<td><code>onlyOracle</code> + <code>nonReentrant</code></td>
+<td>oracle</td>
+<td>pays owners (batch, not isolated)</td>
+</tr>
+<tr>
+<td><code>pushSecondaryPayouts</code></td>
+<td><code>onlyOracle</code> + <code>nonReentrant</code></td>
+<td>oracle</td>
+<td>pays holders (batch, per-recipient isolated)</td>
+</tr>
+<tr>
+<td><code>paySecondaryClaimExternal</code></td>
+<td><strong>self-call only</strong></td>
+<td>self</td>
+<td>pays one holder</td>
+</tr>
+<tr>
+<td><code>setApprovalForAll</code> / <code>safeTransferFrom</code> / <code>safeBatchTransferFrom</code></td>
+<td>always <code>revert</code></td>
+<td>n/a</td>
+<td>no (shares are non-transferable by design)</td>
+</tr>
+<tr>
+<td><code>ContestFactory.createContest</code></td>
+<td><strong>none</strong></td>
+<td>any address</td>
+<td>no — deploys a new controller and <strong>freely picks its own <code>oracle</code></strong>, including itself (see P2-1 escalation)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Addressed by</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Any address (merkle root unset)</td>
+<td><code>addPrimaryPosition</code>/<code>addSecondaryPosition</code></td>
+<td>unrestricted participation</td>
+<td>Invariant holds — registry/supply bookkeeping is correct regardless of caller</td>
+</tr>
+<tr>
+<td>Secondary buyer that is a contract</td>
+<td><code>onERC1155Received</code> callback mid-buy</td>
+<td>control mid-transaction</td>
+<td>Invariant holds — <code>nonReentrant</code> blocks all guarded re-entry; verified by 4+ agents</td>
+</tr>
+<tr>
+<td>Oracle (trusted role)</td>
+<td><code>settleContest</code></td>
+<td>picks arbitrary winners within payout-sum constraint</td>
+<td>Invariant holds / documented trust assumption — out of scope per prior repo commit &quot;Document contest trust model&quot;</td>
+</tr>
+<tr>
+<td>Oracle</td>
+<td><code>closeContest</code></td>
+<td>sweeps 100% of remaining balance post-expiry</td>
+<td><strong>P2-3</strong> (Medium)</td>
+</tr>
+<tr>
+<td>Any address, post-expiry</td>
+<td><code>cancelExpired</code></td>
+<td>permanently blocks settlement</td>
+<td><strong>P2-2</strong> (High)</td>
+</tr>
+<tr>
+<td>Referral graph / reward calculator (external, black box)</td>
+<td><code>distributeReferralFee</code> internals</td>
+<td>up to the bounded referral fee</td>
+<td>Invariant holds — capped at 10 recipients, <code>Σamounts≤fee</code> enforced, try/catch-contained</td>
+</tr>
+<tr>
+<td>Non-standard <code>paymentToken</code> (fee-on-transfer/rebasing/blocklist)</td>
+<td>every transfer site</td>
+<td>accounting drift vs. real custody</td>
+<td><strong>L-2</strong> (Medium)</td>
+</tr>
+<tr>
+<td>Any secondary seller, across all entries sharing one pooled balance</td>
+<td>sell-back/claim <code>balanceOf(this)</code> clamps</td>
+<td>first-mover advantage under balance drift</td>
+<td><strong>L-2</strong> (folded in — same root cause)</td>
+</tr>
+<tr>
+<td>Oracle-supplied batch (<code>pushPrimaryPayouts</code>)</td>
+<td>one reverting recipient</td>
+<td>blocks the whole batch</td>
+<td><strong>L-3</strong> (Low)</td>
+</tr>
+<tr>
+<td>Primary entry owner (any address, including a self-appointed oracle)</td>
+<td><code>removePrimaryPosition</code> while entry has live secondary supply</td>
+<td>strands/steals secondary buyers&#39; backed liquidity</td>
+<td><strong>P2-1</strong> (High, escalating to a deterministic rug under a self-appointed oracle)</td>
+</tr>
+<tr>
+<td>Early vs. late secondary buyer</td>
+<td>curve-priced buy vs. pro-rata-priced exit</td>
+<td>principal transfer between user classes on cancellation</td>
+<td><strong>P2-4</strong> (Medium)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage gate</strong>: 22/22 entrypoints addressed (finding or &quot;examined, no issue&quot;); 9/9 threat rows answered; <strong>0 coverage holes</strong> — both phases independently reached full coverage.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="high">High</h3>
+<h4>[P2-1] <code>removePrimaryPosition</code> orphans a live entry&#39;s secondary market — permanently strands (or, under a self-appointed oracle, steals) secondary buyers&#39; funds</h4>
+<p><strong>Severity</strong>: <span class="pill high">High</span> (escalates toward Critical under the self-appointed-oracle path described below)<br><strong>Confidence</strong>: 95 — independently found by <strong>10 of 19</strong> hunting agents (Phase 1: <code>general-1</code>, <code>erc1155-1</code>; Phase 2: 8 of 12 agents via execution-trace, invariant, periphery, first-principles, asymmetry, boundary, numerical-gap, and flow-gap lenses) and confirmed against the repository&#39;s own test suite.<br><strong>Location</strong>: <code>removePrimaryPosition()</code> <code>ContestController.sol:171-183</code>; <code>PrimaryContest.processRemovePrimaryPosition()</code> <code>PrimaryContest.sol:82-92</code>; gate in <code>SecondaryContest.validateRemoveSecondaryPosition()</code> <code>SecondaryContest.sol:46-60</code></p>
+<pre><code class="language-solidity">// ContestController.sol:171-183
+function removePrimaryPosition(uint256 entryId) external nonReentrant {
+    PrimaryContest.validateRemovePrimaryPosition(entryOwner, entryId, msg.sender, uint8(state));
+
+    (uint256 refundAmount,) = PrimaryContest.processRemovePrimaryPosition(entryOwner, entryId, primaryDepositAmount);
+    _removeActiveEntry(entryId);
+    ...
+</code></pre>
+<pre><code class="language-solidity">// PrimaryContest.sol:82-92
+function processRemovePrimaryPosition(
+    mapping(uint256 =&gt; address) storage entryOwner,
+    uint256 entryId,
+    uint256 primaryDepositAmount
+) internal returns (uint256 refundAmount, uint256 primaryContribution) {
+    address owner = entryOwner[entryId];
+    entryOwner[entryId] = address(0);          // &lt;-- zeroed unconditionally
+    ...
+</code></pre>
+<pre><code class="language-solidity">// SecondaryContest.sol:46-60
+function validateRemoveSecondaryPosition(...) internal view {
+    require(currentState == 0 || currentState == 4, &quot;Cannot withdraw - competition started or settled&quot;);
+    require(entryOwner[entryId] != address(0), &quot;Entry does not exist&quot;);   // &lt;-- line 57, the trap
+    require(tokenAmount &gt; 0, &quot;Amount must be &gt; 0&quot;);
+    require(balance &gt;= tokenAmount, &quot;Insufficient balance&quot;);
+}
+</code></pre>
+<p><strong>Description</strong>: <code>removePrimaryPosition</code> is callable while <code>state</code> is OPEN(0) or CANCELLED(4), and unconditionally zeroes <code>entryOwner[entryId]</code> — with <strong>no check</strong> of <code>netPosition[entryId]</code> (outstanding ERC1155 supply) or <code>secondaryLiquidityPerEntry[entryId]</code> (backed liquidity, real ERC20 tokens already custodied). Both secondary exits — <code>removeSecondaryPosition</code> (line 57 above) and <code>claimSecondaryPayout</code> (an identical <code>entryOwner != 0</code> check) — require the owner slot to still be populated. Secondary positions can only be bought while ACTIVE(1) (<code>SecondaryContest.sol</code> buy validator), so the only reachable window where a live secondary position and a legal primary removal coexist is CANCELLED — precisely the state cancellation is meant to unlock for <em>both</em> sides&#39; refunds. Once the primary owner removes first, every secondary holder on that entry is permanently locked out of both exits (claim requires SETTLED, which CANCELLED never reaches), and their liquidity sits in the contract until <code>closeContest</code> sweeps the whole balance to <code>oracle</code>.</p>
+<p><strong>Proof of Concept — reproduced exactly by the repo&#39;s own test</strong>: <code>test/ContestController.t.sol:1085-1100</code>, <code>test_removeSecondaryPosition_EntryDoesNotExist</code>:</p>
+<pre><code class="language-solidity">function test_removeSecondaryPosition_EntryDoesNotExist() public {
+    _createPrimaryEntry(user1, ENTRY_1);
+    _createSecondaryPosition(user2, ENTRY_1, PURCHASE_INCREMENT);
+
+    vm.prank(oracle);
+    contest.cancelContest();
+
+    vm.prank(user1);
+    contest.removePrimaryPosition(ENTRY_1);
+
+    uint256 tokens = contest.balanceOf(user2, ENTRY_1);
+
+    vm.prank(user2);
+    vm.expectRevert(&quot;Entry does not exist&quot;);
+    contest.removeSecondaryPosition(ENTRY_1, tokens);
+}
+</code></pre>
+<p>This test proves the revert is reproducible exactly as described, but makes no assertion that user2&#39;s <code>PURCHASE_INCREMENT</code> liquidity is recoverable anywhere else — it isn&#39;t. There is no re-add path for <code>entryId</code> (re-registration requires OPEN state), so user2&#39;s funds are captured only by <code>closeContest</code>&#39;s indiscriminate full-balance sweep to <code>oracle</code>.</p>
+<p><strong>Escalation — a self-appointed oracle can make this a deterministic rug, not accidental griefing</strong>: <code>ContestFactory.createContest()</code> (<code>ContestFactory.sol:16-46</code>) takes <code>oracle</code> as a caller-supplied parameter with no restriction that it differ from the caller or from any entry owner:</p>
+<pre><code class="language-solidity">// ContestFactory.sol:16-27
+function createContest(
+    address paymentToken,
+    address oracle,          // &lt;-- caller-chosen, unrestricted
+    ...
+) external returns (address) {
+    ContestController contest = new ContestController(paymentToken, oracle, ...);
+</code></pre>
+<p>An attacker can: (1) deploy a <code>ContestController</code> naming themselves <code>oracle</code>; (2) register themselves as the sole primary entry owner; (3) <code>activateContest()</code> (self, as oracle) to open secondary buying and let victims buy shares on the entry; (4) <code>cancelContest()</code> (self, as oracle); (5) <code>removePrimaryPosition()</code> (self, as entry owner) — refunding their own deposit and, per this finding, permanently orphaning every secondary buyer&#39;s liquidity; (6) after expiry, <code>closeContest()</code> (self, as oracle) sweeps the orphaned liquidity to themselves. Every step is a normal, code-permitted call — the attacker controls every precondition, so this is not a race that depends on unlucky ordering but a deterministic theft primitive available to any deployer of the (permissionless) <code>ContestFactory</code>.</p>
+<p><strong>Recommendation</strong>: In <code>removePrimaryPosition</code> (or <code>PrimaryContest.validateRemovePrimaryPosition</code>), require <code>netPosition[entryId] == 0 &amp;&amp; secondaryLiquidityPerEntry[entryId] == 0</code> before permitting removal. Additionally/alternatively, drop the <code>entryOwner[entryId] != address(0)</code> requirement from <code>validateRemoveSecondaryPosition</code> and <code>validateClaimSecondaryPayout</code> so a holder&#39;s exit depends only on their own share balance and the entry&#39;s tracked liquidity — never on whether the primary registrant is still present.</p>
+<hr>
+<h4>[P2-2] Permissionless <code>cancelExpired</code> can permanently pre-empt <code>settleContest</code></h4>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Confidence</strong>: 95 — flagged by <strong>19 of 19</strong> hunting agents in some form (Phase 1: <code>access-1</code>, <code>dos-4</code>, <code>general-5</code>; Phase 2: FINDING from 3 agents, LEAD from the remaining 9). Confirmed against the repo&#39;s own test suite.<br><strong>Location</strong>: <code>cancelExpired()</code> <code>ContestController.sol:468-473</code> vs. <code>settleContest()</code> <code>ContestController.sol:298-306</code> vs. <code>cancelContest()</code> <code>ContestController.sol:434-438</code></p>
+<pre><code class="language-solidity">// ContestController.sol:468-473
+function cancelExpired() external {
+    require(block.timestamp &gt;= expiryTimestamp, &quot;Not expired&quot;);
+    require(state != ContestState.SETTLED &amp;&amp; state != ContestState.CLOSED, &quot;Already settled&quot;);
+    state = ContestState.CANCELLED;
+    emit ContestCancelled();
+}
+</code></pre>
+<pre><code class="language-solidity">// ContestController.sol:298-306
+function settleContest(uint256[] calldata winningEntries, uint256[] calldata payoutBps)
+    external
+    onlyOracle
+    nonReentrant
+{
+    require(state == ContestState.LOCKED, &quot;Contest not locked&quot;);   // no expiry check at all
+    ...
+</code></pre>
+<p><strong>Description</strong>: <code>settleContest</code> has no expiry precondition — the intended flow is lock, then settle at or after <code>expiryTimestamp</code> once the real-world outcome is known. But <code>cancelExpired</code> is permissionless and accepts LOCKED(2) as a valid starting state (it only excludes SETTLED/CLOSED). Once expiry passes on a LOCKED contest, <strong>any address</strong> — rationally, a participant anticipating a loss — can call <code>cancelExpired()</code> before the oracle&#39;s <code>settleContest()</code> lands, permanently forcing <code>state = CANCELLED</code>. Lifecycle transitions are forward-only (<code>activateContest</code> requires OPEN, <code>lockContest</code> requires ACTIVE) and <code>settleContest</code> demands LOCKED — so settlement is permanently and irreversibly foreclosed. The contest falls back to full refunds via <code>removePrimaryPosition</code>/<code>removeSecondaryPosition</code>, both CANCELLED-gated.</p>
+<p><strong>Proof of Concept</strong>: Contest LOCKED, <code>block.timestamp &gt;= expiryTimestamp</code>, oracle about to call <code>settleContest</code> naming a known winning entry. The owner of a losing entry calls <code>cancelExpired()</code> first → <code>state = CANCELLED</code>. <code>settleContest</code> now reverts <code>&quot;Contest not locked&quot;</code> forever — there is no path back to LOCKED. The losing entry&#39;s owner then calls <code>removePrimaryPosition</code> and recovers the full deposit they would otherwise have forfeited to the winner; the intended winner never receives the pooled prize. No token leaves the contract incorrectly (every participant is refunded), which is why this is rated High rather than Critical — but the protocol&#39;s core prize-distribution function is permanently and unilaterally destroyed at the cost of one ~30k-gas transaction, and the repo&#39;s own tests corroborate the design gap: <code>test_E2E_CancelExpired_thenRefunds</code> (<code>test/ContestLifecycleE2E.t.sol:181</code>) warps past expiry before cancelling, while every <code>test_E2E_Settled_*</code> test (e.g. <code>:75</code>, <code>:109</code>, <code>:217</code>) settles <strong>without</strong> ever warping past expiry first — confirming the implicit design assumption &quot;settle before expiry&quot; is never enforced in code.</p>
+<p><strong>Recommendation</strong>: Exclude LOCKED from <code>cancelExpired</code>&#39;s eligible states (<code>require(state == ContestState.OPEN || state == ContestState.ACTIVE, &quot;Settlement pending&quot;)</code>), preserving the permissionless safety valve for pre-lock contests while giving the oracle an exclusive post-lock settlement window. Alternatively, add a grace period after expiry before <code>cancelExpired</code> becomes callable on a LOCKED contest, or require <code>settleContest</code> to run strictly before <code>expiryTimestamp</code>.</p>
+<hr>
+<h3 id="medium">Medium</h3>
+<h4>[P2-3] <code>closeContest</code> has no state or claims precondition — a tested, intended &quot;residual sweep&quot; with no bound on the swept amount</h4>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 90 — LEAD from 8 of 12 Phase 2 agents, corroborates Phase 1&#39;s <code>access-2</code>. Confirmed against the repo&#39;s own test suite, which changes the framing from &quot;oversight&quot; to &quot;intended mechanism with an unbounded blast radius.&quot;<br><strong>Location</strong>: <code>closeContest()</code> <code>ContestController.sol:440-456</code></p>
+<pre><code class="language-solidity">// ContestController.sol:440-456
+function closeContest() external onlyOracle nonReentrant {
+    require(block.timestamp &gt;= expiryTimestamp, &quot;Expiry not reached&quot;);
+
+    uint256 remaining = IERC20Balance(paymentToken).balanceOf(address(this));
+    if (remaining &gt; 0) {
+        primaryPrizePool = 0;
+        for (uint256 i = 0; i &lt; entries.length; i++) {
+            uint256 eid = entries[i];
+            secondaryLiquidityPerEntry[eid] = 0;
+            secondaryPrimarySubsidyPerEntry[eid] = 0;
+        }
+        state = ContestState.CLOSED;
+        SafeTransferLib.safeTransfer(ERC20(paymentToken), oracle, remaining);
+        emit ContestClosed();
+    }
+}
+</code></pre>
+<p><strong>Description</strong>: Guarded only by <code>onlyOracle</code> and <code>block.timestamp &gt;= expiryTimestamp</code> — no <code>state</code> precondition at all. If the real ERC20 balance is non-zero, it zeroes every pool/liquidity bucket and sweeps the <strong>entire</strong> balance to <code>oracle</code>, callable from any pre-CLOSED state, including a contest that never activated (deposits sitting unclaimed) or a SETTLED contest whose winners haven&#39;t yet called <code>claimPrimaryPayout</code>/<code>claimSecondaryPayout</code>.</p>
+<p><strong>Proof — confirmed as intended design by the repo&#39;s own test</strong>: <code>test/ContestLifecycleE2E.t.sol:203-214</code>, <code>test_E2E_CloseContest_routesResidualToOracle</code>:</p>
+<pre><code class="language-solidity">function test_E2E_CloseContest_routesResidualToOracle() public {
+    _primary(contest, u1, ENTRY_1);
+    uint256 oracleBefore = paymentToken.balanceOf(oracle);
+
+    vm.warp(block.timestamp + EXPIRY_OFFSET + 1);
+    vm.prank(oracle);
+    contest.closeContest();
+
+    assertEq(uint8(contest.state()), uint8(5));
+    assertGt(paymentToken.balanceOf(oracle), oracleBefore);
+    ...
+}
+</code></pre>
+<p>This test deposits a single primary entry and <strong>never activates, locks, settles, or cancels the contest</strong> — it warps past expiry and calls <code>closeContest()</code> directly from OPEN, asserting the oracle&#39;s balance increases. This confirms the sweep-to-oracle mechanism is an intentional, tested design choice (the team&#39;s own framing is &quot;residual&quot; routing), not an oversight. However, neither the code nor this test bounds the swept amount to genuine dust — the mechanism is identical whether the amount is 1 wei of rounding leftover or the full pool of a SETTLED contest whose winners haven&#39;t claimed yet.</p>
+<p><strong>Recommendation</strong>: Bound the sweep to genuine residual dust (e.g., a small absolute or relative threshold), or require <code>state == SETTLED || state == CANCELLED</code> with all tracked payouts/liquidity already claimed/zeroed before permitting the sweep, or add a claims grace period. At minimum, document clearly (in addition to the code comment) that any un-claimed/un-refunded balance at expiry is forfeit to the oracle, so integrators and users are unambiguously on notice.</p>
+<hr>
+<h4>[P2-4] Secondary sell-back/claim redeems at flat pool-average price while buys are priced on the convex curve</h4>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Confidence</strong>: 85 — FINDING from 1 Phase 2 agent with full numeric proof, LEAD from 2 more; corroborates Phase 1&#39;s <code>amm-1</code>. One Phase 2 agent located the <code>SecondaryPricing.sol</code> design comment stating &quot;early bettors get better prices&quot; is an <em>intended</em> curve property — this finding is best read as the linear-exit mechanism amplifying an intended property beyond its likely intended scope (pricing fairness during the ACTIVE market), rather than a pure oversight.<br><strong>Location</strong>: <code>addSecondaryPosition()</code> <code>ContestController.sol:202-228</code> (curve-priced mint) vs. <code>removeSecondaryPosition()</code> <code>ContestController.sol:242</code> (<code>cashOut = tokenAmount * liquidity / supply</code>) and <code>_paySecondaryClaim()</code> <code>ContestController.sol:544</code> (same pro-rata formula)</p>
+<p><strong>Description</strong>: Buys are priced on the rising quadratic curve in <code>SecondaryPricing.sol</code> (<em>&quot;price = BASE_PRICE + COEFFICIENT * shares^2 ... Early bettors get better prices (lower supply = lower price)&quot;</em> — the file&#39;s own header comment), so later/larger buyers pay strictly more per share than earlier/smaller ones for the same entry. Both redemption paths — cancellation sell-back and post-settlement claim — instead pay flat pool-average <code>liquidity/supply</code>, independent of what a given holder&#39;s own shares cost to mint. This transfers principal from later (higher-priced) buyers to earlier (lower-priced) buyers whenever a contest is cancelled after multiple buys at divergent curve points. The transfer is exactly zero-sum between users (no protocol insolvency, <code>cashOut</code> is always bounded by the entry&#39;s own tracked liquidity), but is a materially unfair outcome for a mechanism whose stated purpose in the CANCELLED case is to return participants&#39; money.</p>
+<p><strong>Proof of Concept</strong> (verified numerically; curve constants <code>BASE_PRICE=1e6</code>, <code>COEFFICIENT=15</code>, 18-decimal payment token, <code>PRICE_PRECISION=1e6</code>):</p>
+<ol>
+<li>Alice buys with $50 on an empty entry → curve gives her ≈49.4 tokens; <code>secondaryLiquidityPerEntry=50</code>, <code>netPosition=49.4</code>.</li>
+<li>Bob buys with $1000 → curve prices him marginally from Alice&#39;s post-buy supply, giving only ≈434.4 tokens; <code>liquidity=1050</code>, <code>supply=483.8</code>.</li>
+<li>Contest is cancelled. Pool pro-rata price = <code>1050/483.8 = 2.170</code>/token.</li>
+<li>Alice sells her 49.4 tokens: <code>cashOut = 49.4 × 1050 / 483.8 = $107.2</code>. She deposited $50 → <strong>profit $57.2</strong>.</li>
+<li>Bob sells his 434.4 tokens: remaining liquidity/supply gives him <strong>$942.8</strong>. He deposited $1000 → <strong>loss $57.2</strong> — an under-refund on what is nominally a cancellation refund.</li>
+</ol>
+<p><strong>Recommendation</strong>: For the cancellation-refund case specifically, refund each holder their own tracked <code>secondaryDepositedPerEntry</code> principal (already maintained on-chain at <code>ContestController.sol:224</code>/<code>251-252</code>, currently used only for frontend display — <code>secondaryDepositedPerEntry</code> doc comment: &quot;used by frontend UI... not used for pricing&quot;) rather than a pro-rata pool share. This is the minimal fix and requires no curve-inversion math. Alternatively, make redemption the mathematical inverse of the mint curve so buy and sell are fully path-consistent in both the cancellation and settlement cases.</p>
+<hr>
+<h3 id="low">Low</h3>
+<h4>[L-1] <code>oracle</code> is immutable with no transfer, renounce, or two-step handoff</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 90 <strong>Origin</strong>: Phase 1 <code>access-3</code><br><strong>Location</strong>: <code>oracle</code> <code>ContestController.sol:34</code>, set once <code>:141</code>, <code>onlyOracle</code> <code>:115-118</code><br>Sole privileged role, set once at construction with no rotation path. Key loss/compromise permanently disables every oracle-gated function. Mitigated to Low (not High) because the permissionless <code>cancelExpired</code> (P2-2) means participant principal always remains recoverable post-expiry even with total key loss — the residual cost is &quot;contest can never be settled with a prize, only refunded.&quot;<br><strong>Recommendation</strong>: Consider a two-step oracle handoff for future versions if key-rotation-before-suspected-compromise is desired; otherwise document the trust assumption explicitly.</p>
+<h4>[L-2] Fee-on-transfer / deflationary / rebasing <code>paymentToken</code> breaks add-side accounting and can hard-revert primary refunds/claims</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> (escalates to Medium if such a token is ever configured — see note) <strong>Confidence</strong>: 85 <strong>Origin</strong>: Phase 1 <code>erc20-1</code>/<code>general-2</code>/<code>amm-3</code>/<code>erc20-2</code>; corroborated as a lead by 4 Phase 2 agents (folded together with the &quot;shared-custody first-mover&quot; lead — same root cause)<br><strong>Location</strong>: <code>addPrimaryPosition()</code> <code>ContestController.sol:163-168</code>, <code>addSecondaryPosition()</code> <code>:220-226</code>, <code>removePrimaryPosition()</code> <code>:182</code>, <code>claimPrimaryPayout()</code> <code>:198</code>, <code>pushPrimaryPayouts()</code> <code>:505</code><br>Every deposit site credits accounting with the <em>nominal</em> parameter amount before pulling via <code>safeTransferFrom</code>, never measuring the actual balance received. If <code>paymentToken</code> charges a transfer fee, is deflationary, or rebases downward, real custody permanently falls short of tracked liabilities. Secondary payout paths clamp to <code>balanceOf(this)</code> and silently underpay the last claimant; the primary refund/claim/push-payout transfers are <strong>unclamped</strong> and will hard-revert once real balance dips below the nominal amount owed — a DoS for whichever primary depositor exits last. All Phase 2 agents who investigated confirmed no drift is constructible under a <em>standard</em> ERC20 — this is a configuration-dependent risk, not an unconditional exploit, hence Low as the base rating.<br><strong>Recommendation</strong>: Measure <code>balanceOf(this)</code> before/after each pull and credit the actual delta received; clamp the primary refund/claim/push transfers the same way the secondary paths already are.</p>
+<h4>[L-3] <code>pushPrimaryPayouts</code> batch is not per-recipient isolated</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 90 <strong>Origin</strong>: Phase 1 <code>general-4</code>/<code>erc20-3</code>/<code>dos-3</code> (3 agents) + Phase 2 leads from 7 of 12 agents — 10 of 19 total agents flagged this<br><strong>Location</strong>: <code>pushPrimaryPayouts()</code> <code>ContestController.sol:482-508</code>, un-isolated transfer at <code>:505</code><br>Unlike <code>pushSecondaryPayouts</code> (isolates each recipient via <code>try this.paySecondaryClaimExternal(...) {} catch {}</code> at <code>:526</code>), <code>pushPrimaryPayouts</code> transfers directly with no wrapper. One blocklisted/reverting <code>owner</code> in the oracle-supplied batch reverts the entire call. Mitigated: every winner also has the independent <code>claimPrimaryPayout</code> pull path, and the oracle controls the batch composition.<br><strong>Recommendation</strong>: Mirror the secondary path — wrap each recipient&#39;s transfer in a self-call <code>try/catch</code> so one bad recipient is skipped rather than blocking the batch.</p>
+<h4>[L-4] <code>settleContest</code>&#39;s O(n²) duplicate-winner check is oracle-self-inflicted gas cost</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 85 <strong>Origin</strong>: Phase 1 <code>dos-2</code><br><strong>Location</strong>: <code>settleContest()</code> <code>ContestController.sol:314-317</code><br>Nested loop over <code>winningEntries</code> (up to <code>entries.length</code>, capped at <code>MAX_ENTRIES=500</code>) is O(w²). Worst case (w=500) combined with mandatory <code>entries[]</code> loops totals ≈23-25M gas — under a ~30M block limit, so it executes, but wastefully. <code>w</code> is entirely oracle-chosen, so no unprivileged party can force this cost.<br><strong>Recommendation</strong>: Replace with an O(n) seen-set (transient mapping/bitmap on <code>entryId</code>) or require sorted+strictly-increasing <code>winningEntries</code>.</p>
+<h4>[L-5] Secondary sell/claim burns shares even when pro-rata proceeds round to zero</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 80 <strong>Origin</strong>: Phase 1 <code>precision-2</code><br><strong>Location</strong>: <code>removeSecondaryPosition()</code> <code>ContestController.sol:242-266</code>, <code>_paySecondaryClaim()</code> <code>:544-566</code><br>For low-decimal payment tokens (e.g. USDC), a redemption below <code>supply/liquidity</code> share-wei rounds <code>cashOut</code>/<code>payout</code> to 0, but the code still burns the shares. Self-inflicted dust loss only, no third-party impact.<br><strong>Recommendation</strong>: <code>require(cashOut &gt; 0)</code> in <code>removeSecondaryPosition</code> so dust sellers revert rather than burn for nothing.</p>
+<h4>[L-6] No slippage/minimum-output protection on secondary buy/sell</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 80 <strong>Origin</strong>: Phase 1 <code>amm-2</code><br><strong>Location</strong>: <code>addSecondaryPosition()</code> <code>ContestController.sol:202-228</code>, <code>removeSecondaryPosition()</code> <code>:231-267</code><br>No <code>minTokensOut</code>/<code>minCashOut</code> parameters. An atomic single-block sandwich is not possible (buys require ACTIVE, sells require OPEN/CANCELLED — states never overlap), but adverse multi-buy ordering within ACTIVE can still shift the price a victim receives.<br><strong>Recommendation</strong>: Add caller-supplied <code>minTokensOut</code>/<code>minCashOut</code> reverting if unmet.</p>
+<h4>[L-7] Unchecked <code>int256(...)</code> narrowing casts on token amounts</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 75 <strong>Origin</strong>: Phase 1 <code>general-3</code><br><strong>Location</strong>: <code>SecondaryContest.sol:84,95</code>; <code>ContestController.sol:552</code><br><code>netPosition[entryId] += int256(participantTokensReceived)</code> etc. cast uint256→int256 without <code>SafeCast</code>. Not realistically reachable (requires an astronomical single-buy share amount); latent best-practice gap only.<br><strong>Recommendation</strong>: Use <code>SafeCast.toInt256</code>.</p>
+<h4>[L-8] Blocklist/pause of <code>paymentToken</code> or the contract itself freezes all funds</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 80 <strong>Origin</strong>: Phase 1 <code>erc20-4</code><br><strong>Location</strong>: whole-contract custody; all transfer sites<br>If <code>paymentToken</code> is a centralized-stablecoin-style token and the contract address is blocklisted, or transfers are globally paused, every outbound transfer reverts — all funds frozen. Inherent custodial-token risk, deployer-config-dependent, not a code defect.<br><strong>Recommendation</strong>: Document the token-issuer trust assumption.</p>
+<h4>[L-9] Zero <code>primaryDepositAmount</code> + zero-amount-reverting token bricks the contest</h4>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <strong>Confidence</strong>: 80 <strong>Origin</strong>: Phase 1 <code>erc20-5</code><br><strong>Location</strong>: constructor <code>ContestController.sol:142</code> (no <code>&gt;0</code> check), <code>addPrimaryPosition()</code> <code>:168</code><br>Constructor doesn&#39;t reject <code>primaryDepositAmount==0</code>. Combined with a zero-amount-reverting token, the contest could never activate. Pure liveness/misconfiguration, no funds at risk since none were ever deposited.<br><strong>Recommendation</strong>: <code>require(_primaryDepositAmount &gt; 0)</code> in the constructor.</p>
+<hr>
+<h3 id="info">Info</h3>
+<h4>[I-1] Referral-fee self-call precedes the SETTLED state write, creating a narrow reentrancy window with no fund impact</h4>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> <strong>Confidence</strong>: 60 (Phase-2-only lead, not independently corroborated) <strong>Origin</strong>: Phase 2 agent 2 (access-control)<br><strong>Location</strong>: <code>settleContest()</code> <code>ContestController.sol:342-346</code> (referral try/catch) vs. <code>:349</code> (state write to SETTLED)<br><code>distributeReferralFee</code>&#39;s external graph/calculator calls execute while <code>state</code> is still LOCKED (the write to SETTLED happens after the try/catch block). <code>cancelExpired</code> is not <code>nonReentrant</code>-guarded. A hostile <code>referralGraph</code> could theoretically re-enter <code>cancelExpired</code> mid-settlement, but <code>state</code> is unconditionally overwritten to SETTLED afterward regardless — the only demonstrated residual effect is a spurious <code>ContestCancelled</code> event inside a transaction that finalizes as SETTLED (an off-chain indexer desync), not fund corruption. No concrete state corruption was demonstrated by the reporting agent; kept at Info.<br><strong>Recommendation</strong>: Consider moving the <code>state = ContestState.SETTLED</code> write before the referral try/catch block for defense-in-depth, though no exploit path currently depends on the ordering.</p>
+<h4>[I-2] Precision/rounding characteristics of <code>SecondaryPricing</code> (dust-level, all favor the pool)</h4>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> <strong>Confidence</strong>: 85 <strong>Origin</strong>: Phase 1 <code>precision-1</code>,<code>precision-3</code>,<code>precision-4</code>; Phase 2 corroborated as clean<br>The deliberate <code>shares/1e9</code> truncation in <code>calculatePrice</code>, the Simpson&#39;s-rule integrated-cost rounding, and <code>toShareUnits</code>&#39;s truncation for &gt;18-decimal tokens are all bounded to relative errors far below 1 wei of practical impact, and every rounding direction favors the pool/protocol over the user (verified independently by 2+ agents in each phase). No action required.</p>
+<h4>[I-3] <code>SafeTransferLib</code> no-code-address semantics are only incidentally guarded by the constructor&#39;s <code>decimals()</code> call; <code>paymentTokenDecimals</code> is cached once and never re-read</h4>
+<p><strong>Severity</strong>: <span class="pill info">Info</span> <strong>Confidence</strong>: 80 <strong>Origin</strong>: Phase 1 <code>erc20-6</code>,<code>erc20-7</code><br>Solmate&#39;s <code>SafeTransferLib</code> would treat a no-code <code>paymentToken</code> as a silent-success no-op, but the constructor&#39;s <code>ERC20(_paymentToken).decimals()</code> call reverts for any address without code, incidentally preventing this configuration. <code>paymentTokenDecimals</code> is immutable after construction; an upgradeable-proxy token that later changes its <code>decimals()</code> would silently mis-price secondary buys. No known exploit path; noted for completeness.</p>
+<hr>
+<h2 id="what-was-checked-and-found-sound">What Was Checked and Found Sound</h2>
+<p>Independently verified by multiple agents across both phases, listed here per the coverage gate so the client knows these were examined and not merely skipped:</p>
+<ul>
+<li><strong>Settlement value-conservation</strong>: <code>netPrimary + netSecondary + referralFee &lt;= totalGross</code> holds under integer flooring in every branch, including the zero-supply winner redistribution.</li>
+<li><strong>ERC1155 supply integrity</strong>: <code>netPosition[entryId]</code> stays exactly equal to the sum of that entry&#39;s holder balances across every mint/burn path.</li>
+<li><strong>Reentrancy</strong>: every value-moving entrypoint is <code>nonReentrant</code>; the one caller-reachable callback (<code>onERC1155Received</code> on secondary buy) fires last, after all state is written, and cannot reach any other guarded function.</li>
+<li><strong>Referral-fee containment</strong>: <code>distributeReferralFee</code> is bounded (chain capped at 10 via the <code>MAX_REFERRAL_PAYOUT_LEVELS</code> assembly truncation, <code>Σamounts≤fee</code> enforced) and fully try/catch-isolated from <code>settleContest</code> — any revert falls back to paying the oracle, settlement always completes.</li>
+<li><strong><code>SecondaryPricing</code> curve math</strong>: Simpson&#39;s rule is exact for the underlying cubic integral; the binary search always rounds in the protocol&#39;s favor (never over-mints).</li>
+<li><strong><code>activateContest</code>/<code>lockContest</code>/<code>setPrimaryMerkleRoot</code>/<code>setSecondaryMerkleRoot</code>/<code>pushSecondaryPayouts</code>/<code>paySecondaryClaimExternal</code></strong>: straightforward, correctly guarded, no findings.</li>
+<li><strong><code>ContestFactory</code></strong>: retains no post-deploy privilege over what it deploys (aside from the <code>oracle</code>-choice escalation folded into P2-1).</li>
+</ul>
+<h2 id="severity-legend">Severity Legend</h2>
+<ul>
+<li><strong>Critical</strong>: direct loss of funds by a third party, no preconditions.</li>
+<li><strong>High</strong>: loss of funds requiring specific conditions, or permanent DoS of a core function.</li>
+<li><strong>Medium</strong>: degraded behavior, trust-model violation, incorrect accounting, or owner-only fund loss.</li>
+<li><strong>Low</strong>: best-practice violation, latent bug, or confusing behavior without direct fund risk.</li>
+<li><strong>Info</strong>: informational, no security impact.</li>
+</ul>
+<h2 id="summary-table">Summary Table</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Confidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>P2-1</td>
+<td><code>removePrimaryPosition</code> strands/steals secondary-market funds</td>
+<td><span class="pill high">High</span></td>
+<td>95</td>
+</tr>
+<tr>
+<td>P2-2</td>
+<td>Permissionless <code>cancelExpired</code> permanently blocks <code>settleContest</code></td>
+<td><span class="pill high">High</span></td>
+<td>95</td>
+</tr>
+<tr>
+<td>P2-3</td>
+<td><code>closeContest</code> unbounded post-expiry sweep</td>
+<td><span class="pill medium">Medium</span></td>
+<td>90</td>
+</tr>
+<tr>
+<td>P2-4</td>
+<td>Secondary redemption pricing asymmetry (curve buy vs. pro-rata exit)</td>
+<td><span class="pill medium">Medium</span></td>
+<td>85</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td>Oracle immutable, no handoff</td>
+<td><span class="pill low">Low</span></td>
+<td>90</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td>Fee-on-transfer/rebasing token accounting drift</td>
+<td><span class="pill low">Low</span></td>
+<td>85</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><code>pushPrimaryPayouts</code> batch not isolated</td>
+<td><span class="pill low">Low</span></td>
+<td>90</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td>O(n²) duplicate-winner check</td>
+<td><span class="pill low">Low</span></td>
+<td>85</td>
+</tr>
+<tr>
+<td>L-5</td>
+<td>Dust burn on zero payout</td>
+<td><span class="pill low">Low</span></td>
+<td>80</td>
+</tr>
+<tr>
+<td>L-6</td>
+<td>No slippage protection</td>
+<td><span class="pill low">Low</span></td>
+<td>80</td>
+</tr>
+<tr>
+<td>L-7</td>
+<td>Unchecked int256 casts</td>
+<td><span class="pill low">Low</span></td>
+<td>75</td>
+</tr>
+<tr>
+<td>L-8</td>
+<td>Blocklist/pause systemic freeze risk</td>
+<td><span class="pill low">Low</span></td>
+<td>80</td>
+</tr>
+<tr>
+<td>L-9</td>
+<td>Zero-deposit misconfiguration</td>
+<td><span class="pill low">Low</span></td>
+<td>80</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td>Referral-call reentrancy/state-desync window</td>
+<td><span class="pill info">Info</span></td>
+<td>60</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td>SecondaryPricing rounding characteristics</td>
+<td><span class="pill info">Info</span></td>
+<td>85</td>
+</tr>
+<tr>
+<td>I-3</td>
+<td>SafeTransferLib/decimals caching notes</td>
+<td><span class="pill info">Info</span></td>
+<td>80</td>
+</tr>
+</tbody></table></div>
+<p><strong>2 High, 2 Medium, 9 Low, 3 Info.</strong></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihfmgvbtbmysempeer4m537f352e6lecuc37kcgdrazxibd2hvrjy.ipfs.community.bgipfs.com/"><code>https://bafkreihfmgvbtbmysempeer4m537f352e6lecuc37kcgdrazxibd2hvrjy.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/392">#392</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

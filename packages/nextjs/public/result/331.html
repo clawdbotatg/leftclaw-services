@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mellow-finance/flexible-vaults — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #331">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">mellow-finance/flexible-vaults</h1>
+    <p class="job-sub">Job #331 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/331"><b>Job page</b> #331</a>
+      <a class="chip" href="https://bafkreib74h62owibrg3zfie5jjj4s56p3pvxrsgimvanpswy7pfnjtr3ny.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#low-findings">Low Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — mellow-finance/flexible-vaults</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><a href="https://github.com/mellow-finance/flexible-vaults">https://github.com/mellow-finance/flexible-vaults</a> (src/, HEAD at audit time)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Two-phase audit: Phase 1 breadth (8 checklists, ethskills) → Phase 2 depth (12 blind attacker agents, pashov) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td>53 <code>.sol</code> files, 6,186 LOC under <code>src/</code> (excluding <code>interfaces/</code>; <code>scripts/</code> deployment tooling out of scope)</td>
+</tr>
+<tr>
+<td><strong>Contracts</strong></td>
+<td>Vault, Subvault, VaultConfigurator, Factory, ShareManager (Basic/Tokenized/BurnableTokenized), FeeManager, RiskManager, Oracle/OracleHelper/OracleSubmitter/PermissionedChainlinkOracle, Queue hierarchy (Deposit/Redeem/Sync/Signature), Verifier/BitmaskVerifier/Consensus/MellowACL + protocol verifiers (EigenLayer/Symbiotic/ERC20/OwnedCustom), Modules (ACL/Base/Call/Share/Subvault/Vault/Verifier), Hooks, SwapModule, ThreeFModule, Migrators, MellowAccountV1</td>
+</tr>
+<tr>
+<td><strong>Prior audits</strong></td>
+<td>Repo contains 10 prior Nethermind/Sherlock audit rounds (<code>audits/</code> dir, 2025-08 through 2026-06) — not consulted for findings; this report is a fully independent run per phases below</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation summary</strong>: Overlap: 9 finding/lead group_keys corroborated in both phases (marked <code>[both]</code>) · Phase-1-only: 12 · Phase-2-only: 15 · Re-examined leads kept: 1 (with severity note) · demoted: 1 (proxy storage-slot finding, downgraded after verifying the team&#39;s own deployment tooling passes a fixed <code>version_</code> constant, making the failure mode a deployment-process error rather than a live vulnerability). Completeness: 34 unique (Contract, function, bug-class) groups identified across both phases, 34 covered below (all corroborated/duplicate groups collapsed with <code>[both]</code> tags; no group dropped).</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[90] <strong>1. FeeManager performance-fee formula divides by the wrong price, systematically over-minting fee shares to the fee recipient</strong></p>
+<p><code>FeeManager.calculateFee</code> · Confidence: 90 · <code>[phase2: economic-security agent]</code>, verified independently against source by the orchestrator (contradicts phase-1&#39;s precision-math pass and two other phase-2 agents that pattern-matched the fee logic as &quot;sound&quot; without doing the per-report magnitude derivation — resolved in favor of this finding after two independent from-scratch numeric derivations against the live source, see below)</p>
+<p><strong>Description</strong><br><code>priceD18</code> is &quot;shares per asset&quot; (per <code>IOracle.sol:16</code>: <code>shares = assets * priceD18 / 1e18</code>), so <em>value per share</em> = <code>1e18/priceD18</code>, and <code>minPriceD18</code> (the running minimum price ever recorded) is the <em>highest</em>-value-per-share the vault has ever reached. On a new high (<code>priceD18 &lt; minPriceD18_</code>), the correct fee-share count — sized so the fee recipient receives exactly <code>performanceFeeD6</code> of the value gained, minted at the <em>current</em> value-per-share — is <code>φ · S · (minPriceD18_ − priceD18) / minPriceD18_</code>. The contract instead computes:</p>
+<pre><code class="language-solidity">shares = Math.mulDiv(minPriceD18_ - priceD18, $.performanceFeeD6 * totalShares, priceD18 * 1e6);
+</code></pre>
+<p>dividing by <code>priceD18</code> (current) instead of <code>minPriceD18_</code> (the high-water baseline used to measure the gain). This overcharges by exactly the factor <code>minPriceD18_ / priceD18</code>, which grows without bound as vault appreciation increases, and requires no attacker action — it fires automatically on every performance-fee-triggering report (<code>ShareModule.handleReport</code> → <code>FeeManager.calculateFee</code>, <code>ShareModule.sol:274-306</code>) under completely normal operation.</p>
+<p><strong>Proof (concrete numbers)</strong>: <code>performanceFeeD6 = 20%</code> (<code>0.2e6</code>), <code>totalShares (excl. feeRecipient) = 1000</code>, <code>minPriceD18_ = 1e18</code>, new report <code>priceD18 = 0.5e18</code> (vault value doubled since the last high). Correct fee (20% of the 1000-share-unit gain, valued at the new price): <code>0.2 × 1000 × (1e18−0.5e18)/1e18 = 100</code> shares. Contract&#39;s formula: <code>0.2 × 1000 × (1e18−0.5e18)/0.5e18 = 200</code> shares — <strong>2× the intended fee</strong>. At <code>priceD18 = 0.1e18</code> (10× appreciation), intended ≈180 shares, contract mints 1800 (10× overcharge); with <code>φ=50%</code> and 10× appreciation the formula mints <code>4.5×totalShares</code>, handing the fee recipient ~82% of the vault&#39;s value — far beyond 50% of the realized profit. Verified directly against <code>src/managers/FeeManager.sol:69-85</code> and the caller <code>src/modules/ShareModule.sol:274-306</code> (which passes <code>priceD18</code> from the report and <code>totalShares</code> from <em>before</em> the fee mint, consistent with the &quot;mint fee shares at current NAV/share&quot; convention that this formula gets backwards).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- shares = Math.mulDiv(minPriceD18_ - priceD18, $.performanceFeeD6 * totalShares, priceD18 * 1e6);
++ shares = Math.mulDiv(minPriceD18_ - priceD18, $.performanceFeeD6 * totalShares, minPriceD18_ * 1e6);
+</code></pre>
+<hr>
+<p>[85] <strong>2. <code>SignatureDepositQueue</code> / <code>SignatureRedeemQueue</code> bypass both the merkle whitelist and protocol fees that every other queue enforces</strong></p>
+<p><code>SignatureDepositQueue.deposit</code> / <code>SignatureRedeemQueue.redeem</code> · Confidence: 85 · <code>[phase2: trust-gap agent + asymmetry agent — 2 independent agents converged on the identical bug via different lenses]</code></p>
+<p><strong>Description</strong><br><code>isDepositorWhitelisted(...)</code> (which enforces both the per-account <code>hasWhitelist</code> flag AND <code>whitelistMerkleRoot</code>) is called only from <code>DepositQueue.deposit</code> and <code>SyncDepositQueue.deposit</code>. <code>SignatureDepositQueue.deposit</code> mints via <code>shareManager().mint(order.recipient, order.requested)</code> directly, never calling it — and the mint-time guard <code>ShareManager.updateChecks</code> (line 1395) checks only the <code>hasWhitelist</code> flag, never the merkle root. For a vault configured with merkle-only KYC (<code>hasWhitelist</code> flag off, <code>whitelistMerkleRoot</code> set), the consensus signer set can mint shares to any address, whitelisted or not. Separately, <code>DepositQueue</code>/<code>SyncDepositQueue</code>/<code>RedeemQueue</code> all route through <code>FeeManager.calculateDepositFee</code>/<code>calculateRedeemFee</code>; <code>SignatureDepositQueue</code>/<code>SignatureRedeemQueue</code> mint/send <code>order.requested</code> verbatim, bypassing the deposit/redeem fee entirely.</p>
+<p><strong>Proof</strong>: <code>isDepositorWhitelisted</code> call sites confirmed only at <code>DepositQueue.sol</code> (deposit) and <code>SyncDepositQueue.sol</code> (deposit); absent from <code>SignatureDepositQueue.sol</code> deposit path. Fee calls confirmed present in <code>DepositQueue</code>/<code>SyncDepositQueue</code>/<code>RedeemQueue</code>, absent from <code>SignatureDepositQueue</code>/<code>SignatureRedeemQueue</code>.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function deposit(Order calldata order, bytes calldata signature) external {
+      ...
++     if (!shareManager().isDepositorWhitelisted(order.recipient, merkleProof)) revert NotWhitelisted(order.recipient);
++     uint256 fee = feeManager().calculateDepositFee(order.requested);
++     shareManager().mint(order.recipient, order.requested - fee);
++     if (fee != 0) shareManager().mint(feeManager().feeRecipient(), fee);
+-     shareManager().mint(order.recipient, order.requested);
+  }
+</code></pre>
+<p>(mirror on <code>SignatureRedeemQueue.redeem</code> for the redeem fee; if the signer set is intended to be the <em>sole</em> trusted deposit/redeem authority superseding whitelist and fees, document that explicitly instead.)</p>
+<hr>
+<p>[78] <strong>3. <code>RiskManager.convertToShares</code> reverts on suspicious/zero oracle reports even for balance-<em>decreasing</em> calls, freezing deposit refunds and already-priced redemption settlement</strong></p>
+<p><code>RiskManager.convertToShares</code> (via <code>modifyPendingAssets</code> / <code>modifyVaultBalance</code>) · Confidence: 78 · <code>[phase2: flow-gap agent + first-principles agent — 2 independent agents converged]</code></p>
+<p><strong>Description</strong><br><code>DepositQueue.cancelDepositRequest</code> — the <em>only</em> way to reclaim an unfulfilled deposit — calls <code>riskManager.modifyPendingAssets(asset, -assets)</code> → <code>convertToShares</code> → <code>oracle().getReport(asset)</code>, which reverts if <code>report.isSuspicious || report.priceD18 == 0</code>. The passed change is negative (it can never breach a limit; the conversion exists only to keep the share-denominated <code>pendingBalance</code> current), yet the call still requires a healthy oracle. The same coupling blocks <code>RedeemQueue.handleBatches</code> (<code>modifyVaultBalance(asset, -demand)</code>) from paying out redemption batches that were already priced at an earlier, healthy report. An asset&#39;s price deviating past <code>suspiciousDeviation</code> (but within <code>maxDeviation</code>) is a normal volatility event, not a privileged action, and persists until an operator submits a fresh in-bounds report.</p>
+<p><strong>Proof</strong>: <code>RiskManager.sol:112-113</code> — <code>convertToShares</code> unconditionally reverts on <code>isSuspicious</code>/<code>priceD18==0</code> regardless of the sign of the <code>value</code> argument. <code>cancelDepositRequest</code> has no alternate exit path once a deposit is queued.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function convertToShares(address asset, int256 value) public view returns (int256 shares) {
+      IOracle.DetailedReport memory report = IShareModule($.vault).oracle().getReport(asset);
+-     if (report.isSuspicious || report.priceD18 == 0) {
++     if (value &gt; 0 &amp;&amp; (report.isSuspicious || report.priceD18 == 0)) {
+          revert InvalidReport();
+      }
+      ...
+  }
+</code></pre>
+<p>(balance-reducing calls should use the last-known-good price or a stored per-request share delta rather than re-pricing against a possibly-unhealthy report.)</p>
+<hr>
+<p>[75] <strong>4. <code>Verifier</code>&#39;s compact call-verification paths never constrain <code>msg.value</code>, letting a whitelisted-selector operator attach arbitrary subvault ETH</strong></p>
+<p><code>Verifier.getVerificationResult</code> (<code>ONCHAIN_COMPACT</code> / <code>MERKLE_COMPACT</code>) · Confidence: 75 · <code>[both — phase1: general checklist M-1; phase2: invariant agent, independently]</code></p>
+<p><strong>Description</strong><br><code>CallModule.call</code> forwards the full <code>value</code> via <code>Address.functionCallWithValue(where, data, value)</code>. <code>ONCHAIN_COMPACT</code> checks only <code>isAllowedCall(who, where, data)</code>; <code>MERKLE_COMPACT</code> hashes only <code>(who, where, selector)</code> — neither includes <code>value</code>. <code>MERKLE_EXTENDED</code> and every custom protocol verifier (ERC20Verifier/SymbioticVerifier/EigenLayerVerifier, which explicitly reject <code>value != 0</code>) show the team treats <code>value</code> as security-relevant elsewhere; the compact allowlist omits it. Subvaults hold native ETH as a first-class asset (<code>receive() external payable {}</code>), so a <code>CALLER_ROLE</code> operator can attach any ETH amount to any compact-whitelisted call. Neither phase could construct a concrete <code>where</code> that provably leaks value out of the subvault (most realistic payable targets like <code>WETH.deposit()</code> credit the subvault back) — this is a real hardening gap on a control the team clearly intended to be complete, not a demonstrated theft.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  if (payload.verificationType == VerificationType.ONCHAIN_COMPACT) {
++     if (value != 0) return false;
+      return isAllowedCall(who, where, data);
+  }
+</code></pre>
+<p>(or extend <code>CompactCall</code>/<code>hashCall(CompactCall)</code> to include <code>value</code>.)</p>
+<hr>
+<p>[70] <strong>5. <code>DepositQueue</code>/<code>SyncDepositQueue</code> record the requested deposit amount, not the amount actually received — breaks (and can permanently DoS) processing for stETH and any fee-on-transfer/rebasing asset</strong></p>
+<p><code>DepositQueue.deposit</code> / <code>_handleReport</code> · Confidence: 70 · <code>[both — phase1: general L-2, erc4626 E-1; phase2: boundary agent (elevated to FINDING with concrete stETH proof) + economic-security, periphery, flow-gap agents, all independently]</code></p>
+<p><strong>Description</strong><br><code>deposit()</code> records the caller-<em>requested</em> <code>assets</code> (<code>TransferLibrary.receiveAssets</code> pulls <code>assets</code> with no balance measurement); <code>_handleReport</code> later calls <code>TransferLibrary.sendAssets(asset_, vault_, assets)</code> forwarding the full recorded (not received) amount. <code>LidoDepositHook</code> (<code>src/hooks/LidoDepositHook.sol</code>) shows stETH is an explicit, first-class supported asset for this protocol — not a hypothetical edge case. stETH&#39;s <code>transfer</code>/<code>transferFrom</code> rounds down through an internal shares conversion, delivering <code>assets − 1..2 wei</code> per transfer; any admin-onboarded fee-on-transfer token has the same effect at larger magnitude. Once the queue&#39;s real balance falls short of the recorded sum, <code>sendAssets</code> reverts inside <code>_handleReport</code>, which is invoked from <code>Oracle.submitReports</code> for <em>all</em> deposits of that asset in the batch at once — <strong>the entire price report for that asset is blocked</strong>, and with it every pending deposit/redeem gated on that report, until an operator manually donates the shortfall to the queue.</p>
+<p><strong>Proof</strong>: for N stETH deposits summing to nominal <code>S</code>, the queue holds <code>≤ S − N</code> wei (stETH <code>getPooledEthByShares(getSharesByPooledEth(x)) ≤ x</code>); <code>sendAssets(steth, vault, S)</code> then requires the queue to move more stETH-shares than it holds → <code>ERC20InsufficientBalance</code> revert. Even a single first deposit is already 1-2 wei short.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- TransferLibrary.receiveAssets(asset_, caller, assets);
+- $.requests.modify(index, int256(uint256(assets)));
++ uint256 balBefore = IERC20(asset_).balanceOf(address(this));
++ TransferLibrary.receiveAssets(asset_, caller, assets);
++ uint256 received = IERC20(asset_).balanceOf(address(this)) - balBefore;
++ $.requests.modify(index, int256(received));
+</code></pre>
+<p>(apply the same balance-delta pattern used in <code>LidoDepositHook</code>&#39;s output leg to the input leg of every deposit path, or explicitly document/enforce that only zero-fee, non-rebasing assets may be onboarded.)</p>
+<hr>
+<p>[65] <strong>6. <code>SyncDepositQueue</code> mints shares synchronously at the last stored (possibly lagging) oracle price, letting a depositor capture value from existing holders during price drift</strong></p>
+<p><code>SyncDepositQueue.deposit</code> / <code>_setSyncDepositParams</code> · Confidence: 65 · <code>[phase1: erc4626 E-2, re-examined against source — confirmed]</code></p>
+<p><strong>Description</strong><br>Unlike the async <code>DepositQueue</code> (which prices at the <em>next</em> report), <code>SyncDepositQueue.deposit</code> mints immediately at the last stored report, gated only by <code>report.timestamp + maxAge &gt;= block.timestamp</code> and a <code>penaltyD6</code> haircut. Configuration bounds are <code>penaltyD6 ≤ 50%</code> and <code>maxAge ≤ 365 days</code> — far too loose to be a meaningful backstop on their own; safety depends entirely on the deployer picking a tight <code>maxAge</code> and a <code>penaltyD6</code> that exceeds the oracle&#39;s per-update deviation allowance. Whenever the true asset value rises between oracle updates, a depositor can mint at the stale (cheaper) price minus the penalty, diluting existing holders, then redeem after the next report catches up.</p>
+<p><strong>Fix</strong>: bound <code>maxAge</code> to a small hard maximum aligned with the oracle&#39;s <code>timeout</code>; require <code>penaltyD6</code> to exceed <code>suspiciousRelativeDeviationD18</code>.</p>
+<hr>
+<p>[60] <strong>7. <code>FeeManager</code> owner can set any fee up to 100% instantly, with no per-fee cap or timelock</strong></p>
+<p><code>FeeManager.setFees</code> / <code>setFeeRecipient</code> · Confidence: 60 · <code>[phase1: access-control AC-1, re-examined against source — confirmed, no per-fee cap exists, only </code>sum ≤ 1e6<code>]</code></p>
+<p><strong>Description</strong>: <code>setFees</code> only bounds the <em>sum</em> of the four fees at <code>1e6</code> (100%); a single fee (e.g. <code>depositFeeD6 = 1e6</code>) is legal and takes effect on the very next report with no delay. Combined with <code>setFeeRecipient</code> (also instant, <code>onlyOwner</code>), a compromised or malicious owner can redirect the entirety of the next batch of deposits/redemptions to an arbitrary address with no warning window for depositors.</p>
+<p><strong>Fix</strong>: add a conservative per-fee cap (e.g. <code>≤ 20%</code> each) and route fee/recipient changes through a timelock.</p>
+<hr>
+<p>[58] <strong>8. <code>ShareManager</code> global lockup / pause / blacklist flags let a single role holder freeze all or targeted withdrawals indefinitely</strong></p>
+<p><code>ShareManager.setFlags</code> / <code>setAccountInfo</code> / <code>updateChecks</code> · Confidence: 58 · <code>[phase1: access-control AC-2, re-examined against source — confirmed, </code>globalLockup<code>is an unbounded</code>uint32<code> with no max-duration cap]</code></p>
+<p><strong>Description</strong>: <code>SET_FLAGS_ROLE</code> can set <code>globalLockup</code> to <code>type(uint32).max</code> (~year 2106) and/or <code>hasBurnPause</code>/<code>hasTransferPause</code>, freezing all redemptions/transfers protocol-wide; <code>SET_ACCOUNT_INFO_ROLE</code> can blacklist any individual account, permanently blocking their redemptions. Both take effect instantly with no bound or expiry.</p>
+<p><strong>Fix</strong>: cap <code>globalLockup</code> to a small maximum duration; require pauses to auto-expire; consider a two-role or timelocked path for blacklisting.</p>
+<hr>
+<p>[55] <strong>9. Oracle reports have no consumer-side maximum-staleness (heartbeat) check outside <code>SyncDepositQueue</code></strong></p>
+<p><code>Oracle._handleReport</code> / <code>RiskManager.convertToShares</code> / <code>SignatureQueue.validateOrder</code> · Confidence: 55 · <code>[phase1: oracles O-1, re-examined against source — confirmed; </code>SecurityParams.timeout<code>is a minimum-spacing guard only, no</code>maxAge<code> field exists at the Oracle level]</code></p>
+<p><strong>Description</strong>: <code>securityParams.timeout</code> only prevents reports arriving <em>too soon</em>; nothing enforces a maximum age on a <em>stored</em> report when consumed. <code>RiskManager.convertToShares</code> checks only <code>isSuspicious</code>/<code>priceD18==0</code>; <code>SignatureQueue.validateOrder</code>&#39;s deviation check never inspects <code>report.timestamp</code>. <code>SyncDepositQueue</code> alone implements the missing check, proving the freshness invariant is simply absent elsewhere. If the off-chain submitter stalls, risk-limit accounting and signature-order price validation both silently operate on an arbitrarily stale price.</p>
+<p><strong>Fix</strong>: add a <code>maxAge</code> field to <code>SecurityParams</code>, enforced at every consumer (or centrally inside <code>Oracle.getReport</code>).</p>
+<hr>
+<h2 id="low-findings">Low Findings</h2>
+<p>[48] <strong>10. <code>SlotLibrary</code>-derived storage slots are keyed by a mutable constructor <code>version_</code>; an in-place proxy upgrade to an implementation compiled with a different <code>version_</code> would orphan all proxy storage</strong></p>
+<p><code>SlotLibrary.getSlot</code> / every module constructor · Confidence: 48 (downgraded from the phase-1 agent&#39;s initial Medium rating) · <code>[phase1: proxies P-1, re-examined against source and against the team&#39;s own deployment scripts]</code></p>
+<p><strong>Description</strong>: Every namespaced storage base slot is <code>keccak256(..., contractName, name_, version_)</code> computed from <code>immutable</code> constructor args. Entities deploy behind <code>TransparentUpgradeableProxy</code>, so an in-place upgrade to an implementation compiled with a different <code>version_</code> would resolve every module&#39;s storage struct to a different slot, reading back as all-zero (data loss / brick). <strong>Re-examination</strong>: the phase-1 finding&#39;s proof-of-concept assumed <code>version_</code> tracks the Factory&#39;s <code>implementations</code>-list index (<code>Factory.create(uint256 version, ...)</code>), but that <code>version</code> parameter is unrelated to the constructor&#39;s <code>version_</code> — <code>scripts/common/ProtocolDeploymentLibrary.sol</code> and every network&#39;s <code>Constants.sol</code> show the team&#39;s tooling passes a single hardcoded <code>DEPLOYMENT_VERSION</code> constant (currently <code>1</code>) to <em>every</em> contract in a given deployment, and <code>AcceptanceLibrary.sol</code>&#39;s <code>compareBytecode</code> helper re-deploys with the same constant specifically to verify bytecode/slot consistency before accepting an upgrade. So this does not fire under the team&#39;s normal upgrade workflow — it is a footgun in the <em>design</em> (nothing on-chain enforces the invariant) rather than a live path, hence downgraded to Low.</p>
+<p><strong>Fix</strong>: decouple the storage namespace from the mutable <code>version_</code> (derive from a stable <code>contractName</code> only), or add an on-chain assertion that an upgrade target&#39;s embedded slot matches the proxy&#39;s current slot before allowing the upgrade to take effect.</p>
+<hr>
+<p>[45] <strong>11. <code>OracleSubmitter.acceptReports</code> can underflow / mis-index <code>acceptedAt</code></strong></p>
+<p><code>OracleSubmitter.acceptReports</code> · Confidence: 45 · <code>[both — phase1: general L-1; phase2: periphery, asymmetry, invariant agents — 4 agents total]</code></p>
+<p><strong>Description</strong>: <code>acceptedAt[asset][reports(asset) - 1] = timestamp</code> indexes off <code>_reports[asset].length</code>, which is only pushed to by <code>submitReports</code>. Accepting a report for an asset that was only ever submitted directly on <code>Oracle</code> (not through this submitter) underflows and reverts; even when non-empty, the index doesn&#39;t necessarily correspond to the report being accepted. All agents agree impact is bounded — the write either reverts cleanly or lands in an unused/mislabeled slot, no fund or state corruption identified.</p>
+<p><strong>Fix</strong>: track accepted reports independently rather than indexing off the submit-only array length.</p>
+<hr>
+<p>[40] <strong>12. <code>DepositQueue</code> aggregate share allocation vs. per-user claim rounding permanently strands dust in <code>allocatedShares</code>, and sub-unit deposits can lose their assets entirely</strong></p>
+<p><code>DepositQueue._handleReport</code> / <code>_claim</code> · Confidence: 40 · <code>[both — phase1: precision-math L-2/L-3, erc4626 E-3; phase2: math-precision, periphery, invariant, numerical-gap agents — 6+ agents, the single most-corroborated item in this audit]</code></p>
+<p><strong>Description</strong>: <code>_handleReport</code> allocates <code>floor(Σassets · price)</code> shares for a batch; each depositor later claims <code>floor(their assets · price)</code> individually. Since <code>Σfloor ≤ floor(Σ)</code>, unmintable dust permanently accumulates in <code>allocatedShares</code> (counted in <code>totalShares()</code>), marginally inflating the fee/valuation base over the vault&#39;s life. Separately, a deposit small enough that its individual claim floors to zero shares is deleted with no mint and no refund, even though its assets were already swept to the vault. All agents across both phases agree: protocol-favorable direction, sub-wei-per-batch magnitude, not attacker-forceable against a third party.</p>
+<p><strong>Fix</strong>: track/mint the residual on the final claim of a batch, or revert/refund an individual claim that would round to zero shares.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. Not scored.</em></p>
+<ul>
+<li><strong><code>Oracle.removeSupportedAssets</code> can lock subvault-held assets</strong> — <code>Oracle.removeSupportedAssets</code> / <code>RiskManager.convertToShares</code> — Code smells: removal only checks the fee-base-asset and queue-count guards, never whether a subvault still lists the asset in <code>allowedAssets</code>; after removal <code>getReport</code> reverts, so <code>pullAssets</code> for that asset from any subvault reverts until the asset is re-added. <code>[phase1: defi-staking DS-1]</code></li>
+<li><strong><code>EigenLayerVerifier.completeQueuedWithdrawal</code> indexes <code>strategies[0]</code> before checking length</strong> — reverts (fail-closed) rather than cleanly returning <code>false</code> on an empty array; not a bypass. <code>[phase1: defi-staking DS-2]</code></li>
+<li><strong><code>SwapModule.swap</code> bounded-slippage self-sandwich</strong> — <code>MIN_MULTIPLIER=0.9e8</code> lets a <code>CALLER_ROLE</code> keeper route through a pool it sandwiches for up to ~10% per swap; unverified whether <code>ROUTER_ROLE</code> grants are restricted enough to prevent this in practice. <code>[phase2: trust-gap agent]</code></li>
+<li><strong>Oracle-operator-collusion sync-deposit mint</strong> — a <code>SUBMIT_REPORTS_ROLE</code> holder who is also a depositor can nudge price upward within the per-update deviation bound, sync-deposit cheaply, then let price correct, diluting holders; reduces to the documented centralized-oracle trust assumption. <code>[phase2: trust-gap agent, relates to Finding 6 and 9]</code></li>
+<li><strong>In-flight fee/recipient reassignment</strong> — <code>FeeManager.setFees</code>/<code>setFeeRecipient</code> apply instantly to already-committed-but-unsettled deposits and to already-accrued-but-unminted fees; owner-action, no unprivileged amplifier identified. <code>[phase2: trust-gap agent]</code></li>
+<li><strong><code>ShareModule.hasQueue</code> reverts instead of returning <code>false</code> for EOA callers</strong> — short-circuits role-based fallback checks for any EOA holding a role like <code>MODIFY_PENDING_ASSETS_ROLE</code>; functional DoS, not fund loss, unverified whether such roles are ever granted to EOAs. <code>[phase2: boundary agent]</code></li>
+<li><strong>Unenforced <code>msg.value</code> on ERC20 deposit paths</strong> — payable deposit entrypoints never require <code>msg.value==0</code> on the ERC20 branch; stray ETH is stranded with no sweep path. <code>[both — phase2: boundary + periphery + flow-gap agents]</code></li>
+<li><strong><code>RedeemQueue.handleBatches</code> shared-liquidity read across multiple redeem queues for one asset</strong> — <code>getLiquidAssets()</code> isn&#39;t reserved per-queue; sequential execution updates balances between calls so worst case is a revert, not over-withdrawal — unverified same-tx ordering that forces harmful interleave. <code>[both — phase2: periphery + flow-gap agents]</code></li>
+<li><strong><code>RiskManager.modifyVaultBalance</code>/<code>modifySubvaultBalance</code> path-dependent balance drift</strong> — share-unit balances are updated by converting each asset delta at <em>that moment&#39;s</em> oracle price; repeated deposit/withdraw cycles across price moves can drive the tracked balance away from true holdings, weakening (not bypassing) TVL/allocation limit checks. <code>[phase2: execution-trace + economic-security agents]</code></li>
+<li><strong><code>RiskManager.modifyVaultBalance</code> settlement-time limit re-check can wedge an entire asset&#39;s report processing</strong> — if the owner lowers a vault/asset limit while deposits are in flight, settlement reverts inside the same <code>Oracle.submitReports</code> loop that processes every queue for that asset, blocking the whole batch. <code>[phase2: invariant agent]</code></li>
+<li><strong><code>BasicShareManager._lockShares</code> doesn&#39;t auto-claim before locking (unlike <code>TokenizedShareManager</code>)</strong> — a depositor with unclaimed-but-allocated shares can&#39;t <code>redeem</code> in one call on a Basic-share-manager vault; workaround is a manual (permissionless) <code>claimShares</code> first. <code>[phase2: asymmetry agent]</code></li>
+<li><strong><code>ERC20Verifier</code> reuses <code>RECIPIENT_ROLE</code> for both <code>transfer</code> recipients and <code>approve</code> spenders</strong> — any address whitelisted as a transfer recipient is simultaneously approvable for unlimited allowance; admin role-grant configuration hazard, not a code exploit. <code>[phase2: execution-trace agent]</code></li>
+<li><strong><code>OracleHelper._find</code> can revert on <code>mid==0</code> before its own zero-guard</strong> — the <code>if (mid==0) break</code> guard sits after a <code>calculateFee(mid)</code> call that reverts on <code>priceD18==0</code>; <code>OracleHelper</code> is an off-chain price-estimation helper, so impact is a failed estimation call. <code>[phase2: execution-trace agent]</code></li>
+<li><strong><code>ShareModule.removeQueue</code> leaves a stale <code>isPausedQueue</code> flag</strong> — harmless because factory-salted addresses are never reused. <code>[both — phase2: asymmetry + execution-trace agents]</code></li>
+<li><strong><code>initialize()</code> in <code>OwnedCustomVerifier</code>/<code>SwapModule</code>/<code>ThreeFModule</code> doesn&#39;t validate <code>holders.length == roles.length</code></strong> — mismatch either reverts or silently under-grants. <code>[phase1: general L-3]</code></li>
+<li><strong><code>OracleSubmitter</code>&#39;s Chainlink-compatible surface exposes fabricated <code>roundId</code>/<code>answeredInRound</code> (always 0) and a mis-scaled <code>latestAnswer</code> for non-18-decimal base assets</strong> — defeats the standard <code>answeredInRound &gt;= roundId</code> freshness check for any external integrator; unverified in-scope consumer. <code>[both — phase1: oracles O-3; phase2: math-precision agent]</code></li>
+<li><strong><code>PermissionedChainlinkOracle</code> min/max bounds are hard reverts</strong> — during a genuine depeg the owner cannot publish the true price; feed sticks at the last in-band value. <code>[phase1: oracles O-2]</code></li>
+<li><strong><code>ThreeFModule.isValidSignature</code> never re-checks expiration/cancellation</strong> — stale <code>authorizedOffers</code> entries return the ERC-1271 magic value after cancellation/expiry; actual settlement re-validates independently so not directly drainable. <code>[phase1: signatures S-1]</code></li>
+<li><strong><code>Factory.setVault</code>-pattern initializers (<code>RiskManager</code>/<code>Oracle</code>/<code>ShareManager</code>) are front-runnable if ever deployed non-atomically</strong> — all in-scope deployers (<code>VaultConfigurator</code>, <code>Migrator</code>) bind atomically, so this is latent, not live. <code>[both — phase1: access-control AC-3, proxies P-4; phase2: access-control agent]</code></li>
+<li><strong><code>Factory.proposeImplementation</code> is permissionless with no removal path</strong> — unbounded griefing of the <code>proposals</code> enumeration; <code>create()</code> uses the separate <code>implementations</code> set, so no fund/security impact. <code>[both — phase1: access-control AC-5; phase2: access-control agent]</code></li>
+<li><strong>Single-step <code>Ownable</code> (no <code>Ownable2Step</code>) across <code>Factory</code>/<code>FeeManager</code>/<code>Consensus</code>/<code>PermissionedChainlinkOracle</code>/<code>MellowAccountV1</code>/migrators</strong> — a mistyped <code>transferOwnership</code> permanently loses control. <code>[phase1: access-control AC-4]</code></li>
+<li><strong><code>ShareModule.callHook</code> delegatecalls a <code>SET_HOOK_ROLE</code>-settable arbitrary address</strong> — no allowlist on hook implementations; treat the role as equivalent to full vault control. <code>[phase1: proxies P-3]</code></li>
+<li><strong><code>Factory</code>&#39;s implementation blacklist doesn&#39;t constrain already-deployed proxies</strong> — each entity&#39;s own <code>ProxyAdmin</code> owner is fully trusted for upgrades regardless of Factory blacklist state. <code>[phase1: proxies P-2]</code></li>
+<li><strong><code>SlotLibrary.getSlot</code> uses <code>abi.encodePacked</code> over adjacent dynamic strings</strong> — theoretical slot-collision ambiguity, not reachable with the current fixed <code>contractName</code> constants. <code>[phase1: proxies P-5]</code></li>
+<li><strong>Renouncing <code>DEFAULT_ADMIN_ROLE</code>/<code>Ownable</code> ownership permanently bricks governance-critical setters</strong> — by design of <code>AccessControl</code>/<code>Ownable</code>, worth an explicit override-to-revert given how central these roles are. <code>[phase1: access-control AC-6]</code></li>
+<li><strong>A compromised vault <code>DEFAULT_ADMIN_ROLE</code> can drain subvaults via self-granted <code>SET_MERKLE_ROOT_ROLE</code>+<code>CALLER_ROLE</code></strong> — standard single-key-omnipotence risk, expected to be a multisig/timelock. <code>[phase1: access-control AC-7]</code></li>
+<li><strong>Protocol fees round down (favor the user) in every fee path</strong> — checklist convention is fee rounding should favor the protocol; impact is sub-unit dust escaping fees on repeated small operations. <code>[phase1: precision-math L-1]</code></li>
+<li><strong><code>uint32</code> timestamp downcasts in <code>Oracle</code> truncate silently past year 2106</strong> — no <code>SafeCast</code> used; no near-term impact. <code>[phase1: precision-math Info]</code></li>
+<li><strong><code>SwapModule.evaluate</code> decimal-exponent computation can overflow for extreme (attacker/listing-controlled) <code>decimals()</code> gaps (≳60)</strong> — DoS of the slippage check for that pair only, requires exotic token decimals plus role grants. <code>[phase2: math-precision agent]</code></li>
+<li><strong>Already-processed deposits can become unclaimable if mint-pause/whitelist/blacklist state changes between report-handling and claim</strong> — the claim-time <code>updateChecks</code> call re-applies current flags to an already-committed, no-longer-cancellable deposit. <code>[phase1: erc4626 E-4]</code></li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant (two-phase methodology: 8 breadth checklists + 12 blind attacker agents + hybrid reconciliation, ~20 agent-hours of analysis) as part of an automated leftclaw.services audit job. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. This is an independent run; the repository has prior human audit rounds (Nethermind, Sherlock) which were not consulted for findings in this report. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended, especially before relying on Finding #1 (fee overcharge) or Finding #2 (signature-queue bypass) in production with real user funds.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreib74h62owibrg3zfie5jjj4s56p3pvxrsgimvanpswy7pfnjtr3ny.ipfs.community.bgipfs.com/"><code>https://bafkreib74h62owibrg3zfie5jjj4s56p3pvxrsgimvanpswy7pfnjtr3ny.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/331">#331</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

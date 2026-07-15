@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAFEEngine (HAI Protocol) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #371">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">SAFEEngine (HAI Protocol)</h1>
+    <p class="job-sub">Job #371 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/371"><b>Job page</b> #371</a>
+      <a class="chip" href="https://bafkreihjdmu47d5piq5k3ndmkrlwyxvi5xo4wrvqqe3fjds7qogwso4z2y.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#trust-boundary-scoping-notes-info-no-code-change-recommended-in-">Trust-boundary / scoping notes (Info — no code change recommended in SAFEEngine)</a></li>
+      <li><a href="#severity-summary">Severity summary</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — SAFEEngine (HAI Protocol)</h1>
+<p><strong>Target</strong>: <code>SAFEEngine</code> contract, verified source<br><strong>Address</strong>: <code>0x9Ff826860689483181C5FAc9628fd2F70275A700</code><br><strong>Chain</strong>: Optimism (chain id 10)<br><strong>Source</strong>: Sourcify full-match verification<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (6 ethskills checklist agents: general, precision-math, access-control, defi-lending, assembly, chain-specific) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation<br><strong>Model</strong>: opus (scope: 981 in-scope LOC across 7 contracts → large)</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>File</th>
+<th>LOC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>src/contracts/SAFEEngine.sol</code></td>
+<td>422</td>
+</tr>
+<tr>
+<td><code>src/contracts/utils/Authorizable.sol</code></td>
+<td>97</td>
+</tr>
+<tr>
+<td><code>src/contracts/utils/Modifiable.sol</code></td>
+<td>46</td>
+</tr>
+<tr>
+<td><code>src/contracts/utils/ModifiablePerCollateral.sol</code></td>
+<td>74</td>
+</tr>
+<tr>
+<td><code>src/contracts/utils/Disableable.sol</code></td>
+<td>59</td>
+</tr>
+<tr>
+<td><code>src/libraries/Math.sol</code></td>
+<td>245</td>
+</tr>
+<tr>
+<td><code>src/libraries/Encoding.sol</code></td>
+<td>38</td>
+</tr>
+</tbody></table></div>
+<p>Interfaces (<code>src/interfaces/**</code>) and <code>node_modules/@openzeppelin/contracts/utils/structs/EnumerableSet.sol</code> were read for context (struct/precision annotations) but are out of scope for findings.</p>
+<p><strong>System context</strong>: This is HAI Protocol&#39;s <code>SAFEEngine</code>, a Reflexer/GEB-lineage core CDP accounting engine (&quot;Coded for Reflexer and The Money God&quot; per the contract header). It is the central double-entry ledger for a stablecoin-collateral system: it tracks locked collateral, generated debt, and internal coin balances per SAFE (vault), and enforces debt ceilings, collateralization ratios, and dust floors. It performs <strong>zero external calls</strong> — no ERC20 transfers, no oracle reads, no low-level calls — all &quot;collateral&quot; and &quot;coin&quot; movements are internal ledger mutations. Real tokens, price feeds, and liquidation logic live in out-of-scope periphery contracts (CollateralJoin adapters, OracleRelayer, LiquidationEngine) that call into this engine via the <code>isAuthorized</code> interface.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p><strong>Completeness</strong>: 6 unique (Contract, function) findings + 6 trust-boundary notes from Phase 1, corroborated/cross-checked against 5 dedup groups + 6 uncorroborated leads from Phase 2&#39;s 12 agents. All unique (Contract, function) items from both phases are covered below.</p>
+<p><strong>Overlap</strong>: 4 findings corroborated in both phases · Phase-1-only: 2 · Phase-2-only: 0 (all Phase-2 leads either corroborate a Phase-1 finding or fail pashov&#39;s Gate 2/3 as structurally unreachable / admin-only-no-amplifier and are recorded as notes, not elevated to independent findings) · Re-examined leads kept: 2, demoted: 0.</p>
+<p>Notably, <strong>all 12 Phase 2 attacker-mindset agents independently converged on zero FINDING-grade results</strong> (confidence ≥ 80, all 4 gates cleared) — every candidate either required an authorized/trusted caller with no named unprivileged amplifier (Gate 3) or required economically unreachable magnitudes (Gate 2). This 12-way independent convergence is itself a meaningful signal: the deployed bytecode faithfully reproduces the audited upstream GEB/HAI <code>SAFEEngine</code> reference with no injected vulnerability found by either phase.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="1-last-authorized-account-can-remove-itself-permanently-bricking">[1] Last authorized account can remove itself, permanently bricking all admin functions</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Location</strong>: <code>Authorizable._removeAuthorization()</code> (Authorizable.sol:75) / <code>SAFEEngine.removeAuthorization()</code> (SAFEEngine.sol:326)<br><strong>Origin</strong>: <code>[phase1: access-control]</code> — re-examined against source directly in Turn 3, confirmed. Not independently raised by Phase 2&#39;s access-control or boundary agents, though their exhaustive access-control sweeps found no counter-evidence.</p>
+<p><strong>Description</strong>: <code>_removeAuthorization</code> removes any account from the <code>EnumerableSet.AddressSet</code> <code>_authorizedAccounts</code> with no floor check requiring at least one account to remain:</p>
+<pre><code class="language-solidity">function _removeAuthorization(address _account) internal {
+  if (_authorizedAccounts.remove(_account)) {
+    emit RemoveAuthorization(_account);
+  } else {
+    revert NotAuthorized();
+  }
+}
+</code></pre>
+<p>The last authorized account can call <code>removeAuthorization(self)</code> and succeed. Once <code>_authorizedAccounts</code> is empty, the <code>isAuthorized</code> modifier can never pass again for any account — including <code>addAuthorization</code> itself, which is <code>isAuthorized</code>-gated (and additionally <code>whenEnabled</code> in the SAFEEngine override). There is no recovery path.</p>
+<p>This permanently freezes: <code>updateCollateralPrice</code>, <code>updateAccumulatedRate</code>, <code>confiscateSAFECollateralAndDebt</code>, <code>createUnbackedDebt</code>, <code>modifyCollateralBalance</code>, <code>initializeCollateralType</code>, <code>modifyParameters</code>, and <code>disableContract</code>. The CDP system is frozen with no ability to reprice collateral, accrue interest, liquidate unsafe SAFEs, or trigger global settlement.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Deployment/governance state leaves exactly one authorized account <code>A</code> (e.g., mid-handoff, or after a governance restructuring reduces the multisig-controlled admin set to one).</li>
+<li><code>A</code> calls <code>removeAuthorization(A)</code>. <code>_authorizedAccounts.remove(A)</code> returns <code>true</code> — no minimum-count guard exists — the call succeeds.</li>
+<li><code>_authorizedAccounts</code> is now empty. Every subsequent <code>isAuthorized</code>-gated call, including <code>addAuthorization</code>, reverts with <code>Unauthorized()</code>. No path exists to re-authorize any account.</li>
+</ol>
+<p><strong>Recommendation</strong>: Add a floor check in <code>_removeAuthorization</code>:</p>
+<pre><code class="language-diff">  function _removeAuthorization(address _account) internal {
++   if (_authorizedAccounts.length() == 1) revert CannotRemoveLastAuthorization();
+    if (_authorizedAccounts.remove(_account)) {
+</code></pre>
+<hr>
+<h3 id="2-encoding-decoders-read-32-bytes-with-no-length-check-or-bit-ma">[2] <code>Encoding</code> decoders read 32 bytes with no length check or bit-masking</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>Encoding.sol:12-37</code> (<code>toUint256</code>, <code>toInt256</code>, <code>toAddress</code>, <code>toBool</code>); reached via <code>SAFEEngine._modifyParameters()</code> (SAFEEngine.sol:399, 408)<br><strong>Origin</strong>: <code>[both]</code> — corroborated by 6 independent agents total: Phase 1 (general, precision-math, assembly) and Phase 2 (execution-trace, periphery, first-principles).</p>
+<p><strong>Description</strong>: Each decoder unconditionally does <code>mload(add(_data, 0x20))</code>:</p>
+<pre><code class="language-solidity">function toUint256(bytes memory _data) internal pure returns (uint256 _uint256) {
+  assembly { _uint256 := mload(add(_data, 0x20)) }
+}
+</code></pre>
+<p>with no check that <code>_data.length &gt;= 32</code>. A <code>bytes</code> blob shorter than 32 bytes is not rejected — the load reads into the zero-padded tail of the allocation (or, for zero-length input, adjacent free memory), silently producing a wrong decoded value instead of reverting. <code>toAddress</code>/<code>toBool</code> additionally never mask the loaded word, so dirty upper bits survive into the returned <code>address</code>/<code>bool</code>.</p>
+<p><strong>Proof of Concept</strong>: <code>modifyParameters(&#39;globalDebtCeiling&#39;, hex&#39;01&#39;)</code> (a 1-byte payload) does not revert; <code>toUint256</code> reads the byte left-aligned in the full word (<code>0x0100...00</code> = <code>2^248</code>), not <code>1</code> — silently setting a wildly wrong ceiling instead of failing loudly.</p>
+<p><strong>Exploitability</strong>: Low. Both <code>_modifyParameters</code> overrides are reachable only via <code>Modifiable.modifyParameters</code>/<code>ModifiablePerCollateral.modifyParameters</code>, both <code>isAuthorized</code>-gated. Every Phase 2 agent that examined this confirmed no untrusted-caller path exists — the normal path uses off-chain <code>abi.encode</code>d input, which is always exactly 32 bytes and decodes correctly. This is a defense-in-depth gap against malformed/mistyped governance calldata, not an attacker-reachable primitive.</p>
+<p><strong>Recommendation</strong>: <code>require(_data.length == 32)</code> in each decoder, or replace with <code>abi.decode(_data, (uint256))</code> etc., which enforces length and cleans dirty bits:</p>
+<pre><code class="language-diff">  function toUint256(bytes memory _data) internal pure returns (uint256 _uint256) {
+-   assembly { _uint256 := mload(add(_data, 0x20)) }
++   require(_data.length == 32, &#39;Encoding: bad length&#39;);
++   assembly { _uint256 := mload(add(_data, 0x20)) }
+  }
+</code></pre>
+<hr>
+<h3 id="3-no-validation-hooks-on-parameter-setters-debtfloor-debtceiling">[3] No validation hooks on parameter setters — <code>debtFloor &gt; debtCeiling</code> silently accepted, can brick a collateral type</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>SAFEEngine._modifyParameters(bytes32,bytes32,bytes)</code> (SAFEEngine.sol:407-414); <code>Modifiable._validateParameters()</code> / <code>ModifiablePerCollateral._validateCParameters()</code> left as empty no-op defaults<br><strong>Origin</strong>: <code>[both]</code> — corroborated by 4 agents: Phase 1 (general) and Phase 2 (access-control, periphery, first-principles).</p>
+<p><strong>Description</strong>: <code>modifyParameters</code> runs <code>validParams</code>/<code>validCParams</code> modifiers that call <code>_validateParameters()</code>/<code>_validateCParameters()</code> after every write, but SAFEEngine never overrides either hook — both remain the empty base-contract defaults. There is zero cross-field validation on <code>globalDebtCeiling</code>, <code>safeDebtCeiling</code>, per-collateral <code>debtCeiling</code>, or <code>debtFloor</code>. If governance sets a collateral&#39;s <code>debtFloor &gt; debtCeiling</code>, every SAFE of that type must carry debt ≥ <code>debtFloor</code> (SAFEEngine.sol:181, the dusty-SAFE check) while total collateral debt must stay ≤ <code>debtCeiling</code> (SAFEEngine.sol:161) — an unsatisfiable pair that bricks all new debt issuance for that collateral type. Similarly, <code>safeDebtCeiling = 0</code> disables all debt generation system-wide.</p>
+<p><strong>Proof of Concept</strong>: <code>modifyParameters(cType, &#39;debtFloor&#39;, abi.encode(1000e45))</code> while <code>debtCeiling == 100e45</code> for that <code>cType</code>. Any subsequent debt-generating <code>modifySAFECollateralization</code> call for <code>cType</code> reverts with either <code>SAFEEng_DustySAFE</code> (debt below floor) or <code>SAFEEng_CollateralDebtCeilingHit</code> (debt above ceiling) — the collateral type is unusable for borrowing.</p>
+<p><strong>Recommendation</strong>: Override <code>_validateParameters</code>/<code>_validateCParameters</code> to enforce sane bounds, e.g. <code>debtFloor &lt;= debtCeiling</code>, non-zero <code>safeDebtCeiling</code>.</p>
+<hr>
+<h3 id="4-updateaccumulatedrate-can-drive-accumulatedrate-to-exactly-zer">[4] <code>updateAccumulatedRate</code> can drive <code>accumulatedRate</code> to exactly zero, bricking repayment for that collateral type</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>updateAccumulatedRate()</code> (SAFEEngine.sol:283-294) interacting with the <code>accumulatedRate == 0</code> guard in <code>modifySAFECollateralization()</code> (SAFEEngine.sol:141)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1 (defi-lending) and Phase 2 (agent 9, boundary).</p>
+<p><strong>Description</strong>: <code>Math.add(uint256,int256)</code> does not revert when the result is exactly zero — <code>add(RAY, -int256(RAY)) == 0</code>. Nothing in <code>updateAccumulatedRate</code> forbids the resulting rate from reaching <code>0</code>. Once <code>accumulatedRate == 0</code> for a collateral type, <code>modifySAFECollateralization</code> reverts unconditionally at the &quot;collateral type not initialized&quot; guard (<code>if (__cData.accumulatedRate == 0) revert SAFEEng_CollateralTypeNotInitialized();</code>) — the only path borrowers have to repay debt or add collateral for that type is closed. Simultaneously, every SAFE of that type&#39;s <code>_totalDebtIssued</code> collapses to <code>0</code> (<code>accumulatedRate * generatedDebt = 0</code>), making them read as fully healthy while debt is still owed; only the authorized-only <code>confiscateSAFECollateralAndDebt</code> remains as a path forward, forcing mass write-off to unbacked debt.</p>
+<p><strong>Proof of Concept</strong>: With <code>accumulatedRate == RAY</code> for a <code>cType</code>, an authorized rate-updater (e.g. TaxCollector) calls <code>updateAccumulatedRate(cType, dst, -int256(RAY))</code> — succeeds, sets <code>accumulatedRate = 0</code>. All subsequent <code>modifySAFECollateralization(cType, ...)</code> calls, including borrower repayments, revert at line 141.</p>
+<p><strong>Trigger note</strong>: This requires the authorized rate-updater to act (a misconfiguration or bug in the out-of-scope TaxCollector-equivalent module, not an unprivileged attacker). Both phases independently agree this is a defense-in-depth gap against a buggy/misconfigured rate updater, worth a cheap guard given the severity of the consequence (frozen collateral type, forced bad-debt writeoff), rather than a directly attacker-triggerable exploit.</p>
+<p><strong>Recommendation</strong>: Require the post-update rate to remain strictly positive in <code>updateAccumulatedRate</code>:</p>
+<pre><code class="language-diff">  __cData.accumulatedRate = __cData.accumulatedRate.add(_rateMultiplier);
++ if (__cData.accumulatedRate == 0) revert SAFEEng_InvalidAccumulatedRate();
+</code></pre>
+<hr>
+<h3 id="5-authorization-set-frozen-after-shutdown-while-powerful-functio">[5] Authorization set frozen after shutdown while powerful functions remain callable — no way to revoke a compromised admin during settlement</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>SAFEEngine.addAuthorization()</code>/<code>removeAuthorization()</code> (both <code>whenEnabled</code>, SAFEEngine.sol:318, 326) vs. <code>confiscateSAFECollateralAndDebt</code>, <code>createUnbackedDebt</code>, <code>modifyCollateralBalance</code>, <code>transferCollateral</code>, <code>transferInternalCoins</code> (no <code>whenEnabled</code> guard)<br><strong>Origin</strong>: <code>[both]</code> — corroborated by 3 agents: Phase 1 (access-control) and Phase 2 (access-control, flow-gap).</p>
+<p><strong>Description</strong>: <code>disableContract</code> is one-way (<code>Disableable.sol:24</code> — no re-enable path). SAFEEngine gates both authorization mutators with <code>whenEnabled</code>, so once disabled the authorized set is frozen for the rest of the system&#39;s life. But <code>confiscateSAFECollateralAndDebt</code>, <code>createUnbackedDebt</code>, <code>modifyCollateralBalance</code>, <code>transferCollateral</code>, and <code>transferInternalCoins</code> carry no enabled/disabled guard and remain fully callable by any authorized account post-shutdown — intentional, since global settlement requires these to still function. If an authorized account is compromised at or after the moment of disable, it retains full power to mint unbacked coins and confiscate/move collateral throughout the entire settlement period, and can never be revoked.</p>
+<p><strong>Proof of Concept</strong>: Authorized set <code>{A honest, B compromised}</code>. <code>A</code> (or anyone authorized) calls <code>disableContract()</code>. <code>A</code> then calls <code>removeAuthorization(B)</code> → reverts <code>ContractIsDisabled()</code>. <code>B</code> calls <code>createUnbackedDebt(B, B, hugeRad)</code> (no <code>whenEnabled</code> guard) → succeeds, skewing settlement/redemption in <code>B</code>&#39;s favor.</p>
+<p><strong>Recommendation</strong>: Decide the intended trust model explicitly — either drop <code>whenEnabled</code> from <code>removeAuthorization</code> (allow evicting a compromised admin post-shutdown while still blocking new additions), or scope the powerful post-disable functions to a narrower, more tightly controlled role distinct from the general authorized set.</p>
+<hr>
+<h3 id="6-modifysafecollateralization-requires-debtdestination-consent-e">[6] <code>modifySAFECollateralization</code> requires <code>_debtDestination</code> consent even when <code>_deltaDebt == 0</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Location</strong>: SAFEEngine.sol:159-167<br><strong>Origin</strong>: <code>[phase1: general]</code> — re-examined against source directly in Turn 3, confirmed. No Phase 2 agent flagged this specific edge case (several examined the surrounding consent branches and judged them correct in the general case, without exercising <code>_deltaDebt == 0</code> specifically).</p>
+<p><strong>Description</strong>: The debt-side branch is:</p>
+<pre><code class="language-solidity">if (_deltaDebt &gt; 0) {
+  ...
+} else {
+  if (!canModifySAFE(_debtDestination, msg.sender)) revert SAFEEng_NotDebtDstAllowed();
+}
+</code></pre>
+<p>The <code>else</code> branch covers both <code>_deltaDebt &lt; 0</code> (repay — consent correctly required, since coins are pulled from <code>_debtDestination</code>) and <code>_deltaDebt == 0</code> (no debt change, no coin movement). When <code>_deltaDebt == 0</code>, <code>_deltaAdjustedDebt</code> is <code>0</code> and <code>_modifyInternalCoins</code> moves nothing, yet the call still reverts unless <code>_debtDestination</code> has granted rights to <code>msg.sender</code>. A pure collateral-only adjustment routed through an arbitrary <code>_debtDestination</code> is unnecessarily blocked. This fails safe (over-restrictive, not exploitable) — a correctness/UX nit, not a security issue.</p>
+<p><strong>Recommendation</strong>: Gate the consent check on <code>_deltaDebt &lt; 0</code> specifically, leaving <code>_deltaDebt == 0</code> to require no debt-destination permission.</p>
+<hr>
+<h2 id="trust-boundary-scoping-notes-info-no-code-change-recommended-in-">Trust-boundary / scoping notes (Info — no code change recommended in SAFEEngine)</h2>
+<p>These were raised consistently by both phases and reflect the intended GEB/HAI architecture rather than defects:</p>
+<ul>
+<li><strong>Liquidation correctness is fully delegated out of scope.</strong> The engine enforces only <code>safetyPrice</code> in its solvency check; <code>liquidationPrice</code> is stored (<code>updateCollateralPrice</code>) but never read in-scope. Actual liquidation sizing, bonus calculation, and partial-liquidation math live entirely in the out-of-scope LiquidationEngine, which must be audited before trusting this deployment end-to-end. <code>[both]</code></li>
+<li><strong>Unbounded admin power by design.</strong> <code>confiscateSAFECollateralAndDebt</code>, <code>createUnbackedDebt</code>, <code>updateCollateralPrice</code>, and <code>modifyCollateralBalance</code> grant any <code>isAuthorized</code> address the ability to seize collateral, mint unbacked coins, or reprice any collateral type with no per-call safety check. The entire system&#39;s security rests on the authorized set being governance/timelock/module contracts only, never EOAs — this should be verified against the live deployment&#39;s actual authorized-account list. <code>[both]</code></li>
+<li><strong>Decimal-agnostic accounting.</strong> SAFEEngine works purely in internal WAD/RAY/RAD fixed-point units and never touches real ERC20 decimals; correctness for non-18-decimal collateral depends entirely on out-of-scope CollateralJoin adapters normalizing decimals before calling <code>modifyCollateralBalance</code>. <code>[phase2: economic-security]</code></li>
+<li><strong><code>updateAccumulatedRate</code> doesn&#39;t re-check debt ceilings on accrual.</strong> Interest accrual (surplus minting) can push <code>globalDebt</code>/collateral <code>debtAmount</code> past their respective ceilings without reverting, since the ceiling checks only fire in <code>modifySAFECollateralization</code>&#39;s <code>_deltaDebt &gt; 0</code> branch. This matches canonical GEB behavior (rate accrual is a trusted-module action) and self-corrects via governance; it would soft-DoS new borrowing until ceilings are raised, not cause loss. <code>[phase2: economic-security, invariant, numerical-gap — 3-agent convergence, rejected at Gate 3 per pashov&#39;s admin-action rule: no unprivileged amplifier named]</code></li>
+<li><strong>Chain-specific checklist is architecturally N/A.</strong> SAFEEngine contains no chain-sensitive primitives (no <code>block.timestamp</code>/<code>block.number</code>, no oracle reads, no L1↔L2 messaging) — the Optimism-specific attack surface (sequencer downtime, block-time assumptions) doesn&#39;t apply to this specific contract. Any staleness protection lives entirely in the out-of-scope OracleRelayer. PUSH0/Shanghai-EVM compatibility confirmed non-issue (Optimism&#39;s Canyon upgrade predates this deployment). <code>[phase1: chain-specific]</code></li>
+<li><strong>Precision/scaling verified correct, not a bug.</strong> The raw (non-<code>rmul</code>/<code>wmul</code>) multiplications <code>accumulatedRate * generatedDebt</code> and <code>lockedCollateral * safetyPrice</code> are intentional RAY(10^27)×WAD(10^18)=RAD(10^45) scaling, matching the <code>ISAFEEngine</code> interface&#39;s precision annotations exactly. Using <code>rmul</code>/<code>wmul</code> here would be the actual bug (under-scaling by 10^18–10^27). Verified independently by both phases across 4 separate agents. <code>[both]</code></li>
+<li><strong><code>Math.rpow</code> assembly verified correct.</strong> The Yul-assembly RAY-exponentiation in <code>Math.sol</code> was checked line-by-line against the canonical MakerDAO <code>rpow</code> implementation — all overflow-revert guards present and correct across <code>_x=0</code>, <code>_n=0</code>, and large-value edge cases. <code>[phase1: assembly]</code></li>
+<li><strong>No reentrancy surface.</strong> SAFEEngine makes zero external calls anywhere in scope, so the mutate-before-check ordering used throughout (state written, then safety checks run and can revert) carries no reentrancy risk — there is no external call between mutation and check for an attacker to reenter through. <code>[phase2: flow-gap]</code></li>
+</ul>
+<hr>
+<h2 id="severity-summary">Severity summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>2 + 8 trust-boundary notes</td>
+</tr>
+</tbody></table></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>This deployment of <code>SAFEEngine</code> is a faithful, close-to-byte-identical reproduction of the audited Reflexer/GEB → HAI Protocol core CDP engine. Both the breadth (checklist) pass and the depth (12-agent adversarial) pass — run independently and blind to each other — converged on the same conclusion: <strong>no Critical or High severity issue exists in the in-scope code</strong>. The one Medium finding ([1], last-authorized-account self-removal) is a governance-hygiene footgun with a permanent-bricking consequence and a one-line fix. The remaining Low/Info findings are defense-in-depth gaps (unsafe decode primitives, missing parameter cross-validation) that are only reachable by the trusted authorized/governance set, not by unprivileged attackers. The security of any live deployment depends critically on (a) the authorized-account set being governance/timelock contracts, never EOAs, and (b) the correctness of the out-of-scope OracleRelayer, LiquidationEngine, and CollateralJoin adapters that this engine trusts by construction.</p>
+<blockquote>
+<p>⚠️ This review was performed by an autonomous AI audit pipeline (ethskills breadth + pashov depth, two-phase reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Independent human security review, bug bounty programs, and on-chain monitoring are strongly recommended before relying on this deployment with material value at risk.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihjdmu47d5piq5k3ndmkrlwyxvi5xo4wrvqqe3fjds7qogwso4z2y.ipfs.community.bgipfs.com/"><code>https://bafkreihjdmu47d5piq5k3ndmkrlwyxvi5xo4wrvqqe3fjds7qogwso4z2y.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/371">#371</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

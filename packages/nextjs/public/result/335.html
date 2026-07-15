@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vaultfire AntiSurveillance — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #335">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Vaultfire AntiSurveillance</h1>
+    <p class="job-sub">Job #335 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/335"><b>Job page</b> #335</a>
+      <a class="chip" href="https://bafkreifmg3rrwsihlr67sxufo2dgiaxd4j5n7akyorjn5zxv5oovp373ii.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">2</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">4</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">4</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">3</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#methodology">Methodology</a></li>
+      <li><a href="#summary">Summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — Vaultfire AntiSurveillance</h1>
+<p><strong>Target</strong>: <code>AntiSurveillance.sol</code> (contract <code>AntiSurveillance</code>)<br><strong>Address</strong>: <a href="https://basescan.org/address/0xaaC44F1396f3F5b3C06048a1F819DC9b0f86D90c"><code>0xaaC44F1396f3F5b3C06048a1F819DC9b0f86D90c</code></a> on Base (chain 8453)<br><strong>Source verification</strong>: Sourcify <code>exact_match</code> (creation + runtime), compiled with solc <code>0.8.25+commit.b61c2a91</code>, <code>viaIR: true</code>, <code>evmVersion: cancun</code>, verified 2026-04-16<br><strong>Lines of code</strong>: 164 (single, self-contained file — no imports, no inheritance)<br><strong>Client brief</strong>: &quot;Anti-surveillance guardrail (limits on data emitted). Focus on: any code path that emits identifying data despite the guard, and access control on toggles.&quot;</p>
+<hr>
+<h2 id="methodology">Methodology</h2>
+<p>Two independent audit passes, run blind to each other, then reconciled:</p>
+<ul>
+<li><strong>Phase 1 — breadth</strong> (ethskills checklists): 5 domain checklists applied by parallel sonnet sub-agents — <code>evm-audit-general</code>, <code>evm-audit-precision-math</code>, <code>evm-audit-access-control</code>, <code>evm-audit-dos</code>, <code>evm-audit-governance</code>. (The other 15 ethskills domains do not apply — no tokens, AMM, lending, staking, vaults, account abstraction, bridges, proxy pattern, signatures, oracles, assembly, or NFTs in this contract.)</li>
+<li><strong>Phase 2 — depth</strong> (pashov attacker-mindset methodology): 12 parallel sonnet attack agents (9 single-specialty + 3 cross-lens gap-hunters), each reading only the raw source with no visibility into phase 1&#39;s findings, each finding gated through 4 sequential judging criteria (attack execution, reachability, unprivileged trigger, material impact).</li>
+<li><strong>Phase 3 — reconciliation</strong>: cross-phase dedup by (function, bug-class), hybrid re-read of every phase-unique finding directly against source to confirm or demote.</li>
+</ul>
+<p><strong>Reconciliation summary</strong>: 13 unique (function, bug-class) items raised across both phases raw output, 13 covered in this unified report. 3 items corroborated by both phases (<code>[both]</code>) — including the top finding, independently surfaced by 3 of 5 phase-1 agents and 11 of 12 phase-2 agents. 8 items phase-1-only, 2 items phase-2-only (new: a dead-modifier design footgun and a dead-event declaration). All phase-unique items were re-verified by direct re-read of the deployed source before inclusion below.</p>
+<p>Note: this contract holds no funds and makes no external calls, so &quot;loss of funds&quot; severity anchors rarely apply directly — severities below are judged by analogous impact (integrity of the attestation/ban registry, availability of governance functions, and reputational/PII harm), per the standard Critical/High/Medium/Low/Info scale.</p>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>3</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="h-1-permissionless-reportsurveillanceviolation-reuses-the-owner-">[H-1] Permissionless <code>reportSurveillanceViolation()</code> reuses the owner-gated ban event, letting anyone emit a spoofed &quot;official ban&quot; signal</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (general, access-control, dos) + phase 2 (11 of 12 attack agents; 7 independently reached FINDING-grade proof, conf. 80)<br><strong>Location</strong>: <code>reportSurveillanceViolation()</code> (lines 105-113) vs. <code>banModuleForSurveillance()</code> (lines 116-125); shared event <code>ModuleBannedForSurveillance</code> (lines 73-79)</p>
+<p><strong>Description</strong>: <code>reportSurveillanceViolation</code> is fully permissionless — its only guard is <code>evidenceHash != bytes32(0)</code>, trivially satisfied by any garbage hash. It emits the <em>identical</em> event, <code>ModuleBannedForSurveillance</code> (same name, same three indexed topics), that the <code>onlyOwner</code>-gated <code>banModuleForSurveillance()</code> emits for a genuine enforcement action. The only on-chain differentiator is <code>reasonHash == 0</code> for reports vs. non-zero for real bans (<code>banModuleForSurveillance</code> requires <code>reasonHash != 0</code> at line 120) — a convention documented only in a Solidity comment, not encoded in the event schema itself, and the reporter&#39;s address (<code>msg.sender</code>) is not included in the event at all. This directly undermines the contract&#39;s own stated design goal (&quot;Public reporting is non-binding (prevents griefing/DoS),&quot; lines 12, 100-103): the state-level guarantee holds (<code>bannedForSurveillance[module]</code> is never touched by the report path), but the event-log guarantee does not — the exact griefing surface the contract claims to prevent is achieved one layer up, at the event/interface boundary that off-chain indexers, dashboards, and any downstream integration actually consume.</p>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Attacker (any EOA, no privileges, no prior relationship to <code>module</code>) calls <code>reportSurveillanceViolation(victimModule, BannedDataType.BIOMETRIC_DATA, keccak256(&quot;fabricated&quot;))</code>.</li>
+<li>Only guard <code>require(evidenceHash != bytes32(0), ...)</code> (line 109) passes trivially.</li>
+<li>Contract emits <code>ModuleBannedForSurveillance(victimModule, BIOMETRIC_DATA, reasonHash=0x0, evidenceHash=keccak256(&quot;fabricated&quot;), block.timestamp)</code> — topic0 = <code>keccak256(&quot;ModuleBannedForSurveillance(address,uint8,bytes32,bytes32,uint256)&quot;)</code>, byte-for-byte identical to what <code>banModuleForSurveillance</code> would emit for a real ban.</li>
+<li><code>bannedForSurveillance[victimModule]</code> remains <code>false</code> on-chain, but any off-chain indexer/dashboard/bot/partner protocol filtering on the <code>ModuleBannedForSurveillance</code> topic — the natural integration pattern given the event&#39;s own name — displays or acts on <code>victimModule</code> as banned, with no owner action and no real evidence involved.</li>
+<li>Cost is near-zero (no storage writes, ~30-40k gas), repeatable indefinitely against any address.</li>
+</ol>
+<p><strong>Recommendation</strong>: Use a distinct event name for the permissionless report path, and include the reporter&#39;s address:</p>
+<pre><code class="language-diff">+    event SurveillanceViolationReported(
++        address indexed module,
++        BannedDataType violationType,
++        bytes32 indexed evidenceHash,
++        address indexed reporter,
++        uint256 timestamp
++    );
+
+     function reportSurveillanceViolation(address module, BannedDataType violationType, bytes32 evidenceHash)
+         external
+     {
+         require(evidenceHash != bytes32(0), &quot;Evidence hash required&quot;);
+-        emit ModuleBannedForSurveillance(module, violationType, bytes32(0), evidenceHash, block.timestamp);
++        emit SurveillanceViolationReported(module, violationType, evidenceHash, msg.sender, block.timestamp);
+     }
+</code></pre>
+<p>Reserve <code>ModuleBannedForSurveillance</code> exclusively for the <code>onlyOwner</code> path so binding governance bans and non-binding public accusations are never topic-collidable.</p>
+<hr>
+<h3 id="h-2-owner-key-loss-permanently-disables-every-enforcement-functi">[H-2] Owner key loss permanently disables every enforcement function, with no recovery path</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[phase1: governance]</code> — confirmed via hybrid re-read<br><strong>Location</strong>: <code>owner</code> (line 20), <code>onlyOwner</code> modifier (24-27), all gated functions (93-98, 116-125, 128-130, 136-142)</p>
+<p><strong>Description</strong>: Exactly one address controls every privileged action in the contract, including <code>transferOwnership</code> itself (<code>onlyOwner</code>-gated, line 93). There is no backup admin, no multisig enforced in code (only in a comment — see M-3), and no recovery mechanism of any kind. If the owner&#39;s private key is lost or destroyed, <code>banModuleForSurveillance</code>, <code>unbanModule</code>, and <code>verifyModuleSurveillanceFree</code> become permanently uncallable by anyone: a wrongly-banned module can never be unbanned on appeal, and no new module can ever be verified again. State freezes forever at whatever it was at the moment of key loss — a permanent denial-of-service of the entire enforcement mechanism this contract exists to provide.</p>
+<p><strong>Proof of Concept</strong>: Confirmed by direct read of lines 20-27 and 93-98: <code>owner</code> is a plain <code>address</code> state variable set once in the constructor (<code>owner = msg.sender</code>); every state-changing function checks <code>require(msg.sender == owner, &quot;Only owner&quot;)</code> with no fallback branch, no second role, and no time-locked recovery path. If the key controlling <code>owner</code> is lost, every one of these <code>require</code> statements reverts forever for every possible caller.</p>
+<p><strong>Recommendation</strong>: Use a genuine multisig (e.g., a Gnosis Safe with a sensible threshold such as 3-of-5) as <code>owner</code> rather than a single EOA, so no single lost key disables the contract. Combine with a two-step ownership-transfer pattern (see L-3) to reduce the risk of an irreversible mistake during any future handoff.</p>
+<hr>
+<h3 id="m-1-ban-unban-does-not-reset-verification-state-a-module-can-be-">[M-1] Ban → unban does not reset verification state; a module can be <code>verifyModuleSurveillanceFree</code>&#39;d exactly once, ever</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (general, detailed) + phase 2 (5 of 12 agents independently converged; formally excluded from pashov&#39;s strict FINDING list only because the full path requires the owner&#39;s own ban→unban sequence with no unprivileged amplifier — the underlying code defect was re-confirmed directly against source, see below)<br><strong>Location</strong>: <code>banModuleForSurveillance()</code> (116-125), <code>unbanModule()</code> (128-130), <code>verifyModuleSurveillanceFree()</code> (136-142), <code>surveillanceFreeModules</code> (line 58)</p>
+<p><strong>Description</strong>: <code>surveillanceFreeModules[module]</code> is written exactly once, at verification time, and is never reset by any other function. Confirmed by re-reading lines 116-130: <code>banModuleForSurveillance</code> sets <code>bannedForSurveillance[module] = true</code> but never touches <code>surveillanceFreeModules</code>; <code>unbanModule</code> sets <code>bannedForSurveillance[module] = false</code> and likewise never touches it. Consequently, banning a previously-verified module and later unbanning it (e.g., a successful appeal) silently and automatically restores &quot;surveillance-free&quot; status via the <code>surveillanceFreeOnly</code> modifier, using the <em>original, stale</em> verification timestamp — no new review, no new event. Symmetrically, because <code>verifyModuleSurveillanceFree()</code> requires <code>surveillanceFreeModules[module] == 0</code> (line 138), a module that has ever been verified can never be re-verified — governance has no way to force a fresh attestation after a ban/appeal cycle or a module code change, short of a mechanism this contract does not provide.</p>
+<p><strong>Proof of Concept</strong>: Owner verifies <code>moduleA</code> at <code>t0</code> (<code>surveillanceFreeModules[moduleA] = t0</code>). Owner bans <code>moduleA</code> at <code>t1</code> for a genuine violation (<code>bannedForSurveillance[moduleA] = true</code>; <code>surveillanceFreeModules[moduleA]</code> unchanged). Owner unbans <code>moduleA</code> at <code>t2</code> on appeal (<code>bannedForSurveillance[moduleA] = false</code>). Immediately, <code>surveillanceFreeOnly(moduleA)</code> passes again using the stale <code>t0</code> timestamp — with zero fresh review — and any subsequent <code>verifyModuleSurveillanceFree(moduleA)</code> call reverts with <code>&quot;Module already verified&quot;</code>.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">     function banModuleForSurveillance(address module, BannedDataType violationType, bytes32 reasonHash, bytes32 evidenceHash)
+         external
+         onlyOwner
+     {
+         require(reasonHash != bytes32(0), &quot;Reason hash required&quot;);
+         require(evidenceHash != bytes32(0), &quot;Evidence hash required&quot;);
+
+         bannedForSurveillance[module] = true;
++        surveillanceFreeModules[module] = 0;
+         emit ModuleBannedForSurveillance(module, violationType, reasonHash, evidenceHash, block.timestamp);
+     }
+</code></pre>
+<p>This forces a fresh <code>verifyModuleSurveillanceFree()</code> call (which will now succeed again post-unban) before a previously-banned module is trusted again.</p>
+<hr>
+<h3 id="m-2-evidencehashreasonhash-are-unenforced-raw-bytes32-the-permis">[M-2] <code>evidenceHash</code>/<code>reasonHash</code> are unenforced raw <code>bytes32</code> — the permissionless path can publish identifying data despite the &quot;hash-only, no PII&quot; design intent</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1: general]</code><br><strong>Location</strong>: <code>reportSurveillanceViolation()</code> line 109, <code>banModuleForSurveillance()</code> lines 120-121</p>
+<p><strong>Description</strong>: This is the client&#39;s first explicit ask (&quot;any code path that emits identifying data despite the guard&quot;). The contract&#39;s stated privacy guarantee rests on using &quot;hashes only to avoid writing evidence/reason text (potential PII) on-chain&quot; (lines 11, 70-71). Solidity cannot enforce that a <code>bytes32</code> parameter is actually a hash digest rather than raw data — a short name, an encoded identifier, or a truncated string fits comfortably in 32 bytes. Because <code>reportSurveillanceViolation()</code> requires no permission at all, any external caller can permanently and publicly log short identifying data on-chain, indexed and forever discoverable via topic filters — precisely the outcome the &quot;hash-only&quot; design was meant to prevent.</p>
+<p><strong>Proof of Concept</strong>: <code>reportSurveillanceViolation(module, BannedDataType.SOCIAL_GRAPH_MINING, bytes32(&quot;jane.doe@example.com&quot;))</code> passes the only check present (<code>evidenceHash != bytes32(0)</code>, line 109) and is emitted as a permanent, public, indexed topic. Nothing in the contract distinguishes this from a legitimate <code>keccak256</code> digest.</p>
+<p><strong>Recommendation</strong>: This cannot be fully solved on-chain (a contract can never prove a <code>bytes32</code> was produced by hashing). Mitigate with: an off-chain preimage-disclosure schema governance can verify before any enforcement action; NatSpec/ABI-level warnings that these fields are trusted-input-only and unvalidated; and a bond or per-caller rate limit on the permissionless path (also mitigates L-1).</p>
+<hr>
+<h3 id="m-3-no-timelock-on-any-privileged-admin-action-ban-unban-verify-">[M-3] No timelock on any privileged admin action (ban / unban / verify / ownership transfer)</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1: access-control, governance]</code><br><strong>Location</strong>: <code>banModuleForSurveillance()</code>, <code>unbanModule()</code>, <code>verifyModuleSurveillanceFree()</code>, <code>transferOwnership()</code></p>
+<p><strong>Description</strong>: All owner-gated state changes take effect atomically within the calling transaction — no delay, queueing, or grace period. Any integrator gating on <code>surveillanceFreeOnly</code> gets zero notice window before a module they depend on is banned, or before an unaudited module is declared &quot;surveillance-free.&quot;</p>
+<p><strong>Proof of Concept</strong>: Owner calls <code>banModuleForSurveillance(legitModule, ...)</code>; any downstream consumer of <code>surveillanceFreeOnly(legitModule)</code> breaks in the same block with no advance warning.</p>
+<p><strong>Recommendation</strong>: Add a propose/execute pattern with a fixed minimum delay for these four functions (e.g., OpenZeppelin <code>TimelockController</code>, or a custom <code>pendingChange</code> + <code>executeAfter(block.timestamp)</code> guard).</p>
+<hr>
+<h3 id="m-4-single-eoa-owner-trust-model-claimed-as-governancemultisigda">[M-4] Single EOA owner — trust model claimed as &quot;governance/multisig/DAO&quot; in NatSpec but not enforced in code</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1: access-control, governance]</code><br><strong>Location</strong>: <code>owner</code> (line 20), <code>onlyOwner</code> modifier (24-27); NatSpec lines 6, 13, 19, 100-103, 115, 127, 132-135</p>
+<p><strong>Description</strong>: This is the client&#39;s second explicit ask (&quot;access control on toggles&quot;). NatSpec repeatedly says &quot;governance-controlled,&quot; &quot;multisig/DAO in production,&quot; and labels functions &quot;Governance/admin action&quot; — but the actual implementation is one EOA with a plain <code>require(msg.sender == owner)</code>. There is no multisig, DAO, voting, or quorum logic anywhere in the contract. A single compromised or malicious key can falsely <code>verifyModuleSurveillanceFree</code> a violating module, ban a legitimate competitor, or silently unban a genuine violator — all with attacker-chosen <code>reasonHash</code>/<code>evidenceHash</code> that are only checked for non-zero, never validated against real evidence.</p>
+<p><strong>Proof of Concept</strong>: N/A (design/documentation-mismatch, not a code bypass) — the access control itself is correctly implemented (no bypass found in either audit phase); the finding is that the trust model advertised in the docs does not match what the code enforces.</p>
+<p><strong>Recommendation</strong>: Enforce the multisig/DAO requirement in code (e.g., require <code>owner</code> be a Safe contract address at deploy time, or migrate to role-based access held by a multisig) rather than only in comments; correct the NatSpec if not implementing this before production use.</p>
+<hr>
+<h3 id="l-1-reportsurveillanceviolation-has-no-rate-limit-cheap-unbounde">[L-1] <code>reportSurveillanceViolation()</code> has no rate limit — cheap, unbounded log spam can bury genuine ban events</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase 1 (dos) + phase 2 (1 agent, lead)<br><strong>Location</strong>: <code>reportSurveillanceViolation()</code> (105-113)</p>
+<p><strong>Description</strong>: No storage writes occur, so each call costs little beyond base tx gas. No per-caller cooldown, no per-module cap, no fee, no uniqueness constraint on <code>evidenceHash</code>. Compounds H-1: an attacker can flood the <code>ModuleBannedForSurveillance</code> log stream, degrading it as a reliable audit trail.</p>
+<p><strong>Recommendation</strong>: Add a bond/fee or a per-caller/per-module cooldown; pair with H-1&#39;s distinct-event fix so consumers can trivially filter by reporter.</p>
+<hr>
+<h3 id="l-2-unbanmodule-emits-no-event">[L-2] <code>unbanModule()</code> emits no event</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: general, access-control]</code> — independently flagged pre-gate by 2 of 12 phase-2 agents but formally excluded from the phase-2 report under the pashov methodology&#39;s &quot;Do Not Report: missing events&quot; rule<br><strong>Location</strong>: <code>unbanModule()</code> (128-130)</p>
+<p><strong>Description</strong>: Unlike <code>banModuleForSurveillance</code> and <code>verifyModuleSurveillanceFree</code>, <code>unbanModule</code> performs a state change with no corresponding log. Event-only consumers will show a stale &quot;banned&quot; state indefinitely after a legitimate unban.</p>
+<p><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">+    event ModuleUnbanned(address indexed module, uint256 timestamp);
++
+     function unbanModule(address module) external onlyOwner {
+         bannedForSurveillance[module] = false;
++        emit ModuleUnbanned(module, block.timestamp);
+     }
+</code></pre>
+<hr>
+<h3 id="l-3-transferownership-is-single-step-with-no-acceptclaim">[L-3] <code>transferOwnership()</code> is single-step with no accept/claim</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1: general, access-control]</code><br><strong>Location</strong>: <code>transferOwnership()</code> (93-98)</p>
+<p><strong>Description</strong>: Only a zero-address check guards <code>newOwner</code>; there is no pending-owner/<code>acceptOwnership()</code> step. A typo&#39;d or unreachable <code>newOwner</code> permanently and irrecoverably disables every privileged function in the contract (compounds H-2 — no recovery path exists once this happens, since <code>transferOwnership</code> itself requires <code>onlyOwner</code>).</p>
+<p><strong>Recommendation</strong>: Implement an <code>Ownable2Step</code>-style two-step transfer (<code>pendingOwner</code> + <code>acceptOwnership()</code>).</p>
+<hr>
+<h3 id="l-4-surveillancefreeonly-modifier-is-unused-within-this-contract">[L-4] <code>surveillanceFreeOnly</code> modifier is unused within this contract and binds on a caller-supplied <code>module</code> parameter rather than <code>msg.sender</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase2]</code> — 5 of 12 attack agents independently converged; confirmed via hybrid re-read (new finding not surfaced by phase 1)<br><strong>Location</strong>: <code>surveillanceFreeOnly</code> modifier (83-87)</p>
+<p><strong>Description</strong>: Confirmed by re-read: this modifier is declared but applied to zero functions in this file — it is dead code as shipped, presumably intended for a downstream/out-of-scope contract to reuse. Two compounding issues for any future integrator: (1) as a concrete, non-abstract deployed singleton, this contract&#39;s modifier cannot actually be &quot;inherited&quot; by a separately-deployed contract — a downstream integrator would need to re-implement the same checks via external calls to the public mappings, making the NatSpec&#39;s claim that restricting <code>verifyModuleSurveillanceFree</code> &quot;preserves the integrity of any downstream gating&quot; (line 134) an overstatement of what the contract actually provides; (2) if the modifier pattern is copied downstream, note it validates whatever <code>module</code> address is passed in as a parameter, not <code>msg.sender</code> — a downstream function like <code>doThing(address module) external surveillanceFreeOnly(module) { ... acts on msg.sender ... }</code> would let an unverified caller &quot;borrow&quot; a verified third party&#39;s address to pass the gate. Not exploitable within this contract&#39;s own scope (Gate 2: no consuming function exists here), but worth flagging for any integration.</p>
+<p><strong>Recommendation</strong>: If reused downstream, bind the check to <code>msg.sender</code> explicitly (or require <code>module == msg.sender</code> at the call site) rather than trusting a caller-supplied address; document clearly that this modifier is not automatically inherited by separately-deployed contracts.</p>
+<hr>
+<h3 id="i-1-isdatatypebanned-ignores-its-input-parameter-and-always-retu">[I-1] <code>isDataTypeBanned()</code> ignores its input parameter and always returns <code>true</code></h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: general]</code><br><strong>Location</strong>: lines 153-156</p>
+<p><strong>Description</strong>: Signature implies a per-type lookup; body discards <code>dataType</code>. Internally consistent with the design (every enum member is permanently banned) but potentially misleading to integrators expecting a real conditional check.</p>
+<p><strong>Recommendation</strong>: Drop the parameter, or add a NatSpec comment clarifying that all <code>BannedDataType</code> values are permanently banned by design.</p>
+<hr>
+<h3 id="i-2-no-zero-address-validation-on-module-in-banverify-functions">[I-2] No zero-address validation on <code>module</code> in ban/verify functions</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase1: general]</code><br><strong>Location</strong>: <code>banModuleForSurveillance()</code> line 116, <code>verifyModuleSurveillanceFree()</code> line 136</p>
+<p><strong>Description</strong>: <code>module</code> is never checked against <code>address(0)</code>. No meaningful security impact (address(0) can never be a real module), but is a minor hygiene gap for admin-input mistakes.</p>
+<p><strong>Recommendation</strong>: Optional <code>require(module != address(0), &quot;Invalid module&quot;)</code> for defense-in-depth.</p>
+<hr>
+<h3 id="i-3-surveillanceattemptblocked-event-is-declared-but-never-emitt">[I-3] <code>SurveillanceAttemptBlocked</code> event is declared but never emitted</h3>
+<p><strong>Severity</strong>: <span class="pill info">Info</span><br><strong>Origin</strong>: <code>[phase2]</code> — 2 of 12 attack agents; confirmed via re-read (new finding not surfaced by phase 1)<br><strong>Location</strong>: line 81</p>
+<p><strong>Description</strong>: Confirmed by grep: <code>event SurveillanceAttemptBlocked(address indexed attacker, BannedDataType attemptedType, uint256 timestamp);</code> has no corresponding <code>emit</code> anywhere in the contract. This is dead code, suggesting an enforcement/blocking signal that was planned but never wired up. No state or security impact on its own, but any off-chain system expecting this event as a live signal will never receive it.</p>
+<p><strong>Recommendation</strong>: Either remove the unused declaration or implement the intended emission path if blocking logic is added in a future version.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by AI audit agents (two independent methodologies, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, and monitoring of the deployed contract&#39;s event stream and owner key custody, are recommended before this registry is relied upon by downstream integrations.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifmg3rrwsihlr67sxufo2dgiaxd4j5n7akyorjn5zxv5oovp373ii.ipfs.community.bgipfs.com/"><code>https://bafkreifmg3rrwsihlr67sxufo2dgiaxd4j5n7akyorjn5zxv5oovp373ii.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/335">#335</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

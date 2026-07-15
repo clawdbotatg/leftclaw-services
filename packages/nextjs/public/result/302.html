@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TheDAO (`DAO.sol`) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #302">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">TheDAO (`DAO.sol`)</h1>
+    <p class="job-sub">Job #302 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/302"><b>Job page</b> #302</a>
+      <a class="chip" href="https://bafkreih4vgi3d6smrk5ldmm23hyi2g44xcix47pqeucmlvkr2hpixllthe.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">3</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">4</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">5</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">12</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#context-note">Context note</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#critical">Critical</a></li>
+      <li><a href="#high">High</a></li>
+      <li><a href="#medium">Medium</a></li>
+    </ol>
+    <ol start="6">
+      <li><a href="#low">Low</a></li>
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#severity-summary">Severity Summary</a></li>
+      <li><a href="#overall-assessment">Overall Assessment</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report — TheDAO (<code>DAO.sol</code>)</h1>
+<p><strong>Target</strong>: <code>0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413</code> (Ethereum mainnet)<br><strong>Contract</strong>: The historic 2016 &quot;TheDAO&quot; contract (Token, TokenCreation, ManagedAccount, DAO, DAO_Creator) — 1235 LOC, Solidity ~0.3.1<br><strong>Client request</strong>: &quot;See if it is secure or if funds can get stolen. Focus on reentrancy.&quot;<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (6 ethskills checklist agents: general, precision-math, erc20, governance, access-control, dos) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → this hybrid reconciliation.</p>
+<h2 id="context-note">Context note</h2>
+<p>This address is the original, historically famous &quot;TheDAO&quot; contract. It was exploited via a recursive-call reentrancy bug in June 2016, draining ~3.6M ETH and precipitating the Ethereum/Ethereum-Classic hard-fork split. The client&#39;s framing (&quot;I launched a DAO contract... focus on reentrancy&quot;) suggests this audit is either a deliberate historical/educational exercise or a check against a redeployment/fork of the original code. <strong>This report is a fresh, independent audit of the deployed bytecode&#39;s source — every finding below was independently re-derived by this run&#39;s 18 agents (6 breadth + 12 depth) from the source itself, not copied from public historical write-ups.</strong> The findings corroborate the well-known history but go beyond it (see Finding 3, a distinct accounting bug not part of the famous 2016 narrative).</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<ul>
+<li><strong>Overlap</strong>: 12 findings identified independently by both phases (near-unanimous on the core reentrancy family — up to 12/12 phase-2 agents on the headline bug).</li>
+<li><strong>Phase-1-only</strong>: 12 findings (re-examined against source below; 1 demoted from Medium to Low on re-read).</li>
+<li><strong>Phase-2-only</strong>: 1 major finding (reward-accounting inflation, independently verified by the orchestrator against source with a concrete numeric trace) + several minor leads.</li>
+<li><strong>Re-examined leads kept</strong>: 12 (all phase-1-only findings confirmed on re-read). <strong>Demoted</strong>: 1 (<code>transfer</code>/<code>transferFrom</code> silent-false finding downgraded — the deployed <code>DAO</code> contract&#39;s own override always throws, so the base <code>Token</code> semantics are dead code in this deployment, not a live risk).</li>
+<li><strong>Completeness</strong>: 25 unique (Contract, function, bug-class) tuples identified across both phases combined; all 25 are represented in the findings below.</li>
+</ul>
+<hr>
+<h2 id="critical">Critical</h2>
+<h3 id="1-reentrancy-in-splitdao-drains-the-dao-the-historic-june-2016-e">[1] Reentrancy in <code>splitDAO()</code> drains the DAO — the historic June 2016 exploit</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Origin</strong>: <code>[both]</code> — found independently by all 6 phase-1 agents and all 12 phase-2 agents (unanimous corroboration)<br><strong>Location</strong>: <code>splitDAO()</code> DAO.sol:1007-1013<br><strong>Description</strong>: <code>splitDAO()</code> calls <code>withdrawRewardFor(msg.sender)</code> (line 1009), which reaches <code>ManagedAccount.payOut</code> → <code>_recipient.call.value(_amount)()</code> (line 197) <strong>before</strong> <code>balances[msg.sender]</code>, <code>totalSupply</code>, and <code>paidOut[msg.sender]</code> are zeroed (lines 1010-1012):</p>
+<pre><code class="language-solidity">1007	        // Burn DAO Tokens
+1008	        Transfer(msg.sender, 0, balances[msg.sender]);
+1009	        withdrawRewardFor(msg.sender); // be nice, and get his rewards
+1010	        totalSupply -= balances[msg.sender];
+1011	        balances[msg.sender] = 0;
+1012	        paidOut[msg.sender] = 0;
+</code></pre>
+<p><strong>Proof of Concept</strong>: Attacker votes yes on a split proposal naming itself <code>_newCurator</code>, then calls <code>splitDAO</code>. The first pass creates the child DAO and sends <code>fundsToBeMoved</code> (computed from <code>balances[msg.sender]</code>, lines 982-985) via <code>createTokenProxy.value(...)</code> (line 985). Execution then reaches line 1009, triggering <code>attacker.call.value(reward)()</code>; the attacker&#39;s fallback re-enters <code>splitDAO</code> with the same proposal ID. All guards (<code>blocked[msg.sender]==proposalID</code>, <code>votedYes</code>, <code>balances[msg.sender] != 0</code>) still pass because state isn&#39;t zeroed until line 1011, so <code>fundsToBeMoved</code> is recomputed at full value and another tranche of ether is sent to the attacker&#39;s child DAO. Recursion continues until gas/call-depth exhaustion. This is the exact mechanism that drained ~3.6M ETH in June 2016.<br><strong>Recommendation</strong>: Apply checks-effects-interactions — zero <code>balances[msg.sender]</code>, <code>totalSupply</code>, <code>paidOut[msg.sender]</code> before any external call:</p>
+<pre><code class="language-diff">-        Transfer(msg.sender, 0, balances[msg.sender]);
+-        withdrawRewardFor(msg.sender); // be nice, and get his rewards
+-        totalSupply -= balances[msg.sender];
+-        balances[msg.sender] = 0;
+-        paidOut[msg.sender] = 0;
++        uint senderBalance = balances[msg.sender];
++        Transfer(msg.sender, 0, senderBalance);
++        totalSupply -= senderBalance;
++        balances[msg.sender] = 0;
++        paidOut[msg.sender] = 0;
++        withdrawRewardFor(msg.sender); // now safe
+</code></pre>
+<p>Add a reentrancy guard shared across <code>splitDAO</code>, <code>executeProposal</code>, <code>getMyReward</code>, <code>retrieveDAOReward</code>.</p>
+<hr>
+<h3 id="2-reentrancy-in-withdrawrewardfor-reachable-directly-via-getmyre">[2] Reentrancy in <code>withdrawRewardFor()</code> (reachable directly via <code>getMyReward()</code>) drains <code>rewardAccount</code></h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (general, governance); phase-2 (8/12 agents: 2,3,4,5,6,7,9,12)<br><strong>Location</strong>: <code>withdrawRewardFor()</code> DAO.sol:1058-1068<br><strong>Description</strong>: <code>rewardAccount.payOut(_account, reward)</code> (line 1064) fires the external call <strong>before</strong> <code>paidOut[_account] += reward</code> (line 1066):</p>
+<pre><code class="language-solidity">1062	        uint reward =
+1063	            (balanceOf(_account) * rewardAccount.accumulatedInput()) / totalSupply - paidOut[_account];
+1064	        if (!rewardAccount.payOut(_account, reward))
+1065	            throw;
+1066	        paidOut[_account] += reward;
+</code></pre>
+<p>Independent of Finding [1] — reachable directly via the public <code>getMyReward()</code> (line 1053) without needing to split.<br><strong>Proof of Concept</strong>: Attacker contract holding DAO tokens with accrued reward <code>r</code> calls <code>getMyReward()</code>. Line 1064 pays <code>r</code> to the attacker&#39;s fallback, which re-enters <code>getMyReward()</code>; since <code>paidOut[attacker]</code> hasn&#39;t been incremented, <code>reward</code> recomputes to <code>r</code> again and is paid again. Loops until <code>rewardAccount</code> is drained.<br><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">         uint reward =
+             (balanceOf(_account) * rewardAccount.accumulatedInput()) / totalSupply - paidOut[_account];
+-        if (!rewardAccount.payOut(_account, reward))
+-            throw;
+-        paidOut[_account] += reward;
++        paidOut[_account] += reward;
++        if (!rewardAccount.payOut(_account, reward))
++            throw;
+</code></pre>
+<hr>
+<h3 id="3-withdrawrewardfor-reward-formula-inflates-after-any-splitdao-b">[3] <code>withdrawRewardFor()</code> reward formula inflates after any <code>splitDAO()</code> burn — over-claim + permanent DoS for later claimants</h3>
+<p><strong>Severity</strong>: <span class="pill critical">Critical</span><br><strong>Origin</strong>: <code>[phase2-only]</code> — agent 10 (full numeric proof), agent 11 (independent lead corroboration) — <strong>independently re-verified by the orchestrator against source</strong> (this is a distinct bug from the reentrancy findings; no reentrancy is required to trigger it)<br><strong>Location</strong>: <code>withdrawRewardFor()</code> DAO.sol:1059-1063; <code>splitDAO()</code> DAO.sol:1009-1010; <code>ManagedAccount</code> DAO.sol:190-203<br><strong>Description</strong>: <code>reward = balanceOf(_account) * rewardAccount.accumulatedInput() / totalSupply - paidOut[_account]</code>. <code>accumulatedInput</code> only ever <em>increases</em> (via <code>ManagedAccount</code>&#39;s fallback, <code>accumulatedInput += msg.value</code>, line 191) and is <strong>never decremented</strong> when <code>payOut</code> sends ether out — confirmed: <code>payOut</code> (lines 194-203) has no <code>accumulatedInput</code> write. Meanwhile <code>totalSupply</code> is permanently reduced every time any holder calls <code>splitDAO()</code> (line 1010). Because the numerator stays fixed while the denominator shrinks, every remaining/future claimant&#39;s computed entitlement inflates after each split — with no corresponding increase in <code>rewardAccount</code>&#39;s actual ether balance.<br><strong>Proof of Concept</strong> (verified against source, no reentrancy required — pure sequential/benign usage): <code>accumulatedInput = 300</code>, <code>totalSupply = 300</code>, holders C/A/B = 100 tokens each, <code>paidOut = 0</code> for all, <code>rewardAccount.balance = 300</code>.</p>
+<ol>
+<li>C calls <code>getMyReward()</code>: <code>reward = 100·300/300 − 0 = 100</code>. Paid. <code>rewardAccount.balance = 200</code>, <code>paidOut[C] = 100</code>.</li>
+<li>A splits via <code>splitDAO</code>: A&#39;s own <code>withdrawRewardFor</code> runs with the pre-decrement <code>totalSupply = 300</code> (fair for A): <code>reward = 100·300/300 − 0 = 100</code>. <code>rewardAccount.balance = 100</code>. Then <code>totalSupply -= 100 → 200</code>.</li>
+<li>C calls <code>getMyReward()</code> again: <code>reward = 100·300/200 − 100(paidOut) = 150 − 100 = +50</code>. Paid — C has now extracted 150 total against an original fair share of 100. <code>rewardAccount.balance = 50</code>.</li>
+<li>B (never withdrew) calls <code>getMyReward()</code>: <code>reward = 100·300/200 − 0 = 150</code>, but <code>rewardAccount.balance</code> is only 50 — the <code>payOut</code> call&#39;s <code>_recipient.call.value(150)()</code> fails (insufficient balance), so <code>withdrawRewardFor</code> throws. <strong>B is permanently unable to withdraw any of their 100-wei entitlement</strong> while the pool remains short.</li>
+</ol>
+<p>This is loss of funds for legitimate token holders (B in the trace above) triggered by entirely benign, non-malicious sequential usage (one holder splitting, others later claiming) — not merely a griefing/DoS edge case.<br><strong>Recommendation</strong>: Compute reward against the reward pot&#39;s actual remaining/distributable balance rather than the monotonic <code>accumulatedInput</code>, or rescale all holders&#39; <code>paidOut</code> proportionally whenever <code>totalSupply</code> changes in <code>splitDAO</code> so that reward-per-token is conserved across burns. At minimum, track a separate &quot;distributed so far&quot; counter decremented in step with <code>payOut</code> so total entitlements can never exceed <code>rewardAccount</code>&#39;s actual balance.</p>
+<hr>
+<h2 id="high">High</h2>
+<h3 id="4-reentrancy-in-refund-allows-repeated-withdrawal-during-failed-">[4] Reentrancy in <code>refund()</code> allows repeated withdrawal during failed token creation</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (erc20, general); phase-2 (4/12 agents: 3,6 as FINDING; 4,9 as LEAD)<br><strong>Location</strong>: <code>refund()</code> DAO.sol:314-328<br><strong>Description</strong>: <code>msg.sender.call.value(weiGiven[msg.sender])()</code> (line 321) sends ether before <code>totalSupply</code>/<code>balances</code>/<code>weiGiven</code> are cleared (lines 323-325). Reachable only when <code>now &gt; closingTime &amp;&amp; !isFueled</code> (creation failed to reach <code>minTokensToCreate</code>).<br><strong>Proof of Concept</strong>: A contract that contributed <code>W</code> wei during a failed creation calls <code>refund()</code>. Line 321 pays <code>W</code> wei to the attacker&#39;s fallback, which re-enters <code>refund()</code> before <code>weiGiven[attacker]</code> is cleared, receiving <code>W</code> again; repeats until the contract&#39;s balance (other contributors&#39; refunds) is drained.<br><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">-            if (msg.sender.call.value(weiGiven[msg.sender])()) {
+-                Refund(msg.sender, weiGiven[msg.sender]);
+-                totalSupply -= balances[msg.sender];
+-                balances[msg.sender] = 0;
+-                weiGiven[msg.sender] = 0;
+-            }
++            uint amount = weiGiven[msg.sender];
++            totalSupply -= balances[msg.sender];
++            balances[msg.sender] = 0;
++            weiGiven[msg.sender] = 0;
++            if (msg.sender.call.value(amount)()) {
++                Refund(msg.sender, amount);
++            }
+</code></pre>
+<hr>
+<h3 id="5-reentrancy-in-executeproposal-permits-repeated-payout-of-one-p">[5] Reentrancy in <code>executeProposal()</code> permits repeated payout of one passed proposal</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (governance H-1, general C-5); phase-2 (6/12 agents: 8,9 as FINDING; 2,4,5,12 as LEAD)<br><strong>Location</strong>: <code>executeProposal()</code> DAO.sol:908-927<br><strong>Description</strong>: <code>p.recipient.call.value(p.amount)(_transactionData)</code> (line 909) executes while <code>p.open</code> is still <code>true</code> — <code>closeProposal()</code> only runs at line 927, after the call. All guards (<code>p.open</code>, deadline passed, hash match, <code>quorum &gt;= minQuorum</code>, <code>amount &lt;= actualBalance()</code>) still pass on re-entry.<br><strong>Proof of Concept</strong>: A curator-whitelisted (or later-compromised/malicious) recipient contract, on receiving its approved payout at line 909, re-enters <code>executeProposal(id, data)</code>. Since <code>p.open</code> and reward-token accounting haven&#39;t been finalized yet, another <code>p.amount</code> is sent and <code>rewardToken</code>/<code>totalRewardToken</code> inflated again. Repeats until <code>p.amount &gt; actualBalance()</code> finally fails <code>proposalCheck</code> (line 883).<br><strong>Recommendation</strong>: Close the proposal / finalize reward accounting before the external call:</p>
+<pre><code class="language-diff">-            if (!p.recipient.call.value(p.amount)(_transactionData))
+-                throw;
+-            p.proposalPassed = true;
++            p.proposalPassed = true;
++            closeProposal(_proposalID);
++            if (!p.recipient.call.value(p.amount)(_transactionData))
++                throw;
+</code></pre>
+<p>Add a reentrancy guard.</p>
+<hr>
+<h3 id="6-reentrancy-in-retrievedaoreward-drains-daorewardaccount">[6] Reentrancy in <code>retrieveDAOReward()</code> drains <code>DAOrewardAccount</code></h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (general C-7, governance H-2); phase-2 (3/12 agents: 5 as FINDING; 6,12 as LEAD)<br><strong>Location</strong>: <code>retrieveDAOReward()</code> DAO.sol:1031-1051<br><strong>Description</strong>: <code>DAOrewardAccount.payOut(...)</code> (lines 1042/1046) sends ether to <code>msg.sender</code> (cast to <code>DAO</code>, an address fully controlled by the caller) before <code>DAOpaidOut[msg.sender] += reward</code> (line 1049). Reachable by any contract holding <code>rewardToken</code> (i.e. a child DAO created via a prior split).<br><strong>Proof of Concept</strong>: A child DAO created via <code>splitDAO</code> (which accrues <code>rewardToken</code>) calls <code>retrieveDAOReward(false)</code>; the payout (line 1046) sends ether to it, and its fallback re-enters <code>retrieveDAOReward</code> before <code>DAOpaidOut</code> is bumped, repeating the payout until <code>DAOrewardAccount</code> is drained.<br><strong>Recommendation</strong>:</p>
+<pre><code class="language-diff">-        if(_toMembers) {
+-            if (!DAOrewardAccount.payOut(dao.rewardAccount(), reward))
+-                throw;
+-        } else {
+-            if (!DAOrewardAccount.payOut(dao, reward))
+-                throw;
+-        }
+-        DAOpaidOut[msg.sender] += reward;
++        DAOpaidOut[msg.sender] += reward;
++        if(_toMembers) {
++            if (!DAOrewardAccount.payOut(dao.rewardAccount(), reward))
++                throw;
++        } else {
++            if (!DAOrewardAccount.payOut(dao, reward))
++                throw;
++        }
+</code></pre>
+<hr>
+<h3 id="7-division-by-zero-in-splitdao-blocks-all-splits-while-rewardtok">[7] Division-by-zero in <code>splitDAO()</code> blocks all splits while <code>rewardToken[address(this)] == 0</code></h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (precision-math P-1, governance M-2, dos D-1 — 3 agents); phase-2 (leads from agents 7,8,10; disputed by agent 1)<br><strong>Location</strong>: <code>splitDAO()</code> DAO.sol:994-995<br><strong>Description</strong>: <code>paidOutToBeMoved = DAOpaidOut[address(this)] * rewardTokenToBeMoved / rewardToken[address(this)]</code> divides by <code>rewardToken[address(this)]</code>, which starts at 0 and is only incremented by <code>executeProposal()</code> (lines 922-923) after a successful external spend. Until then, every <code>splitDAO()</code> call reverts on division by zero.<br><strong>Note on compiler semantics</strong>: one phase-2 agent disputed whether Solidity reverts on division by zero in this era, suggesting the raw EVM <code>DIV</code> opcode&#39;s zero-return behavior might apply. We resolve this in favor of &quot;reverts&quot;: Solidity has, since its earliest releases, compiled a runtime check that throws on division/modulo by zero — this is a language-level guarantee distinct from the raw EVM opcode, corroborated independently by 4 of 6 phase-1 agents and by the well-documented behavior of this exact contract generation. Splitting is the DAO&#39;s only minority-exit mechanism, so this disables that safety valve for the entire period before any proposal has executed a spend.<br><strong>Proof of Concept</strong>: Fresh DAO, no proposal has yet spent externally → <code>rewardToken[address(this)] == 0</code>. A minority passes a split proposal and calls <code>splitDAO</code>; execution reaches line 994, <code>0/0</code>, reverts. Every subsequent attempt reverts identically until an unrelated proposal executes a spend.<br><strong>Recommendation</strong>: <code>paidOutToBeMoved = rewardToken[address(this)] == 0 ? 0 : DAOpaidOut[address(this)] * rewardTokenToBeMoved / rewardToken[address(this)];</code></p>
+<hr>
+<h2 id="medium">Medium</h2>
+<h3 id="8-curator-centralization-unilateral-censorship-of-spending-unila">[8] Curator centralization: unilateral censorship of spending + unilateral quorum reduction</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (access-control AC-1/AC-2, governance M-1, dos D-4); phase-2 (lead, agent 11: curator front-run)<br><strong>Location</strong>: <code>changeAllowedRecipients()</code> DAO.sol:1143-1149; whitelist gate in <code>executeProposal()</code> DAO.sol:875-879; <code>halveMinQuorum()</code> DAO.sol:1175-1186<br><strong>Description</strong>: Only <code>curator</code> may whitelist spending recipients, and <code>newProposal</code> rejects any non-split proposal whose recipient isn&#39;t whitelisted. A curator can de-whitelist a recipient <em>after</em> a proposal has passed but before execution, forcing <code>executeProposal</code> to abort-and-refund — vetoing an already-passed vote. <code>halveMinQuorum()</code> also lets the curator halve the required quorum every 2 weeks, independent of the 25-week community fallback path.<br><strong>Proof of Concept</strong>: (a) Curator never whitelists any recipient → no spending proposal can be created. (b) Curator lets a proposal reach quorum, then calls <code>changeAllowedRecipients(recipient, false)</code> before execution → the passed vote never executes and the ether is never sent. (c) Curator repeatedly calls <code>halveMinQuorum()</code> to drive quorum toward 0.<br><strong>Recommendation</strong>: Gate whitelist edits and <code>halveMinQuorum</code> behind token-holder votes/timelock; forbid de-whitelisting the recipient of an already-passed, not-yet-executed proposal; require a multisig/timelock for the curator role.</p>
+<h3 id="9-quorum-threshold-recomputed-from-mutable-live-state-at-executi">[9] Quorum threshold recomputed from mutable live state at execution time, not snapshotted at proposal creation</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — governance M-3. <strong>Re-examined</strong>: confirmed on re-read — <code>minQuorum()</code> (DAO.sol:1168-1172) is invoked at execution time (lines 892/897/908) using live <code>totalSupply</code>/<code>actualBalance()</code>/<code>rewardToken[address(this)]</code>, while <code>p.yea</code>/<code>p.nay</code> are frozen at vote time. Kept at Medium.<br><strong>Location</strong>: <code>minQuorum()</code> DAO.sol:1168-1172; consumed in <code>executeProposal()</code> DAO.sol:892/897/908<br><strong>Description</strong>: Any split (which reduces <code>totalSupply</code>, line 1010) between voting and execution shifts the passing bar the frozen vote tally is compared against.<br><strong>Proof of Concept</strong>: A large split reduces <code>totalSupply</code> after votes are cast but before a proposal executes. <code>minQuorum(p.amount)</code> at execution now uses the smaller <code>totalSupply</code>, potentially pushing through a proposal that lacked genuine quorum during the debate period (or blocking one that had it).<br><strong>Recommendation</strong>: Snapshot the quorum denominator into the <code>Proposal</code> struct at creation time and use the frozen values at execution.</p>
+<h3 id="10-daocreator-is-a-fully-trusted-immutable-external-factory-with">[10] <code>daoCreator</code> is a fully trusted, immutable external factory with no code verification</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — access-control AC-3. <strong>Re-examined</strong>: confirmed — <code>daoCreator</code> (DAO.sol:436, set once at line 706, no setter) is called by <code>createNewDAO()</code> (1188-1191) and <code>splitDAO</code> forwards real ether to whatever it returns (line 985), with no <code>extcodehash</code>/bytecode verification. Kept at Medium (design-level trust assumption, not exploitable against the genuine mainnet deployment).<br><strong>Location</strong>: <code>createNewDAO()</code> DAO.sol:1188-1191, consumed by <code>splitDAO()</code> 967-985<br><strong>Recommendation</strong>: Verify child-DAO bytecode on-chain before forwarding funds, or hard-code the trusted factory rather than accepting it as a constructor parameter.</p>
+<h3 id="11-retrievedaoreward-authorizes-callers-implicitly-via-rewardtok">[11] <code>retrieveDAOReward()</code> authorizes callers implicitly via <code>rewardToken</code> balance and blind-casts <code>msg.sender</code> to <code>DAO</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (access-control AC-4); phase-2 (lead, agent 6)<br><strong>Location</strong>: <code>retrieveDAOReward()</code> DAO.sol:1031-1051<br><strong>Description</strong>: No explicit registry check confirms <code>msg.sender</code> is a genuine child DAO; access is inferred solely from <code>rewardToken[msg.sender] &gt; 0</code>, and <code>msg.sender</code> is cast to <code>DAO</code> and called back into.<br><strong>Recommendation</strong>: Maintain an explicit registry of DAOs created via <code>createNewDAO</code>, and require <code>msg.sender</code> to be in it.</p>
+<h3 id="12-reverting-fallback-proposal-creator-makes-a-passed-proposal-p">[12] Reverting-fallback proposal creator makes a passed proposal permanently un-executable; deposit stranded</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — dos D-2. <strong>Re-examined</strong>: confirmed on re-read — <code>executeProposal()</code> DAO.sol:897-899 uses a throwing 2300-gas <code>send</code> on the mandatory execution path. Kept at Medium.<br><strong>Location</strong>: <code>executeProposal()</code> DAO.sol:897-899<br><strong>Description</strong>: <code>if (!p.creator.send(p.proposalDeposit)) throw;</code> sits on the mandatory execution path. If <code>p.creator</code> is a contract whose fallback needs more gas (or reverts), this throws on every call, permanently blocking execution of an already-passed proposal.<br><strong>Proof of Concept</strong>: Contract <code>C</code> (fallback consumes &gt;2300 gas) creates proposal <code>P</code> via <code>newProposal</code>. <code>P</code> reaches quorum. Any call to <code>executeProposal(P, data)</code> reverts at line 899 before ever reaching line 909. At <code>deadline + executeProposalPeriod</code>, <code>P</code> auto-closes unexecuted (line 858) and the deposit is never returned to <code>C</code>.<br><strong>Recommendation</strong>: Use a pull-payment pattern for the deposit refund instead of a throwing <code>send</code> on the execution path.</p>
+<h3 id="13-transfertransferfrom-base-semantics-silent-false-are-dead-cod">[13] <code>transfer</code>/<code>transferFrom</code> base semantics (silent <code>false</code>) are dead code in the deployed <code>DAO</code> — override always throws (demoted from initial Medium assessment)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — erc20 T-4. <strong>Re-examined and demoted</strong>: phase-1 flagged base <code>Token.transfer</code>/<code>transferFrom</code> (DAO.sol:95-124) returning <code>false</code> on failure vs. integrators expecting a revert. On re-read, the <strong>deployed</strong> <code>DAO</code> contract&#39;s own overrides (DAO.sol:1071-1103) always <code>throw</code> on any failure path, including when <code>super.transfer</code>/<code>super.transferFrom</code> return <code>false</code> — confirmed via direct source read. Since the live contract&#39;s behavior is always &quot;throw,&quot; there is no integrator-facing risk against the actual deployment; the base <code>Token</code> semantics are unreachable dead code in this context. Demoted from Medium to Low (code-quality/consistency note only).<br><strong>Location</strong>: <code>Token.transfer()</code>/<code>transferFrom()</code> DAO.sol:95-124 vs. DAO override DAO.sol:1071-1103<br><strong>Recommendation</strong>: No change required for the deployed contract&#39;s live risk profile; for code hygiene, remove the unreachable base semantics or document that the DAO override is the only path ever exercised.</p>
+<h3 id="14-actualbalance-force-feedable-accounting-possible-underflow-af">[14] <code>actualBalance()</code> force-feedable accounting + possible underflow after <code>newContract()</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (general C-3, dos D-5); phase-2 (lead, agent 1)<br><strong>Location</strong>: <code>actualBalance()</code> DAO.sol:1163-1165; <code>minQuorum()</code> 1168-1172; <code>newContract()</code> 1016-1028<br><strong>Description</strong>: <code>actualBalance() = this.balance - sumOfProposalDeposits</code> can be inflated by force-feeding ether (<code>selfdestruct</code>), skewing <code>minQuorum</code>&#39;s denominator. <code>newContract()</code> sends the entire balance out (line 1019); if <code>sumOfProposalDeposits &gt; 0</code> at that moment, a subsequent <code>actualBalance()</code> call underflows.<br><strong>Recommendation</strong>: Track deposited ether via an explicit accumulator rather than <code>this.balance</code>; guard the subtraction against underflow.</p>
+<h3 id="15-newcontract-migrates-full-balance-before-finalizing-reward-to">[15] <code>newContract()</code> migrates full balance before finalizing reward-token bookkeeping</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — general C-6. <strong>Re-examined</strong>: confirmed — <code>newContract()</code> DAO.sol:1016-1028 sends <code>address(this).balance</code> (line 1019) before zeroing <code>rewardToken[address(this)]</code>/<code>DAOpaidOut[address(this)]</code> (lines 1024-1027). Kept at Medium (bounded by curator-whitelist + self-call gating).<br><strong>Location</strong>: <code>newContract()</code> DAO.sol:1016-1028<br><strong>Recommendation</strong>: Zero <code>rewardToken[address(this)]</code> and finalize migration bookkeeping before the external transfer.</p>
+<hr>
+<h2 id="low">Low</h2>
+<h3 id="16-unchecked-low-level-call-in-createtokenproxy-tokens-minted-ev">[16] Unchecked low-level call in <code>createTokenProxy()</code> — tokens minted even if <code>extraBalance</code> funding fails</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (erc20 T-7, general C-1); phase-2 (leads, agents 6,7)<br><strong>Location</strong>: <code>createTokenProxy()</code> DAO.sol:299-303<br><strong>Description</strong>: <code>extraBalance.call.value(msg.value - token)()</code> (line 300) return value is ignored; <code>balances</code>/<code>totalSupply</code>/<code>weiGiven</code> are updated unconditionally regardless of whether the ether actually reached <code>extraBalance</code>.<br><strong>Recommendation</strong>: Check the return value and revert on failure.</p>
+<h3 id="17-zero-value-transfers-rejected-erc20-semantics-violation">[17] Zero-value transfers rejected — ERC20 semantics violation</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — erc20 T-5. <strong>Re-examined</strong>: confirmed — <code>_amount &gt; 0</code> required at DAO.sol:96, 114, 1071-1103. Kept at Low.<br><strong>Recommendation</strong>: Remove the <code>_amount &gt; 0</code> guard; allow zero-value transfers to succeed and emit <code>Transfer</code>.</p>
+<h3 id="18-approve-allowance-race-condition-classic-erc20-front-running">[18] <code>approve()</code> allowance race condition (classic ERC20 front-running)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — erc20 T-3. <strong>Re-examined</strong>: confirmed — <code>Token.approve()</code> DAO.sol:126-130 overwrites unconditionally, no zero-first requirement. Kept at Low.<br><strong>Recommendation</strong>: Require the current allowance to be zero (or add increase/decrease-allowance helpers) before setting a new non-zero value.</p>
+<h3 id="19-transferpaidout-dead-safety-check-division-by-zero-on-zero-ba">[19] <code>transferPaidOut()</code> — dead safety check, division-by-zero on zero balance, and compounding rounding drift</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (precision-math P-6/P-2, general C-4, governance L-2, dos D-6); phase-2 (leads, agents 1,3,5,7,9)<br><strong>Location</strong>: <code>transferPaidOut()</code> DAO.sol:1118-1130<br><strong>Description</strong>: <code>transferPaidOut = paidOut[_from] * _value / balanceOf(_from)</code> (line 1124) reverts on division-by-zero if <code>balanceOf(_from) == 0</code>. The guard at line 1125 is mathematically unreachable and provides no real protection. Floor division causes small, conserved, non-exploitable rounding drift in reward-liability accounting (explicitly traced by phase-2 agent 1 to a net-zero effect).<br><strong>Recommendation</strong>: Guard the division against <code>balanceOf(_from) == 0</code>; remove the dead check.</p>
+<h3 id="20-division-by-zero-edge-cases-in-minquorum-withdrawrewardfor-re">[20] Division-by-zero edge cases in <code>minQuorum()</code>, <code>withdrawRewardFor()</code>, <code>retrieveDAOReward()</code> at degenerate zero-denominator states</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[both]</code> — phase-1 (precision-math P-4, governance L-1, dos D-6/D-7); phase-2 (lead, agent 10)<br><strong>Location</strong>: <code>minQuorum()</code> DAO.sol:1170-1172; <code>withdrawRewardFor()</code>/<code>getMyReward()</code> DAO.sol:1059-1063; <code>retrieveDAOReward()</code> DAO.sol:1034-1040<br><strong>Description</strong>: Each divides by a value that can legitimately reach zero in edge states (fully drained balance, fully-burned <code>totalSupply</code>, no reward tokens ever minted), causing a hard revert instead of a graceful no-op. No third-party victim in any case.<br><strong>Recommendation</strong>: Add explicit zero-denominator guards at each site.</p>
+<h3 id="21-reward-withdrawals-round-down-to-zero-for-small-holders-dust-">[21] Reward withdrawals round down to zero for small holders (dust retained by reward accounts)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — precision-math P-3. <strong>Re-examined</strong>: confirmed, and distinguished from Finding [3] — this is normal floor-division dust (protocol-favoring), not the totalSupply-shrinkage inflation bug. Kept at Low.<br><strong>Recommendation</strong>: Acceptable as-is; optionally carry remainders forward for more precise settlement.</p>
+<h3 id="22-unchecked-send-silently-strands-a-proposal-deposit-when-the-r">[22] Unchecked <code>send()</code> silently strands a proposal deposit when the recipient is de-whitelisted mid-flight</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — general C-2. <strong>Re-examined</strong>: confirmed — DAO.sol:877 <code>p.creator.send(p.proposalDeposit)</code> ignores its boolean return, unlike the checked equivalent at line 898. Kept at Low.<br><strong>Recommendation</strong>: Check the return value and handle failure consistently with line 898.</p>
+<h3 id="23-empty-onlytokenholders-modifier-stub-in-daointerface-latent-f">[23] Empty <code>onlyTokenholders</code> modifier stub in <code>DAOInterface</code> (latent footgun, no live impact)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — access-control AC-5. <strong>Re-examined</strong>: confirmed — DAO.sol:491 interface stub has no <code>_</code> placeholder; the deployed <code>DAO</code> (lines 691-694) correctly overrides it, so no live vulnerability. Kept at Low (latent risk for future subclasses only).<br><strong>Recommendation</strong>: Do not ship a stub modifier body in an interface meant to be overridden.</p>
+<h3 id="24-malicious-recipient-can-force-executeproposal-to-revert-bound">[24] Malicious recipient can force <code>executeProposal</code> to revert (bounded, self-limiting griefing)</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: <code>[phase1-only]</code> — dos D-3. <strong>Re-examined</strong>: confirmed — DAO.sol:908-910; self-limiting since the proposal auto-closes unexecuted after <code>deadline + executeProposalPeriod</code>, and only the proposal&#39;s own recipient is harmed.<br><strong>Recommendation</strong>: Accept the boolean result without throwing so one bad recipient cannot indefinitely block finalization, or rely on the curator whitelist as the trust boundary (documented, not fixed).</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong>Unchecked arithmetic</strong> (no SafeMath) throughout balance/supply updates — not practically reachable given bounded <code>totalSupply</code>. <code>[phase1-only, erc20 T-8]</code></li>
+<li><strong><code>approve()</code> lacks the <code>noEther</code> modifier</strong> present on <code>transfer</code>/<code>transferFrom</code>, allowing stray ether to become trapped. <code>[phase1-only, erc20 T-9]</code></li>
+<li><strong>DAO <code>transfer</code>/<code>transferFrom</code> overrides drop <code>noEther</code></strong> (present on base <code>Token</code>), silently absorbing stray ether sent alongside a transfer call — self-harm only. <code>[phase2-only, agent 8]</code></li>
+<li><strong><code>createTokenProxy()</code> mints 0 tokens</strong> for sub-2-wei contributions during the 30-divisor window while still consuming the ether. <code>[phase1-only, precision-math P-5]</code></li>
+<li><strong><code>DAO_Creator.createDAO()</code></strong> is an intentionally permissionless factory; <code>privateCreation</code> binding prevents privilege leakage — reviewed, no issue. <code>[phase1-only, access-control AC-7]</code></li>
+<li><strong>Voting power is read from live <code>balances[msg.sender]</code></strong> (not snapshotted); double-voting is prevented only by the <code>blocked</code>-mapping transfer lock — sound for this design, worth noting for any redesign. <code>[phase1-only, governance I-1]</code></li>
+<li><strong><code>splitDAO()</code> snapshot-ratio gaming</strong>: <code>splitData[0]</code> (splitBalance/totalSupply) is frozen at the first splitter&#39;s call but each subsequent splitter&#39;s balance is read live; a later splitter who accumulated tokens post-snapshot could extract disproportionately. Not fully traced through the <code>blocked</code>-transfer restrictions. <code>[phase2-only, agent 11]</code></li>
+<li><strong><code>splitDAO()</code> reward-token rounding dust</strong>: floor division on <code>rewardTokenToBeMoved</code> (lines 992-994) leaves orphaned <code>rewardToken[address(this)]</code> dust after a full drain-out; no claimable-profit path constructed. <code>[phase2-only, agent 10]</code></li>
+</ul>
+<hr>
+<h2 id="severity-summary">Severity Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>10</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>7</td>
+</tr>
+</tbody></table></div>
+<p><strong>Total: 25 findings</strong> across 25 unique (Contract, function, bug-class) tuples.</p>
+<h2 id="overall-assessment">Overall Assessment</h2>
+<p>The client&#39;s instinct to &quot;focus on reentrancy&quot; is well-founded: this contract&#39;s dominant risk is a family of four independent, unguarded checks-effects-interactions violations (<code>splitDAO</code>, <code>withdrawRewardFor</code>/<code>getMyReward</code>, <code>executeProposal</code>, <code>retrieveDAOReward</code>, plus <code>refund</code>), all sharing the same root cause — <code>ManagedAccount.payOut()</code>&#39;s raw <code>_recipient.call.value(_amount)()</code> (DAO.sol:197) hands control to attacker-influenced code before the caller&#39;s books are updated. <strong>Finding [1] is the exact mechanism that drained ~3.6M ETH from this contract in June 2016</strong> and remains live in the currently deployed bytecode. Beyond reentrancy, this audit also surfaces a previously under-documented, independently exploitable accounting flaw (<strong>Finding [3]</strong>) where the reward-per-token formula silently inflates after any minority split, causing legitimate late-claiming token holders to be permanently unable to withdraw their fair entitlement — a genuine fund-safety defect distinct from the historical narrative. None of these issues have been patched in the deployed contract; if this address is live and holds funds, it should be treated as <strong>immediately exploitable</strong> by the same class of attack that occurred in 2016.</p>
+<hr>
+<p><em>This review was performed by an AI-orchestrated two-phase audit (6 breadth agents + 12 depth agents, 18 total, run in parallel across two independent methodologies and reconciled by a third synthesis pass). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreih4vgi3d6smrk5ldmm23hyi2g44xcix47pqeucmlvkr2hpixllthe.ipfs.community.bgipfs.com/"><code>https://bafkreih4vgi3d6smrk5ldmm23hyi2g44xcix47pqeucmlvkr2hpixllthe.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/302">#302</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

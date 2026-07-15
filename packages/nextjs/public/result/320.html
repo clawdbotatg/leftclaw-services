@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DustSwapSweepRouter — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #320">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">DustSwapSweepRouter</h1>
+    <p class="job-sub">Job #320 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/320"><b>Job page</b> #320</a>
+      <a class="chip" href="https://bafkreihgp2b6lp4i24svugsmrgbf2sez73gnwiqezg6avwctcmoeog2ryu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#leads">Leads</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — DustSwapSweepRouter</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td><code>DustSwapSweepRouter</code> — 0x06e6BAa61A5Da1E4469FCa5dEa3EB68324255E20</td>
+</tr>
+<tr>
+<td><strong>Chain</strong></td>
+<td>Base (chain 8453)</td>
+</tr>
+<tr>
+<td><strong>Source</strong></td>
+<td>Sourcify exact-match, single flattened file <code>DustswapSweepRouter.sol</code> (solc 0.8.24, optimizer 200 runs, evmVersion cancun)</td>
+</tr>
+<tr>
+<td><strong>Custom logic reviewed</strong></td>
+<td>~577 LOC (contract body, lines 1039–1615); remainder is inlined OpenZeppelin-style boilerplate (Context, Ownable, Pausable, ReentrancyGuard, SafeERC20, StorageSlot) and Permit2/WETH interfaces, treated as trusted/standard</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Two-phase: Phase 1 breadth (8 domain checklists, ethskills) → Phase 2 depth (12 blind attacker-lens agents, pashov) → hybrid reconciliation</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold</strong></td>
+<td>70</td>
+</tr>
+</tbody></table></div>
+<p><strong>What this contract does</strong>: a permissionless &quot;dust sweeper&quot; — a user batches up to 50 small ERC20 balances, pulls them into the router either via a Permit2 signature (with a custom EIP-712 witness) or a plain ERC20 allowance, executes each swap leg as a best-effort call to an owner-allowlisted DEX target/spender, refunds anything unconsumed, takes a protocol fee in bps on the settled output, and delivers the net output (ERC20 or unwrapped native ETH) to a recipient.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Completeness</strong>: 13 unique (Contract, function, bug-class) items in Phase 1 raw output; 12 unique items in Phase 2 raw output; <strong>all 21 distinct mechanisms</strong> (after merging exact duplicates across phases) are represented below. None dropped.</li>
+<li><strong>Overlap</strong>: 7 findings corroborated by both phases (boosted confidence) · <strong>Phase-1-only</strong>: 9 · <strong>Phase-2-only</strong>: 4</li>
+<li><strong>Re-examined leads</strong>: 2 phase-2-only leads promoted/escalated after targeted source re-read (fee-bypass via output redirection; stranded-balance drain via aggregate balance guard); 0 demoted.</li>
+<li><strong>Convergence signal</strong>: 9 of the 12 blind Phase-2 agents (plus 1 Phase-1 agent, independently) each rediscovered the <code>feeBpsOverride</code> fee-bypass from a different specialty lens with no cross-agent communication — the strongest possible confirmation this codebase&#39;s methodology can produce.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[85] <strong>1. Protocol fee is permissionlessly bypassable — no floor on caller-supplied <code>feeBpsOverride</code></strong></p>
+<p><code>DustSwapSweepRouter._resolveFeeBps</code> · Confidence: 85 · <strong>[both]</strong> — corroborated by phase-1 general checklist + 8 of 12 independent phase-2 attacker agents (math-precision, access-control, economic-security, first-principles, asymmetry, periphery, numerical-gap, flow-gap)</p>
+<p><strong>Description</strong><br><code>_resolveFeeBps</code> only rejects overrides <em>above</em> <code>MAX_FEE_BPS</code>; any caller — the same party who pays the fee — can pass <code>feeBpsOverride = 0</code> (directly in Allowance mode, or by self-signing a zero-fee Permit2 witness, since Permit2 validates the signature against <code>msg.sender</code>) and pay the protocol nothing, on every single sweep, with no precondition.</p>
+<pre><code class="language-solidity">function _resolveFeeBps(uint16 feeBpsOverride) internal view returns (uint16 effectiveFeeBps) {
+    effectiveFeeBps = feeBpsOverride == FEE_OVERRIDE_SENTINEL ? feeBps : feeBpsOverride;
+    if (effectiveFeeBps &gt; MAX_FEE_BPS) revert FeeTooHigh();
+}
+</code></pre>
+<p>With default <code>feeBps = 100</code> (1%) and a sweep realizing 1,000 units of gross output, the honest path pays 10 units to <code>feeCollector</code>; setting <code>feeBpsOverride = 0</code> pays 0. The owner-configured <code>feeBps</code> only ever applies to callers who voluntarily pass <code>FEE_OVERRIDE_SENTINEL</code> — the fee mechanism is entirely opt-in.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff"> function _resolveFeeBps(uint16 feeBpsOverride) internal view returns (uint16 effectiveFeeBps) {
+     effectiveFeeBps = feeBpsOverride == FEE_OVERRIDE_SENTINEL ? feeBps : feeBpsOverride;
+     if (effectiveFeeBps &gt; MAX_FEE_BPS) revert FeeTooHigh();
++    if (effectiveFeeBps &lt; feeBps) revert FeeTooLow();
+ }
+</code></pre>
+<hr>
+<p>[80] <strong>2. Protocol fee bypassable via a second, independent mechanism — routing swap output directly to the recipient, bypassing router custody</strong></p>
+<p><code>DustSwapSweepRouter._settleOutput</code> / <code>executeRoute</code> · Confidence: 80 · <strong>[phase2-only]</strong> — found by the boundary-lens agent; re-examined against source and confirmed reachable</p>
+<p><strong>Description</strong><br><code>grossAmountOut</code> is measured purely as the router&#39;s own ERC20 balance delta (<code>balanceOf(this) - initialOutputBalance</code>). Each swap leg&#39;s <code>route.data</code> is opaque, off-chain-constructed calldata that the router never inspects — it is only hash-bound in the Permit2 witness, never interpreted. Most general-purpose DEX routers/aggregators (Uniswap Universal Router, 0x, 1inch) accept a caller-specified output recipient in their calldata. A user can encode every leg to deliver output straight to <code>params.recipient</code> instead of <code>address(this)</code>. The router then observes <code>grossAmountOut = 0</code>; with <code>minAmountOut = 0</code> (a value the same user also freely controls — see finding 8), <code>_settleOutput</code> does not revert, <code>feeAmount = 0</code>, and the user has already received their full swap proceeds directly from the DEX.</p>
+<pre><code class="language-solidity">grossAmountOut = IERC20(st.actualOutput).balanceOf(address(this)) - st.initialOutputBalance;
+if (grossAmountOut &lt; params.minAmountOut) revert InsufficientOutput();   // 0 &lt; 0 is false
+feeAmount = (grossAmountOut * st.effectiveFeeBps) / BPS_DENOMINATOR;     // 0
+</code></pre>
+<p>This is architecturally independent of finding 1 — fixing the <code>feeBpsOverride</code> floor does <strong>not</strong> close this path, since it never touches <code>feeBpsOverride</code> at all.</p>
+<p><strong>Fix</strong><br>There is no clean single-line fix given the current design (the router intentionally does not interpret <code>route.data</code>). Options: (a) restrict <code>allowedTargets</code> to integrations verified to always deliver output to <code>msg.sender</code> (the router) with no caller-overridable recipient parameter; (b) reject <code>minAmountOut == 0</code> on-chain (see finding 8) to at least remove the simplest triggering condition; (c) treat <code>grossAmountOut == 0</code> on a non-empty, non-fully-skipped route set as an error rather than a silent zero-fee success.</p>
+<hr>
+<p>[75] <strong>3. <code>minAmountOut</code> slippage floor is enforced on gross (pre-fee) output, so the recipient can receive less than their signed minimum</strong></p>
+<p><code>DustSwapSweepRouter._settleOutput</code> · Confidence: 75 · <strong>[both]</strong> — corroborated by phase-1 defi-amm checklist + 9 of 12 independent phase-2 agents (near-unanimous convergence)</p>
+<p><strong>Description</strong><br>The slippage check happens before the fee is subtracted, but the recipient is paid the post-fee net amount:</p>
+<pre><code class="language-solidity">grossAmountOut = IERC20(st.actualOutput).balanceOf(address(this)) - st.initialOutputBalance;
+if (grossAmountOut &lt; params.minAmountOut) revert InsufficientOutput();   // checked on GROSS
+feeAmount   = (grossAmountOut * st.effectiveFeeBps) / BPS_DENOMINATOR;
+netAmountOut = grossAmountOut - feeAmount;                                // recipient gets NET
+</code></pre>
+<p>With <code>minAmountOut = 100</code> and the maximum <code>effectiveFeeBps = 300</code> (3%), a swap realizing exactly <code>gross = 100</code> passes the check (<code>100 &lt; 100</code> is false) but delivers only <code>net = 97</code> — 3% below the floor the user signed. The witness does bind <code>feeBps</code>, so a diligent frontend can pre-discount <code>minAmountOut</code>, but the contract itself provides no guarantee that the delivered amount meets the user&#39;s stated minimum.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     grossAmountOut = IERC20(st.actualOutput).balanceOf(address(this)) - st.initialOutputBalance;
+-    if (grossAmountOut &lt; params.minAmountOut) revert InsufficientOutput();
+-
+     feeAmount = (grossAmountOut * st.effectiveFeeBps) / BPS_DENOMINATOR;
+     netAmountOut = grossAmountOut - feeAmount;
++    if (netAmountOut &lt; params.minAmountOut) revert InsufficientOutput();
+</code></pre>
+<hr>
+<p>[70] <strong>4. Fee-on-transfer input combined with a pre-existing stranded balance lets a sweep over-sell and extract funds that were never pulled from the caller</strong></p>
+<p><code>DustSwapSweepRouter.executeRoute</code> · Confidence: 70 · <strong>[both]</strong> — phase-1 general checklist flagged the accounting pattern; phase-2 flow-gap agent produced a full concrete trace (corroborated as leads by the periphery and first-principles agents)</p>
+<p><strong>Description</strong><br>The fee-on-transfer guard checks the router&#39;s <em>total</em> balance of <code>tokenIn</code>, not the amount this specific pull actually delivered:</p>
+<pre><code class="language-solidity">if (tokenIn.balanceOf(address(this)) &lt; route.amountIn) revert InsufficientHeldBalance();
+tokenIn.forceApprove(route.spender, route.amountIn);
+</code></pre>
+<p>If the router already holds a stranded balance <code>S</code> of <code>tokenIn</code> (plausible in normal operation — e.g. left behind by an earlier sweep&#39;s <code>RefundFailed</code>, which this same audit shows is a real and reachable state for weird/non-standard tokens — see finding 12), a caller can submit a fee-on-transfer route whose delivered amount is <code>&lt; amountIn</code>. The aggregate check still passes because <code>freshlyDelivered + S &gt;= amountIn</code>, so the router approves and sells the <em>full</em> <code>amountIn</code>, drawing the shortfall out of the stranded balance <code>S</code>. The refund logic (<code>current - initial</code>) never claws this back — it simply observes <code>current &lt; initial</code> and refunds nothing, silently converting someone else&#39;s stranded funds into the current caller&#39;s swap output.</p>
+<p><strong>Concrete trace</strong>: router holds 1,000 stranded units of a 2%-fee-on-transfer token. Attacker submits <code>amountIn = 100</code>; pull delivers 98 (balance → 1,098). Guard <code>1098 &lt; 100</code>? No → passes. Router approves and sells the full 100 → balance → 998 (below the 1,000 snapshot) → no refund triggered. The attacker delivered 98 but the DEX sold 100 on their behalf — 2 units of stranded (protocol/prior-user) funds were converted into the attacker&#39;s output.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- if (tokenIn.balanceOf(address(this)) &lt; route.amountIn) revert InsufficientHeldBalance();
+- tokenIn.forceApprove(route.spender, 0);
+- tokenIn.forceApprove(route.spender, route.amountIn);
++ // caller must pass the amount actually received by THIS pull (measured immediately
++ // before/after the transfer in _pullInputsWith*), not the requested amountIn
++ if (receivedThisPull &lt; route.amountIn) revert InsufficientHeldBalance();
++ tokenIn.forceApprove(route.spender, 0);
++ tokenIn.forceApprove(route.spender, receivedThisPull);
+</code></pre>
+<hr>
+<p>[65] <strong>5. Blacklist or pause on the output token can permanently DoS every sweep into that token via the mandatory fee transfer</strong></p>
+<p><code>DustSwapSweepRouter._settleOutput</code> · Confidence: 65 · <strong>[both]</strong> — corroborated by phase-1 erc20 checklist + phase-2 economic-security agent</p>
+<p><strong>Description</strong><br>The protocol fee transfer to <code>feeCollector</code> happens unconditionally (not best-effort) before the recipient payout:</p>
+<pre><code class="language-solidity">IERC20(st.actualOutput).safeTransfer(collector, feeAmount);   // reverts the WHOLE sweep on failure
+</code></pre>
+<p>If the output token has a blocklist (USDC/USDT-style) and <code>feeCollector</code> becomes blacklisted, or the token issuer pauses transfers, every sweep with <code>feeAmount &gt; 0</code> into that output token reverts for <strong>all users</strong>, protocol-wide, until the owner rotates <code>feeCollector</code> via <code>setFeeCollector</code>.</p>
+<p><strong>Fix</strong><br>Make the fee transfer resilient — either accrue fees per-token in contract storage and let the collector pull them separately, or wrap the fee transfer so a failing collector degrades to a best-effort skip (mirroring the pattern already used for user refunds) rather than blocking the user&#39;s payout.</p>
+<hr>
+<p>[65] <strong>6. No timelock on <code>setAllowedTarget</code>/<code>setAllowedSpender</code> — the allowlist is the sole guardrail on an otherwise arbitrary-call + arbitrary-approval primitive</strong></p>
+<p><code>DustSwapSweepRouter.setAllowedTarget</code> / <code>setAllowedSpender</code> / <code>executeRoute</code> · Confidence: 65 · <strong>[both]</strong> — corroborated by phase-1 access-control checklist + 3 independent phase-2 agents (access-control, economic-security, invariant — all of which explicitly could not construct a working exploit given the current approval design, so this is presented as a centralization/defense-in-depth gap rather than a live exploit)</p>
+<p><strong>Description</strong><br><code>executeRoute</code> performs <code>route.target.call(route.data)</code> with fully caller-supplied calldata after granting <code>route.spender</code> an ERC20 approval of exactly <code>route.amountIn</code>. The only thing preventing this from being an arbitrary-call/arbitrary-approval primitive is <code>allowedTargets</code>/<code>allowedSpenders</code>, both mutable instantly and without delay by the owner. Every reviewing agent confirmed that, given the current exact-amount/reset-on-revert approval design and the absence of any pooled third-party funds, a malicious addition cannot be turned into fund theft beyond the current caller&#39;s own approved amount for that leg — but this rests entirely on the owner never allowlisting a misbehaving pair, with no on-chain delay for users to react.</p>
+<p><strong>Fix</strong><br>Add a timelock (24–48h) to additions in <code>allowedTargets</code>/<code>allowedSpenders</code>, and/or govern the allowlist via a multisig.</p>
+<hr>
+<p>[60] <strong>7. Failed best-effort refunds are recoverable only by the owner via <code>rescueERC20</code>, with no user-callable reclaim path</strong></p>
+<p><code>DustSwapSweepRouter._refundLeftoverInputs</code> / <code>rescueERC20</code> · Confidence: 60 · <strong>[both]</strong> — corroborated across phase-1 access-control/erc20/dos checklists and the phase-2 trust-gap agent</p>
+<p><strong>Description</strong><br>If a leftover input&#39;s <code>transfer</code> back to the user fails or returns non-compliant data, <code>_refundLeftoverInputs</code> emits <code>RefundFailed</code> and leaves the tokens in the router by design (to preserve best-effort semantics). The only recovery mechanism is <code>rescueERC20</code>, <code>onlyOwner</code>, sendable to an arbitrary address — a malicious or compromised owner can redirect a user&#39;s stranded balance to themselves, and even an honest owner is a mandatory trust dependency for a user to ever recover their own funds.</p>
+<p><strong>Fix</strong><br>Track failed-refund amounts per original payer and expose a permissionless <code>claimRefund(token)</code>, or explicitly document <code>rescueERC20</code>/<code>rescueNative</code> as a custodial backstop requiring user trust in the owner.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[85]</td>
+<td>Protocol fee bypassable — no floor on <code>feeBpsOverride</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>[80]</td>
+<td>Protocol fee bypassable — output routed directly to recipient</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[75]</td>
+<td><code>minAmountOut</code> checked on gross, not net, delivered amount</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[70]</td>
+<td>Fee-on-transfer input drains stranded balance via aggregate <code>balanceOf</code> guard</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[65]</td>
+<td>Blacklisted/paused output-token fee collector DoSes all sweeps for that token</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[65]</td>
+<td>No timelock on target/spender allowlist</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[60]</td>
+<td>Stranded refunds recoverable only by owner</td>
+</tr>
+</tbody></table></div>
+<hr>
+<p>[45] <strong>8. <code>minAmountOut == 0</code> is accepted, disabling all on-chain slippage protection</strong></p>
+<p><code>DustSwapSweepRouter._validateParams</code> · Confidence: 45 · <strong>[phase1-only]</strong>, re-examined and confirmed</p>
+<p>No on-chain floor forces a non-zero <code>minAmountOut</code>; combined with finding 3 and finding 2, a zero floor removes essentially all delivered-amount guarantees for a self-directed caller. For frontend-driven flows this is a UX/config risk rather than an exploit.</p>
+<hr>
+<p>[45] <strong>9. No per-leg slippage validation; only an aggregate output-token floor exists, and proceeds landing in an unexpected (non-input, non-output) token are permanently stranded</strong></p>
+<p><code>DustSwapSweepRouter.executeRoute</code> / <code>_settleOutput</code> · Confidence: 45 · <strong>[phase1-only]</strong>, re-examined and confirmed</p>
+<p>Each leg&#39;s own slippage/deadline parameters live in opaque <code>route.data</code> never validated on-chain; the only protection is the aggregate <code>minAmountOut</code> on the final output token. A sandwicher can extract up to the user&#39;s full aggregate slippage tolerance from a single leg. Separately, any token produced by a mis-encoded or unexpected leg that is neither an input token nor the settled output token is invisible to both the refund and settlement logic and is permanently stranded pending owner <code>rescueERC20</code>.</p>
+<hr>
+<p>[40] <strong>10. Single-step ownership (<code>Ownable</code>, not <code>Ownable2Step</code>) can permanently freeze <code>unpause</code>/allowlist/rescue if the owner key is lost or renounced</strong></p>
+<p><code>Ownable</code> (inherited) · Confidence: 40 · <strong>[phase1-only]</strong>, re-examined and confirmed</p>
+<p>If ownership is lost or <code>renounceOwnership()</code> is called, <code>unpause</code>, allowlist updates, fee configuration, and both rescue functions become permanently uncallable — including bricking recovery of any stranded balances from finding 7.</p>
+<hr>
+<p>[35] <strong>11. Owner-controlled fee changes griefs in-flight sentinel-mode signatures, asymmetrically between the two pull modes</strong></p>
+<p><code>_resolveFeeBps</code> / <code>_pullInputsWithPermit2</code> · Confidence: 35 · <strong>[both]</strong></p>
+<p>Permit2-mode sentinel signatures fail safely (revert) on an owner <code>feeBps</code> change between signing and execution. Allowance-mode sweeps using the sentinel have no signature at all, so the identical owner change is applied silently, up to the 3% cap, with no on-chain commitment to the rate the user expected.</p>
+<hr>
+<p>[30] <strong>12. <code>_refundLeftoverInputs</code> reverts the entire batch on a non-boolean 32-byte transfer return (<code>abi.decode</code> panic)</strong></p>
+<p><code>_refundLeftoverInputs</code> · Confidence: 30 · <strong>[both]</strong></p>
+<p><code>abi.decode(ret, (bool))</code> panics (<code>Panic(0x21)</code>) on any 32-byte return value other than 0/1. This sits outside the only try/catch boundary in the flow, so it reverts the caller&#39;s entire sweep. All value in the reverted transaction belongs to the same <code>msg.sender</code> and is fully restored by the atomic revert — this is a self-inflicted availability bug (a batch containing a specific non-compliant token can never complete) rather than a fund-loss path, which is why it scores below the confidence threshold despite two independent phases finding it.</p>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed. Not scored.</em></p>
+<ul>
+<li><strong><code>feeCollector</code> not bound by the Permit2 witness</strong> — <code>_settleOutput</code>/<code>setFeeCollector</code> — Code smells: fee <em>amount</em> is witness-bound and capped, but fee <em>destination</em> is owner-mutable mid-flight — An owner can redirect where an already-signed sweep&#39;s fee is paid; no impact on the user&#39;s net output, purely a centralization observation.</li>
+<li><strong>Blind signing of route bodies</strong> — <code>hashRoutes</code>/<code>PERMIT2_WITNESS_TYPE_STRING</code> — Code smells: <code>SweepRoute</code> fields are cryptographically bound into the witness but never included in the human-readable EIP-712 type string — A compromised frontend could induce a signature over malicious (but allowlisted-target) routes with no visible wallet warning; compensating control is the owner allowlist.</li>
+<li><strong>Fee-on-transfer input tokens can never actually be swept</strong> — <code>executeRoute</code> — Code smells: the held-balance guard requires <code>balanceOf(this) &gt;= amountIn</code> immediately after a pull, which a FoT token can never satisfy — Every FoT input route is silently skipped and (partially) refunded, contradicting the contract&#39;s stated purpose of handling &quot;weird/unknown&quot; dust; not a fund-loss bug.</li>
+<li><strong>Fee-on-transfer output token weakens <code>minAmountOut</code></strong> — <code>_settleOutput</code> — Code smells: <code>minAmountOut</code> is checked against the router&#39;s balance delta, not what the recipient receives after a further on-transfer fee — Compounds finding 3 for FoT output tokens.</li>
+<li><strong>Native-output sweeps pay the protocol fee in WETH while the recipient receives unwrapped ETH; events log the ETH sentinel for both</strong> — <code>_settleOutput</code> — Code smells: asset-type mismatch between what <code>feeCollector</code> and <code>recipient</code> each receive, with identical event logging — Benign unless <code>feeCollector</code> integration assumes ETH.</li>
+<li><strong>Uncapped returndata copied from <code>target.call</code> and from the low-level refund transfer</strong> — <code>executeRoute</code>/<code>_executeRoutesBestEffort</code>/<code>_refundLeftoverInputs</code> — Code smells: no bound on copied returndata size before re-emitting/re-reverting it — A misbehaving allowlisted target or weird token could grief gas costs; bounded by the allowlist trust boundary on one side and self-inflicted on the other.</li>
+<li><strong>Custom inline-assembly blocks lack <code>memory-safe</code> annotations</strong> — <code>executeRoute</code>/<code>_snapshotInputs</code> — Code smells: both blocks are genuinely memory-safe (verified) but unannotated, unlike the inherited OZ blocks — cosmetic/optimizer-only.</li>
+<li><strong><code>route.target.call()</code> never checks the target has code</strong> — <code>executeRoute</code> — Code smells: a codeless allowlisted target would report success with no swap — benign failure mode (input refunded or <code>InsufficientOutput</code> reverts), confined to an owner allowlist mistake.</li>
+<li><strong>Deadline check is inclusive (<code>&gt;</code> not <code>&gt;=</code>)</strong> — <code>_validateParams</code> — one-second-wider validity window than &quot;expired at deadline&quot; phrasing implies; no fund impact.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an autonomous two-phase AI audit pipeline (breadth checklist pass + blind independent attacker-lens pass, reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A follow-up manual/human review, and consideration of a bug bounty, are strongly recommended before this contract is used to custody meaningful value, given the confirmed fee-bypass and stranded-balance-extraction findings above.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihgp2b6lp4i24svugsmrgbf2sez73gnwiqezg6avwctcmoeog2ryu.ipfs.community.bgipfs.com/"><code>https://bafkreihgp2b6lp4i24svugsmrgbf2sez73gnwiqezg6avwctcmoeog2ryu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/320">#320</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

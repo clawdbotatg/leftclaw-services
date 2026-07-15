@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hats.finance `HATVault` / `HATVaultsRegistry` — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #314">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Hats.finance `HATVault` / `HATVaultsRegistry`</h1>
+    <p class="job-sub">Job #314 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/314"><b>Job page</b> #314</a>
+      <a class="chip" href="https://bafkreig6yhxd2e27m4ocwup2tkbepa45z4o4cdiwmdv23llprncfi5bic4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">10</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">7</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#findings-list">Findings List</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#notes-on-paths-checked-and-cleared-no-finding">Notes on paths checked and cleared (no finding)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — Hats.finance <code>HATVault</code> / <code>HATVaultsRegistry</code></h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td>On-chain instance <code>0x02fbe0bc422d6da9800802002f06ad47697e995c</code> (Ethereum mainnet), an EIP-1167 clone of implementation <code>0x028A7C6873dFA8357c9dcF9C9d76EF2abb66256E</code> (Hats.finance <code>HATVault</code>)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Default — all in-scope <code>.sol</code> files</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>HATVault.sol</code> · <code>HATVaultsRegistry.sol</code><br><code>tokenlock/TokenLockFactory.sol</code> · <code>interfaces/*.sol</code></td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Two-phase: Phase 1 breadth (8 checklist agents: general, precision-math, erc4626, erc20, access-control, proxies, dos, flashloans) → Phase 2 depth (12 blind attacker-mindset agents: 9 specialty + 3 gap-hunter) → hybrid reconciliation with source re-verification</td>
+</tr>
+</tbody></table></div>
+<p><strong>Reconciliation summary</strong>: Completeness: 21 unique (Contract, function, bug-class) groups across both phases, 21 covered in the unified set below. Overlap: 3 groups found by both phases (corroborated) · Phase-1-only: 16 · Phase-2-only: 2. Re-examined leads: of 5 phase-2 FINDINGS, 1 (<code>emergencyWithdraw</code> reentrancy escalation sub-claim) was <strong>demoted/refuted</strong> against source (the guard is enforced transitively via the internal <code>_withdraw</code>/<code>_deposit</code> functions&#39; own <code>nonReentrant</code> modifiers); its core accounting-desync claim survived. Of 9 phase-2 LEADS, all were left as leads or as a corroborated rejection — none required promotion.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="high-1-unbounded-unremovable-reward-controllers-can-permanently-">[High] 1. Unbounded, unremovable reward controllers can permanently brick all deposits, withdrawals, and transfers</h3>
+<p><code>HATVault._beforeTokenTransfer</code> / <code>addRewardController</code> / <code>withdrawAndClaim</code>,<code>redeemAndClaim</code> · Origin: <strong>[phase1: dos]</strong>, re-examined and confirmed against source</p>
+<p><strong>Description</strong></p>
+<p><code>rewardControllers</code> can only grow — <code>addRewardController</code> (lines 442-449) is owner-gated with only an O(n) duplicate check, no removal function, no length cap:</p>
+<pre><code class="language-solidity">function addRewardController(IRewardController _rewardController) external onlyRegistryOwner noActiveClaim {
+    for (uint256 i = 0; i &lt; rewardControllers.length;) { 
+        if (_rewardController == rewardControllers[i]) revert DuplicatedRewardController();
+        unchecked { ++i; }
+    }
+    rewardControllers.push(_rewardController);
+    emit AddRewardController(_rewardController);
+}
+</code></pre>
+<p>Every deposit/withdraw/redeem/transfer runs through <code>_beforeTokenTransfer</code>, which calls <code>rewardControllers[i].commitUserBalance(...)</code> with no try/catch on both the receive side (lines 789-792) and the burn side (lines 803-806). A single controller that reverts, runs out of gas, or is later bricked permanently reverts every mint/burn/transfer path for the whole vault, with no on-chain recovery function.</p>
+<p>Verified escape hatch: <code>emergencyWithdraw()</code> sets <code>_isEmergencyWithdraw = true</code> before calling <code>redeem()</code>. This burns shares via <code>_burn</code>, which triggers <code>_beforeTokenTransfer(_from, address(0), _amount)</code> — the receive-side loop is skipped because <code>_to == address(0)</code>, and the burn-side loop is explicitly skipped by the <code>if (!_isEmergencyWithdraw)</code> guard at line 802. So principal is not permanently lost via this path, but all <em>normal</em> vault functionality (deposit, withdraw, redeem, transfer, <code>withdrawAndClaim</code>/<code>redeemAndClaim</code>) is bricked forever once any registered controller is stuck.</p>
+<p><strong>Proof of Concept</strong>: Registry owner (or a later-compromised/buggy already-added controller) causes <code>commitUserBalance</code> to revert for some reason (bug, access-control change, running out of storage, etc.). Any subsequent <code>deposit</code>/<code>withdraw</code>/<code>redeem</code>/<code>transfer</code> reverts inside <code>_beforeTokenTransfer</code>. No <code>removeRewardController</code> exists to recover; the only surviving path is <code>emergencyWithdraw</code>.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- rewardControllers[i].commitUserBalance(_to, _amount, true);
++ try rewardControllers[i].commitUserBalance{gas: 200_000}(_to, _amount, true) {} catch {}
+</code></pre>
+<p>Wrap all <code>commitUserBalance</code>/<code>claimReward</code> calls in bounded-gas <code>try/catch</code>; add a registry-owner-gated <code>removeRewardController</code>; cap the array length.</p>
+<hr>
+<h3 id="medium-2-approveclaim-pays-bounties-via-atomic-push-only-transfe">[Medium] 2. <code>approveClaim</code> pays bounties via atomic push-only transfers with no pull-payment fallback — several token behaviors can permanently block settlement</h3>
+<p><code>HATVault.approveClaim</code> (lines 314-332) · Origin: <strong>[both]</strong> — phase1 <code>[erc20, dos]</code> (3 mechanisms) corroborated by phase2 agent-4 + agent-9 (2-agent convergence on mechanism (b))</p>
+<p><strong>Description</strong></p>
+<p>The whole bounty settlement is one atomic transaction with hard-coded recipients and no escrow/pull fallback:</p>
+<pre><code class="language-solidity">_asset.safeTransfer(_claim.beneficiary, claimBounty.hacker);
+_asset.safeTransfer(_claim.committee, claimBounty.committee);
+...
+_asset.safeApprove(address(_registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
+_registry.addTokensToSwap(...);
+_asset.safeApprove(address(_registry), 0);
+</code></pre>
+<p>Three distinct token-behavior mechanisms can each permanently prevent a valid, already-approved claim from ever settling:</p>
+<ul>
+<li><strong>(a) Blacklist tokens</strong> (USDC/USDT-style): if <code>beneficiary</code> or <code>committee</code> is blacklisted, the <code>safeTransfer</code> at line 317/318 reverts forever — also lets a project grief a legitimate payout by having the token issuer blacklist the beneficiary.</li>
+<li><strong>(b) Zero-value-transfer-revert tokens</strong> (e.g. LEND): <code>_validateSplit</code> permits <code>bountySplit.hacker == 0</code> / <code>.committee == 0</code>, and <code>bountyGovernanceHAT</code>/<code>bountyHackerHATVested</code> can independently be 0 (confirmed via <code>getBountyGovernanceHAT</code>/<code>getBountyHackerHATVested</code>, which default from registry values with no non-zero requirement) — any of these zeroes a downstream <code>safeTransfer</code> that isn&#39;t <code>&gt;0</code>-guarded (unlike the <code>hackerVested</code> transfer at line 297, which is guarded by <code>if (claimBounty.hackerVested &gt; 0)</code>).</li>
+<li><strong>(c) Zero-approve-revert tokens</strong> (e.g. BNB): the explicit <code>safeApprove(..., 0)</code> reset at line 332 always runs regardless of whether the prior approval was already fully consumed by <code>addTokensToSwap</code>&#39;s <code>safeTransferFrom</code> — reapproving 0→0 reverts on tokens that reject redundant zero-approvals.</li>
+</ul>
+<p><strong>Proof of Concept</strong>: Vault deployed over a USDC-like blacklistable asset. Committee submits a claim naming a <code>beneficiary</code>. Before the challenge period ends, the token issuer blacklists that address. <code>approveClaim</code> then always reverts at the <code>safeTransfer</code> to the blacklisted address — the only path forward is claim expiry/dismissal; the bounty is never paid.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- _asset.safeTransfer(_claim.beneficiary, claimBounty.hacker);
+- _asset.safeTransfer(_claim.committee, claimBounty.committee);
++ if (claimBounty.hacker &gt; 0) pendingWithdrawals[_claim.beneficiary][address(_asset)] += claimBounty.hacker;
++ if (claimBounty.committee &gt; 0) pendingWithdrawals[_claim.committee][address(_asset)] += claimBounty.committee;
+</code></pre>
+<p>Guard every transfer with <code>if (amount &gt; 0)</code>; move to a pull-payment/escrow pattern so one uncooperative recipient or edge-case token behavior cannot block the entire claim.</p>
+<hr>
+<h3 id="medium-3-swapandsends-arbitrary-routing-contract-caller-controll">[Medium] 3. <code>swapAndSend</code>&#39;s arbitrary routing contract + caller-controlled <code>_amountOutMinimum</code> is a theft vector for a compromised registry owner and an MEV sandwich target</h3>
+<p><code>HATVaultsRegistry.swapAndSend</code> / <code>_swapTokenForHAT</code> (lines 301-359, 418-445) · Origin: <strong>[phase1: access-control, flashloans, general]</strong>, re-examined and confirmed against source</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">function swapAndSend(address _asset, address[] calldata _beneficiaries, uint256 _amountOutMinimum,
+    address _routingContract, bytes calldata _routingPayload) external onlyOwner { ... }
+
+function _swapTokenForHAT(...) internal returns (...) {
+    IERC20(_asset).safeApprove(_routingContract, _amount);
+    ...
+    (bool success,) = _routingContract.call(_routingPayload);
+    if (!success) revert SwapFailed();
+    hatsReceived = _HAT.balanceOf(address(this)) - _balanceBefore;
+    amountUnused = _amount - (_assetBalanceBefore - _asset.balanceOf(address(this)));
+    if (hatsReceived &lt; _amountOutMinimum) revert AmountSwappedLessThanMinimum();
+</code></pre>
+<p><code>swapAndSend</code> is <code>onlyOwner</code>, but the owner supplies a completely arbitrary <code>_routingContract</code>, <code>_routingPayload</code>, and <code>_amountOutMinimum</code>. <code>_swapTokenForHAT</code> approves <code>_routingContract</code> for the <strong>full earmarked hacker+governance HAT-swap balance</strong> and blindly <code>.call()</code>s it, trusting only the HAT balance-delta against the caller-chosen minimum — there is no check on how much of <code>_asset</code> the routing contract actually consumed beyond the informational <code>amountUnused</code> bookkeeping, and no <code>_routingContract.code.length &gt; 0</code> check.</p>
+<p>A malicious/compromised registry owner can point <code>_routingContract</code> at their own contract, set <code>_amountOutMinimum = 0</code>, and sweep the earmarked hacker reward (funds owed to a third party, not the owner) — a direct theft vector for a trusted-but-compromised role. Even with an honest owner, a loosely-set <code>_amountOutMinimum</code> against a thin-liquidity target exposes the (mempool-visible) swap to MEV sandwiching.</p>
+<p><strong>Proof of Concept</strong>: After a claim is approved, <code>hackersHatReward[asset][hacker]</code> is credited and the asset sits in the registry. Owner (or an attacker who has compromised the owner key) calls <code>swapAndSend(asset, [hacker], 0, evilContract, payload)</code>. <code>_swapTokenForHAT</code> approves <code>evilContract</code> for the full amount and calls it; <code>evilContract</code> pulls the funds via the approval and returns 0 HAT; <code>_amountOutMinimum = 0</code> lets this pass. The hacker&#39;s earmarked reward is stolen.</p>
+<p><strong>Fix</strong></p>
+<p>Restrict <code>_routingContract</code> to an allowlist of vetted swap adapters/routers; enforce a non-zero, sanity-bounded <code>_amountOutMinimum</code> derived from an independent quote; require <code>_routingContract.code.length &gt; 0</code>. Document the remaining trust assumption on the registry owner explicitly.</p>
+<hr>
+<h3 id="low-4-emergencywithdraw-skips-the-reward-controller-balance-decr">[Low] 4. <code>emergencyWithdraw</code> skips the reward-controller balance decrement, leaving a phantom reward-earning balance</h3>
+<p><code>HATVault.emergencyWithdraw</code> / <code>_beforeTokenTransfer</code> · Origin: <strong>[phase2: agent-6, agent-7, agent-8, agent-12 — 4-agent convergence]</strong>, re-examined against source; reentrancy-escalation sub-claim <strong>demoted</strong> on re-examination</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">if (_from != address(0)) {
+    if (_amount &gt; maxRedeem(_from)) revert RedeemMoreThanMax();
+    withdrawEnableStartTime[_from] = 0;
+    if (!_isEmergencyWithdraw) {
+        for (uint256 i = 0; i &lt; rewardControllers.length;) { 
+            rewardControllers[i].commitUserBalance(_from, _amount, false);
+            unchecked { ++i; }
+        }
+    }
+}
+</code></pre>
+<p>The burn-side branch of <code>_beforeTokenTransfer</code> skips the <code>commitUserBalance(_from, _amount, false)</code> notification whenever <code>_isEmergencyWithdraw == true</code>, which <code>emergencyWithdraw()</code> sets for its entire <code>redeem()</code> call. Shares are burned on-chain, but the (out-of-scope) <code>RewardController</code>&#39;s internal per-user balance for that user is never decremented — the user retains a phantom reward-earning balance after fully exiting via the emergency path. Full financial impact is unverifiable from in-scope code alone since <code>IRewardController</code>&#39;s accounting logic is out of scope, but the code-level asymmetry itself is concrete and reproducible.</p>
+<p><strong>Re-examination note</strong>: phase 2&#39;s escalation — that <code>emergencyWithdraw</code> is &quot;the only asset-moving entrypoint not wrapped in <code>nonReentrant</code>&quot; and that this could compound the desync via ERC777 reentrancy — does not hold up against the source. <code>emergencyWithdraw</code> calls <code>redeem()</code> → <code>_withdraw()</code>, and <code>_withdraw</code> itself carries the <code>nonReentrant</code> modifier (line 752), as does <code>_deposit</code> (line 733) and <code>approveClaim</code> (line 257). OpenZeppelin&#39;s <code>ReentrancyGuard</code> status flag is shared across every function carrying the modifier regardless of external/internal visibility, so a reentrant callback during the asset transfer inside <code>_withdraw</code> cannot re-enter <code>deposit</code>/<code>withdraw</code>/<code>redeem</code>/<code>approveClaim</code> — it would revert. The reentrancy-compounding scenario is therefore refuted; only the phantom-balance accounting gap stands.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function emergencyWithdraw(address receiver) external returns (uint256 assets) {
++     // notify reward controllers of the forfeited balance instead of unconditionally skipping
+      _isEmergencyWithdraw = true;
+      address msgSender = _msgSender();
+      assets = redeem(balanceOf(msgSender), receiver, msgSender);
+      _isEmergencyWithdraw = false;
+  }
+</code></pre>
+<p>Reconcile the reward-controller balance (e.g. a best-effort <code>try/catch</code> decrement) rather than unconditionally skipping it.</p>
+<hr>
+<h3 id="low-5-deposits-are-not-blocked-during-an-active-claim-exposing-f">[Low] 5. Deposits are not blocked during an active claim, exposing fresh deposits to an in-flight bounty with no exit</h3>
+<p><code>HATVault.deposit</code> / <code>maxDeposit</code> · Origin: <strong>[phase2: agent-5, agent-8, agent-11, agent-12 — 4-agent convergence]</strong>, re-examined and confirmed against source</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">function maxWithdraw(address owner) public view ... returns (uint256) {
+    if (activeClaim.createdAt != 0 || !_isWithdrawEnabledForUser(owner)) return 0;
+    ...
+function maxDeposit(address) public view ... returns (uint256) {
+    return depositPause ? 0 : MAX_UINT;   // no activeClaim check
+</code></pre>
+<p><code>maxRedeem</code>/<code>maxWithdraw</code> correctly return 0 while <code>activeClaim.createdAt != 0</code> (blocking exits), but <code>maxDeposit</code>/<code>maxMint</code> and <code>_deposit</code> (lines 728-742) carry no equivalent <code>noActiveClaim</code> guard. A user (or a front-run victim) can deposit while a bounty claim is pending, immediately have their new shares frozen (<code>maxRedeem == 0</code>) until the claim resolves, and eat a pro-rata share of the payout on approval. All agents that traced the &quot;committee colludes with beneficiary, front-runs their own claim with a deposit to inflate the payout&quot; variant confirmed it nets to a loss for the attacker (the inflated bounty base is funded by the attacker&#39;s own capital, distributed pro-rata) — so this is a depositor footgun/UX gap rather than a profitable attack, but the entry/exit asymmetry itself is a real, easily-fixed gap.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- function maxDeposit(address) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
+-     return depositPause ? 0 : MAX_UINT;
+- }
++ function maxDeposit(address) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
++     return (depositPause || activeClaim.createdAt != 0) ? 0 : MAX_UINT;
++ }
+</code></pre>
+<hr>
+<h3 id="low-6-maxdepositmaxmint-report-unlimited-capacity-even-when-depo">[Low] 6. <code>maxDeposit</code>/<code>maxMint</code> report unlimited capacity even when deposits are actually blocked</h3>
+<p><code>HATVault.maxDeposit</code> / <code>maxMint</code> (lines 604-612) · Origin: <strong>[both]</strong> — phase1 <code>[erc4626]</code> + phase2 agent-3 (confidence 90, direct finding)</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">function maxDeposit(address) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
+    return depositPause ? 0 : MAX_UINT;
+}
+</code></pre>
+<p>Both <code>maxDeposit</code>/<code>maxMint</code> only check <code>depositPause</code>, ignoring that <code>deposit</code>/<code>mint</code> also revert when <code>committeeCheckedIn == false</code> (<code>_deposit</code>, <code>CommitteeNotCheckedInYet</code>, line 734) or when the registry is emergency-paused (<code>_beforeTokenTransfer</code>, line 779). This violates the ERC4626 spec requirement that <code>maxDeposit</code>/<code>maxMint</code> return 0 whenever any deposit would revert, and can break integrators/routers that trust these functions.</p>
+<p><strong>Proof of Concept</strong>: New vault before <code>committeeCheckIn()</code>: <code>maxDeposit(user) == type(uint256).max</code>, but <code>deposit(1e18, user)</code> reverts <code>CommitteeNotCheckedInYet</code>.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">- return depositPause ? 0 : MAX_UINT;
++ return (depositPause || !committeeCheckedIn || registry.isEmergencyPaused()) ? 0 : MAX_UINT;
+</code></pre>
+<p>(same pattern for <code>maxMint</code>)</p>
+<hr>
+<h3 id="low-7-maxredeemmaxwithdraw-overstate-the-actually-withdrawable-a">[Low] 7. <code>maxRedeem</code>/<code>maxWithdraw</code> overstate the actually-withdrawable amount</h3>
+<p><code>HATVault.maxRedeem</code>/<code>maxWithdraw</code> (lines 614-624); floor in <code>_afterTokenTransfer</code> (811-815); fee rounding in <code>previewWithdrawAndFee</code>/<code>previewRedeemAndFee</code> (637-650) · Origin: <strong>[phase1: erc4626, general]</strong>, re-examined and confirmed</p>
+<p><strong>Description</strong></p>
+<p>Two independent mechanisms make <code>redeem(maxRedeem(owner))</code> or <code>withdraw(maxWithdraw(owner))</code> potentially revert:</p>
+<ul>
+<li><strong>(a)</strong> <code>maxRedeem</code> returns the owner&#39;s full balance (<code>balanceOf(owner)</code>, line 623) with no check against the <code>_afterTokenTransfer</code> floor — redeeming it can push global <code>totalSupply()</code> into the forbidden <code>(0, 1000)</code> band if the owner doesn&#39;t hold 100% of supply, reverting <code>AmountOfSharesMustBeMoreThanMinimalAmount</code>.</li>
+<li><strong>(b)</strong> The withdraw-fee round trip: <code>maxWithdraw = previewRedeem(balance)</code> rounds assets down (<code>_convertToAssets(shares, Rounding.Down)</code> then floors the fee), but <code>withdraw()</code> internally recomputes shares via <code>previewWithdrawAndFee</code>, which rounds shares <strong>up</strong> (<code>_convertToShares(assets + fee, Rounding.Up)</code>) — this round trip can demand one more share than the owner holds.</li>
+</ul>
+<p><strong>Proof of Concept (a)</strong>: Supply 1500 (Alice 1000 / Bob 500). <code>maxRedeem(Alice) = 1000</code>; <code>Alice.redeem(1000)</code> drops supply to 500 → reverts. Alice&#39;s true max is 500.<br><strong>Proof of Concept (b)</strong>: <code>withdrawalFee = 200</code> (2%), <code>totalSupply = 1000</code>, <code>totalAssets = 1499</code>, Alice holds all 1000 shares. <code>maxWithdraw = 1470</code>, but <code>withdraw(1470)</code> recomputes <code>shares = ceil(1500·1000/1499) = 1001 &gt; 1000</code> and reverts.</p>
+<p><strong>Fix</strong></p>
+<p>Cap <code>maxRedeem</code> to the largest redeemable amount that keeps supply at 0 or ≥1000; derive <code>maxWithdraw</code> from a round-trip-safe calculation. Integrators should prefer <code>redeem(maxRedeem(...))</code> over <code>withdraw(maxWithdraw(...))</code>.</p>
+<hr>
+<h3 id="low-8-fee-on-transfer-deflationary-underlying-tokens-break-share">[Low] 8. Fee-on-transfer / deflationary underlying tokens break share accounting</h3>
+<p><code>HATVault._deposit</code> (line 728) → inherited <code>ERC4626Upgradeable._deposit</code>; <code>totalAssets()</code> = raw <code>asset.balanceOf(address(this))</code> · Origin: <strong>[phase1: general, erc20, erc4626]</strong>, re-examined and confirmed</p>
+<p><strong>Description</strong></p>
+<p><code>HATVaultsRegistry.createVault()</code> is permissionless for any ERC20 asset (line 272, no allowlist). <code>_deposit</code> mints shares for the requested <code>assets</code> amount without measuring what was actually received:</p>
+<pre><code class="language-solidity">function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override virtual nonReentrant {
+    if (!committeeCheckedIn) revert CommitteeNotCheckedInYet();
+    ...
+    super._deposit(caller, receiver, assets, shares);   // transfers `assets`, mints `shares` — no balance-delta check
+}
+</code></pre>
+<p>A fee-on-transfer/deflationary asset causes the vault to receive less than credited, silently diluting existing shareholders.</p>
+<p><strong>Proof of Concept</strong>: 1%-fee token; depositor sends 100, vault balance rises by 99, but shares are minted as if 100 arrived — a transfer of value from existing holders to the new depositor.</p>
+<p><strong>Fix</strong></p>
+<p>Either restrict vault creation to a registry-level allowlist of standard tokens, or measure the actual balance delta around the transfer and mint shares on the delta.</p>
+<hr>
+<h3 id="low-9-swapandsend-proportional-re-credit-of-unused-swap-amount-r">[Low] 9. <code>swapAndSend</code> proportional re-credit of unused swap amount rounds to zero per-beneficiary, stranding dust in the registry</h3>
+<p><code>HATVaultsRegistry.swapAndSend</code> (lines 325, 331) · Origin: <strong>[phase1: precision-math]</strong>, re-examined and confirmed</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">governanceHatReward[_asset] = _swapData.amountUnused.mulDiv(_swapData.governanceHatReward, _swapData.amount);
+...
+hackersHatReward[_asset][_beneficiaries[i]] = _swapData.amountUnused.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
+</code></pre>
+<p><code>mulDiv</code> floors by default. When a swap only partially consumes its input, the sum of re-credited amounts can be strictly less than <code>amountUnused</code>, permanently stranding the difference in the registry with no owner. A beneficiary with a small proportional share can have their remaining credit floored entirely to zero.</p>
+<p><strong>Proof of Concept</strong>: <code>amount = 1000</code>, <code>amountUnused = 500</code>, 999 beneficiaries each with <code>hackerRewards[i] = 1</code>: each re-credit is <code>500·1/1000 = 0</code> (floored) — ~500 units become permanently unassigned. Realistic likelihood is low since the owner typically sets swap parameters to fully consume the input.</p>
+<p><strong>Fix</strong></p>
+<p>Either require full consumption of the swap input (revert on any non-trivial <code>amountUnused</code>), or route the flooring residual deterministically to <code>governanceHatReward</code> instead of splitting it away silently.</p>
+<hr>
+<h3 id="low-10-single-step-ownership-no-ownable2step-plus-unguarded-reno">[Low] 10. Single-step ownership (no <code>Ownable2Step</code>) plus unguarded <code>renounceOwnership</code> risks permanent bricking</h3>
+<p><code>HATVaultsRegistry</code> (imports <code>@openzeppelin/contracts/access/Ownable.sol</code>), <code>HATVault</code> (imports <code>OwnableUpgradeable</code>, <code>_transferOwnership</code> at <code>initialize()</code> line 188) · Origin: <strong>[phase1: access-control]</strong>, re-examined and confirmed — grepped both files for <code>Ownable2Step</code>/<code>renounceOwnership</code> override, found neither</p>
+<p><strong>Description</strong></p>
+<p>Both contracts use single-step ownership transfer with no acceptance step, and neither overrides <code>renounceOwnership()</code>. A mistyped <code>transferOwnership</code> address or an accidental/malicious <code>renounceOwnership()</code> call permanently and irrecoverably bricks every owner-gated function — including <code>setEmergencyPaused(false)</code> (unpause), meaning a pause-then-renounce sequence freezes the whole registry forever.</p>
+<p><strong>Proof of Concept</strong>: Registry owner calls <code>setEmergencyPaused(true)</code> then <code>renounceOwnership()</code> — <code>isEmergencyPaused</code> can never be reset, so every vault&#39;s deposits/transfers revert permanently.</p>
+<p><strong>Fix</strong></p>
+<p>Adopt <code>Ownable2Step</code>/<code>Ownable2StepUpgradeable</code>; override <code>renounceOwnership()</code> to revert (or gate it deliberately).</p>
+<hr>
+<h3 id="low-11-committee-role-becomes-unrecoverable-once-checked-in">[Low] 11. Committee role becomes unrecoverable once checked in</h3>
+<p><code>HATVault.setCommittee</code> (lines 366-378) · Origin: <strong>[phase1: access-control]</strong>, re-examined and confirmed</p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">function setCommittee(address _committee) external {
+    if (msg.sender == owner() &amp;&amp; committee != msg.sender) {
+        if (committeeCheckedIn) revert CommitteeAlreadyCheckedIn();
+    } else {
+        if (committee != msg.sender) revert OnlyCommittee();
+    }
+    committee = _committee;
+</code></pre>
+<p>After <code>committeeCheckedIn == true</code>, only the current committee itself can rotate the role — the owner branch reverts. A lost committee key or unresponsive committee permanently disables <code>submitClaim</code>/<code>approveClaim</code>-adjacent flows for that vault (deposits/withdrawals are unaffected). <code>_committee</code> is also never validated non-zero.</p>
+<p><strong>Fix</strong></p>
+<p>Add an owner/registry-owner recovery path (e.g. timelocked), and validate <code>_committee != address(0)</code>.</p>
+<hr>
+<h3 id="low-12-swapandsend-iterates-an-unbounded-owner-supplied-benefici">[Low] 12. <code>swapAndSend</code> iterates an unbounded, owner-supplied beneficiaries array</h3>
+<p><code>HATVaultsRegistry.swapAndSend</code> (lines 313-354) · Origin: <strong>[phase1: dos]</strong>, re-examined and confirmed</p>
+<p><strong>Description</strong></p>
+<p>An oversized <code>_beneficiaries</code> array can exceed the block gas limit, and one bad recipient can revert the whole batch — but the array and the call are both <code>onlyOwner</code>, so this is self-inflicted operational risk, not an externally triggerable griefing vector.</p>
+<p><strong>Fix</strong></p>
+<p>Process in bounded chunks, or wrap per-beneficiary transfers in try/catch for operational robustness.</p>
+<hr>
+<h3 id="low-13-first-depositor-donation-attack-is-raised-in-cost-by-mini">[Low] 13. First-depositor donation attack is raised in cost by <code>MINIMAL_AMOUNT_OF_SHARES</code> but not eliminated — later depositors can still round down to a small share count</h3>
+<p><code>HATVault._deposit</code> / <code>_afterTokenTransfer</code> (line 811-815) · Origin: <strong>[both, refined]</strong> — phase1 <code>[erc4626]</code> concluded &quot;no exploitable window&quot;; phase2 agent-1 (math-precision) produced a concrete numeric counter-example. <strong>Re-examined against source: phase 2&#39;s refinement is correct and phase 1&#39;s conclusion is corrected below.</strong></p>
+<p><strong>Description</strong></p>
+<pre><code class="language-solidity">function _afterTokenTransfer(address, address, uint256) internal virtual override {
+    if (totalSupply() &gt; 0 &amp;&amp; totalSupply() &lt; MINIMAL_AMOUNT_OF_SHARES) {
+      revert AmountOfSharesMustBeMoreThanMinimalAmount();
+    }
+}
+</code></pre>
+<p><code>MINIMAL_AMOUNT_OF_SHARES = 1000</code> is enforced against <strong>global <code>totalSupply()</code></strong>, not against any individual deposit&#39;s price-per-share. It stops the classic &quot;supply pushed to exactly 1 share&quot; case, but does not stop a funded attacker from inflating price-per-share via a <strong>direct donation</strong> (a plain ERC20 <code>transfer()</code> to the vault, bypassing <code>deposit()</code> entirely — nothing in <code>totalAssets()</code>, which is raw <code>balanceOf</code>, or <code>_afterTokenTransfer</code> can distinguish a donation from organic yield) after the 1000-share floor is already satisfied, causing a subsequent, unrelated depositor to receive far fewer shares than their deposit is worth. The victim&#39;s transaction does not revert (only an exact-zero-share mint reverts via <code>AmountCannotBeZero</code>), so the loss is silent.</p>
+<p><strong>Proof of Concept</strong>: Attacker deposits 1000 (mints 1000 shares 1:1, satisfies the floor). Attacker then donates 1,500,000 directly to the vault via a raw ERC20 transfer (not through <code>deposit()</code>) — <code>totalAssets()</code> rises to 1,501,000 with no new shares minted. Victim deposits 2000: <code>shares = floor(2000·1000/1,501,000) = 1</code> share, worth ~1501 versus their 2000 deposited — a ~499 loss that flows entirely to the attacker&#39;s existing 1000 shares. Profitability for the attacker is bounded by their locked donation capital (~0.03% return in this example) and generally requires front-running a specific victim&#39;s deposit size to be material, so real-world profitability is marginal for well-funded vaults — but the mechanism is real, and the floor does not fully close it as phase 1&#39;s initial pass concluded.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">  function initialize(IHATVault.VaultInitParams calldata _params) external initializer {
++     // consider seeding a small protocol-owned first deposit, or migrating to an
++     // ERC4626 implementation with a virtual shares/assets offset
+</code></pre>
+<p>Consider a protocol-seeded first deposit, or migrating to virtual-offset ERC4626 accounting, to remove donation-based price manipulation for the permissionlessly-created low-decimal/thin-liquidity vaults this registry allows.</p>
+<hr>
+<h3 id="low-info-14-withdrawal-fee-rounds-down-dust-favors-the-withdrawi">[Low / Info] 14. Withdrawal fee rounds down (dust favors the withdrawing user); stale doc comment</h3>
+<p><code>previewWithdrawAndFee()</code> (639), <code>previewRedeemAndFee()</code> (644-650) · Origin: <strong>[phase1: precision-math, general]</strong>, corroborated by phase2 lead (math-precision, 2/12 agents) — re-examined and confirmed</p>
+<p><strong>Description</strong></p>
+<p>Fee computation floors in both preview functions, understating the fee owed to <code>registry.owner()</code> by up to 1 wei per withdrawal (not exploitable for compounding extraction — deposit/withdraw rounding directions are opposite). Separately, the <code>unchecked</code> subtraction at line 647-649 carries a comment claiming the fee is capped at &quot;20%&quot; when <code>MAX_WITHDRAWAL_FEE</code> (<code>HATVault.sol</code> line 84) is actually <code>2e2</code> = 2% — confirmed mismatch; the subtraction itself is still safe, just mis-documented.</p>
+<p><strong>Fix</strong></p>
+<p>Round the fee up if exact accrual matters; fix the comment to say 2%.</p>
+<hr>
+<h3 id="info-15-shared-hatvault-implementation-contract-has-no-disablein">[Info] 15. Shared <code>HATVault</code> implementation contract has no <code>_disableInitializers()</code></h3>
+<p><code>HATVault</code> — no constructor · Origin: <strong>[phase1: proxies, access-control, general]</strong>, confirmed (no constructor present in the 912-line file)</p>
+<p><strong>Description</strong></p>
+<p>The singleton implementation (<code>0x028A7C6873dFA8357c9dcF9C9d76EF2abb66256E</code>) can be <code>initialize()</code>-d directly by anyone. Impact is minimal: EIP-1167 clones use independent storage, clones initialize atomically inside <code>createVault</code> (no front-running window), and the implementation has no <code>delegatecall</code>/<code>selfdestruct</code> surface to hijack. Residual risk is phishing/impersonation of the initialized implementation instance, which holds no funds and isn&#39;t registered in <code>hatVaults</code>.</p>
+<p><strong>Fix</strong>: Add <code>constructor() { _disableInitializers(); }</code> as defense-in-depth.</p>
+<hr>
+<h3 id="info-16-instant-non-timelocked-owner-parameter-changes-can-grief">[Info] 16. Instant, non-timelocked owner parameter changes can grief withdrawal timing</h3>
+<p><code>HATVaultsRegistry.setWithdrawSafetyPeriod</code>, <code>setWithdrawRequestParams</code>; <code>HATVault.setWithdrawalFee</code> · Origin: <strong>[phase1: access-control]</strong>, confirmed</p>
+<p><strong>Description</strong>: Only <code>maxBounty</code> has a mandatory 2-day+ timelock (<code>setPendingMaxBounty</code>→<code>setMaxBounty</code>). Withdraw-window and fee parameters change instantly, letting a hostile (trusted) owner repeatedly shift the safety/enable window to stall a user&#39;s pending withdrawal indefinitely — griefing, not fund loss.</p>
+<p><strong>Fix</strong>: Consider timelocking or bounding per-change deltas on withdraw-window/fee parameters.</p>
+<hr>
+<h3 id="info-17-previewdepositpreviewmint-dont-reflect-the-min-shares-fl">[Info] 17. <code>previewDeposit</code>/<code>previewMint</code> don&#39;t reflect the min-shares-floor revert on first deposit</h3>
+<p>Inherited <code>previewDeposit</code>/<code>previewMint</code>; floor at <code>_afterTokenTransfer</code> · Origin: <strong>[phase1: erc4626]</strong>, confirmed (neither function is overridden in <code>HATVault.sol</code>)</p>
+<p><strong>Description</strong>: On an empty vault, <code>previewDeposit(999)</code>/<code>previewMint(999)</code> return 999 (1:1), but the actual call reverts <code>AmountOfSharesMustBeMoreThanMinimalAmount</code> since <code>MINIMAL_AMOUNT_OF_SHARES = 1000</code>. Preview/actual-behavior mismatch, low impact (first deposit only).</p>
+<p><strong>Fix</strong>: Document the ≥1000-share minimum first-deposit requirement for integrators.</p>
+<hr>
+<h3 id="info-18-erc777677-reentrancy-surface-exists-but-is-mitigated">[Info] 18. ERC777/677 reentrancy surface exists but is mitigated</h3>
+<p><code>approveClaim</code>, <code>_withdraw</code>, <code>_deposit</code> · Origin: <strong>[phase1: erc20]</strong>, cross-checked against phase2&#39;s reentrancy escalation claim in Finding #4 above — <strong>confirmed mitigated</strong></p>
+<p><strong>Description</strong>: Arbitrary asset choice permits ERC777/677 tokens whose transfer hooks could attempt reentrancy. Confirmed: <code>_deposit</code> (line 733), <code>_withdraw</code> (line 752), and <code>approveClaim</code> (line 257) all carry <code>nonReentrant</code> directly; <code>emergencyWithdraw</code> inherits the same guard transitively through <code>_withdraw</code>. No exploitable reentrant path found in-scope.</p>
+<p><strong>Fix</strong>: Keep <code>nonReentrant</code> on all asset-moving entrypoints; treat any integrated reward controller as untrusted if it can be called back into.</p>
+<hr>
+<h3 id="info-19-permissionless-createvault-allows-roguephishing-clones-n">[Info] 19. Permissionless <code>createVault</code> allows rogue/phishing clones (no fund risk)</h3>
+<p><code>HATVaultsRegistry.createVault()</code> (lines 272-280) · Origin: <strong>[phase1: proxies]</strong>, confirmed (no access control on <code>createVault</code>)</p>
+<p><strong>Description</strong>: Anyone can deploy a clone with arbitrary params; it&#39;s isolated storage (cannot touch other vaults) and defaults to <code>isVaultVisible = false</code>. Only a phishing/impersonation and array-spam concern.</p>
+<p><strong>Fix</strong>: No change required; optionally gate behind an allowlist if brand-impersonation is a concern.</p>
+<hr>
+<h3 id="info-20-uint32-timestamp-downcasts-wrap-around-year-2106">[Info] 20. <code>uint32</code> timestamp downcasts wrap around ~year 2106</h3>
+<p><code>submitClaim</code>/<code>challengeClaim</code>/<code>setPendingMaxBounty</code> timestamp fields · Origin: <strong>[phase1: general]</strong>, confirmed (<code>uint32(block.timestamp)</code> used with no <code>SafeCast</code>, e.g. lines 223, 252, 411)</p>
+<p><strong>Description</strong>: Claim-window arithmetic in <code>uint32</code> will overflow-revert once timestamps approach <code>type(uint32).max</code>. No impact for the contract&#39;s realistic lifetime.</p>
+<hr>
+<h3 id="info-21-committee-collusion-donation-based-bounty-inflation-anal">[Info] 21. Committee-collusion donation-based bounty inflation analyzed — confirmed not profitable</h3>
+<p><code>_calcClaimBounty()</code> (uses raw <code>totalAssets()</code>) · Origin: <strong>[phase1: flashloans]</strong>, methodology re-examined: mandatory <code>withdrawRequest()</code> + 7-day pending period (registry default, confirmed in constructor: <code>withdrawRequestPendingPeriod: 7 days</code>) makes this non-flash-loan-fundable, consistent with phase 1&#39;s numeric walkthrough</p>
+<p><strong>Description</strong>: Traced the hypothesis that a committee could front-run its own <code>approveClaim</code> with a large donation to inflate the absolute bounty paid to a colluding beneficiary. A concrete numeric walkthrough shows the attacker always loses <code>(1-p)·D</code> of their own donated capital to remaining honest shareholders unless they already own ~100% of shares — donation cannot amplify theft, and recovering donated capital requires holding shares through the mandatory 7-day withdraw-request period, which cannot complete atomically.</p>
+<p><strong>Fix</strong>: No change required; optionally track deposited assets via internal accounting rather than raw <code>balanceOf</code> for defense-in-depth against share-price donation noise generally.</p>
+<hr>
+<h2 id="findings-list">Findings List</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><span class="pill high">High</span></td>
+<td>Unbounded, unremovable reward controllers can brick all vault activity</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>2</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>approveClaim</code> push-only payments block on blacklist/zero-value/zero-approve tokens</td>
+<td>both</td>
+</tr>
+<tr>
+<td>3</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>swapAndSend</code> arbitrary routing contract is a theft vector</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>4</td>
+<td><span class="pill low">Low</span></td>
+<td><code>emergencyWithdraw</code> skips reward-controller decrement (phantom balance)</td>
+<td>phase2</td>
+</tr>
+<tr>
+<td>5</td>
+<td><span class="pill low">Low</span></td>
+<td>Deposits not blocked during an active claim</td>
+<td>phase2</td>
+</tr>
+<tr>
+<td>6</td>
+<td><span class="pill low">Low</span></td>
+<td><code>maxDeposit</code>/<code>maxMint</code> report unlimited capacity incorrectly</td>
+<td>both</td>
+</tr>
+<tr>
+<td>7</td>
+<td><span class="pill low">Low</span></td>
+<td><code>maxRedeem</code>/<code>maxWithdraw</code> overstate withdrawable amount</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>8</td>
+<td><span class="pill low">Low</span></td>
+<td>Fee-on-transfer tokens break share accounting</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>9</td>
+<td><span class="pill low">Low</span></td>
+<td><code>swapAndSend</code> re-credit rounding strands dust</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>10</td>
+<td><span class="pill low">Low</span></td>
+<td>Single-step ownership / unguarded <code>renounceOwnership</code></td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>11</td>
+<td><span class="pill low">Low</span></td>
+<td>Committee role unrecoverable once checked in</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>12</td>
+<td><span class="pill low">Low</span></td>
+<td>Unbounded beneficiaries array in <code>swapAndSend</code> (self-inflicted DoS)</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>13</td>
+<td><span class="pill low">Low</span></td>
+<td>Donation/price-per-share manipulation survives the shares floor</td>
+<td>both (refined)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Low/Info</td>
+<td>Withdrawal fee rounds down; stale &quot;20%&quot; comment</td>
+<td>both</td>
+</tr>
+<tr>
+<td>15</td>
+<td><span class="pill info">Info</span></td>
+<td>No <code>_disableInitializers()</code> on implementation</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>16</td>
+<td><span class="pill info">Info</span></td>
+<td>No timelock on non-<code>maxBounty</code> owner params</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>17</td>
+<td><span class="pill info">Info</span></td>
+<td><code>previewDeposit</code>/<code>previewMint</code> miss the min-shares floor</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>18</td>
+<td><span class="pill info">Info</span></td>
+<td>ERC777/677 reentrancy surface — mitigated</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>19</td>
+<td><span class="pill info">Info</span></td>
+<td>Permissionless <code>createVault</code> — phishing risk only</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>20</td>
+<td><span class="pill info">Info</span></td>
+<td><code>uint32</code> timestamp wraps ~2106</td>
+<td>phase1</td>
+</tr>
+<tr>
+<td>21</td>
+<td><span class="pill info">Info</span></td>
+<td>Committee-collusion bounty inflation — not profitable</td>
+<td>phase1</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed, or where cross-checking demoted/rejected the claim. Not scored.</em></p>
+<ul>
+<li><strong><code>addTokensToSwap</code> has no caller restriction</strong> — <code>HATVaultsRegistry.addTokensToSwap</code> — external, no <code>onlyVault</code> check, writes into shared <code>hackersHatReward</code>/<code>governanceHatReward</code> mappings. 9/12 phase-2 agents independently flagged this, and every one concluded it is <strong>not exploitable</strong>: the credited amount is always fully backed by <code>safeTransferFrom(msg.sender, ...)</code> of the same amount (confirmed at line 297), so a caller can only donate their own tokens (self-harm), never extract value. Recommended as defense-in-depth (restrict to registered vaults) but not a fund-loss finding.</li>
+<li><strong><code>swapAndSend</code> duplicate-beneficiary carry-over erasure</strong> — <code>HATVaultsRegistry.swapAndSend</code> — <code>_beneficiaries</code> is owner-supplied with no dedup; on a partial swap, a beneficiary listed twice has their re-credited leftover overwritten by the second occurrence&#39;s write (confirmed at line 331 — plain assignment, not additive). Requires the <code>onlyOwner</code> caller to pass a duplicate address — an operational/data-entry bug rather than an attack.</li>
+<li><strong><code>_swapTokenForHAT</code> unchecked-external-accounting underflow</strong> — <code>HATVaultsRegistry._swapTokenForHAT</code> — <code>amountUnused = _amount - (assetBalanceBefore - assetBalanceAfter)</code> (line 440) underflow-reverts if the owner-chosen routing contract consumes more than <code>_amount</code> of the asset. Requires an owner-chosen malicious/buggy router.</li>
+<li><strong><code>addRewardController</code> doesn&#39;t checkpoint existing holders into the new controller</strong> — <code>HATVault.addRewardController</code> — pre-existing depositors are never checkpointed into a controller added mid-life, yet their next withdrawal calls <code>commitUserBalance(_from, amount, false)</code> on it uniformly. Impact entirely depends on out-of-scope <code>RewardController</code> behavior, unverifiable in-scope.</li>
+<li><strong><code>approveClaim</code> lacks <code>notEmergencyPaused</code></strong> — <code>HATVault.approveClaim</code> — <code>submitClaim</code> carries <code>notEmergencyPaused</code> (confirmed line 207), <code>approveClaim</code> does not (confirmed line 257) — an emergency pause cannot stop an already-submitted claim from paying out after the challenge period. Plausible as an intentional design choice (pause targets deposits/transfers, not resolving in-flight claims).</li>
+<li><strong>Registry owner can <code>challengeClaim</code> (not just the arbitrator), freezing withdrawals up to ~5 weeks</strong> — <code>HATVault.challengeClaim</code> — confirmed explicit in code: <code>msg.sender != activeClaim.arbitrator &amp;&amp; msg.sender != registry.owner()</code> (line 243) — an intentional design giving the registry owner an emergency-check power over committees; a centralization/trust observation rather than a bug, worth documenting as a trust assumption.</li>
+<li><strong><code>_afterTokenTransfer</code> min-shares floor can strand the last ~1000 shares among multiple holders</strong> — <code>HATVault._afterTokenTransfer</code> — recoverable via coordination (consolidate shares into one holder, then redeem to 0) — griefing/dust-lock, not fund loss.</li>
+<li><strong><code>logClaim</code> can strand excess <code>msg.value</code></strong> — <code>HATVaultsRegistry.logClaim</code> — self-harm/user-error scale; no sweep function for stray ETH exists (confirmed lines 167-177).</li>
+</ul>
+<hr>
+<h2 id="notes-on-paths-checked-and-cleared-no-finding">Notes on paths checked and cleared (no finding)</h2>
+<p>Both phases independently verified and cleared: the claim state machine&#39;s timing gates (submit → challenge → approve/dismiss) under caller/state inversion; <code>_calcClaimBounty</code>&#39;s bounty-split conservation (payouts never exceed <code>totalAssets() · bountyPercentage</code>, committee absorbs floor dust); <code>swapAndSend</code>&#39;s HAT-distribution conservation (<code>hatsReceived - totalHackerReward</code> cannot underflow); withdrawal/transfer gating funneling correctly through the <code>maxRedeem</code> chokepoint during active claims and safety periods; <code>setMaxBounty</code>/<code>setBountySplit</code>/<code>setHATBountySplit</code> snapshot-and-freeze correctly at claim submission so no admin setter can retroactively alter an in-flight claim; and <code>TokenLockFactory</code>&#39;s CREATE-based clone deployment (non-collidable, non-custodial).</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant running a two-phase (breadth + depth) methodology with hybrid reconciliation. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreig6yhxd2e27m4ocwup2tkbepa45z4o4cdiwmdv23llprncfi5bic4.ipfs.community.bgipfs.com/"><code>https://bafkreig6yhxd2e27m4ocwup2tkbepa45z4o4cdiwmdv23llprncfi5bic4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/314">#314</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

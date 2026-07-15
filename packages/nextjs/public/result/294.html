@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security Audit Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #294">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Security Audit Report</h1>
+    <p class="job-sub">Job #294 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/294"><b>Job page</b> #294</a>
+      <a class="chip" href="https://bafkreiewxl4fuudqufyn3e6k5phzmrhc7tb6f5vip6x7oxraqe5nzaw2km.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">2</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">12</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#buidlguidl-multisig-multisigfactory-multisig-clones">BuidlGuidl Multisig — MultisigFactory + Multisig + Clones</a></li>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#info-severity">Info Severity</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#cross-phase-finding-disposition">Cross-Phase Finding Disposition</a></li>
+      <li><a href="#areas-verified-clean">Areas Verified Clean</a></li>
+      <li><a href="#appendix-finding-count">Appendix: Finding Count</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Audit Report</h1>
+<h2 id="buidlguidl-multisig-multisigfactory-multisig-clones">BuidlGuidl Multisig — MultisigFactory + Multisig + Clones</h2>
+<p><strong>Job ID</strong>: 294<br><strong>Contract (factory)</strong>: <code>0x21f03d2AdaEAaFe75e0C721bD1eBbC4C9aF9602E</code> — Ethereum Mainnet<br><strong>Scope</strong>: <code>MultisigFactory.sol</code>, <code>Multisig.sol</code>, <code>Clones.sol</code> (~510 LOC)<br><strong>Methodology</strong>: Two-phase hybrid audit — Phase 1 ethskills breadth (checklist-driven, 8 specialty agents) + Phase 2 pashov depth (12 attacker-mindset agents, blind); Turn 3 reconciliation.<br><strong>Date</strong>: 2026-07-05</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>The BuidlGuidl Multisig is a well-structured M-of-N multisig that supports both EOA (ECDSA/secp256k1) and WebAuthn passkey (secp256r1) signers. It deploys EIP-1167 minimal proxy clones via CREATE2 and implements ERC-1271 for off-chain signature verification.</p>
+<p>The core signing and replay-protection logic is sound: <code>getExecHash</code> and <code>getBatchExecHash</code> bind signatures to chainid, contract address, and nonce; the strictly-ascending <code>sig.signer</code> sort prevents duplicates; and the <code>nonReentrant</code> transient guard blocks nested execution. No path was found to forge signatures or bypass threshold verification against an initialized clone.</p>
+<p><strong>Two findings require action before production use:</strong></p>
+<ul>
+<li>The implementation contract&#39;s permanently-zero <code>threshold</code> allows anyone to drain any assets sent to it.</li>
+<li>Passkey (WebAuthn) signatures share an identical challenge format between <code>execTransaction</code> and <code>isValidSignature</code>, enabling cross-domain replay from a malicious ERC-1271 flow into <code>execTransaction</code>.</li>
+</ul>
+<p>Additionally, a long-standing design tension in the EOA ERC-1271 path means that standard wallet <code>personal_sign</code> flows silently fail for ERC-1271 consumers.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+<th>IDs</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+<td>—</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>1</td>
+<td>H-1</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>2</td>
+<td>M-1, M-2</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>12</td>
+<td>L-1 through L-12</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>8</td>
+<td>I-1 through I-8</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<hr>
+<h3 id="h-1-implementation-threshold-0-allows-anyone-to-drain-assets-and">[H-1] Implementation <code>threshold == 0</code> allows anyone to drain assets and forge ERC-1271 signatures <code>[both]</code></h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Origin</strong>: Phase 1 [G-1] (Low) → elevated by Phase 2 F-P2-1 with full exploit proof<br><strong>Contracts</strong>: <code>Multisig.sol</code> — <code>execTransaction</code>, <code>execBatchTransaction</code>, <code>isValidSignature</code></p>
+<p><strong>Root cause</strong>: The implementation contract&#39;s constructor calls <code>_disableInitializers()</code> to prevent <code>initialize()</code> from running, but this leaves <code>threshold = 0</code> and <code>_signers.length = 0</code> in the implementation&#39;s storage. The signature guard <code>if (signatures.length &lt; threshold) revert ThresholdNotMet()</code> evaluates <code>0 &lt; 0 = false</code> and does not revert. The subsequent loop over zero signatures executes zero iterations. Execution falls through to <code>nonce++</code> and <code>target.call{value: value}(data)</code>.</p>
+<p><strong>Impact</strong>:</p>
+<ul>
+<li>Any ETH accidentally sent to the implementation address is drainable by anyone via <code>execTransaction(attacker, balance, &quot;&quot;, type(uint256).max, [])</code>.</li>
+<li><code>isValidSignature(anyHash, abi.encode(new Signature[](0)))</code> returns the ERC-1271 magic value <code>0x1626ba7e</code>, making the implementation a universal signer that approves any hash — potentially abused by protocols querying the wrong address.</li>
+<li>The implementation has <code>receive() external payable {}</code> and all three token-received hooks, so it silently accepts ETH and NFTs pushed via <code>safeTransferFrom</code>.</li>
+</ul>
+<p><strong>Proof of concept</strong>:</p>
+<pre><code>1. Attacker sends 1 ETH to implementation (or ETH is forced via pre-fund/selfdestruct).
+2. Attacker calls:
+   Multisig(implementation).execTransaction(
+       attacker, 1 ether, &quot;&quot;, type(uint256).max, new Signature[](0)
+   )
+3. _verifySignatures: signatures.length(0) &lt; threshold(0) → 0 &lt; 0 → false. Pass.
+4. Loop: 0 iterations. Returns.
+5. nonce++ → nonce=1 in impl storage.
+6. implementation.call{value: 1 ether}(&quot;&quot;) → attacker receives 1 ETH.
+</code></pre>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-solidity">constructor() {
+    _disableInitializers();
+    threshold = type(uint256).max; // block execution on uninitialized impl
+}
+</code></pre>
+<p>Or add <code>if (threshold == 0) revert ThresholdNotMet();</code> at the top of <code>execTransaction</code>, <code>execBatchTransaction</code>, and <code>isValidSignature</code>.</p>
+<hr>
+<h3 id="m-1-eoa-erc-1271-path-uses-raw-hash-standard-wallet-personalsign">[M-1] EOA ERC-1271 path uses raw hash; standard wallet <code>personal_sign</code> silently rejected <code>[both]</code></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: Phase 1 [S-1] (Medium), confirmed by Phase 2 Agent 7<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>isValidSignature</code></p>
+<p><strong>Root cause</strong>: <code>execTransaction</code>/<code>execBatchTransaction</code> verify EOA signatures over <code>MessageHashUtils.toEthSignedMessageHash(hash)</code> (the EIP-191 personal_sign-prefixed digest). <code>isValidSignature</code> verifies against the raw <code>hash</code> with no prefix. Any wallet using <code>personal_sign</code>/<code>eth_sign</code>/<code>signMessage</code> produces a signature over the prefixed digest — but <code>isValidSignature</code> recovers against the raw hash, yielding a garbage address and returning <code>0xffffffff</code>. This is intentional per the M-2 comment (EIP-712 typed-data flows pass a pre-prepared digest), but the practical result is that standard wallet flows are incompatible with this contract&#39;s ERC-1271 interface.</p>
+<p><strong>Impact</strong>: DeFi protocols (Permit2, CoW Swap, OpenSea, limit-order aggregators) that call <code>isValidSignature</code> with a hash the signer approved via <code>personal_sign</code> will silently reject the signature even though the signer intended approval. The signer receives no error; the protocol simply ignores the multisig&#39;s authorization.</p>
+<p><strong>Proof of concept</strong>:</p>
+<pre><code>1. Protocol asks Alice to sign hash H via personal_sign.
+   Wallet produces σ = sign(privKey, keccak256(&quot;\x19Ethereum Signed Message:\n32&quot; ‖ H))
+2. Protocol calls isValidSignature(H, abi.encode([{EOA, alice, σ}])).
+3. ECDSA.tryRecover(H, σ) recovers addr ≠ alice → returns 0xffffffff.
+</code></pre>
+<p><strong>Fix</strong> (backward compatible — try raw, fall back to prefixed):</p>
+<pre><code class="language-solidity">(address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecover(hash, sig.data);
+if (err != ECDSA.RecoverError.NoError || recovered != sig.signer) {
+    (recovered, err,) = ECDSA.tryRecover(
+        MessageHashUtils.toEthSignedMessageHash(hash), sig.data);
+    if (err != ECDSA.RecoverError.NoError || recovered != sig.signer) return 0xffffffff;
+}
+</code></pre>
+<hr>
+<h3 id="m-2-passkey-challenge-identical-in-exectransaction-and-isvalidsi">[M-2] Passkey challenge identical in <code>execTransaction</code> and <code>isValidSignature</code> — cross-domain replay <code>[phase2]</code></h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Origin</strong>: Phase 2 F-P2-2 (new)<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>_verifySignatures</code>, <code>isValidSignature</code></p>
+<p><strong>Root cause</strong>: Both <code>execTransaction</code> and <code>isValidSignature</code> construct the WebAuthn challenge identically:</p>
+<pre><code class="language-solidity">bytes memory challenge = abi.encodePacked(hash);
+WebAuthn.verify(challenge, auth, qx, qy)
+</code></pre>
+<p>A <code>WebAuthnAuth</code> signed over challenge <code>H</code> validates in both functions. By contrast, the EOA path already has accidental domain separation: <code>execTransaction</code> uses <code>toEthSignedMessageHash(hash)</code> while <code>isValidSignature</code> uses raw <code>hash</code>. Passkeys receive no domain separation.</p>
+<p><strong>Impact</strong>: An attacker can trick threshold-many passkey signers into signing a hash via a malicious dApp&#39;s &quot;sign-in&quot; ERC-1271 flow, then replay those signatures to drain the multisig. The attack is directly proportional to difficulty of threshold: threshold=1 requires a single user to visit the phishing page; threshold=2 requires two users.</p>
+<p><strong>Proof of concept</strong>:</p>
+<pre><code>1. Attacker picks (target=attacker, value=balance, data=&quot;&quot;, deadline=MAX).
+2. Computes H = getExecHash(target, value, data, deadline) — deterministic from public nonce.
+3. Deploys phishing dApp: &quot;Authenticate with your passkey&quot; → internally calls
+   multisig.isValidSignature(H, ...) with the user&#39;s WebAuthn sig as part of the flow.
+4. Each passkey holder&#39;s authenticator signs challenge = abi.encodePacked(H).
+5. Attacker collects threshold-many WebAuthnAuth structures.
+6. Calls execTransaction(target, value, data, deadline, sigStructs).
+7. _verifySignatures: challenge = abi.encodePacked(H) — identical to what authenticator signed.
+   WebAuthn.verify returns true. All checks pass. target.call drains balance.
+</code></pre>
+<p><strong>Note</strong>: The EOA path is NOT affected (different signed message structures between the two paths).</p>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-solidity">// In _verifySignatures (execution path — add a domain prefix):
+bytes memory challenge = abi.encodePacked(bytes32(&quot;MULTISIG_EXEC_V1&quot;), hash);
+
+// In isValidSignature (ERC-1271 path — keep current raw bytes):
+bytes memory challenge = abi.encodePacked(hash);
+</code></pre>
+<p>This ensures passkey signatures issued under an ERC-1271 authentication flow cannot be replayed to authorize an <code>execTransaction</code>.</p>
+<hr>
+<h3 id="l-1-duplicate-credentialidhash-corrupts-reverse-lookup-removesig">[L-1] Duplicate <code>credentialIdHash</code> corrupts reverse lookup; <code>removeSigner</code> deletes survivor&#39;s entry <code>[both]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [G-3/A-4/V-4], confirmed by all 12 Phase 2 agents<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>_addSigner</code>, <code>removeSigner</code></p>
+<p><strong>Root cause</strong>: <code>_addSigner</code> blindly writes <code>credentialIdToAddress[credId] = signer</code> without checking whether <code>credId</code> already maps to a different active signer. <code>removeSigner</code> then deletes <code>credentialIdToAddress[credentialIdOf[signer]]</code> without checking whether that mapping still belongs to the signer being removed.</p>
+<p><strong>Proof of concept</strong>:</p>
+<pre><code>1. Register P1 with credId=H → credentialIdToAddress[H]=P1, credentialIdOf[P1]=H.
+2. Register P2 with credId=H → credentialIdToAddress[H]=P2 (overwritten). credentialIdOf[P1] still=H.
+3. removeSigner(P1): reads credentialIdOf[P1]=H → delete credentialIdToAddress[H].
+4. P2 is active signer. getPasskeyByCredentialId(H) returns (address(0), 0, 0).
+</code></pre>
+<p><strong>Impact</strong>: Off-chain login flow (credential-ID based signer lookup) silently breaks for an active passkey signer. The signer can still sign transactions — only the reverse lookup is affected. Requires a governance action that intentionally or accidentally registers two passkeys with the same credential ID hash.</p>
+<p><strong>Fix</strong>: Reject re-use of a non-zero <code>credId</code> in <code>_addSigner</code>:</p>
+<pre><code class="language-solidity">if (credId != bytes32(0)) {
+    if (credentialIdToAddress[credId] != address(0)) revert AlreadySigner();
+    credentialIdToAddress[credId] = signer;
+    credentialIdOf[signer] = credId;
+}
+</code></pre>
+<p>Or in <code>removeSigner</code>, guard the delete: <code>if (credentialIdToAddress[credId] == signer) delete credentialIdToAddress[credId];</code></p>
+<hr>
+<h3 id="l-2-isvalidsignature-reverts-on-malformed-signature-bytes-instea">[L-2] <code>isValidSignature</code> reverts on malformed signature bytes instead of returning <code>0xffffffff</code> <code>[both]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [S-4], confirmed by Phase 2 agents 5, 9<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>isValidSignature</code></p>
+<p><strong>Root cause</strong>: <code>abi.decode(signatures, (Signature[]))</code> on line 329 and <code>abi.decode(sig.data, (bytes32, bytes32, WebAuthn.WebAuthnAuth))</code> inside the loop revert on malformed input. ERC-1271 consumers that invoke via the high-level Solidity interface (rather than low-level <code>staticcall</code>) will propagate the revert rather than receiving a clean &quot;invalid&quot; response.</p>
+<p><strong>Fix</strong>: Wrap the outer decode in a try/catch (via external self-call helper) and return <code>0xffffffff</code> on failure.</p>
+<hr>
+<h3 id="l-3-threshold-reduction-retroactively-devalues-pre-signed-future">[L-3] Threshold reduction retroactively devalues pre-signed future-nonce authorizations <code>[phase2]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 2 L-P2-3 (new, Agent 11)<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>changeThreshold</code>, <code>_verifySignatures</code></p>
+<p><strong>Root cause</strong>: <code>getExecHash</code> and <code>getBatchExecHash</code> commit to <code>nonce</code> but not to <code>threshold</code>. <code>_verifySignatures</code> reads <code>threshold</code> at execution time. A <code>changeThreshold</code> reduction between signing and submission allows a subset of already-collected signatures to authorize an action the original signers intended to require more approvals for.</p>
+<p><strong>Proof of concept</strong>:</p>
+<pre><code>1. threshold=3, signers {A,B,C} pre-sign execHash_X for nonce=7.
+2. Governance lowers threshold to 1 at nonce=5. nonce advances to 6, then 7.
+3. Attacker holds any ONE of the three pre-collected sigs for execHash_X.
+4. Submits execTransaction with 1 sig. signatures.length(1) &gt;= threshold(1). Executes.
+</code></pre>
+<p><strong>Impact</strong>: Primarily affects governance workflows where signers pre-sign for future nonces. Common in automated multisig orchestration. Requires threshold reduction + pre-existing off-chain signature collection.</p>
+<p><strong>Fix</strong>: Include <code>threshold</code> in <code>getExecHash</code>/<code>getBatchExecHash</code>:</p>
+<pre><code class="language-solidity">keccak256(abi.encode(block.chainid, address(this), nonce, threshold, deadline, target, value, keccak256(data)))
+</code></pre>
+<hr>
+<h3 id="l-4-exectransaction-target-returndata-unbounded-returndata-bomb-">[L-4] <code>execTransaction</code> target returndata unbounded — returndata bomb possible <code>[both]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [D-1/B-2], confirmed by Phase 2 Agent 7<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>execTransaction</code>, <code>execBatchTransaction</code></p>
+<p><strong>Root cause</strong>: <code>(bool ok, bytes memory ret) = target.call{value: value}(data)</code> copies the full returndata into memory. A malicious <code>target</code> (authorized by threshold sigs) can return megabytes, causing quadratic memory expansion gas cost and reverting OOG. In <code>execBatchTransaction</code>, each call&#39;s returndata is also stored in <code>results[i]</code>, compounding the effect.</p>
+<p><strong>Fix</strong>: Cap returndata copy:</p>
+<pre><code class="language-solidity">assembly (&quot;memory-safe&quot;) {
+    let sz := returndatasize()
+    if gt(sz, 0x1000) { sz := 0x1000 }  // 4 KB cap
+    let retPtr := mload(0x40)
+    mstore(0x40, add(retPtr, add(sz, 0x20)))
+    mstore(retPtr, sz)
+    returndatacopy(add(retPtr, 0x20), 0, sz)
+    ret := retPtr
+}
+</code></pre>
+<hr>
+<h3 id="l-5-unbounded-signer-set-makes-removesigner-on-dos-risk-at-scale">[L-5] Unbounded signer set makes <code>removeSigner</code> O(N) — DoS risk at scale <code>[phase1]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [D-2]<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>_addSigner</code>, <code>removeSigner</code></p>
+<p><strong>Root cause</strong>: No <code>MAX_SIGNERS</code> cap is enforced. <code>removeSigner</code> performs an O(N) linear scan of <code>_signers[]</code>. On L2s where storage is cheap, a colluding quorum can inflate <code>_signers</code> to make removal gas-prohibitive.</p>
+<p><strong>Fix</strong>: Add <code>if (_signers.length &gt;= MAX_SIGNERS) revert TooManySigners();</code> (suggested cap: 50–100). Consider a <code>signer → index</code> mapping for O(1) removal.</p>
+<hr>
+<h3 id="l-6-no-emergency-recovery-path-if-quorum-is-lost-phase1">[L-6] No emergency recovery path if quorum is lost <code>[phase1]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [A-1]<br><strong>Contract</strong>: <code>Multisig.sol</code></p>
+<p><strong>Root cause</strong>: All admin functions (<code>addEoaSigner</code>, <code>removeSigner</code>, <code>changeThreshold</code>) are gated behind <code>onlySelf</code> reachable only through <code>execTransaction</code> at threshold. If enough signers lose keys, all assets are permanently locked with no recovery path.</p>
+<p><strong>Fix</strong>: Consider an optional guardian with a long timelock (≥30 days) vetoable by any current signer. At minimum, document this risk prominently in user-facing UX.</p>
+<hr>
+<h3 id="l-7-erc-1271-signer-set-changes-retroactively-flip-attestation-v">[L-7] ERC-1271 signer-set changes retroactively flip attestation validity <code>[phase1]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [S-3]<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>isValidSignature</code></p>
+<p><strong>Root cause</strong>: <code>isValidSignature</code> reads live <code>signerInfo</code> and <code>threshold</code>. A 2-of-3 signed limit order valid today becomes invalid if threshold is raised or a signer is removed — or a previously-invalid 1-sig submission becomes valid after threshold reduction.</p>
+<p><strong>Fix</strong>: Document that ERC-1271 attestations must be verified at settlement. Optionally commit to a signer-set fingerprint in the ERC-1271 digest.</p>
+<hr>
+<h3 id="l-8-no-eip-712-domain-separator-signed-digests-expose-no-human-r">[L-8] No EIP-712 domain separator — signed digests expose no human-readable context <code>[phase1]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [S-2]<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>getExecHash</code>, <code>getBatchExecHash</code></p>
+<p><strong>Root cause</strong>: The exec hash includes <code>chainid</code> and <code>address(this)</code> but no protocol name, version, or type-string hash. Hardware wallets and browser extension wallets present an opaque 32-byte blob; signers cannot inspect what they are authorizing.</p>
+<p><strong>Fix</strong>: Adopt EIP-712. Define <code>TxRequest</code> and <code>BatchTxRequest</code> typed structs and use <code>_hashTypedDataV4(structHash)</code>.</p>
+<hr>
+<h3 id="l-9-signature-verification-logic-duplicated-between-execution-an">[L-9] Signature verification logic duplicated between execution and ERC-1271 paths <code>[phase1]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [S-5]<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>_verifySignatures</code>, <code>isValidSignature</code></p>
+<p><strong>Root cause</strong>: Two near-identical loops differ in three ways: revert vs. return, personal_sign vs. raw hash, calldata vs. memory. Future fixes (malleability policy, WebAuthn UV flag changes, new signer types) must be applied to both paths independently. Divergence between parallel verification paths is a common source of multisig vulnerabilities.</p>
+<p><strong>Fix</strong>: Extract <code>_verifySigsCore(bytes32 digest, Signature[] memory sigs) internal view returns (bool)</code> and delegate from both callers.</p>
+<hr>
+<h3 id="l-10-webauthn-requireuvtrue-silently-rejects-hardware-tokens-wit">[L-10] WebAuthn <code>requireUV=true</code> silently rejects hardware tokens without PIN/biometric <code>[phase1]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [S-6]<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>_verifySignatures</code>, <code>isValidSignature</code></p>
+<p><strong>Root cause</strong>: <code>WebAuthn.verify(challenge, auth, qx, qy)</code> defaults to <code>requireUV=true</code>. YubiKeys and other hardware tokens configured without PIN produce <code>flags = 0x01</code> (UP only, UV=0) — always rejected even though the user physically confirmed the transaction.</p>
+<p><strong>Fix</strong>: Keep <code>requireUV=true</code> for security, but document the requirement in signer-registration UX. Consider a per-signer <code>requireUV</code> flag in <code>SignerInfo</code> if flexibility is needed.</p>
+<hr>
+<h3 id="l-11-batch-execution-can-atomically-restructure-the-entire-signe">[L-11] Batch execution can atomically restructure the entire signer set in one signing round <code>[both]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [V-1], confirmed by Phase 2 Agent 7<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>execBatchTransaction</code></p>
+<p><strong>Root cause</strong>: A signed batch can contain <code>addEoaSigner(attacker)</code>, <code>changeThreshold(1)</code>, <code>removeSigner(A)</code>, <code>removeSigner(B)</code> in sequence — all validated once against the pre-batch signer set. All admin ops are gated only by <code>onlySelf</code>; the batch loop does not re-verify signatures between calls.</p>
+<p><strong>Impact</strong>: A social-engineering attack (or compromised co-signer) that obtains threshold approval for a large &quot;routine&quot; batch can take full control in a single signing round.</p>
+<p><strong>Fix</strong>: Consider a timelock on governance selectors, or forbid governance calls within <code>execBatchTransaction</code>.</p>
+<hr>
+<h3 id="l-12-threshold1-with-1-signer-is-deployable-effectively-a-single">[L-12] Threshold=1 with 1 signer is deployable — effectively a single-key wallet <code>[phase1]</code></h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Origin</strong>: Phase 1 [V-2]<br><strong>Contract</strong>: <code>Multisig.sol</code> — <code>initialize</code>, <code>changeThreshold</code></p>
+<p><strong>Root cause</strong>: No minimum threshold or minimum signer count is enforced beyond <code>threshold &gt;= 1</code>. Combined with L-11, an attacker who gains one threshold signing round can reduce the signer set to 1-of-1.</p>
+<p><strong>Fix</strong>: Optionally enforce <code>if (_threshold &lt; 2 || total &lt; 2) revert InvalidThreshold();</code>.</p>
+<hr>
+<h2 id="info-severity">Info Severity</h2>
+<h3 id="i-1-clones-assembly-advances-fmp-by-0x40-but-writes-to-0x48-memo">[I-1] Clones assembly advances FMP by 0x40 but writes to 0x48 — <code>memory-safe</code> annotation technically violated <code>[both]</code></h3>
+<p><strong>Origin</strong>: Phase 1 [B-1], confirmed by Phase 2 agents 1, 6, 7<br>The third <code>mstore(add(ptr, 0x28), ...)</code> writes to <code>ptr+0x28..ptr+0x47</code>. FMP is advanced to <code>ptr+0x40</code>, leaving 8 written bytes above the FMP. Benign (they are zero-padding never read after CREATE2), but violates the compiler contract declared by <code>memory-safe</code>. <strong>Fix</strong>: Advance FMP to <code>add(ptr, 0x60)</code> or remove the FMP update (bytes are ephemeral).</p>
+<h3 id="i-2-multisigcreated-event-omits-passkey-signers-both">[I-2] <code>MultisigCreated</code> event omits passkey signers <code>[both]</code></h3>
+<p><strong>Origin</strong>: Phase 1 [V-6], confirmed by Phase 2 Agent 8<br>Event emits <code>eoaSigners</code> but not <code>passkeyQxs</code>, <code>passkeyQys</code>, or <code>credentialIdHashes</code>. Off-chain indexers relying only on the event will miss passkey-only multisigs. <strong>Fix</strong>: Emit passkey data, or at minimum emit a hash of the passkey set.</p>
+<h3 id="i-3-addressthis-accepted-as-eoa-signer-permanently-dead-slot-bot">[I-3] <code>address(this)</code> accepted as EOA signer — permanently dead slot <code>[both]</code></h3>
+<p><strong>Origin</strong>: Phase 1 [A-2], confirmed by Phase 2 Agents 7, 11<br><code>_addSigner</code> rejects only <code>address(0)</code>; a signer at the multisig&#39;s own address has no private key. <strong>Fix</strong>: <code>if (signer.code.length &gt; 0 || signer == address(this)) revert InvalidSigner();</code></p>
+<h3 id="i-4-no-on-curve-validation-for-passkey-coordinates-phase2">[I-4] No on-curve validation for passkey coordinates <code>[phase2]</code></h3>
+<p><strong>Origin</strong>: Phase 2 L-P2-5 (Agents 1, 4)<br><code>initialize</code> and <code>addPasskeySigner</code> reject <code>qx == 0 || qy == 0</code> but do not verify <code>(qx, qy)</code> is a valid secp256r1 point. Off-curve inputs create permanently unusable signer slots that count toward threshold. <strong>Fix</strong>: Add a P-256 point-on-curve check at registration.</p>
+<h3 id="i-5-nonce-not-consumed-on-failed-execution-signatures-remain-reu">[I-5] Nonce not consumed on failed execution — signatures remain reusable <code>[phase2]</code></h3>
+<p><strong>Origin</strong>: Phase 2 L-P2-8 (Agent 7)<br>When <code>target.call</code> fails, <code>_bubbleRevert</code> reverts the transaction including <code>nonce++</code>. Pre-collected signatures remain valid for the same nonce until <code>deadline</code> expires. Differs from Gnosis Safe which burns nonce on failure. <strong>Recommendation</strong>: Use short deadlines when the action is time-sensitive.</p>
+<h3 id="i-6-reentrancyguardtransient-and-push0-require-cancun-capable-ch">[I-6] <code>ReentrancyGuardTransient</code> and PUSH0 require Cancun-capable chains <code>[phase1]</code></h3>
+<p><strong>Origin</strong>: Phase 1 [G-7]<br>Deploying on pre-Cancun chains (or some L2s without EIP-1153 support) will break reentrancy protection. <strong>Fix</strong>: Verify chain compatibility before deployment.</p>
+<h3 id="i-7-factory-allows-anyone-to-deploy-a-clone-with-arbitrary-third">[I-7] Factory allows anyone to deploy a clone with arbitrary third-party signers <code>[phase1]</code></h3>
+<p><strong>Origin</strong>: Phase 1 [A-5]<br>Anyone can deploy a multisig listing any EOA as a signer. No informed consent from listed signers. Registry pollution / phishing vector. <strong>Recommendation</strong>: Document in UX.</p>
+<h3 id="i-8-getexechash-reads-live-nonce-integrators-must-track-nonce-of">[I-8] <code>getExecHash</code> reads live <code>nonce</code> — integrators must track nonce off-chain for pre-signing <code>[phase1]</code></h3>
+<p><strong>Origin</strong>: Phase 1 [S-8]<br>Pre-computing future execution hashes requires off-chain nonce tracking. <strong>Recommendation</strong>: Provide a view function that accepts an explicit nonce parameter.</p>
+<hr>
+<h2 id="cross-phase-finding-disposition">Cross-Phase Finding Disposition</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Phase 1 ID</th>
+<th>Phase 2 Outcome</th>
+<th>Unified ID</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S-1 [Medium]</td>
+<td>Confirmed, EOA path; new passkey variant found (M-2)</td>
+<td>M-1</td>
+</tr>
+<tr>
+<td>G-1 [Low]</td>
+<td>Elevated to High with full exploit proof</td>
+<td>H-1</td>
+</tr>
+<tr>
+<td>G-2 [Low]</td>
+<td>Structural note, subsumed into M-1/M-2 narrative</td>
+<td>—</td>
+</tr>
+<tr>
+<td>G-3/A-4/V-4 [Low]</td>
+<td>Confirmed by all 12 agents</td>
+<td>L-1</td>
+</tr>
+<tr>
+<td>A-1 [Low]</td>
+<td>No new proof</td>
+<td>L-6</td>
+</tr>
+<tr>
+<td>A-2 [Low]</td>
+<td>Confirmed by Agents 7, 11</td>
+<td>I-3</td>
+</tr>
+<tr>
+<td>D-1/B-2 [Low]</td>
+<td>Confirmed by Agent 7</td>
+<td>L-4</td>
+</tr>
+<tr>
+<td>D-2 [Low]</td>
+<td>No new proof</td>
+<td>L-5</td>
+</tr>
+<tr>
+<td>B-1 [Low]</td>
+<td>Confirmed by Agents 1, 6, 7</td>
+<td>I-1</td>
+</tr>
+<tr>
+<td>S-2 [Low]</td>
+<td>No new proof</td>
+<td>L-8</td>
+</tr>
+<tr>
+<td>S-3 [Low]</td>
+<td>Phase 2 adds threshold-devaluation variant</td>
+<td>L-7</td>
+</tr>
+<tr>
+<td>S-4 [Low]</td>
+<td>Confirmed by Agents 5, 9</td>
+<td>L-2</td>
+</tr>
+<tr>
+<td>S-5 [Low]</td>
+<td>No new proof</td>
+<td>L-9</td>
+</tr>
+<tr>
+<td>S-6 [Low]</td>
+<td>No new proof</td>
+<td>L-10</td>
+</tr>
+<tr>
+<td>V-1 [Low]</td>
+<td>Confirmed by Agent 7</td>
+<td>L-11</td>
+</tr>
+<tr>
+<td>V-2 [Low]</td>
+<td>No new proof</td>
+<td>L-12</td>
+</tr>
+<tr>
+<td>—</td>
+<td>F-P2-2: Passkey cross-domain replay [NEW]</td>
+<td>M-2</td>
+</tr>
+<tr>
+<td>—</td>
+<td>L-P2-3: Threshold devalues pre-signed sigs [NEW]</td>
+<td>L-3</td>
+</tr>
+<tr>
+<td>—</td>
+<td>L-P2-5: No on-curve validation [NEW]</td>
+<td>I-4</td>
+</tr>
+<tr>
+<td>—</td>
+<td>L-P2-8: Nonce not burned on failure [NEW]</td>
+<td>I-5</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="areas-verified-clean">Areas Verified Clean</h2>
+<p>The following attack surfaces were investigated across both phases and found secure:</p>
+<ul>
+<li><strong>Signature replay</strong> — <code>getExecHash</code> and <code>getBatchExecHash</code> embed <code>block.chainid</code> and <code>address(this)</code>; signatures are chain- and contract-specific.</li>
+<li><strong>Cross-format collision</strong> — <code>getExecHash</code> encodes 7 fields (224 bytes encoded); <code>getBatchExecHash</code> encodes 5 fields (160 bytes). Different abi.encode lengths preclude cross-format hash collision.</li>
+<li><strong>EOA cross-path replay</strong> — <code>execTransaction</code> uses personal_sign prefix; <code>isValidSignature</code> uses raw hash. Bridging requires a keccak256 preimage — computationally infeasible.</li>
+<li><strong>Signer type confusion</strong> — <code>signerInfo[addr].qx</code> discriminates EOA (qx=0) from passkey (qx≠0); <code>SignerTypeMismatch</code> revert if types don&#39;t match. The passkey <code>qx/qy</code> in the signature payload is verified against the registered values.</li>
+<li><strong>Front-run clone address capture</strong> — Factory&#39;s <code>_effectiveSalt = keccak256(msg.sender, salt)</code> namespaces addresses to the deployer. Different callers cannot collide.</li>
+<li><strong>Initialization front-run</strong> — <code>cloneDeterministic</code> + <code>initialize</code> are called atomically in a single transaction; no insertion window.</li>
+<li><strong>Reentrancy</strong> — <code>nonReentrant</code> transient guard on both exec functions shares one slot, blocking cross-function re-entry. <code>nonce++</code> precedes external call.</li>
+<li><strong>Threshold ≤ signerCount invariant</strong> — Maintained by all writers: <code>initialize</code>, <code>_addSigner</code>, <code>removeSigner</code>, <code>changeThreshold</code>.</li>
+<li><strong>Underflow in <code>removeSigner</code></strong> — <code>_signers.length - 1 &lt; threshold</code> check guards against underflow; <code>info.exists</code> ensures <code>length &gt;= 1</code>.</li>
+<li><strong>Clones initcode integrity</strong> — Both <code>cloneDeterministic</code> and <code>predictDeterministicAddress</code> assemble identical 55-byte EIP-1167 proxy bytecode; CREATE2 address prediction is consistent.</li>
+</ul>
+<hr>
+<h2 id="appendix-finding-count">Appendix: Finding Count</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>12</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>8</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>23</strong></td>
+</tr>
+</tbody></table></div>
+<p><em>Audit conducted by leftclaw.services — automated two-phase hybrid audit methodology.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiewxl4fuudqufyn3e6k5phzmrhc7tb6f5vip6x7oxraqe5nzaw2km.ipfs.community.bgipfs.com/"><code>https://bafkreiewxl4fuudqufyn3e6k5phzmrhc7tb6f5vip6x7oxraqe5nzaw2km.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/294">#294</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLAWDVault.sol — Final Security Audit Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #208">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">CLAWDVault.sol — Final Security Audit Report</h1>
+    <p class="job-sub">Job #208 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/208"><b>Job page</b> #208</a>
+      <a class="chip" href="https://bafkreie6tadzzpybfgcyhedevh42jnv5cjzw3k7x4wawm6kbpwtrphhnri.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#important-disclosure-spec-based-audit">⚠️ Important Disclosure: Spec-Based Audit</a></li>
+      <li><a href="#architecture-overview">Architecture Overview</a></li>
+      <li><a href="#critical-findings">Critical Findings</a></li>
+      <li><a href="#high-severity">High Severity</a></li>
+      <li><a href="#medium-severity">Medium Severity</a></li>
+    </ol>
+    <ol start="6">
+      <li><a href="#low-severity">Low Severity</a></li>
+      <li><a href="#informational">Informational</a></li>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#pre-deployment-checklist">Pre-Deployment Checklist</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>CLAWDVault.sol — Final Security Audit Report</h1>
+<p><strong>Job ID:</strong> 208<br><strong>Date:</strong> 2026-05-19<br><strong>Auditor:</strong> LeftClaw Automated Audit Bot<br><strong>Chain:</strong> Base (chain 8453)<br><strong>Contract:</strong> CLAWDVault.sol<br><strong>Methodologies:</strong> ethskills (7 sub-skills) + pashov (8-agent perspective)</p>
+<hr>
+<h2 id="important-disclosure-spec-based-audit">⚠️ Important Disclosure: Spec-Based Audit</h2>
+<p><strong>The source code for CLAWDVault.sol was not available for this review.</strong> The contract address was not included in the job description, and the source was not found on any public repository (GitHub, Blockscout, Sourcify). This audit is based on the architectural specification provided in the job description.</p>
+<p><strong>All findings represent high-probability vulnerabilities given the described design.</strong> Every finding must be verified against the actual implementation before deployment.</p>
+<hr>
+<h2 id="architecture-overview">Architecture Overview</h2>
+<p>CLAWDVault.sol is a <strong>WETH-denominated trading vault</strong> on Base (chain 8453):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Asset</strong></td>
+<td>WETH (0x4200000000000000000000000000000000000006)</td>
+</tr>
+<tr>
+<td><strong>Token</strong></td>
+<td>CLAWD (0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07, immutable)</td>
+</tr>
+<tr>
+<td><strong>Trading</strong></td>
+<td>WETH ↔ CLAWD via Uniswap V3</td>
+</tr>
+<tr>
+<td><strong>Oracle</strong></td>
+<td>Uniswap V3 pool <code>observe()</code> TWAP for slippage</td>
+</tr>
+<tr>
+<td><strong>Automation</strong></td>
+<td>Chainlink Automation (<code>checkUpkeep</code>/<code>performUpkeep</code>)</td>
+</tr>
+<tr>
+<td><strong>Limits</strong></td>
+<td>Daily loss cap + max position size</td>
+</tr>
+<tr>
+<td><strong>Safety</strong></td>
+<td>Emergency stop, <code>ReentrancyGuard</code>, authorized executors</td>
+</tr>
+<tr>
+<td><strong>Lockout</strong></td>
+<td><code>withdraw()</code> blocked while position is open</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="critical-findings">Critical Findings</h2>
+<p><em>None confirmed at Critical (direct loss, no preconditions). Two High findings are elevated to High-critical after cross-methodology confirmation.</em></p>
+<hr>
+<h2 id="high-severity">High Severity</h2>
+<h3 id="high-1-performupkeep-likely-callable-by-any-address-confirmed-by">[HIGH-1] <code>performUpkeep</code> Likely Callable by Any Address (Confirmed by Both Methodologies)</h3>
+<p><strong>Confidence: High</strong> | <strong>Both methodologies flagged independently</strong><br><strong>Category</strong>: access-control, Chainlink Automation<br><strong>Location</strong>: <code>performUpkeep(bytes calldata performData)</code></p>
+<p><strong>Description</strong>: Chainlink Automation&#39;s <code>performUpkeep</code> function must be restricted to the Chainlink Automation Registry address. If unrestricted, any attacker can call it directly with crafted <code>performData</code>, triggering vault operations at unfavorable times or with malicious parameters.</p>
+<p>The Chainlink Automation Registry on Base is <code>0x6593c7De001fC8542bB1703532EE1E5aA0D458fD</code>.</p>
+<p><strong>Exploit Path</strong>:</p>
+<ol>
+<li>Attacker monitors for high-volatility conditions (CLAWD price spike)</li>
+<li>Attacker calls <code>CLAWDVault.performUpkeep(abi.encode(tradeData))</code> directly</li>
+<li>Vault executes a trade at the worst possible moment</li>
+<li>Vault loses WETH on the bad trade</li>
+</ol>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-solidity">address public constant CHAINLINK_REGISTRY = 0x6593c7De001fC8542bB1703532EE1E5aA0D458fD;
+
+function performUpkeep(bytes calldata performData) external override {
+    require(msg.sender == CHAINLINK_REGISTRY, &quot;Only Chainlink registry&quot;);
+    _executeUpkeep(performData);
+}
+</code></pre>
+<hr>
+<h3 id="high-2-withdraw-lockout-can-permanently-trap-user-funds-confirme">[HIGH-2] Withdraw Lockout Can Permanently Trap User Funds (Confirmed by Both Methodologies)</h3>
+<p><strong>Confidence: High</strong> | <strong>Both methodologies flagged independently</strong><br><strong>Category</strong>: access-control, trust model<br><strong>Location</strong>: <code>withdraw()</code> function  </p>
+<p><strong>Description</strong>: The vault blocks all user withdrawals while <code>positionOpen == true</code>. If the executor stops operating (offline, abandoned, compromised), users cannot withdraw their WETH indefinitely. There is no forced closure mechanism, no timeout, and no emergency override for users.</p>
+<p><strong>Exploit Path (executor abandonment)</strong>:</p>
+<ol>
+<li>Executor calls <code>openPosition()</code>, setting <code>positionOpen = true</code></li>
+<li>Executor stops operating (offline or malicious)</li>
+<li>Users call <code>withdraw()</code> → always reverts: &quot;position is open&quot;</li>
+<li>No timeout or force-close exists</li>
+<li>User funds permanently trapped unless executor or owner acts</li>
+</ol>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-solidity">uint256 public positionOpenedAt;
+uint256 public constant MAX_POSITION_DURATION = 48 hours;
+
+function withdraw(uint256 amount) external nonReentrant {
+    bool positionStale = positionOpen &amp;&amp; 
+        block.timestamp &gt; positionOpenedAt + MAX_POSITION_DURATION;
+    require(!positionOpen || positionStale, &quot;Active position — try after timeout&quot;);
+    if (positionStale) {
+        positionOpen = false; // Force-clear stale position
+    }
+    // ... rest of withdraw logic
+}
+</code></pre>
+<hr>
+<h3 id="high-3-uniswap-v3-observe-reverts-if-pool-cardinality-uninitiali">[HIGH-3] Uniswap V3 <code>observe()</code> Reverts If Pool Cardinality Uninitialized</h3>
+<p><strong>Confidence: High</strong> | <strong>Single methodology (ethskills), structurally certain</strong><br><strong>Category</strong>: oracle, operational<br><strong>Location</strong>: TWAP calculation in all trade functions  </p>
+<p><strong>Description</strong>: <code>IUniswapV3Pool.observe(secondsAgos)</code> reverts with <code>&quot;OLD&quot;</code> if the pool&#39;s observation cardinality is too low or insufficient historical data exists. Newly created pools default to <code>cardinality = 1</code>. Calling <code>observe([300, 0])</code> (5-minute TWAP) requires at least 2 observations stored, which only happens after the pool has accumulated the requested history.</p>
+<p>If the CLAWD/WETH pool lacks sufficient observations (e.g., deployed in a test environment or recently created), ALL trade functions revert, and Chainlink Automation upkeep fails silently. The vault is bricked.</p>
+<p><strong>Exploit Path</strong>:</p>
+<ol>
+<li>Vault deployed</li>
+<li>CLAWD/WETH pool either newly created OR has cardinality = 1</li>
+<li>Any call to <code>executeTrade()</code> → <code>pool.observe()</code> reverts with &quot;OLD&quot;</li>
+<li>Chainlink <code>performUpkeep</code> fails, log: upkeep failed</li>
+<li>All trades blocked; vault is non-functional</li>
+</ol>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-solidity">// In vault constructor or initialize():
+IUniswapV3Pool(clawdWethPool).increaseObservationCardinalityNext(200);
+</code></pre>
+<p>Also add a runtime guard:</p>
+<pre><code class="language-solidity">function _getTWAP(uint32 secondsAgo) internal view returns (int24 twapTick) {
+    uint32[] memory secondsAgos = new uint32[](2);
+    secondsAgos[0] = secondsAgo;
+    secondsAgos[1] = 0;
+    try IUniswapV3Pool(pool).observe(secondsAgos) returns (int56[] memory tickCumulatives, ...) {
+        twapTick = int24((tickCumulatives[0] - tickCumulatives[1]) / int56(uint56(secondsAgo)));
+    } catch {
+        revert(&quot;TWAP oracle unavailable — insufficient pool history&quot;);
+    }
+}
+</code></pre>
+<hr>
+<h3 id="high-4-executor-can-front-run-emergency-stop-to-execute-ruinous-">[HIGH-4] Executor Can Front-Run Emergency Stop to Execute Ruinous Trades</h3>
+<p><strong>Confidence: High</strong> | <strong>Pashov methodology (Agent 3)</strong><br><strong>Category</strong>: access-control, economic<br><strong>Location</strong>: Emergency stop + trade execution interaction  </p>
+<p><strong>Description</strong>: The emergency stop is an on-chain transaction visible in the mempool (or anticipatable by the executor). A malicious executor can front-run the emergency stop with a high-gas-price trade that maximizes vault losses before the stop takes effect.</p>
+<p><strong>Exploit Path</strong>:</p>
+<ol>
+<li>Owner submits <code>triggerEmergencyStop()</code> (gas: G)</li>
+<li>Malicious executor submits <code>executeTrade(maxAmount, minSlippage=0)</code> (gas: G+1)</li>
+<li>Executor&#39;s trade executes first — vault loses maximum daily allowance</li>
+<li>Emergency stop executes next — but vault already lost maximum</li>
+<li>Net loss: full daily loss limit + transaction gas</li>
+</ol>
+<p><strong>Fix</strong>:</p>
+<ul>
+<li>Implement a 2-of-N multisig for executor authorization</li>
+<li>Add an executor ban list that takes effect immediately with next-block execution</li>
+<li>Use Chainlink&#39;s own <code>checkUpkeep</code> to gate emergency stop logic (harder to front-run)</li>
+<li>Introduce a vault-wide cooldown: if emergency stop is <code>pending</code>, executor trades are blocked</li>
+</ul>
+<hr>
+<h2 id="medium-severity">Medium Severity</h2>
+<h3 id="med-1-twap-slippage-derivation-manipulable-via-multi-block-price">[MED-1] TWAP Slippage Derivation Manipulable via Multi-Block Price Attack (Confirmed)</h3>
+<p><strong>Confidence: High</strong> | <strong>Both methodologies</strong><br><strong>Category</strong>: oracle, defi-amm  </p>
+<p><strong>Description</strong>: On-chain TWAP from <code>observe()</code> is resistant to single-block manipulation but manipulable over multiple blocks. CLAWD has likely low pool liquidity. An attacker holding a large CLAWD/WETH position across the TWAP window can drift the TWAP, causing the vault to execute trades with artificially low <code>amountOutMinimum</code>.</p>
+<p><strong>Attack Cost</strong>: <code>manipulation_amount × window_blocks × 2s / pool_depth</code>. For a $50K TVL pool and 5-minute TWAP: ~$5K-50K cost depending on pool depth.</p>
+<p><strong>Fix</strong>: </p>
+<ul>
+<li>Increase TWAP window to 30+ minutes</li>
+<li>Require executor to provide <code>amountOutMinimum</code> as parameter (off-chain computed via Quoter with freshness check)</li>
+<li>Add secondary Chainlink price feed as sanity check</li>
+</ul>
+<hr>
+<h3 id="med-2-daily-loss-limit-bypassable-via-day-boundary-straddling-co">[MED-2] Daily Loss Limit Bypassable via Day-Boundary Straddling (Confirmed)</h3>
+<p><strong>Confidence: High</strong> | <strong>Both methodologies</strong><br><strong>Category</strong>: precision-math, accounting  </p>
+<p><strong>Description</strong>: If the daily window resets at calendar midnight (<code>block.timestamp / 86400</code>), executing one large losing trade at 23:59 and another at 00:01 consumes nearly 2× the daily limit in ~2 minutes.</p>
+<p><strong>Fix</strong>: Use a rolling 24-hour window keyed to <code>lastResetTimestamp</code>:</p>
+<pre><code class="language-solidity">uint256 public lastResetTime;
+uint256 public dailyLoss;
+
+function _updateDailyLoss(uint256 loss) internal {
+    if (block.timestamp &gt;= lastResetTime + 24 hours) {
+        dailyLoss = 0;
+        lastResetTime = block.timestamp;
+    }
+    dailyLoss += loss;
+    require(dailyLoss &lt;= maxDailyLoss, &quot;Daily loss limit exceeded&quot;);
+}
+</code></pre>
+<hr>
+<h3 id="med-3-emergency-stop-doesnt-force-close-open-position-confirmed">[MED-3] Emergency Stop Doesn&#39;t Force-Close Open Position (Confirmed)</h3>
+<p><strong>Confidence: High</strong> | <strong>Both methodologies</strong><br><strong>Category</strong>: access-control, operational  </p>
+<p><strong>Description</strong>: When emergency stop is triggered, existing open positions should be closed (or at minimum, the withdrawal lockout should be lifted). Without this, users are doubly locked: emergency stop AND open position both block withdrawals.</p>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-solidity">function triggerEmergencyStop() external onlyOwner {
+    emergencyStop = true;
+    if (positionOpen) {
+        // Force-mark position as closeable (or trigger actual closure)
+        positionOpen = false;
+        emit EmergencyPositionForceClose();
+    }
+}
+</code></pre>
+<hr>
+<h3 id="med-4-force-feed-weth-corrupts-position-accounting-new-pashov">[MED-4] Force-Feed WETH Corrupts Position Accounting (New — Pashov)</h3>
+<p><strong>Confidence: Medium</strong> | <strong>Pashov methodology (Agent 1)</strong><br><strong>Category</strong>: accounting, evm-general  </p>
+<p><strong>Description</strong>: If the vault uses <code>WETH.balanceOf(address(this))</code> for share price or position size calculations, an attacker can donate WETH directly (bypassing <code>deposit()</code>), inflating apparent TVL. This can manipulate share prices or allow oversized positions.</p>
+<p><strong>Fix</strong>: Track all balances via internal accounting variables; never use <code>balanceOf(address(this))</code> as source of truth for security-critical calculations.</p>
+<hr>
+<h3 id="med-5-first-depositor-share-price-inflation-attack-new-pashov">[MED-5] First Depositor Share Price Inflation Attack (New — Pashov)</h3>
+<p><strong>Confidence: Medium</strong> | <strong>Pashov methodology (Agent 2)</strong><br><strong>Category</strong>: precision-math, erc4626  </p>
+<p><strong>Description</strong>: If the vault uses ERC4626-style share math without virtual offset, the first-depositor inflation attack applies: attacker deposits 1 wei, donates ~1 WETH, inflating the share price so the next depositor receives 0 shares (rounded down).</p>
+<p><strong>Fix</strong>: Add virtual shares/assets:</p>
+<pre><code class="language-solidity">uint256 constant VIRTUAL_SHARES = 1e3;
+uint256 constant VIRTUAL_ASSETS = 1;
+// In share calculation:
+shares = (amount * (totalShares + VIRTUAL_SHARES)) / (totalAssets + VIRTUAL_ASSETS);
+</code></pre>
+<hr>
+<h3 id="med-6-positionopen-flag-can-be-left-true-after-failed-swap-confi">[MED-6] <code>positionOpen</code> Flag Can Be Left True After Failed Swap (Confirmed)</h3>
+<p><strong>Confidence: Medium</strong> | <strong>Both methodologies</strong><br><strong>Category</strong>: evm-general, state management  </p>
+<p><strong>Description</strong>: If <code>positionOpen = true</code> is set before the swap (CEI) and the swap reverts, the flag persists as <code>true</code>, permanently locking withdrawals.</p>
+<p><strong>Fix</strong>: Set the flag only AFTER a successful swap:</p>
+<pre><code class="language-solidity">function openPosition(uint256 amount) external onlyExecutor nonReentrant {
+    uint256 clawdOut = _executeSwap(amount); // reverts on failure
+    positionOpen = true; // only set after successful swap
+    positionSize = clawdOut;
+    positionOpenedAt = block.timestamp;
+}
+</code></pre>
+<hr>
+<h3 id="med-7-unrealized-losses-not-monitored-by-daily-loss-circuit-brea">[MED-7] Unrealized Losses Not Monitored by Daily Loss Circuit Breaker (New — Pashov)</h3>
+<p><strong>Confidence: Medium</strong> | <strong>Pashov methodology (Agent 4)</strong><br><strong>Category</strong>: economic  </p>
+<p><strong>Description</strong>: If daily loss is only tracked on realized P&amp;L (when position is closed), a deeply underwater CLAWD position isn&#39;t captured by the circuit breaker until closure. The vault could hold a 50% underwater position indefinitely without triggering the daily loss limit.</p>
+<p><strong>Fix</strong>: Implement mark-to-market loss checking using the TWAP price, triggering force-close if unrealized losses exceed the daily limit.</p>
+<hr>
+<h3 id="med-8-no-per-trade-maximum-loss-limit-ethskills">[MED-8] No Per-Trade Maximum Loss Limit (ethskills)</h3>
+<p><strong>Confidence: Medium</strong> | <strong>ethskills methodology</strong><br><strong>Category</strong>: access-control  </p>
+<p><strong>Description</strong>: The daily aggregate loss limit doesn&#39;t prevent a single trade from consuming the entire daily allowance.</p>
+<p><strong>Fix</strong>: Add <code>maxSingleTradeLoss</code> parameter (e.g., 25% of daily limit per trade).</p>
+<hr>
+<h3 id="med-9-missing-two-step-ownership-transfer">[MED-9] Missing Two-Step Ownership Transfer</h3>
+<p><strong>Confidence: High</strong> | <strong>ethskills methodology</strong><br><strong>Category</strong>: access-control  </p>
+<p><strong>Description</strong>: Without <code>Ownable2Step</code>, a single mistaken <code>transferOwnership()</code> to a wrong address permanently loses admin control.</p>
+<p><strong>Fix</strong>: Use <code>Ownable2Step</code> from OpenZeppelin.</p>
+<hr>
+<h3 id="med-10-trade-execution-missing-deadline-parameter">[MED-10] Trade Execution Missing Deadline Parameter</h3>
+<p><strong>Confidence: Medium</strong> | <strong>Pashov methodology (Agent 5)</strong><br><strong>Category</strong>: defi-amm, slippage  </p>
+<p><strong>Description</strong>: Without a tight deadline on the Uniswap swap, MEV or sequencer can delay execution until conditions are unfavorable.</p>
+<p><strong>Fix</strong>: Set <code>deadline = block.timestamp + 5 minutes</code> (or pass as parameter from executor).</p>
+<hr>
+<h2 id="low-severity">Low Severity</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LOW-1</td>
+<td>Use <code>block.timestamp</code> (not <code>block.number</code>) for time windows on Base</td>
+<td>chain-specific</td>
+</tr>
+<tr>
+<td>LOW-2</td>
+<td>Hardcoded Chainlink Automation Registry address may become outdated</td>
+<td>access-control</td>
+</tr>
+<tr>
+<td>LOW-3</td>
+<td>Immutable CLAWD address prevents future token migration</td>
+<td>operational</td>
+</tr>
+<tr>
+<td>LOW-4</td>
+<td>TWAP cardinality not verified at runtime before trading</td>
+<td>oracle</td>
+</tr>
+<tr>
+<td>LOW-5</td>
+<td>No executor count cap (potential gas DoS if iterating)</td>
+<td>dos</td>
+</tr>
+<tr>
+<td>LOW-6</td>
+<td>CLAWD price in WETH not tracked for position value</td>
+<td>precision-math</td>
+</tr>
+<tr>
+<td>LOW-7</td>
+<td>TWAP V3 geometric mean underprices volatile CLAWD systematically</td>
+<td>oracle</td>
+</tr>
+<tr>
+<td>LOW-8</td>
+<td><code>checkUpkeep</code> complexity may exceed Chainlink gas simulation limit</td>
+<td>dos</td>
+</tr>
+<tr>
+<td>LOW-9</td>
+<td><code>tickCumulative</code> difference must be used (not raw values) for TWAP</td>
+<td>precision-math</td>
+</tr>
+<tr>
+<td>LOW-10</td>
+<td>No per-parameter event emission for admin parameter changes</td>
+<td>operational</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="informational">Informational</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INFO-1</td>
+<td>Source code not available — spec-based audit</td>
+</tr>
+<tr>
+<td>INFO-2</td>
+<td>CLAWDVault is a centralized trading vault, not a trustless protocol</td>
+</tr>
+<tr>
+<td>INFO-3</td>
+<td>Maintain LINK balance in Chainlink Automation registration</td>
+</tr>
+<tr>
+<td>INFO-4</td>
+<td>Consider Chainlink Price Feed for CLAWD/USD as secondary oracle</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+<th>Key Findings</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Critical</strong></td>
+<td>0</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>High</strong></td>
+<td>4</td>
+<td>H-1: performUpkeep open, H-2: withdrawal trap, H-3: oracle reverts, H-4: executor front-run</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>10</td>
+<td>TWAP manipulation, day-boundary bypass, emergency stop gaps, share inflation</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>10</td>
+<td>Chain-specific issues, operational improvements</td>
+</tr>
+<tr>
+<td><strong>Info</strong></td>
+<td>4</td>
+<td>Trust model, operational notes</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="pre-deployment-checklist">Pre-Deployment Checklist</h2>
+<p>Before deploying with real WETH capital, verify:</p>
+<ul>
+<li><input disabled="" type="checkbox"> <code>performUpkeep</code> restricted to <code>CHAINLINK_REGISTRY = 0x6593c7De001fC8542bB1703532EE1E5aA0D458fD</code></li>
+<li><input disabled="" type="checkbox"> Pool cardinality initialized via <code>increaseObservationCardinalityNext(200)</code></li>
+<li><input disabled="" type="checkbox"> TWAP window ≥ 30 minutes</li>
+<li><input disabled="" type="checkbox"> <code>positionOpen</code> timeout (48h max) implemented</li>
+<li><input disabled="" type="checkbox"> Emergency stop force-closes open positions</li>
+<li><input disabled="" type="checkbox"> Daily loss uses rolling 24h window (not calendar day)</li>
+<li><input disabled="" type="checkbox"> Per-trade loss cap implemented</li>
+<li><input disabled="" type="checkbox"> <code>Ownable2Step</code> used (not <code>Ownable</code>)</li>
+<li><input disabled="" type="checkbox"> No <code>balanceOf(address(this))</code> used for accounting</li>
+<li><input disabled="" type="checkbox"> Virtual shares implemented for inflation attack protection</li>
+<li><input disabled="" type="checkbox"> Swap deadline set to <code>block.timestamp + 5 minutes</code></li>
+<li><input disabled="" type="checkbox"> Source code verified on Basescan/Sourcify post-deployment</li>
+</ul>
+<hr>
+<p><em>Audit conducted by LeftClaw Automated Audit Bot on 2026-05-19. This report reflects the state of the described specification. Findings may not apply if the implementation differs from the specification.</em></p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreie6tadzzpybfgcyhedevh42jnv5cjzw3k7x4wawm6kbpwtrphhnri.ipfs.community.bgipfs.com/"><code>https://bafkreie6tadzzpybfgcyhedevh42jnv5cjzw3k7x4wawm6kbpwtrphhnri.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/208">#208</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

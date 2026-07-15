@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FWA / FWAToken — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #332">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">FWA / FWAToken</h1>
+    <p class="job-sub">Job #332 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/332"><b>Job page</b> #332</a>
+      <a class="chip" href="https://bafkreihfwys2s2o33ole6icksr36w7f3bbh4cdqpgxmh6l5chph6vocjaq.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">3</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">4</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">3</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings-summary">Findings Summary</a></li>
+      <li><a href="#1-deposit-during-vrf-flight-window-force-refunds-pending-acquisi">[1] Deposit during VRF flight window force-refunds pending acquisitions (griefing DoS)</a></li>
+      <li><a href="#2-jitflash-deposit-capture-of-buybacks-depositor-token-injection">[2] JIT/flash-deposit capture of buyback&#39;s depositor token injection</a></li>
+      <li><a href="#3-fwatokenbuyback-has-no-slippage-protection-permissionless-sand">[3] FWAToken.buyback() has no slippage protection — permissionless, sandwichable</a></li>
+      <li><a href="#4-owner-can-seize-up-to-100-of-an-allocated-listings-escrowed-ba">[4] Owner can seize up to 100% of an allocated listing&#39;s escrowed backing</a></li>
+      <li><a href="#5-ownerdistributors-bypass-fwatokens-transfer-lock">[5] Owner/distributors bypass FWAToken&#39;s transfer lock</a></li>
+    </ol>
+    <ol start="8">
+      <li><a href="#6-owner-can-redirect-buyback-proceeds-via-unconstrained-setpool">[6] Owner can redirect buyback proceeds via unconstrained setPool</a></li>
+      <li><a href="#7-withdrawlisting-strict-nft-transfer-can-strand-a-depositors-et">[7] withdrawListing strict NFT transfer can strand a depositor&#39;s ETH + NFT</a></li>
+      <li><a href="#8-buyback-pays-caller-bounty-even-on-a-zero-output-swap">[8] buyback() pays caller bounty even on a zero-output swap</a></li>
+      <li><a href="#9-inverse-weight-formula-has-no-minbacking-floor-by-default">[9] Inverse-weight formula has no minBacking floor by default</a></li>
+      <li><a href="#10-partial-fill-swaps-can-strand-purchaser-eth">[10] Partial-fill swaps can strand purchaser ETH</a></li>
+      <li><a href="#low-info-single-source-items-not-independently-corroborated-incl">Low / Info — Single-source items (not independently corroborated, included for completeness)</a></li>
+      <li><a href="#what-was-checked-and-found-sound">What was checked and found sound</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — FWA / FWAToken</h1>
+<p><strong>Target</strong>: <code>0x6596170e4cF89C7b390637E97531FD0aC28a6322</code> (Ethereum mainnet)<br><strong>Methodology</strong>: Two-phase audit — Phase 1 breadth (8 ethskills domain checklists) → Phase 2 depth (12 pashov attacker-mindset agents, run blind to Phase 1) → hybrid reconciliation with targeted source re-verification of every phase-unique finding.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Default — all in-scope <code>.sol</code>, excluding <code>lib/</code></td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>src/FWA.sol</code> (2,290 lines) · <code>src/FWAToken.sol</code> (428 lines)</td>
+</tr>
+<tr>
+<td><strong>Out of scope</strong></td>
+<td>Solady, Uniswap v4-core/v4-periphery, Chainlink VRF wrapper (library code, read only to confirm assumptions); the FWATokenHook contract referenced by <code>FWAToken</code> is <strong>not in this repo</strong> and could not be audited — several findings below note where correctness depends on it</td>
+</tr>
+<tr>
+<td><strong>Total findings</strong></td>
+<td>2 High, 4 Medium, 6 Low, 8 Info (post-dedup, both phases combined)</td>
+</tr>
+</tbody></table></div>
+<p>FWA is a randomized NFT acquisition pool: depositors list an ERC721 backed by ETH; purchasers pay an EV-priced fee for a Chainlink VRF draw that allocates a listing weighted inversely to its backing. FWAToken is a transfer-locked, fixed-supply ERC20 that funds a permissionless on-pool buyback, both contracts driving a single Uniswap v4 ETH/FWAToken pool directly via <code>IUnlockCallback</code>.</p>
+<p><strong>Reconciliation summary</strong>: Phase 1 (8 domain agents) and Phase 2 (12 attacker-mindset agents, blind) were run independently. Overlap: 4 distinct root-cause findings corroborated by both phases (in several cases by 4–6 independent agents each, with independently-derived numeric proofs). Phase-1-only: 4 findings (all owner-trust/access-control items, confirmed via targeted source re-read in this synthesis). Phase-2-only: 1 novel finding (JIT buyback-reward capture) not surfaced by any Phase 1 checklist — confirmed via targeted source re-read. All phase-unique findings were re-examined against source directly before inclusion below; none were dropped.</p>
+<hr>
+<h2 id="findings-summary">Findings Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><span class="pill high">High</span></td>
+<td>Deposit during VRF flight window force-refunds pending acquisitions (griefing DoS)</td>
+<td><strong>[both]</strong> — 2 phase-1 agents, 4 phase-2 agents</td>
+</tr>
+<tr>
+<td>2</td>
+<td><span class="pill high">High</span></td>
+<td>JIT/flash-deposit capture of buyback&#39;s depositor token injection</td>
+<td><strong>[phase2 only]</strong> — 3 independent agents</td>
+</tr>
+<tr>
+<td>3</td>
+<td><span class="pill high">High</span></td>
+<td><code>FWAToken.buyback()</code> has no slippage protection — permissionless, sandwichable</td>
+<td><strong>[both]</strong> — 2 phase-1 agents, 3 phase-2 agents</td>
+</tr>
+<tr>
+<td>4</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Owner can seize up to 100% of an allocated listing&#39;s escrowed backing</td>
+<td><strong>[phase1 only]</strong> — 2 agents; re-verified</td>
+</tr>
+<tr>
+<td>5</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Owner/distributors bypass FWAToken&#39;s transfer lock</td>
+<td><strong>[phase1 only]</strong> — 1 agent; re-verified</td>
+</tr>
+<tr>
+<td>6</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Owner can redirect buyback proceeds via unconstrained <code>setPool</code></td>
+<td><strong>[phase1 only]</strong> — 1 agent; re-verified</td>
+</tr>
+<tr>
+<td>7</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>withdrawListing</code> strict NFT transfer can strand a depositor&#39;s ETH + NFT</td>
+<td><strong>[both]</strong> — 2 phase-1 agents, 2 phase-2 agents</td>
+</tr>
+<tr>
+<td>8</td>
+<td><span class="pill low">Low</span></td>
+<td><code>buyback()</code> pays caller bounty even on a zero-output swap</td>
+<td><strong>[both]</strong> — 2 phase-1 agents</td>
+</tr>
+<tr>
+<td>9</td>
+<td><span class="pill low">Low</span></td>
+<td>Inverse-weight formula / harmonic-mean pricing has no <code>minBacking</code> floor by default</td>
+<td><strong>[both]</strong> — root cause of #1, #9 informational restatement</td>
+</tr>
+<tr>
+<td>10</td>
+<td><span class="pill low">Low</span></td>
+<td>Partial-fill swaps can strand purchaser ETH (allowance debited before fill confirmed)</td>
+<td><strong>[phase2 only]</strong> — 5 independent leads on the same mechanism</td>
+</tr>
+<tr>
+<td>11</td>
+<td><span class="pill low">Low</span></td>
+<td>Single-step <code>Ownable</code>, no forced 2-step handover</td>
+<td><strong>[phase1 only]</strong></td>
+</tr>
+<tr>
+<td>12</td>
+<td><span class="pill low">Low</span></td>
+<td><code>setSurchargeBps</code> uncapped; <code>setOwnerAcquisitionFeeBps</code> capped only at 100%</td>
+<td><strong>[phase1 only]</strong></td>
+</tr>
+<tr>
+<td>13</td>
+<td><span class="pill low">Low</span></td>
+<td>No timelock on any owner parameter; changes apply retroactively to in-flight positions</td>
+<td><strong>[phase1 only]</strong></td>
+</tr>
+<tr>
+<td>—</td>
+<td><span class="pill info">Info</span></td>
+<td>8 additional informational items (L2 block-window calibration, dead storage, non-standard NFT compatibility, uncontested top-slot seizure, flat-fee Sybil farming, accumulator-overflow lead at extreme values, etc.)</td>
+<td>see Appendix</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="1-deposit-during-vrf-flight-window-force-refunds-pending-acquisi">[1] Deposit during VRF flight window force-refunds pending acquisitions (griefing DoS)</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Location</strong>: <code>listNFT()</code> (FWA.sol:717-754), <code>fulfillRandomWords()</code> slippage branch (FWA.sol:1175-1214), <code>acquisitionFee()</code> (FWA.sol:1015)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1: precision-math (P-1, Low), oracles-vrf (O-1, High). Phase 2: economic-security, execution-trace, invariant, asymmetry (4 independent FINDINGS, with independently-derived numeric proofs).</p>
+<p><strong>Description</strong>: <code>listNFT</code> deposits are deliberately exempt from the <code>withdrawLockBlocks</code> gate that protects withdrawals — the code comment states &quot;Deposits are otherwise always allowed, even with acquisitions in flight: pool growth never invalidates an acquisition.&quot; This is incorrect. <code>acquisitionFee()</code> is the harmonic mean of all active listings&#39; backing (<code>weightedBackingTotal / totalWeight</code>), and <code>fulfillRandomWords</code> re-checks this <strong>live</strong> value against the fee escrowed at request time, with only a ±5% (<code>selectionSlippageBps</code>) tolerance:</p>
+<pre><code class="language-solidity">// FWA.sol:1203-1210
+uint256 liveFee = acquisitionFee();
+uint256 escrowed = acquisition.priceEscrowed;
+uint256 tolerance = escrowed * selectionSlippageBps / BPS;
+if (liveFee &gt; escrowed + tolerance || liveFee + tolerance &lt; escrowed) {
+    acquisition.status = AcquisitionStatus.Refunded;
+    if (escrowed != 0) SafeTransferLib.forceSafeTransferETH(acquisition.purchaser, escrowed);
+    emit AcquisitionRefundedSlippage(requestId, acquisition.purchaser, escrowed, escrowed, liveFee);
+    return;
+}
+</code></pre>
+<p>Because <code>minBacking</code> defaults to <code>0</code> (FWA.sol:256) and deposits are unlocked, any address can deposit a below-pool-average listing at any moment — including inside the ~3-block Chainlink VRF confirmation window between a victim&#39;s <code>acquire()</code> and its callback — and collapse or spike the live fee past the 5% band.</p>
+<p><strong>Proof of Concept</strong> (from the asymmetry agent, independently re-derived by 3 other agents):</p>
+<ol>
+<li>Pool holds one listing backed 10 ETH → <code>acquisitionFee()</code> ≈ 11 ETH (10 ETH EV × 1.1 surcharge).</li>
+<li>Victim calls <code>acquire()</code>, escrowing ~11 ETH and paying the non-refundable Chainlink native VRF fee. A VRF request opens.</li>
+<li>Within the confirmation window, attacker calls <code>listNFT{value: 0.001 ether}(whitelistedCollection, tokenId)</code>. New <code>weightedBackingTotal ≈ 2e36</code>, <code>totalWeight ≈ 1e21</code> → live EV collapses to ≈ 0.002 ETH — a &gt;99% drift, ~20x past the 5% tolerance.</li>
+<li>VRF callback lands, sees <code>liveFee + tolerance &lt; escrowed</code>, and refunds the victim&#39;s escrowed fee via <code>AcquisitionRefundedSlippage</code>. <strong>No listing is allocated.</strong> The victim&#39;s non-refundable VRF fee is gone with nothing received.</li>
+<li>Attacker withdraws the dust listing (and backing) after the short lock elapses. Cost: gas + one whitelisted NFT + trivial recoverable backing. Repeatable against every subsequent acquisition in any pool where a single deposit can move the harmonic mean &gt;5% — true for any pool of roughly ≤19 listings of similar size, and easily achievable in larger pools with a correspondingly larger (but still fully recoverable) deposit.</li>
+</ol>
+<p>The guard is two-sided, so an oversized deposit can equally spike the live fee upward past tolerance — the attack works in either direction depending on what&#39;s cheapest for the attacker to achieve.</p>
+<p><strong>Recommendation</strong>: Gate <code>listNFT</code> and <code>updateBacking</code> increases with the same <code>withdrawLockBlocks</code> window applied to withdrawals whenever any acquisition is in flight (or globally), so the pool a pending purchaser priced against cannot be altered before their VRF callback lands. Alternatively, make the fulfillment guard one-sided — only refund when the live fee has risen (protecting the purchaser from overpaying), never when it has fallen, since a falling price cannot itself harm the purchaser.</p>
+<hr>
+<h2 id="2-jitflash-deposit-capture-of-buybacks-depositor-token-injection">[2] JIT/flash-deposit capture of buyback&#39;s depositor token injection</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Location</strong>: <code>onTokenReceived()</code> (FWA.sol:1721-1735), <code>claimDepositorTokens()</code> (FWA.sol:1745-1767)<br><strong>Origin</strong>: <code>[phase2 only]</code> — trust-gap, economic-security, flow-gap (3 independent FINDINGS, converging on the identical mechanism from three different attack lenses). Not surfaced by any Phase 1 checklist. Re-verified directly against source in this synthesis.</p>
+<p><strong>Description</strong>: FWAToken&#39;s permissionless <code>buyback()</code> routes a slice of newly-bought FWAToken to FWA via <code>onTokenReceived</code>, which credits depositors through:</p>
+<pre><code class="language-solidity">// FWA.sol:1723-1730
+if (depositorAmt != 0) {
+    if (sqrtBackingTotal == 0) {
+        ITokenBurnable(token).burn(depositorAmt);
+    } else {
+        _advanceToken();
+        accTokenPerSqrt += depositorAmt * SCALE / sqrtBackingTotal; // inject into Mechanism 2
+        emit ProtocolTokensRedistributed(depositorAmt);
+    }
+}
+</code></pre>
+<p>This is an <strong>instantaneous lump-sum</strong> injection weighted by whoever holds <code>√backing</code> <em>at that exact block</em> — architecturally inconsistent with the contract&#39;s own continuous emission stream (<code>_advanceToken</code>), which correctly time-integrates via <code>depositorRatePerSec * dt</code>. Critically, <code>claimDepositorTokens</code> (FWA.sol:1745) has <strong>no withdraw-lock</strong> — it only requires <code>listing.status == Active</code> and <code>listing.depositor == msg.sender</code> — because it doesn&#39;t touch weight or value:</p>
+<pre><code class="language-solidity">// FWA.sol:1747-1750
+function claimDepositorTokens(uint256[] calldata listingIds) external nonReentrant returns (uint256 total) {
+    if (token == address(0)) revert TokenNotConfigured();
+    _advanceToken();
+    for (uint256 i = 0; i &lt; listingIds.length; i++) {
+        ...
+        if (listing.status != ListingStatus.Active) revert ListingNotActive();
+        if (listing.depositor != msg.sender) revert NotDepositor();
+        uint256 pending = _pendingToken(listingId);
+</code></pre>
+<p><strong>Proof of Concept</strong>:</p>
+<ol>
+<li>Honest pool holds one 1 ETH listing (<code>√value ≈ 1e9</code>, contributing to <code>sqrtBackingTotal</code>).</li>
+<li>Attacker calls <code>listNFT{value: 100 ether}(...)</code> — <code>√value ≈ 1e10</code>, now dominating <code>sqrtBackingTotal ≈ 1.1e10</code>.</li>
+<li>Attacker (or anyone) calls <code>FWAToken.buyback()</code> (permissionless, 1-block rate limit) — <code>onTokenReceived</code> injects <code>depositorAmt</code> into <code>accTokenPerSqrt</code> in the same block the attacker&#39;s large deposit is present.</li>
+<li>Attacker&#39;s instantaneous share of the injection ≈ 1e10 / 1.1e10 ≈ <strong>91%</strong>, for roughly zero holding time. Attacker immediately calls <code>claimDepositorTokens([id])</code> — no lock blocks this.</li>
+<li>Attacker calls <code>withdrawListing(id)</code> once the short <code>withdrawLockBlocks</code> window elapses (or immediately, if no recent <code>acquire()</code> has refreshed the lock — a common condition), recovering the 100 ETH principal.</li>
+</ol>
+<p>Because none of steps 2-5 require holding capital across a meaningful time window, this is plausibly executable via a single flash-loaned transaction whenever the withdraw lock is not currently active (i.e., whenever no acquisition has recently been requested) — making the attack effectively capital-free beyond gas and flash-loan fees. Every honest long-term depositor is diluted to near-zero on any buyback the attacker chooses to trigger.</p>
+<p><strong>Recommendation</strong>: Route the buyback-sourced depositor slice through the same time-integrated accumulator used for continuous emission (accrue it into a pending bucket released gradually via <code>depositorRatePerSec</code>-style streaming) rather than crediting it instantaneously against the current <code>sqrtBackingTotal</code>. Alternatively, require a minimum deposit age before <code>claimDepositorTokens</code> can realize tokens accrued from a discrete buyback injection.</p>
+<hr>
+<h2 id="3-fwatokenbuyback-has-no-slippage-protection-permissionless-sand">[3] <code>FWAToken.buyback()</code> has no slippage protection — permissionless, sandwichable</h2>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Location</strong>: <code>FWAToken.buyback()</code> / <code>unlockCallback()</code> (FWAToken.sol:313-350, ~2609-2672 in combined source)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1: defi-amm (H-1, High), erc20 (T-1, Medium). Phase 2: economic-security (FINDING), access-control and boundary (corroborating leads).</p>
+<p><strong>Description</strong>: The buyback swap executes with no output floor and an extreme price limit:</p>
+<pre><code class="language-solidity">// unlockCallback, buyback path
+BalanceDelta d = poolManager.swap(key,
+    SwapParams({zeroForOne: true, amountSpecified: -int256(amountIn), sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1}), &quot;&quot;);
+</code></pre>
+<p>No <code>minOut</code> parameter exists on this path, unlike FWA&#39;s own user-facing buys (<code>claimAccruedTokens</code>, <code>acceptBidAsTokens</code>) which correctly enforce a caller-supplied <code>minOut</code> and revert with <code>SlippageBuy</code> if unmet. <code>buyback()</code> is permissionless, callable by anyone with a 0.5% caller bounty, and the pool runs at <code>POOL_LP_FEE = 0</code> — a sandwicher pays zero fee to bracket each buyback.</p>
+<p><strong>Proof of Concept</strong>: Once external sells are open (post-launch, hook-gated), an attacker can: (1) buy FWAToken from the pool, pushing price up; (2) call (or wait for someone to call) <code>buyback()</code>, which executes its ≤1 ETH slice at the now-inflated price with no floor; (3) sell the FWAToken from step 1 back into the pool at the now-higher price, capturing the price impact the buyback paid — extracted directly from the protocol&#39;s buyback reserve, meaning fewer tokens reach depositors/purchasers/burn than the ETH should have bought. <code>BUYBACK_DELAY_BLOCKS = 1</code> provides negligible protection — the reserve can be drained one slice per block across consecutive blocks.</p>
+<p><strong>Recommendation</strong>: Add a manipulation-resistant <code>minOut</code> to the buyback swap — derive it from an on-chain TWAP over the pool (or a stored/decaying reference price) and revert if <code>amountOut</code> falls short. Increasing <code>BUYBACK_DELAY_BLOCKS</code> alone does not fix this without a price floor.</p>
+<hr>
+<h2 id="4-owner-can-seize-up-to-100-of-an-allocated-listings-escrowed-ba">[4] Owner can seize up to 100% of an allocated listing&#39;s escrowed backing</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Location</strong>: <code>setOwnerSettlementFeeBps()</code> (FWA.sol:2135-2137), <code>setSettlementDiscountBps()</code> (FWA.sol:2116-2120), <code>_settleNFTToPurchaser()</code> (FWA.sol:1443-1464), reachable permissionlessly via <code>finalizeUnsettled()</code> (FWA.sol:1410-1418)<br><strong>Origin</strong>: <code>[phase1 only]</code> — general (G-1) and access-control (AC-1), 2 independent agents. Not flagged by Phase 2&#39;s dedicated access-control agent (which scoped owner-authorized-but-excessive powers as outside its unauthorized-access remit). <strong>Re-verified directly against source in this synthesis — confirmed accurate.</strong></p>
+<p><strong>Description</strong>:</p>
+<pre><code class="language-solidity">// FWA.sol:2135-2137
+function setOwnerSettlementFeeBps(uint256 newOwnerSettlementFeeBps) external onlyOwner {
+    if (newOwnerSettlementFeeBps &gt; settlementDiscountBps) revert InvalidConfig();
+    ownerSettlementFeeBps = newOwnerSettlementFeeBps;
+}
+</code></pre>
+<p>The only bound is <code>&lt;= settlementDiscountBps</code>, which itself can be raised as high as <code>BPS</code> (10,000 = 100%) via <code>setSettlementDiscountBps</code> (bounded only to <code>[MIN_SETTLEMENT_DISCOUNT_BPS=5000, BPS]</code>). In <code>_settleNFTToPurchaser</code>:</p>
+<pre><code class="language-solidity">// FWA.sol:1454-1456
+uint256 ownerCut = value * ownerSettlementFeeBps / BPS;
+toDepositor = value - ownerCut;
+</code></pre>
+<p>This path is reached by <code>finalizeUnsettled</code>, which is <strong>permissionless</strong> and callable by anyone once <code>finalizeWindow</code> has elapsed on an <code>Allocated</code> listing (FWA.sol:1410-1418, confirmed no access modifier beyond the state/timing checks).</p>
+<p><strong>Proof of Concept</strong>: Owner calls <code>setSettlementDiscountBps(10000)</code> then <code>setOwnerSettlementFeeBps(10000)</code>. A depositor&#39;s listing is allocated to a purchaser and left unsettled past <code>finalizeWindow</code>. Anyone calls <code>finalizeUnsettled(listingId)</code> → <code>ownerCut = value</code>, <code>toDepositor = 0</code> — the depositor&#39;s entire escrowed backing accrues to <code>accruedOwnerFees</code> while the NFT still ships to the purchaser.</p>
+<p><strong>Recommendation</strong>: Bound <code>ownerSettlementFeeBps</code> to a small absolute cap independent of <code>settlementDiscountBps</code> (e.g. a few hundred bps, matching the documented ~1% intent), or snapshot fee parameters at allocation time so an already-locked-in listing&#39;s economics cannot be changed retroactively.</p>
+<hr>
+<h2 id="5-ownerdistributors-bypass-fwatokens-transfer-lock">[5] Owner/distributors bypass FWAToken&#39;s transfer lock</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Location</strong>: <code>setDistributor()</code> (FWAToken.sol:183-186), <code>_afterTokenTransfer()</code> (FWAToken.sol:405-421)<br><strong>Origin</strong>: <code>[phase1 only]</code> — access-control (AC-2), 1 agent. <strong>Re-verified directly against source — confirmed accurate.</strong></p>
+<p><strong>Description</strong>:</p>
+<pre><code class="language-solidity">// FWAToken.sol:405-410
+function _afterTokenTransfer(address from, address to, uint256 amount) internal override {
+    if (from == address(0) || to == address(0)) return; // mint / burn
+    if (isDistributor[from] || isDistributor[to]) return;
+    address o = owner();
+    if (from == o || to == o) return;
+    ...
+</code></pre>
+<p>The token is designed to be buy-only (transfer-locked) until the hook opens selling. But the owner is unconditionally exempt from the lock, and <code>setDistributor</code> (owner-only, unbounded) can grant the same exemption to any address. This lets the owner (or any owner-blessed address) sell FWAToken into the pool while ordinary holders remain locked out.</p>
+<p><strong>Recommendation</strong>: Document this as an explicit trust assumption if intentional (it mirrors a referenced prior design). Otherwise, scope the distributor exemption strictly to protocol-internal routing addresses and remove the blanket owner exemption post-launch.</p>
+<hr>
+<h2 id="6-owner-can-redirect-buyback-proceeds-via-unconstrained-setpool">[6] Owner can redirect buyback proceeds via unconstrained <code>setPool</code></h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Location</strong>: <code>setPool()</code> (FWAToken.sol:191-195), consumed in <code>buyback()</code> (FWAToken.sol:339-343)<br><strong>Origin</strong>: <code>[phase1 only]</code> — access-control (AC-3), 1 agent. <strong>Re-verified directly against source — confirmed accurate.</strong></p>
+<p><strong>Description</strong>:</p>
+<pre><code class="language-solidity">// FWAToken.sol:191-195
+function setPool(address g) external onlyOwner {
+    if (g == address(0)) revert InvalidAddress();
+    pool = g;
+    emit PoolSet(g);
+}
+</code></pre>
+<p>No validation that <code>g</code> is the legitimate FWA contract. In <code>buyback()</code>, the depositor+purchaser slice (80% by default via <code>routeDepositorBps</code>/<code>routePurchaserBps</code>) is transferred to <code>pool</code> and <code>IBuybackRouter(pool).onTokenReceived(...)</code> is called. Combined with <code>setDistributor</code> (finding #5), the owner can point <code>pool</code> at a self-controlled sink (also granted distributor status so the transfer passes the lock) and divert the routed buyback proceeds away from depositors/purchasers entirely — and since <code>buyback()</code> is permissionless, the owner doesn&#39;t even need to trigger it themselves.</p>
+<p><strong>Recommendation</strong>: Make <code>pool</code> settable only once, or immutable after first configuration, or place it behind a timelock so a malicious redirect is publicly visible before it can be exploited.</p>
+<hr>
+<h2 id="7-withdrawlisting-strict-nft-transfer-can-strand-a-depositors-et">[7] <code>withdrawListing</code> strict NFT transfer can strand a depositor&#39;s ETH + NFT</h2>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Location</strong>: <code>withdrawListing()</code> (FWA.sol:825-858)<br><strong>Origin</strong>: <code>[both]</code> — Phase 1: erc721 (E-1, Medium), dos (D-1, Low). Phase 2: boundary (lead), periphery (adjacent).</p>
+<p><strong>Description</strong>: Every <em>resolution</em> path (<code>_deliverNFT</code>, FWA.sol:1503-1510) delivers the NFT best-effort via <code>try/catch</code>, recording <code>stuckNFTRecipient</code> on failure so the ETH legs always settle independently. <code>withdrawListing</code> does not follow this pattern — it sends the ETH backing, then attempts a <strong>strict</strong> <code>safeTransferFrom</code>:</p>
+<pre><code class="language-solidity">SafeTransferLib.forceSafeTransferETH(msg.sender, value);
+...
+ERC721(listing.collection).safeTransferFrom(address(this), msg.sender, tokenId); // strict, no fallback
+</code></pre>
+<p>If the NFT leg reverts (depositor is a contract without <code>onERC721Received</code>, or the collection is paused/blacklisted/reverting), the <strong>entire call reverts</strong>, including the ETH refund — violating the contract&#39;s own stated invariant that &quot;any un-allocated listing is fully withdrawable by its depositor.&quot;</p>
+<p><strong>Mitigating factor</strong> (noted by the dos-agent): <code>updateBacking(id, minBacking)</code> does not touch the NFT and can still recover ETH backing down to <code>minBacking</code>, so the loss is generally partial (the residual <code>minBacking</code> slice + the NFT) rather than a full lock, except when <code>minBacking</code> is at or near the deposited amount.</p>
+<p><strong>Recommendation</strong>: Route <code>withdrawListing</code>&#39;s NFT return through <code>_deliverNFT</code> (best-effort + <code>stuckNFTRecipient</code> fallback), matching every other exit path.</p>
+<hr>
+<h2 id="8-buyback-pays-caller-bounty-even-on-a-zero-output-swap">[8] <code>buyback()</code> pays caller bounty even on a zero-output swap</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>buyback()</code> (FWAToken.sol:313-350)<br><strong>Origin</strong>: <code>[both]</code> — general (G-2) and erc20 (T-2), 2 phase-1 agents. Re-verified: <code>incentive</code> is computed from <code>slice</code> and paid unconditionally at the end regardless of <code>amountOut</code>.</p>
+<p><strong>Description</strong>: Once the seeded single-sided LP position is fully bought out, further <code>buyback()</code> calls swap for <code>amountOut == 0</code> but still pay the 0.5% caller bounty from the pre-swap slice, and still advance <code>lastBuybackBlock</code>. An MEV bot can drain the ETH reserve at 0.5%/block with zero buyback benefit once this state is reached.</p>
+<p><strong>Recommendation</strong>: Only pay the bounty (and advance <code>lastBuybackBlock</code>) when <code>amountOut &gt; 0</code>.</p>
+<hr>
+<h2 id="9-inverse-weight-formula-has-no-minbacking-floor-by-default">[9] Inverse-weight formula has no <code>minBacking</code> floor by default</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> (informational restatement — root cause of Finding #1)<br><strong>Location</strong>: <code>minBacking</code> (FWA.sol:256, defaults to <code>0</code>), <code>listNFT()</code> weight computation<br><strong>Origin</strong>: <code>[both]</code> — this is the same underlying design gap that enables Finding #1; listed separately here because Phase 1&#39;s precision-math agent flagged it purely as a pricing-distortion curiosity (Low) before Phase 2 demonstrated it is actively weaponizable as griefing DoS.</p>
+<p><strong>Recommendation</strong>: Ship a non-zero default <code>minBacking</code> and/or cap per-listing weight so a single lightly-backed listing cannot dominate <code>totalWeight</code> or collapse the harmonic-mean price. This single change substantially mitigates Finding #1.</p>
+<hr>
+<h2 id="10-partial-fill-swaps-can-strand-purchaser-eth">[10] Partial-fill swaps can strand purchaser ETH</h2>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Location</strong>: <code>claimAccruedTokens()</code> / <code>_buyTokens()</code> / <code>unlockCallback()</code> (FWA.sol ~1670-1716), <code>acceptBidAsTokens()</code><br><strong>Origin</strong>: <code>[phase2 only]</code> — boundary, periphery, trust-gap, first-principles, flow-gap (5 independent leads converging on the identical mechanism; none could confirm reachability against live pool liquidity).</p>
+<p><strong>Description</strong>: <code>claimAccruedTokens</code> zeroes the caller&#39;s <code>tokenBuyAllowance</code> for the full requested <code>amount</code> <em>before</em> the swap executes. The swap is exact-input with <code>sqrtPriceLimitX96 = MIN_SQRT_PRICE + 1</code>; <code>unlockCallback</code> settles only the ETH actually consumed (<code>-d.amount0()</code>). If the pool&#39;s FWAToken liquidity is exhausted before the full input is absorbed, the swap partial-fills for less than <code>amount</code>, and the unspent difference remains in the contract with the allowance already zeroed — silently stranded rather than returned to the caller.</p>
+<p><strong>Reachability</strong>: Unconfirmed. This requires the single-sided seeded launch position to be exhausted within one swap, which depends on on-chain pool depth at the time of the call — not verifiable from source alone. Five independent agents flagged the identical mechanism without being able to construct a concrete trigger, which is a strong-enough signal to report but not to rate above Low pending on-chain liquidity verification.</p>
+<p><strong>Recommendation</strong>: Check <code>d.amount0()</code> against <code>amount</code> post-swap and refund any shortfall to the caller rather than treating a partial fill as a full spend.</p>
+<hr>
+<h2 id="low-info-single-source-items-not-independently-corroborated-incl">Low / Info — Single-source items (not independently corroborated, included for completeness)</h2>
+<p><strong>[11] Low — Single-step <code>Ownable</code>, no forced 2-step handover.</strong> Both contracts use Solady&#39;s single-step <code>Ownable</code>; <code>transferOwnership</code>/<code>renounceOwnership</code> are immediately effective with no recovery. <em>(Phase 1, access-control.)</em></p>
+<p><strong>[12] Low — <code>setSurchargeBps</code> uncapped; <code>setOwnerAcquisitionFeeBps</code> capped only at 100%.</strong> Owner can price acquisitions arbitrarily high (griefing, not fund loss — purchasers are protected by their own <code>maxAcquisitionFee</code> slippage guard) or route the entire acquisition fee to themselves instead of depositors. <em>(Phase 1, access-control.)</em></p>
+<p><strong>[13] Low — No timelock on any owner parameter.</strong> All economic parameters (fees, windows, splits) apply instantly and retroactively to in-flight positions. General centralization observation; concrete instances are Findings #4 and #12. <em>(Phase 1, general/access-control.)</em></p>
+<p><strong>Info items</strong> (no fund-risk, included for completeness): block-count windows (<code>withdrawLockBlocks</code>, <code>MAX_WINDOW_BLOCKS</code>, <code>requestConfirmations</code>) assume ~12s L1 blocks and are miscalibrated if deployed to a fast L2; stale side-mappings not cleared on listing removal (harmless dead storage); non-standard ERC721 collections (e.g. CryptoPunks) cannot be deposited (compatibility only); <code>_deliverNFT</code>/<code>recoverStuckNFT</code> trust non-reverting <code>transferFrom</code> semantics, so a deliberately non-standard whitelisted collection could strand an NFT with no recovery path; an uncontested vacant <code>topListingId</code> can be seized by a minimal-backing listing (2 phase-2 agents, unverified profitability given dust listings displace quickly); flat per-listing fee-sharing rewards listing count over backing size, enabling mild Sybil farming (self-limiting, since dust listings also collapse <code>acquisitionFee()</code> per Finding #9); an unbounded <code>accTokenPerSqrt</code> accumulator could theoretically overflow and brick listing removal at extreme accumulated values — not reachable under realistic token-supply/emission parameters per the agents&#39; own bounds (2 phase-2 leads); <code>tokenBuyAllowanceTotal</code> is written but never read anywhere (dead state, no functional impact); <code>setWithdrawLockBlocks</code> has no lower bound unlike its sibling <code>setSelectionTimeoutBlocks</code> (owner-misconfiguration risk only).</p>
+<hr>
+<h2 id="what-was-checked-and-found-sound">What was checked and found sound</h2>
+<p>Across both phases (10+ independent agent-passes over the core accounting): ETH/token conservation from acquisition escrow through distribution/settlement (traced independently by 6+ agents — always balances exactly); the sparse segment-tree selection invariant (<code>tree[1] == totalWeight</code>, bounded to fixed <code>TREE_DEPTH</code>, no unbounded loops); VRF request/response correlation, native-fee pass-through, and callback authentication (base contract enforces <code>msg.sender == wrapper</code>); reentrancy surface (all state-changing externals <code>nonReentrant</code>, both <code>unlockCallback</code>s and <code>onTokenReceived</code> correctly <code>msg.sender</code>-gated, no untrusted external calls inside the VRF callback so a hostile purchaser cannot brick fulfillment); top-listing pot single-settle discipline (<code>_vacateTop</code>/<code>_setTop</code> always zero the pot atomically, no double-pay path); epoch-tally divisor safety (fulfillment-epoch tallying prevents reviving swept/closed epochs); the fee/token dividend accumulators&#39; ceil-on-debt/floor-on-credit discipline (Σcredited ≤ Σcollected always holds); no unauthorized-access / missing-modifier path found by either phase&#39;s dedicated access-control review (all admin setters <code>onlyOwner</code>, all depositor/purchaser actions correctly keyed to <code>msg.sender</code>).</p>
+<p>The FWATokenHook contract that enforces the buy-only transfer lock&#39;s pool-initialization gating and sell-side allowance bumps is <strong>not present in this repository</strong> and could not be audited; several findings&#39; full risk picture (in particular the transfer-lock&#39;s front-running resistance during <code>launch()</code>) depends on that out-of-scope contract being correct.</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated two-phase audit process (breadth checklist pass + blind attacker-mindset pass + hybrid reconciliation with source-level re-verification of every finding). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A human security review, bug bounty program, and on-chain monitoring are strongly recommended before or alongside mainnet use, particularly given the High-severity findings above.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihfwys2s2o33ole6icksr36w7f3bbh4cdqpgxmh6l5chph6vocjaq.ipfs.community.bgipfs.com/"><code>https://bafkreihfwys2s2o33ole6icksr36w7f3bbh4cdqpgxmh6l5chph6vocjaq.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/332">#332</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

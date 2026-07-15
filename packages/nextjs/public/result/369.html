@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLPool (Vaultfire job #369) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #369">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">CLPool (Vaultfire job #369)</h1>
+    <p class="job-sub">Job #369 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/369"><b>Job page</b> #369</a>
+      <a class="chip" href="https://bafkreif6tmz4wcgspru5aw7orowbzuvtykqlduetjimrdxcex3yxwu4wca.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="3">
+      <li><a href="#info-no-action-items-verified-no-fix-required">Info / no-action items (verified, no fix required)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — CLPool (Vaultfire job #369)</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Target</strong></td>
+<td>Proxy <code>0x74f72788f4814d7ff3c49b44684aa98eee140c0e</code> (Base, chain 8453) — EIP-1167 minimal-proxy clone</td>
+</tr>
+<tr>
+<td><strong>Implementation</strong></td>
+<td><code>0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831</code> — Sourcify-verified exact match (<code>solc 0.7.6</code>), verified 2024-08-09</td>
+</tr>
+<tr>
+<td><strong>Contract</strong></td>
+<td><code>CLPool</code> — Aerodrome/Velodrome &quot;Slipstream&quot; concentrated-liquidity AMM pool (Uniswap V3 core fork + staked-liquidity/gauge/reward-emission layer)</td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td>Default — all in-scope <code>.sol</code>, excluding <code>interfaces/</code></td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>CLPool.sol</code> · <code>Tick.sol</code> · <code>Oracle.sol</code> · <code>Position.sol</code><br><code>SwapMath.sol</code> · <code>TickMath.sol</code> · <code>TickBitmap.sol</code> · <code>SqrtPriceMath.sol</code><br><code>FullMath.sol</code> · <code>LiquidityMath.sol</code> · <code>SafeCast.sol</code> · <code>BitMath.sol</code><br><code>FixedPoint96.sol</code> · <code>FixedPoint128.sol</code> · <code>LowGasSafeMath.sol</code> · <code>UnsafeMath.sol</code><br><code>TransferHelper.sol</code> · <code>ProtocolTimeLibrary.sol</code> (18 files, 2,645 LOC)</td>
+</tr>
+<tr>
+<td><strong>Method</strong></td>
+<td>Two-phase: Phase 1 ethskills breadth (8 checklist agents) → Phase 2 pashov depth (12 attacker-mindset agents, blind to Phase 1) → hybrid reconciliation with direct source re-verification of every cross-phase lead</td>
+</tr>
+</tbody></table></div>
+<p><strong>Note on prior audits</strong>: this exact CLPool implementation is the well-known, previously-audited Velodrome/Aerodrome Slipstream codebase. Per this engagement&#39;s standing instructions, every finding below was independently re-derived by this run&#39;s own agents against the actual deployed source — no finding was carried over from external knowledge of prior audits.</p>
+<p><strong>Reconciliation summary</strong>: 8 phase-1 + 12 phase-2 agents run independently. Overlap: the reward-accrual (<code>lastUpdated</code>/<code>syncReward</code>) issue and the fee-on-transfer/rebasing token incompatibility were each independently found by 4+ agents across both phases (<code>[both]</code>). The <code>calculateFees</code> unchecked-underflow concern was raised as a LEAD by 6 phase-2 agents but explicitly refuted by 2 of the most careful agents (asymmetry, first-principles) and by this orchestrator&#39;s own direct read of <code>stake()</code> — downgraded to Info/hardening-recommendation after re-verification (see Finding 8). Completeness: 11 unique (Contract, function) issues raised across both phases, all 11 covered in the unified findings below (7 Medium/Low findings + 4 Info items); re-examined leads kept: 9, demoted: 1 (<code>calculateFees</code> underflow), refuted-but-still-noted: 1 (<code>rewardGrowthOutside</code>, kept at Low with an explicit non-exploitability caveat).</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="medium-1-lastupdated-is-never-initialized-the-first-reward-accru">[Medium-1] <code>lastUpdated</code> is never initialized — the first reward accrual can dump an entire epoch&#39;s <code>rewardReserve</code> in one block</h3>
+<p><strong>Confidence: 85</strong> · <code>CLPool._updateRewardsGrowthGlobal</code> / <code>CLPool.initialize</code> · <code>[both — flagged independently by 8+ phase-1 and phase-2 agents]</code></p>
+<p><code>lastUpdated</code> (a <code>uint32</code> state variable, <code>CLPool.sol:100</code>) is never assigned in <code>initialize()</code> (<code>CLPool.sol:148-179</code>) and defaults to <code>0</code>. It is written nowhere except inside <code>_updateRewardsGrowthGlobal()</code>:</p>
+<pre><code class="language-solidity">function _updateRewardsGrowthGlobal() internal {
+    uint32 timestamp = _blockTimestamp();
+    uint256 _lastUpdated = lastUpdated;
+    uint256 timeDelta = timestamp - _lastUpdated; // skip if second call in same block
+
+    if (timeDelta != 0) {
+        if (rewardReserve &gt; 0) {
+            uint256 reward = rewardRate * timeDelta;
+            if (reward &gt; rewardReserve) reward = rewardReserve;
+            rewardReserve -= reward;
+            if (stakedLiquidity &gt; 0) {
+                rewardGrowthGlobalX128 += FullMath.mulDiv(reward, FixedPoint128.Q128, stakedLiquidity);
+            } else {
+                rollover += reward;
+            }
+        }
+        lastUpdated = timestamp;
+    }
+}
+</code></pre>
+<p>(<code>CLPool.sol:934-952</code>)</p>
+<p><code>_updateRewardsGrowthGlobal()</code> is reached only via: <code>stake()</code> — but <em>only</em> when the staked range is currently in-range (<code>CLPool.sol:598-602</code>); <code>swap()</code> — but <em>only</em> on the first crossing of an <em>initialized</em> tick (<code>CLPool.sol:788-791</code>); or the gauge explicitly calling <code>updateRewardsGrowthGlobal()</code>. <strong><code>syncReward()</code> never calls it</strong> (see Finding Medium-2).</p>
+<p><strong>Concrete trace</strong>: pool is cloned + <code>initialize()</code>d → <code>lastUpdated == 0</code>. Gauge sets <code>rewardReserve = R</code> via <code>syncReward()</code> (no staking has happened in-range yet, so <code>_updateRewardsGrowthGlobal</code> has never fired). The first subsequent trigger — a swap crossing an initialized tick, an in-range <code>stake()</code>, or a direct <code>updateRewardsGrowthGlobal()</code> call — computes <code>timeDelta = block.timestamp - 0 ≈ 1.8×10⁹</code> (current 2026 timestamps). <code>reward = rewardRate * 1.8e9</code>, clamped to <code>rewardReserve = R</code>. The <strong>entire</strong> epoch&#39;s reward budget is consumed in that single call:</p>
+<ul>
+<li>If <code>stakedLiquidity &gt; 0</code> at that exact moment, all of <code>R</code> is credited to <code>rewardGrowthGlobalX128</code> at once — whoever is staked in-range captures a full epoch&#39;s emissions instantly instead of over the streamed period, and can unstake immediately after.</li>
+<li>If <code>stakedLiquidity == 0</code> at that moment, all of <code>R</code> moves into <code>rollover</code> — where it is then at risk of being silently dropped (see Finding Low-1).</li>
+</ul>
+<p>This is not an edge case requiring attacker setup — every pool&#39;s <em>first</em> reward-earning event hits <code>lastUpdated == 0</code> unless the (out-of-scope) gauge happens to call <code>updateRewardsGrowthGlobal()</code> proactively before ever setting <code>rewardReserve &gt; 0</code>, which nothing in this contract enforces or documents.</p>
+<p><strong>Fix</strong>: initialize <code>lastUpdated = _blockTimestamp()</code> in <code>initialize()</code>.</p>
+<pre><code class="language-diff"> slot0 = Slot0({...});
++lastUpdated = _blockTimestamp();
+ emit Initialize(_sqrtPriceX96, tick);
+</code></pre>
+<hr>
+<h3 id="medium-2-syncreward-overwrites-reward-state-without-settling-the">[Medium-2] <code>syncReward()</code> overwrites reward state without settling the prior period or refreshing <code>lastUpdated</code></h3>
+<p><strong>Confidence: 75</strong> · <code>CLPool.syncReward</code> · <code>[both — independently flagged by 6+ phase-2 agents plus phase-1&#39;s General checklist]</code></p>
+<pre><code class="language-solidity">function syncReward(uint256 _rewardRate, uint256 _rewardReserve, uint256 _periodFinish)
+    external override lock onlyGauge
+{
+    rewardRate = _rewardRate;
+    rewardReserve = _rewardReserve;
+    periodFinish = _periodFinish;
+    delete rollover;
+}
+</code></pre>
+<p>(<code>CLPool.sol:954-965</code>)</p>
+<p>Unlike <code>stake()</code>, which always calls <code>_updateRewardsGrowthGlobal()</code> <em>before</em> mutating any reward-relevant state (<code>CLPool.sol:600</code>), <code>syncReward()</code> overwrites <code>rewardRate</code>/<code>rewardReserve</code>/<code>periodFinish</code> and deletes <code>rollover</code> with <strong>no settlement step</strong> and without advancing <code>lastUpdated</code>. If any interval <code>[lastUpdated, now)</code> is unsettled at the old rate when <code>syncReward</code> runs, the next <code>_updateRewardsGrowthGlobal()</code> call charges that entire stale interval against the <strong>new</strong> <code>rewardRate</code> — either front-loading a large reward burst from a rate that didn&#39;t apply to that time window, or (if the old reserve still had unsettled amounts) silently discarding them under the overwrite.</p>
+<p>Whether this is exploitable in practice depends on whether the out-of-scope gauge contract always calls <code>updateRewardsGrowthGlobal()</code> immediately before <code>syncReward()</code> in the same transaction — unverifiable from this bundle, and not enforced by the pool.</p>
+<p><strong>Fix</strong>: settle before mutating, matching the pattern already used in <code>stake()</code>:</p>
+<pre><code class="language-diff"> function syncReward(uint256 _rewardRate, uint256 _rewardReserve, uint256 _periodFinish)
+     external override lock onlyGauge
+ {
++    _updateRewardsGrowthGlobal();
+     rewardRate = _rewardRate;
+     rewardReserve = _rewardReserve;
+     periodFinish = _periodFinish;
+     delete rollover;
+ }
+</code></pre>
+<hr>
+<h3 id="medium-3-fee-on-transfer-and-rebasing-tokens-break-the-pools-vir">[Medium-3] Fee-on-transfer and rebasing tokens break the pool&#39;s virtual-reserve accounting</h3>
+<p><strong>Confidence: 80</strong> · <code>CLPool.mint</code> / <code>CLPool.swap</code> / <code>CLPool.flash</code> / <code>CLPool._collect</code> · <code>[both — independently corroborated by 6+ agents across both phases]</code></p>
+<p>Payment verification throughout the pool is a pure balance-delta check against live <code>balanceOf</code>, e.g.:</p>
+<pre><code class="language-solidity">if (amount0 &gt; 0) require(balance0Before.add(amount0) &lt;= balance0(), &quot;M0&quot;);   // mint, CLPool.sol:476
+require(balance0Before.add(uint256(amount0)) &lt;= balance0(), &quot;IIA&quot;);          // swap, CLPool.sol:860
+require(balance0Before.add(fee0) &lt;= balance0After, &quot;F0&quot;);                    // flash, CLPool.sol:891
+</code></pre>
+<p>Pricing itself is driven entirely by internal <code>liquidity</code>/<code>sqrtPriceX96</code>/<code>tokensOwed</code> state, never by measured balances.</p>
+<ul>
+<li><strong>Fee-on-transfer tokens</strong> (input side): the pool receives less than <code>amount</code>, so the <code>balanceBefore + amount &lt;= balanceAfter</code> check fails and <code>mint</code>/<code>swap-in</code>/<code>flash</code> <strong>revert</strong> — a hard DoS for any FoT token pair.</li>
+<li><strong>Fee-on-transfer / rebasing tokens</strong> (output side): <code>swap</code>-out, <code>collect</code>, and <code>flash</code> payouts send <code>amount</code> computed from virtual reserves via <code>TransferHelper.safeTransfer</code>; a token that deducts value in flight (FoT fee, or a negative rebase) means real balance drops by more than the virtual debit. Outstanding <code>tokensOwed</code>/liquidity claims can come to exceed <code>balanceOf(pool)</code>, so the <em>last</em> LPs to <code>collect</code>/<code>burn</code> find their <code>safeTransfer</code> reverting — a slow insolvency for the tail of LPs, not the first movers.</li>
+<li><strong>Positive rebases</strong>: surplus balance is stranded — there is no <code>skim()</code> function to recover or attribute it to any position.</li>
+</ul>
+<p>This is a factory-level trust decision (only whitelisted, well-behaved tokens should be paired), not fixable inside the pool itself without abandoning the virtual-reserve model.</p>
+<p><strong>Fix</strong>: enforce a token allowlist at the factory (probe-transfer FoT/rebase detection before <code>createPool</code>) rather than attempting an in-pool fix.</p>
+<hr>
+<h3 id="low-1-rollover-rewards-can-be-permanently-lost">[Low-1] <code>rollover</code> rewards can be permanently lost</h3>
+<p><strong>Confidence: 60</strong> · <code>CLPool._updateRewardsGrowthGlobal</code> / <code>CLPool.syncReward</code> · <code>[phase2: 2 agents]</code></p>
+<p>When <code>rewardReserve &gt; 0</code> but <code>stakedLiquidity == 0</code>, <code>_updateRewardsGrowthGlobal()</code> moves the accrued <code>reward</code> into <code>rollover</code> (<code>CLPool.sol:944-948</code>) instead of crediting it to <code>rewardGrowthGlobalX128</code>. <code>rollover</code> is read nowhere in this contract except <code>syncReward()</code>, which unconditionally <code>delete</code>s it (<code>CLPool.sol:964</code>) without folding it back into the new <code>rewardReserve</code>. If the out-of-scope gauge does not itself read and re-inject <code>rollover</code> before calling <code>syncReward()</code>, those rewards are permanently stranded — debited from the old reserve, never credited to any staker, then deleted.</p>
+<p><strong>Fix</strong>: fold prior <code>rollover</code> back into <code>rewardReserve</code> inside <code>syncReward()</code> rather than deleting it, so correctness doesn&#39;t depend on gauge-side sequencing:</p>
+<pre><code class="language-diff"> function syncReward(uint256 _rewardRate, uint256 _rewardReserve, uint256 _periodFinish)
+     external override lock onlyGauge
+ {
+     _updateRewardsGrowthGlobal();
+     rewardRate = _rewardRate;
+-    rewardReserve = _rewardReserve;
++    rewardReserve = _rewardReserve + rollover;
+     periodFinish = _periodFinish;
+     delete rollover;
+ }
+</code></pre>
+<hr>
+<h3 id="low-2-mintrecipient-gauge-is-permissionless-and-writes-directly-">[Low-2] <code>mint(recipient = gauge)</code> is permissionless and writes directly into the gauge&#39;s privileged staked-position storage slot</h3>
+<p><strong>Confidence: 65</strong> · <code>CLPool.mint</code> / <code>CLPool._updatePosition</code> · <code>[both — independently found by 5 agents across both phases]</code></p>
+<p><code>mint(recipient, ...)</code> places no restriction on <code>recipient</code> (<code>CLPool.sol:452</code>). <code>_updatePosition</code> derives <code>staked = (owner == gauge) &amp;&amp; (owner != address(0))</code> (<code>CLPool.sol:437</code>) purely from address equality — it has no way to distinguish a legitimate <code>stake()</code>-routed position update from an arbitrary <code>mint()</code> call with <code>recipient = gauge</code>. Verified against <code>Position.update()</code> (<code>Position.sol:44-86</code>): a <code>staked = true</code> position <strong>never accrues <code>tokensOwed0/1</code></strong> (the fee-accrual block is gated <code>if (!staked)</code>, <code>Position.sol:63-75</code>).</p>
+<p>Concretely: anyone can call <code>mint(gauge, tickLower, tickUpper, amount, data)</code>, paying real tokens, and that liquidity lands in <code>positions[keccak256(gauge, tickLower, tickUpper)]</code> — the exact same storage slot <code>stake()</code> uses for its virtual staked-position bookkeeping (<code>CLPool.sol:606</code>) — flagged <code>staked=true</code> so it earns no fees, and with the global <code>stakedLiquidity</code> counter left untouched (only <code>stake()</code> moves that). The caller can never recover this liquidity: the public <code>burn</code>/<code>collect</code> overloads key on <code>owner == msg.sender</code>, and the owner-parameterized overloads are <code>onlyNftManager</code>.</p>
+<p>Direct impact within this contract&#39;s scope is a self-harm donation (the caller&#39;s own funds become unrecoverable). The unverified risk is downstream: if the out-of-scope gauge contract reads <code>positions[gauge].liquidity</code> (or its <code>feeGrowthInside*LastX128</code>) as ground truth for its own staked-liquidity/reward bookkeeping, this griefing-by-donation could desynchronize gauge-side accounting from the pool&#39;s actual <code>stakedLiquidity</code>.</p>
+<p><strong>Fix</strong>: restrict <code>mint</code>&#39;s recipient, or gate the staked flag more strictly:</p>
+<pre><code class="language-diff"> function mint(address recipient, int24 tickLower, int24 tickUpper, uint128 amount, bytes calldata data)
+     external override lock returns (uint256 amount0, uint256 amount1)
+ {
+     require(amount &gt; 0);
++    require(recipient != gauge &amp;&amp; recipient != nft, &quot;RG&quot;);
+     ...
+</code></pre>
+<hr>
+<h3 id="low-3-rewardgrowthoutsidex128-is-never-initialized-when-a-tick-i">[Low-3] <code>rewardGrowthOutsideX128</code> is never initialized when a tick is first touched — deviates from canonical Slipstream, but self-cancels under normal delta-based reward consumption</h3>
+<p><strong>Confidence: 55</strong> · <code>Tick.update</code> / <code>Tick.getRewardGrowthInside</code> · <code>[both — independently found by 6 agents across both phases; direct source-verified]</code></p>
+<p><code>Tick.update()</code>&#39;s tick-initialization block seeds <code>feeGrowthOutside0/1X128</code>, <code>secondsPerLiquidityOutsideX128</code>, <code>tickCumulativeOutside</code>, and <code>secondsOutside</code> to current global values when a tick initializes at-or-below the current tick (<code>Tick.sol:173-183</code>) — but never seeds <code>rewardGrowthOutsideX128</code>, and <code>update()</code> isn&#39;t even passed <code>rewardGrowthGlobalX128</code> to do so. <code>getRewardGrowthInside()</code> (<code>Tick.sol:109-136</code>) and <code>cross()</code> (<code>Tick.sol:236-239</code>) both treat <code>rewardGrowthOutsideX128</code> with the identical &quot;assume prior growth happened below&quot; convention the other five fields rely on being seeded for.</p>
+<p>This orchestrator traced the algebra directly: a tick seeded with <code>rewardGrowthOutside = 0</code> instead of the correct <code>G₀</code> carries a constant offset of magnitude <code>G₀</code> that <strong>flips sign on every <code>cross()</code></strong> (since <code>cross</code> computes <code>new_outside = G_now - old_outside</code>), and that sign-flip is synchronized with the below/above branch switch in <code>getRewardGrowthInside</code>. For the standard &quot;checkpoint now, read again later, take the delta&quot; pattern any gauge/reward-accounting consumer would use, and where the number of crosses between the two checkpoints is even (including zero), the offset cancels exactly. It does <strong>not</strong> cancel if a consumer ever reads <code>getRewardGrowthInside</code> as an absolute value at a single point, or checkpoints across an odd number of crosses in a way sensitive to the sign — neither of which can be verified since the gauge contract is out of scope.</p>
+<p><strong>Fix</strong> (recommended regardless of exploitability, since it&#39;s a clear deviation from the canonical pattern used for every other accumulator in the same struct):</p>
+<pre><code class="language-diff"> function update(
+     mapping(int24 =&gt; Tick.Info) storage self,
+     int24 tick,
+     int24 tickCurrent,
+     int128 liquidityDelta,
+     uint256 feeGrowthGlobal0X128,
+     uint256 feeGrowthGlobal1X128,
+     uint160 secondsPerLiquidityCumulativeX128,
+     int56 tickCumulative,
+     uint32 time,
+     bool upper,
+-    uint128 maxLiquidity
++    uint128 maxLiquidity,
++    uint256 rewardGrowthGlobalX128
+ ) internal returns (bool flipped) {
+     ...
+     if (tick &lt;= tickCurrent) {
+         info.feeGrowthOutside0X128 = feeGrowthGlobal0X128;
+         info.feeGrowthOutside1X128 = feeGrowthGlobal1X128;
++        info.rewardGrowthOutsideX128 = rewardGrowthGlobalX128;
+         info.secondsPerLiquidityOutsideX128 = secondsPerLiquidityCumulativeX128;
+         ...
+</code></pre>
+<hr>
+<h3 id="low-4-initialize-has-no-caller-access-control-pool-safety-depend">[Low-4] <code>initialize()</code> has no caller access control — pool safety depends entirely on factory deploy/init atomicity</h3>
+<p><strong>Confidence: 55</strong> · <code>CLPool.initialize</code> · <code>[both — independently flagged by 5 agents across both phases]</code></p>
+<pre><code class="language-solidity">function initialize(address _factory, address _token0, address _token1, int24 _tickSpacing,
+                     address _factoryRegistry, uint160 _sqrtPriceX96) external override {
+    require(factory == address(0) &amp;&amp; _factory != address(0));
+    ...
+</code></pre>
+<p>(<code>CLPool.sol:148-156</code>)</p>
+<p>The only guard is the one-time latch on <code>factory == address(0)</code> — there is no <code>msg.sender</code> check. Since this is a constructor-less EIP-1167 clone, if the (out-of-scope) <code>CLFactory</code> ever deploys the clone and calls <code>initialize()</code> in a separate transaction from the CREATE2 deployment, anyone can front-run with attacker-chosen <code>_token0</code>/<code>_token1</code>/<code>_tickSpacing</code>/<code>_factoryRegistry</code>/<code>_sqrtPriceX96</code>. <code>_factoryRegistry</code> in particular backstops the <code>onlyGaugeFactory</code> modifier (<code>CLPool.sol:141-144</code>), so an attacker-supplied registry could let the attacker later call <code>setGaugeAndPositionManager</code> and take over the gauge role entirely. Not exploitable if <code>createPool</code> deploys-and-initializes atomically (the standard Slipstream pattern), but the pool contract itself does not enforce or verify this.</p>
+<p><strong>Fix</strong>: restrict to the deploying factory, e.g. <code>require(msg.sender == expectedFactory)</code> (passed via clone immutable args), or confirm and document that the factory&#39;s <code>createPool</code> is always atomic.</p>
+<hr>
+<h3 id="low-5-swap-fee-is-read-live-from-the-factory-on-every-swap-gover">[Low-5] Swap fee is read live from the factory on every swap — governance-side fee-sandwich exposure</h3>
+<p><strong>Confidence: 50</strong> · <code>CLPool.fee</code> / <code>CLPool.unstakedFee</code> · <code>[phase1: defi-amm]</code></p>
+<pre><code class="language-solidity">function fee() public view override returns (uint24) { return ICLFactory(factory).getSwapFee(address(this)); }
+function unstakedFee() public view override returns (uint24) { return ICLFactory(factory).getUnstakedFee(address(this)); }
+</code></pre>
+<p>(<code>CLPool.sol:181-187</code>), consumed fresh in every <code>swap()</code> (<code>CLPool.sol:716</code>) and <code>flash()</code> (<code>CLPool.sol:878-879</code>). Whoever controls the factory&#39;s fee-setter can front-run a large pending swap with a fee hike and revert it after — bounded entirely by the (out-of-scope) factory&#39;s own fee cap and access control, which are not in this audit&#39;s scope.</p>
+<p><strong>Fix</strong>: lives in the factory — hard fee cap + timelock on fee changes.</p>
+<hr>
+<h3 id="low-6-dust-liquidity-ticks-can-inflate-swap-gas-across-a-targete">[Low-6] Dust-liquidity ticks can inflate swap gas across a targeted price band</h3>
+<p><strong>Confidence: 45</strong> · <code>CLPool.swap</code> / <code>Tick.cross</code> / <code>TickBitmap</code> · <code>[phase1: dos]</code></p>
+<p>The swap loop crosses one initialized tick per iteration; each crossing rewrites multiple storage slots. An attacker can <code>mint()</code> minimal-liquidity positions across many adjacent ticks (bounded by <code>maxLiquidityPerTick</code> per tick, not by tick count) to force a legitimate large swap through that band to pay for thousands of tick crossings. Inherent to concentrated-liquidity AMMs generally, amplified by cheap L2 gas (this deploys on Base); does not permanently brick swaps since they can be chunked into multiple transactions.</p>
+<p><strong>Fix</strong>: none at the pool level without breaking V3 semantics; periphery/routers should support chunked/multi-hop execution.</p>
+<hr>
+<h3 id="low-7-balanceof-dependent-payment-paths-revert-if-a-pool-token-p">[Low-7] <code>balanceOf</code>-dependent payment paths revert if a pool token pauses</h3>
+<p><strong>Confidence: 40</strong> · <code>CLPool.balance0</code> / <code>balance1</code> · <code>[phase1: dos, erc20]</code></p>
+<p><code>mint</code>, <code>swap</code>, and <code>flash</code> all gate on <code>balanceOf</code> succeeding with ≥32 bytes of return data (<code>CLPool.sol:204-219</code>). A pausable/blocklistable token (USDC-style) that reverts or blocks the pool&#39;s own address freezes every mint/swap/flash on that pool. Not third-party-triggerable — depends entirely on which tokens the factory allows to be paired.</p>
+<hr>
+<h2 id="info-no-action-items-verified-no-fix-required">Info / no-action items (verified, no fix required)</h2>
+<ul>
+<li><strong><code>calculateFees</code>/<code>splitFees</code> unchecked subtraction</strong> (<code>CLPool.sol:978, 1016</code>) assumes <code>stakedLiquidity ≤ liquidity</code>. Six phase-2 agents raised this as a potential unchecked-underflow DoS/fee-corruption lead. <strong>Direct re-verification of <code>stake()</code> (<code>CLPool.sol:590-620</code>) refutes this as exploitable under the pool&#39;s trust model</strong>: the global <code>stakedLiquidity</code> counter is only incremented when the current tick is in-range (<code>CLPool.sol:599-601</code>) — symmetric with how the global <code>liquidity</code> counter itself is only updated in-range in <code>_modifyPosition</code> (<code>CLPool.sol:344-365</code>) — and the per-tick <code>stakedLiquidityNet</code> update is only skipped when a tick is not yet <code>initialized</code> (<code>CLPool.sol:618-619</code>), which cannot happen for any tick that already bounds real minted liquidity (minting always initializes both boundary ticks first). Given <code>stake()</code> is <code>onlyGauge</code> and only stakes already-minted positions, the invariant holds. Recommended as defense-in-depth only, since the pool has zero in-contract enforcement and the entire argument rests on trusting the out-of-scope gauge: <code>require(_stakedLiquidity &lt;= _liquidity)</code> in <code>calculateFees</code>.</li>
+<li><strong><code>collectFees()</code> permanently strands 1 wei</strong> of each gauge-fee token (<code>CLPool.sol:1025-1034</code>) — a deliberate, standard gas-optimization pattern (avoid clearing a storage slot), not a defect.</li>
+<li><strong>Silent <code>uint128(...)</code> truncation</strong> of gauge/staked fee amounts without <code>SafeCast</code> (<code>CLPool.sol:768, 902, 908</code>) — would require a single fee step to exceed <code>2^128</code> base units, unreachable with any realistic token supply.</li>
+<li><strong>Division-before-multiplication</strong> in <code>Oracle.observeSingle</code>&#39;s <code>tickCumulative</code> interpolation — verbatim upstream Uniswap V3, immaterial precision loss, not attacker-steerable.</li>
+<li><strong>TWAP/spot-price manipulability</strong> (<code>slot0.sqrtPriceX96</code> is spot and single-tx-manipulable; the accumulator-based TWAP correctly resists single-tx manipulation but remains manipulable over multiple blocks on thin pools with short windows) — the standard, well-documented AMM oracle caveat for external integrators, not a pool-level bug.</li>
+<li><strong>Default observation cardinality of 1</strong> — <code>observe()</code> reverts for historical queries until a consumer calls <code>increaseObservationCardinalityNext</code> and the buffer fills; standard inherited Uniswap V3/Slipstream behavior.</li>
+<li><strong>Inline assembly</strong> is confined to <code>FullMath.mulDiv</code>, <code>TickMath.getTickAtSqrtRatio</code>, <code>UnsafeMath.divRoundingUp</code> — all canonical, heavily-audited Uniswap V3 snippets; no memory-safety or calldata/returndata issues found.</li>
+<li><strong>Flash-loan repayment and reentrancy</strong>: <code>flash()</code>&#39;s repayment check (<code>balanceBefore + fee ≤ balanceAfter</code>, rounded up via <code>mulDivRoundingUp</code>) is correct and unbypassable; every state-mutating entrypoint is <code>lock</code>-guarded (or manually guarded in <code>swap</code>), so there is no reentrancy window during any callback.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated two-phase audit (8 checklist-breadth agents + 12 attacker-mindset depth agents, reconciled with direct source re-verification of every cross-phase lead). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Several findings above (Medium-1, Medium-2, Low-1, Low-2, Low-3, Low-4) depend partly on the behavior of the out-of-scope <code>CLGauge</code>/<code>CLFactory</code>/position-manager contracts, which were not provided as part of this engagement&#39;s scope (only their interfaces are referenced by the audited source) — a follow-up review covering those contracts is recommended to fully close out the reward-accrual and privileged-position-write findings. Team security review and on-chain monitoring of reward-emission events are strongly recommended given the concrete, low-effort trigger path for Medium-1.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreif6tmz4wcgspru5aw7orowbzuvtykqlduetjimrdxcex3yxwu4wca.ipfs.community.bgipfs.com/"><code>https://bafkreif6tmz4wcgspru5aw7orowbzuvtykqlduetjimrdxcex3yxwu4wca.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/369">#369</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClawdVictionStaking — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #295">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ClawdVictionStaking</h1>
+    <p class="job-sub">Job #295 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/295"><b>Job page</b> #295</a>
+      <a class="chip" href="https://bafkreifejseuqo2qsjan67u5kfpd2kbn27wdfiinvnfrb4t5nwf7ditzh4.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-15</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">4</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">6</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">7</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#info">Info</a></li>
+      <li><a href="#phase-2-leads-not-promoted-to-findings">Phase 2 Leads (Not Promoted to Findings)</a></li>
+      <li><a href="#finding-index">Finding Index</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — ClawdVictionStaking</h1>
+<blockquote>
+<p>Two-phase audit: ethskills breadth pass (6 checklist agents) + pashov depth pass (12 attacker agents)<br>Job 295 · Contract <code>0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf</code> · Base (chain 8453)</p>
+</blockquote>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>ALL</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>ClawdVictionStaking.sol</code></td>
+</tr>
+<tr>
+<td><strong>Contract</strong></td>
+<td><code>0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf</code></td>
+</tr>
+<tr>
+<td><strong>Chain</strong></td>
+<td>Base (8453)</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Phase 1: ethskills (general, precision-math, erc20, defi-staking, access-control, chain-specific+dos) · Phase 2: pashov (12 attacker agents)</td>
+</tr>
+<tr>
+<td><strong>Reconciliation</strong></td>
+<td>P1-C-1 demoted Critical→High (no confirmed theft path); P1-H-3 demoted High→Low (CEI followed in unstake); P2 adds 2 new findings</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill high">High</span></td>
+<td>4</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>6</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>7</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>4</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<hr>
+<h3 id="h-1-erc777-token-reentrancy-in-stake-cei-violation-with-unguarde">[H-1] ERC777 Token Reentrancy in <code>stake()</code> — CEI Violation with Unguarded Attack Surface</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span> <em>(Phase 1 Critical · demoted: Phase 2 could not confirm fund theft path)</em><br><strong>Source</strong>: Phase 1 (erc20, general) + Phase 2 (agents 3, 4, 9, 12 analyzed)<br><strong>Location</strong>: <code>stake()</code> — <code>clawdToken.safeTransferFrom</code> called before all state writes</p>
+<p><code>stake()</code> executes the external <code>safeTransferFrom</code> call (line 39) <strong>before</strong> pushing to <code>stakes[]</code>, incrementing <code>totalStaked</code>, updating <code>totalSupplyStaked</code>, or updating <code>weightedStakeSum</code> (lines 40–44). This is a checks-effects-interactions violation. If <code>clawdToken</code> is an ERC777 token, the sender&#39;s <code>tokensToSend</code> hook fires mid-transfer with completely stale state. Two re-entrant <code>stake()</code> calls within the hook produce two stake records, each backed by an independent token transfer. While Phase 2 analysis traced both calls correctly completing their transfers (no single-deposit double-claim), the unguarded re-entrancy path poses serious risk: any future state extension, additional access-control logic, or reward-accrual mechanism layered onto <code>stake()</code> could be exploitable. The attack surface is live today if <code>clawdToken</code> is or becomes ERC777-compatible.</p>
+<p><strong>Recommendation</strong>: Add <code>nonReentrant</code> modifier to both <code>stake()</code> and <code>unstake()</code>. Additionally, move the <code>safeTransferFrom</code> call to after all state writes (proper CEI):</p>
+<pre><code class="language-diff">  function stake(uint256 amount) external nonReentrant {
+      require(amount &gt;= MIN_STAKE, &quot;Below minimum stake&quot;);
++     uint256 stakeIndex = stakes[msg.sender].length;
++     stakes[msg.sender].push(Stake({ amount: amount, stakedAt: block.timestamp }));
++     totalStaked[msg.sender] += amount;
++     totalSupplyStaked += amount;
++     weightedStakeSum[msg.sender] += amount * block.timestamp;
+      clawdToken.safeTransferFrom(msg.sender, address(this), amount);
+-     uint256 stakeIndex = stakes[msg.sender].length;
+-     stakes[msg.sender].push(Stake({ amount: amount, stakedAt: block.timestamp }));
+-     totalStaked[msg.sender] += amount;
+-     totalSupplyStaked += amount;
+-     weightedStakeSum[msg.sender] += amount * block.timestamp;
+      emit Staked(msg.sender, amount, stakeIndex, block.timestamp);
+  }
+</code></pre>
+<hr>
+<h3 id="h-2-fee-on-transfer-token-inflates-accounting-last-stakers-canno">[H-2] Fee-on-Transfer Token Inflates Accounting — Last Stakers Cannot Withdraw</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Source</strong>: Phase 1 (erc20, general, access-control) + Phase 2 (agents 2, 3, 5, 9, 10, 12 — 6 agents confirmed)<br><strong>Location</strong>: <code>stake()</code> line 39 vs lines 41–44</p>
+<p><code>stake()</code> calls <code>safeTransferFrom(msg.sender, address(this), amount)</code> and then records the caller-supplied <code>amount</code> in <code>Stake.amount</code>, <code>totalStaked[msg.sender]</code>, <code>totalSupplyStaked</code>, and <code>weightedStakeSum[msg.sender]</code>. For a fee-on-transfer token, the contract receives <code>amount - fee</code> but records <code>amount</code>. On <code>unstake()</code>, <code>safeTransfer(msg.sender, amount)</code> attempts to return the over-recorded value. The first stakers to unstake draw on later stakers&#39; deposits; the final stakers find the contract balance insufficient and cannot unstake — their tokens are permanently locked.</p>
+<p><strong>Proof of concept</strong> (1% fee token):</p>
+<ol>
+<li>Alice stakes 1000e18; contract receives 990e18, records 1000e18.</li>
+<li>Bob stakes 1000e18; contract receives 990e18. Total held: 1980e18, recorded: 2000e18.</li>
+<li>Alice unstakes — receives 1000e18 (succeeds, leaving 980e18).</li>
+<li>Bob unstakes — contract tries to send 1000e18 from 980e18 → <strong>permanent revert</strong>.</li>
+</ol>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-diff">+ uint256 balanceBefore = clawdToken.balanceOf(address(this));
+  clawdToken.safeTransferFrom(msg.sender, address(this), amount);
++ uint256 received = clawdToken.balanceOf(address(this)) - balanceBefore;
++ require(received &gt;= MIN_STAKE, &quot;Received amount below minimum&quot;);
+  uint256 stakeIndex = stakes[msg.sender].length;
+- stakes[msg.sender].push(Stake({ amount: amount, stakedAt: block.timestamp }));
+- totalStaked[msg.sender] += amount;
+- totalSupplyStaked += amount;
+- weightedStakeSum[msg.sender] += amount * block.timestamp;
++ stakes[msg.sender].push(Stake({ amount: received, stakedAt: block.timestamp }));
++ totalStaked[msg.sender] += received;
++ totalSupplyStaked += received;
++ weightedStakeSum[msg.sender] += received * block.timestamp;
+</code></pre>
+<hr>
+<h3 id="h-3-rebasing-token-stale-accounting-negative-rebase-causes-insol">[H-3] Rebasing Token Stale Accounting — Negative Rebase Causes Insolvency</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Source</strong>: Phase 1 (erc20, general)<br><strong>Location</strong>: <code>Stake.amount</code>, <code>totalStaked</code>, <code>totalSupplyStaked</code> — all fixed at deposit time</p>
+<p><code>Stake.amount</code> is recorded at deposit time and never updated. If <code>clawdToken</code> is a rebasing token (stETH, aTokens, AMPL), the contract&#39;s actual token balance diverges over time. On a <strong>negative rebase or slashing event</strong>, the contract holds fewer tokens than all recorded stakes. The first unstakers drain remaining tokens; later unstakers&#39; <code>safeTransfer</code> calls revert permanently with no recovery path.</p>
+<p><strong>Recommendation</strong>: Explicitly document that rebasing tokens are unsupported; if rebasing support is needed, implement share-based accounting where <code>Stake.amount</code> stores shares, not nominal amounts.</p>
+<hr>
+<h3 id="h-4-token-blacklist-or-pause-permanently-locks-staked-funds">[H-4] Token Blacklist or Pause Permanently Locks Staked Funds</h3>
+<p><strong>Severity</strong>: <span class="pill high">High</span><br><strong>Source</strong>: Phase 1 (dos, erc20)<br><strong>Location</strong>: <code>unstake()</code> line 60 — <code>clawdToken.safeTransfer(msg.sender, amount)</code></p>
+<p>If <code>clawdToken</code> adds <code>msg.sender</code> to a transfer blocklist (common in USDC, USDT, and many governance tokens), or pauses all transfers, <code>safeTransfer</code> reverts and the entire <code>unstake()</code> transaction reverts. Because this rolls back <code>s.amount = 0</code>, the user is trapped: every unstake attempt reverts indefinitely. There is no admin, no rescue function, and no alternative withdrawal path. The user&#39;s staked tokens are irrecoverably locked.</p>
+<p><strong>Recommendation</strong>: Separate the accounting from the transfer using a pull-payment pattern:</p>
+<pre><code class="language-solidity">mapping(address =&gt; uint256) public pendingWithdrawal;
+
+// In unstake(), replace safeTransfer with:
+pendingWithdrawal[msg.sender] += amount;
+
+// Separate function:
+function withdraw() external {
+    uint256 amount = pendingWithdrawal[msg.sender];
+    require(amount &gt; 0, &quot;Nothing to withdraw&quot;);
+    pendingWithdrawal[msg.sender] = 0;
+    clawdToken.safeTransfer(msg.sender, amount);
+}
+</code></pre>
+<hr>
+<h3 id="m-1-public-clawdvictionaccrued-variable-enables-snapshot-gaming">[M-1] Public <code>clawdvictionAccrued</code> Variable Enables Snapshot Gaming</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span> <em>(New finding from Phase 2 — trust-gap + periphery agents)</em><br><strong>Source</strong>: Phase 2 (agents 11, 6)<br><strong>Location</strong>: <code>clawdvictionAccrued</code> — public state variable, only updated in <code>unstake()</code></p>
+<p><code>clawdvictionAccrued[user]</code> is a public state variable updated only when a user calls <code>unstake()</code>. A long-term staker who never unstakes has <code>clawdvictionAccrued == 0</code> despite potentially years of staking history — all their conviction is only visible through <code>getClawdviction()</code>. Any governance or reward contract that reads <code>clawdvictionAccrued</code> directly (it is a public variable, making direct reads easy and tempting) will systematically undercount long-term holders and overcount active churners.</p>
+<p>The attack: An adversary can call <code>unstake()</code> on all positions immediately before a governance snapshot to maximize <code>clawdvictionAccrued</code>, then immediately restake. Long-term holders who never touched their positions show <code>clawdvictionAccrued == 0</code>; the adversary shows full historical conviction. Both had identical economic exposure.</p>
+<p>The contract&#39;s own NatSpec says &quot;Clawdviction calculated off-chain from events&quot; — yet <code>clawdvictionAccrued</code> is public and will be read by integrators who assume it is the canonical on-chain score.</p>
+<p><strong>Recommendation</strong>: Make <code>clawdvictionAccrued</code> internal (or private) and force all external reads through <code>getClawdviction()</code>. Document clearly that <code>getClawdviction()</code> is the authoritative score.</p>
+<pre><code class="language-diff">- mapping(address =&gt; uint256) public clawdvictionAccrued;
++ mapping(address =&gt; uint256) internal clawdvictionAccrued;
+</code></pre>
+<hr>
+<h3 id="m-2-getclawdviction-intermediate-overflow-causes-permanent-view-">[M-2] <code>getClawdviction()</code> Intermediate Overflow Causes Permanent View Revert</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Source</strong>: Phase 1 (precision-math) + Phase 2 (agents 1, 10 corroborated)<br><strong>Location</strong>: <code>getClawdviction()</code> line 65 — expression evaluation order</p>
+<pre><code class="language-solidity">return clawdvictionAccrued[user] + totalStaked[user] * block.timestamp - weightedStakeSum[user];
+</code></pre>
+<p>Solidity evaluates this as <code>(clawdvictionAccrued + (totalStaked * block.timestamp)) - weightedStakeSum</code>. The intermediate sum of <code>clawdvictionAccrued + totalStaked * block.timestamp</code> can overflow <code>uint256</code> even when the mathematically correct final result fits, because the nearly-equal <code>weightedStakeSum</code> is subtracted only after the addition. Solidity 0.8 checked arithmetic causes a permanent revert for that user&#39;s address. Any governance or off-chain scoring system relying on this view function silently stops returning valid data.</p>
+<p><strong>Fix</strong> (safe: inner subtraction cannot underflow — all <code>stakedAt</code> are in the past):</p>
+<pre><code class="language-diff">- return clawdvictionAccrued[user] + totalStaked[user] * block.timestamp - weightedStakeSum[user];
++ return clawdvictionAccrued[user]
++     + (totalStaked[user] * block.timestamp - weightedStakeSum[user]);
+</code></pre>
+<hr>
+<h3 id="m-3-unbounded-stakes-array-getactivestakes-gas-exhaustion">[M-3] Unbounded <code>stakes[]</code> Array — <code>getActiveStakes()</code> Gas Exhaustion</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Source</strong>: Phase 1 (dos, general, staking) + Phase 2 (agents 3, 5, 8 confirmed as Finding; 7 additional agents corroborated)<br><strong>Location</strong>: <code>getActiveStakes()</code> — double O(n) loop; <code>unstake()</code> zeroes but never removes entries</p>
+<p><code>stake()</code> appends to <code>stakes[user]</code>; <code>unstake()</code> sets <code>s.amount = 0</code> but never removes the entry. <code>getActiveStakes()</code> iterates the full array twice — once counting active entries, once filling the output. Dead (zeroed) entries from past unstakes are included in both passes. A user with ~3,500 total stake history entries approaches Base&#39;s 30M block gas limit for this view call; above ~5,000–6,000 entries the call permanently reverts. On-chain integrations (aggregators, multi-calls, governance snapshot contracts) will OOG for any such user.</p>
+<p><strong>Recommendation</strong>: Swap-and-pop in <code>unstake()</code> to reclaim slots. Update <code>Unstaked</code> events to emit the new index of the swapped element for off-chain indexers. Alternatively, enforce <code>MAX_STAKES_PER_USER</code>.</p>
+<hr>
+<h3 id="m-4-atomic-stake-unstake-spams-events-at-near-zero-cost">[M-4] Atomic Stake-Unstake Spams Events at Near-Zero Cost</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Source</strong>: Phase 1 (staking) + Phase 2 (agents 3, 4, 5 noted no-lock-period governance risk)<br><strong>Location</strong>: <code>stake()</code>, <code>unstake()</code></p>
+<p>No lock period, no EOA guard, and no minimum hold duration allow a contract to call <code>stake()</code> and <code>unstake(i)</code> in the same transaction. <code>block.timestamp - stakedAt == 0</code> yields zero clawdviction — the caller retains all tokens and pays only gas. On Base (~$0.004/tx), generating 1,000 spurious event pairs costs approximately $4. Off-chain indexers that process <code>Staked</code>/<code>Unstaked</code> events to build participation metrics or leaderboards can be spammed cheaply, inflating apparent protocol activity and corrupting snapshot-based analyses.</p>
+<p>Phase 2 additionally noted: with a 12-second window between blocks, a user staking immediately before a snapshot earns <code>amount × 12</code> clawdviction — small in absolute terms but worth gaming for large capital if governance decisions are high-value.</p>
+<p><strong>Recommendation</strong>: Add a short minimum hold:</p>
+<pre><code class="language-solidity">uint256 public constant MIN_HOLD = 1; // 1 second minimum
+// In unstake():
+require(block.timestamp &gt;= stakedAt + MIN_HOLD, &quot;Too soon to unstake&quot;);
+</code></pre>
+<hr>
+<h3 id="m-5-token-admin-mint-or-burn-corrupts-accounting">[M-5] Token Admin Mint or Burn Corrupts Accounting</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Source</strong>: Phase 1 (erc20)<br><strong>Location</strong>: <code>totalSupplyStaked</code>, <code>unstake()</code> — no external balance validation</p>
+<p>If <code>clawdToken</code> supports admin burns from arbitrary addresses, an admin can burn tokens held by the staking contract, reducing actual balance below <code>totalSupplyStaked</code>. Subsequent <code>safeTransfer</code> calls in <code>unstake()</code> revert for the last stakers. Conversely, if admin minting is unrestricted, an attacker with admin access can mint tokens, stake, accumulate clawdviction, then unstake — potentially draining real user deposits at scale.</p>
+<p><strong>Recommendation</strong>: Verify in deployment that the CLAWD token contract does not permit admin burns from arbitrary addresses. Document this constraint in the staking contract&#39;s NatSpec.</p>
+<hr>
+<h3 id="m-6-stray-token-transfers-bypass-accounting-excess-permanently-l">[M-6] Stray Token Transfers Bypass Accounting — Excess Permanently Locked</h3>
+<p><strong>Severity</strong>: <span class="pill medium">Medium</span><br><strong>Source</strong>: Phase 1 (general, access-control)<br><strong>Location</strong>: Contract-level — no sweep or rescue function</p>
+<p>Tokens transferred directly to the contract (not via <code>stake()</code>) increase <code>clawdToken.balanceOf(address(this))</code> without updating <code>totalSupplyStaked</code>. There is no owner, no rescue function, and no way to distinguish staked from donated tokens. These tokens are permanently locked. Additionally, other ERC20 tokens accidentally sent to this address cannot be recovered.</p>
+<p><strong>Recommendation</strong>: Add a recovery function restricted to the contract&#39;s deployer or a designated role:</p>
+<pre><code class="language-solidity">function recoverStrayTokens(address token, address to) external onlyOwner {
+    if (token == address(clawdToken)) {
+        uint256 excess = clawdToken.balanceOf(address(this)) - totalSupplyStaked;
+        clawdToken.safeTransfer(to, excess);
+    } else {
+        IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
+    }
+}
+</code></pre>
+<hr>
+<h3 id="l-1-erc777-tokensreceived-hook-unguarded-chained-unstake-path">[L-1] ERC777 <code>tokensReceived</code> Hook — Unguarded Chained Unstake Path</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <em>(Phase 1 High · demoted: Phase 2 confirmed CEI followed in unstake, no double-spend possible)</em><br><strong>Source</strong>: Phase 1 (erc20) + Phase 2 (agents 3, 9)<br><strong>Location</strong>: <code>unstake()</code> line 60 — <code>clawdToken.safeTransfer</code> after state zeroing</p>
+<p><code>unstake()</code> correctly follows CEI — <code>s.amount = 0</code> is set before <code>safeTransfer</code>. A re-entrant call to <code>unstake(sameIndex)</code> is blocked. However, if <code>clawdToken</code> is ERC777, the <code>tokensReceived</code> hook fires after transfer and can call <code>unstake()</code> with a <strong>different active index</strong>. Phase 2 analysis confirmed this does not enable double-spending (each stake&#39;s state is independently zeroed), but it allows a caller to chain multiple unstakes in a single transaction. Future integrations that assume one unstake per transaction (rate-limiting, multi-step flows) may be bypassed.</p>
+<p><strong>Recommendation</strong>: Add <code>nonReentrant</code> to <code>unstake()</code>.</p>
+<hr>
+<h3 id="l-2-weightedstakesum-invariant-is-fragile-under-future-refactors">[L-2] <code>weightedStakeSum</code> Invariant Is Fragile Under Future Refactors</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Source</strong>: Phase 1 (general) + Phase 2 (agents 1, 5, 10 verified the invariant holds)<br><strong>Location</strong>: <code>stake()</code> line 44, <code>unstake()</code> line 58</p>
+<p>The O(1) clawdviction formula depends on <code>weightedStakeSum[user] == Σ(active_stake.amount × active_stake.stakedAt)</code> being maintained exactly. Phase 2 confirmed the invariant holds under current code. However, any future function that modifies <code>s.amount</code> or <code>s.stakedAt</code> without mirroring the change in <code>weightedStakeSum</code> will silently corrupt <code>getClawdviction()</code> for that user with no revert.</p>
+<p><strong>Recommendation</strong>: Add NatSpec documenting the invariant. Include an invariant assertion in tests.</p>
+<hr>
+<h3 id="l-3-clawdvictionaccrued-never-pruned-historical-score-persists-i">[L-3] <code>clawdvictionAccrued</code> Never Pruned — Historical Score Persists Indefinitely</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Source</strong>: Phase 1 (staking)<br><strong>Location</strong>: <code>clawdvictionAccrued</code> — append-only, no reset or decay</p>
+<p>Once accrued, clawdviction never decreases. A user who fully unstaked years ago and holds zero tokens today retains their full historical conviction score. If clawdviction gates governance decisions or airdrops, it measures past exposure rather than current commitment — stakeholders with no active position retain governance influence indefinitely.</p>
+<p><strong>Recommendation</strong>: If current commitment matters, compute governance weight from <code>totalStaked[user] * snapshotBlock.timestamp - weightedStakeSum[user]</code> (active portion only) rather than <code>getClawdviction()</code>.</p>
+<hr>
+<h3 id="l-4-no-zero-address-validation-on-clawdtoken-constructor-paramet">[L-4] No Zero-Address Validation on <code>_clawdToken</code> Constructor Parameter</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Source</strong>: Phase 1 (staking)<br><strong>Location</strong>: <code>constructor(address _clawdToken)</code></p>
+<p>Deploying with <code>address(0)</code> produces a contract where every <code>stake()</code> call reverts on transfer. Any tokens transferred to such a bricked contract are permanently unrecoverable.</p>
+<p><strong>Fix</strong>:</p>
+<pre><code class="language-diff">  constructor(address _clawdToken) {
++     require(_clawdToken != address(0), &quot;Zero token address&quot;);
+      clawdToken = IERC20(_clawdToken);
+  }
+</code></pre>
+<hr>
+<h3 id="l-5-block-timestamp-manipulation-minor-clawdviction-inflation">[L-5] Block Timestamp Manipulation — Minor Clawdviction Inflation</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Source</strong>: Phase 1 (general, chain-specific) + Phase 2 (agents 7, 8, 11, 12 corroborated)<br><strong>Location</strong>: <code>stake()</code>, <code>unstake()</code>, <code>getClawdviction()</code></p>
+<p>All conviction accounting uses <code>block.timestamp</code> exclusively. On Base, the sequencer controls timestamps and can adjust within the allowed drift (~15 seconds). A colluding sequencer or validator can inflate <code>block.timestamp</code> at unstake time relative to stake time, inflating per-position clawdviction. For a user with <code>totalStaked = 10^24</code> wei, a 15-second manipulation adds <code>1.5 × 10^25</code> conviction units in one block. For governance uses, even marginal manipulations matter.</p>
+<p><strong>Recommendation</strong>: For high-stakes governance decisions, enforce a minimum hold period so per-block manipulation becomes economically negligible.</p>
+<hr>
+<h3 id="l-6-sequencer-downtime-temporarily-prevents-unstaking">[L-6] Sequencer Downtime Temporarily Prevents Unstaking</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span><br><strong>Source</strong>: Phase 1 (chain-specific)<br><strong>Location</strong>: <code>unstake()</code></p>
+<p>During Base sequencer outages, users cannot submit transactions and therefore cannot unstake. Since there are no lock periods or slashing risks, this is a temporary delay only. Clawdviction continues accruing during downtime, marginally benefiting stakers at no cost. No material security risk.</p>
+<hr>
+<h3 id="l-7-getstakecount-returns-historical-count-including-dead-slots">[L-7] <code>getStakeCount()</code> Returns Historical Count Including Dead Slots</h3>
+<p><strong>Severity</strong>: <span class="pill low">Low</span> <em>(New finding from Phase 2)</em><br><strong>Source</strong>: Phase 2 (agents 5, 6)<br><strong>Location</strong>: <code>getStakeCount()</code> — returns <code>stakes[user].length</code></p>
+<p><code>getStakeCount()</code> returns the total length of the <code>stakes[user]</code> array, which includes all historical slots zeroed by <code>unstake()</code>. It can return 1,000 while <code>getActiveStakes()</code> returns 0. Off-chain integrations using this count to iterate or allocate for active positions will encounter ghost entries and must filter by <code>amount &gt; 0</code>.</p>
+<p><strong>Recommendation</strong>: Rename to <code>getTotalStakeCount()</code> or add a separate <code>getActiveStakeCount()</code> function that iterates and counts only non-zero entries.</p>
+<hr>
+<h2 id="info">Info</h2>
+<p><strong>[I-1] NatSpec Contradicts On-Chain Implementation</strong><br>The <code>@notice</code> states &quot;Clawdviction calculated off-chain from events&quot; but the contract implements full on-chain tracking via <code>clawdvictionAccrued</code>, <code>weightedStakeSum</code>, and <code>getClawdviction()</code>. This contradicts the design intent and misleads integrators about which source is authoritative. Update NatSpec to clarify that <code>getClawdviction()</code> is the canonical on-chain score.</p>
+<p><strong>[I-2] PUSH0 Opcode — Safe on Base Only</strong><br>Solidity ^0.8.20 emits <code>PUSH0</code>. Base supports the Shanghai EVM, so this is safe. Risk exists only if the contract is redeployed to pre-Shanghai networks (e.g., older L2s or sidechains without Shanghai support).</p>
+<p><strong>[I-3] Theoretical <code>amount * block.timestamp</code> Overflow (Unreachable)</strong><br>Overflow in <code>weightedStakeSum</code> accumulation (<code>amount * block.timestamp</code>) would require <code>totalStaked</code> approaching <code>~6.5 × 10^67</code> — astronomically beyond any realistic ERC-20 supply. Solidity 0.8 would revert rather than silently corrupt state. Informational only. (Phase 2 agents 1, 10 independently verified.)</p>
+<p><strong>[I-4] <code>getClawdviction()</code> Subtraction Cannot Underflow</strong><br>The expression <code>totalStaked[user] * block.timestamp - weightedStakeSum[user]</code> is always non-negative: since all <code>stakedAt</code> timestamps are in the past (<code>stakedAt ≤ block.timestamp</code>), the product <code>totalStaked * now ≥ weightedStakeSum</code> algebraically. The invariant was independently verified by Phase 2 agents 1, 3, 5, 9, 10, 12.</p>
+<hr>
+<h2 id="phase-2-leads-not-promoted-to-findings">Phase 2 Leads (Not Promoted to Findings)</h2>
+<p><em>High-signal trails from Phase 2 pashov agents that passed multi-agent convergence review but did not clear all judging gates for finding status.</em></p>
+<ul>
+<li><p><strong>No minimum lock period — governance flash-staking</strong> — <code>ClawdVictionStaking.stake</code> — Any user can stake immediately before a snapshot and unstake after, earning <code>amount × ~12 seconds</code> conviction at near-zero cost (captured in M-4 above; lead is about on-chain governance consumers specifically). [agents: 3]</p>
+</li>
+<li><p><strong>ERC-777 reentrancy on stake() — pre-state external call</strong> — <code>ClawdVictionStaking.stake</code> — <code>safeTransferFrom</code> before state writes (CEI violation) creates an unguarded re-entrancy path via ERC-777 <code>tokensToSend</code>; no theft path confirmed by Phase 2; captured in H-1 above. [agents: 3]</p>
+</li>
+<li><p><strong>Validator timestamp manipulation</strong> — <code>ClawdVictionStaking.getClawdviction</code> — PoS validators can nudge <code>block.timestamp</code> ±12 seconds; scales linearly with staked amount; captured in L-5 above. [agents: 4]</p>
+</li>
+<li><p><strong>Intermediate overflow in getClawdviction at extreme token supply</strong> — <code>ClawdVictionStaking.getClawdviction</code> — captured in M-2 above. [agents: 2]</p>
+</li>
+</ul>
+<hr>
+<h2 id="finding-index">Finding Index</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Title</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H-1</td>
+<td><span class="pill high">High</span></td>
+<td>ERC777 CEI violation in stake() — reentrancy attack surface</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>H-2</td>
+<td><span class="pill high">High</span></td>
+<td>Fee-on-transfer token — insolvency and permanent lock</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>H-3</td>
+<td><span class="pill high">High</span></td>
+<td>Rebasing token — negative rebase causes insolvency</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>H-4</td>
+<td><span class="pill high">High</span></td>
+<td>Token blacklist/pause — permanent fund lock, no recovery</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>M-1</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>clawdvictionAccrued</code> public variable enables snapshot gaming</td>
+<td>P2 new</td>
+</tr>
+<tr>
+<td>M-2</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>getClawdviction()</code> intermediate overflow → permanent view revert</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>M-3</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Unbounded <code>stakes[]</code> array — <code>getActiveStakes()</code> gas exhaustion</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>M-4</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Atomic stake-unstake spams events + governance gaming</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>M-5</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Token admin mint/burn corrupts accounting</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>M-6</td>
+<td><span class="pill medium">Medium</span></td>
+<td>Stray token transfers — excess permanently locked</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>L-1</td>
+<td><span class="pill low">Low</span></td>
+<td>ERC777 <code>tokensReceived</code> — unguarded chained unstake</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><span class="pill low">Low</span></td>
+<td><code>weightedStakeSum</code> invariant fragile under future refactors</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><span class="pill low">Low</span></td>
+<td><code>clawdvictionAccrued</code> never pruned — historical score persists</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>L-4</td>
+<td><span class="pill low">Low</span></td>
+<td>No zero-address check on <code>_clawdToken</code> constructor</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>L-5</td>
+<td><span class="pill low">Low</span></td>
+<td>Block timestamp manipulation — minor clawdviction inflation</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>L-6</td>
+<td><span class="pill low">Low</span></td>
+<td>Sequencer downtime temporarily blocks unstaking</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>L-7</td>
+<td><span class="pill low">Low</span></td>
+<td><code>getStakeCount()</code> returns historical count with dead slots</td>
+<td>P2 new</td>
+</tr>
+<tr>
+<td>I-1</td>
+<td><span class="pill info">Info</span></td>
+<td>NatSpec off-chain claim contradicts on-chain implementation</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>I-2</td>
+<td><span class="pill info">Info</span></td>
+<td>PUSH0 opcode — safe on Base only</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>I-3</td>
+<td><span class="pill info">Info</span></td>
+<td>Theoretical amount × timestamp overflow (unreachable)</td>
+<td>P1+P2</td>
+</tr>
+<tr>
+<td>I-4</td>
+<td><span class="pill info">Info</span></td>
+<td><code>getClawdviction()</code> subtraction invariant confirmed safe</td>
+<td>P1+P2</td>
+</tr>
+</tbody></table></div>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant using a two-phase methodology (ethskills breadth + pashov depth). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended. For a consultation regarding your project&#39;s security, visit <a href="https://www.pashov.com">https://www.pashov.com</a></p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifejseuqo2qsjan67u5kfpd2kbn27wdfiinvnfrb4t5nwf7ditzh4.ipfs.community.bgipfs.com/"><code>https://bafkreifejseuqo2qsjan67u5kfpd2kbn27wdfiinvnfrb4t5nwf7ditzh4.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/295">#295</a> on Base. Rendered 2026-07-15.</p>
+  </footer>
+
+</div>
+</body>
+</html>
