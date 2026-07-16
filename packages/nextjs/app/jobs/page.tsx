@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useAccount } from "wagmi";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
-import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
 import { formatUnits } from "viem";
+import { useAccount } from "wagmi";
+import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 const STATUS_LABELS: Record<number, { label: string; badge: string }> = {
   0: { label: "Open", badge: "badge-success" },
@@ -40,14 +40,15 @@ function JobCard({ jobId }: { jobId: number; publicBoard?: boolean }) {
   });
   const job = jobRaw as any;
 
-  if (!job) return (
-    <div className="card bg-base-200 animate-pulse">
-      <div className="card-body py-4 px-5">
-        <div className="h-4 bg-base-300 rounded w-1/2" />
-        <div className="h-3 bg-base-300 rounded w-1/3 mt-2" />
+  if (!job)
+    return (
+      <div className="card bg-base-200 animate-pulse">
+        <div className="card-body py-4 px-5">
+          <div className="h-4 bg-base-300 rounded w-1/2" />
+          <div className="h-3 bg-base-300 rounded w-1/3 mt-2" />
+        </div>
       </div>
-    </div>
-  );
+    );
 
   const serviceType = Number(job.serviceTypeId);
 
@@ -62,9 +63,7 @@ function JobCard({ jobId }: { jobId: number; publicBoard?: boolean }) {
 
   // Determine the right action link
   const actionLink = isConsult ? `/chat/${jobId}` : `/jobs/${jobId}`;
-  const actionLabel = isConsult
-    ? (Number(job.status) === 0 ? "Continue Chat →" : "View Chat →")
-    : "View Details →";
+  const actionLabel = isConsult ? (Number(job.status) === 0 ? "Continue Chat →" : "View Chat →") : "View Details →";
 
   return (
     <Link href={actionLink} className="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
@@ -113,16 +112,27 @@ export default function JobsPage() {
 
       {/* Quick actions */}
       <div className="flex flex-wrap gap-2 mb-6">
-        <Link href="/consult" className="btn btn-primary btn-sm">💬 New Consult</Link>
-        <Link href="/build" className="btn btn-outline btn-sm">🔨 New Build</Link>
-        <Link href="/" className="btn btn-ghost btn-sm">← Services</Link>
+        <Link href="/consult" className="btn btn-primary btn-sm">
+          💬 New Consult
+        </Link>
+        <Link href="/build" className="btn btn-outline btn-sm">
+          🔨 New Build
+        </Link>
+        <Link href="/showcase" className="btn btn-outline btn-sm">
+          🚀 The Work
+        </Link>
+        <Link href="/" className="btn btn-ghost btn-sm">
+          ← Services
+        </Link>
       </div>
 
       {/* My Jobs */}
       {!address ? (
         <div className="text-center py-12 w-full max-w-lg">
           <div className="text-5xl mb-3">🔗</div>
-          <div className="mb-3"><RainbowKitCustomConnectButton /></div>
+          <div className="mb-3">
+            <RainbowKitCustomConnectButton />
+          </div>
           <p className="text-sm opacity-50">Your consultations, builds, and audits will appear here</p>
         </div>
       ) : myJobs.length === 0 ? (

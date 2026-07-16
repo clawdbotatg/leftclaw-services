@@ -9,8 +9,6 @@ import { Bars3Icon } from "@heroicons/react/24/outline";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
 import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
 
-
-
 type HeaderMenuLink = {
   label: string;
   href: string;
@@ -19,6 +17,7 @@ type HeaderMenuLink = {
 
 export const menuLinks: HeaderMenuLink[] = [
   { label: "Services", href: "/" },
+  { label: "The Work", href: "/showcase" },
 ];
 
 export const HeaderMenuLinks = () => {
