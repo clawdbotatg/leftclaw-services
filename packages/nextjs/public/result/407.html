@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProRataDistributor — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #407">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">ProRataDistributor</h1>
+    <p class="job-sub">Job #407 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/407"><b>Job page</b> #407</a>
+      <a class="chip" href="https://bafkreiey6kqrjgpawl44ulncqli2r4mcdda2ggofqbvdghsctsmxiqk5su.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-16</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card medium"><div class="n">3</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">3</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#audit-target">Audit Target</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#findings-below-confidence-threshold-description-only">Findings below confidence threshold (description only)</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — ProRataDistributor</h1>
+<hr>
+<h2 id="audit-target">Audit Target</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Contract</strong></td>
+<td><code>ProRataDistributor</code></td>
+</tr>
+<tr>
+<td><strong>Chain</strong></td>
+<td>Avalanche C-Chain (chain ID 43114)</td>
+</tr>
+<tr>
+<td><strong>Address</strong></td>
+<td><code>0xd9b7fc1fA0EdFb2E881acCe3fA5709D1aA5Bfb4d</code></td>
+</tr>
+<tr>
+<td><strong>Verification source</strong></td>
+<td>Verified source pulled from Routescan (Snowtrace-compatible Etherscan-format API), full match, single file <code>src/ProRataDistributor.sol</code></td>
+</tr>
+<tr>
+<td><strong>Compiler</strong></td>
+<td><code>v0.8.24+commit.e11b9ed9</code>, optimizer <strong>disabled</strong>, runs=200, EVM target <code>cancun</code>, no <code>viaIR</code></td>
+</tr>
+<tr>
+<td><strong>Observed block</strong></td>
+<td>~90,438,411 – 90,439,508 (live calls made during this audit)</td>
+</tr>
+<tr>
+<td><strong>Constructor args (decoded)</strong></td>
+<td><code>yrt_=0x964555644E067c560A4C144360507E80c1104784</code>, <code>owner_=0xEA3e895b0696e161C68486Ee2F85e6Cc6ef962d0</code>, <code>deadline_=1789366189</code> (2026-09-14), <code>totalPayout_=10824709191</code></td>
+</tr>
+<tr>
+<td><strong>Live values confirmed on-chain</strong></td>
+<td><code>owner()=0xEA3e895b0696e161C68486Ee2F85e6Cc6ef962d0</code>, <code>yrt()=0x964555644E067c560A4C144360507E80c1104784</code>, <code>token()=0xc7198437980c041c805A1EDcbA50c1Ce5db95118</code> (USDT.e, 6 dec), <code>deadline()=1789366189</code>, <code>rate()=1186981452639335672</code>, <code>totalPayout()=10824709191</code>. Contract currently holds <strong>0 YRT and 0 USDT.e</strong> (unfunded, no swaps yet).</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>ProRataDistributor.sol</code> (149 lines, single contract, no inheritance, no proxy)</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td>Full file, no exclusions applicable (no tests/mocks/interfaces present)</td>
+</tr>
+</tbody></table></div>
+<p>This is a live post-deployment review of a fresh audit engagement (job assigned as a<br>standalone target — &quot;redemption contract&quot; on Avalanche). No prior audit of this<br>specific contract was provided or assumed; every finding below comes from this<br>job&#39;s own fresh three-phase run (context → ethskills breadth → pashov depth →<br>reconciliation), not from any external report.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<ul>
+<li><strong>Phases run</strong>: Phase 0 (context: protocol map, access-control inventory, threat<br>catalog) → Phase 1 (ethskills breadth: 5 domains — general, precision-math, erc20,<br>access-control, dos) → Phase 2 (pashov depth: 12 blind attack agents) →<br>Phase 3 (this reconciliation).</li>
+<li><strong>Overlap</strong>: 2 · <strong>Phase-1-only</strong>: 5 · <strong>Phase-2-only</strong>: 1 (demoted to<br>template-robustness note) · <strong>Re-examined leads kept</strong>: 1 (the external<br>YRT-supply-freeze dependency, elevated from a universally-raised-but-unverified<br>lead to a concretely-proven finding via independent on-chain research into the<br>external YakStrategy contract) · <strong>Coverage holes closed</strong>: 0 (both phases<br>independently and exhaustively covered the same small, single-file scope — a<br>healthy convergence, not a gap).</li>
+<li><strong>Confidence floor</strong>: findings below Low severity are not reported as findings;<br>anything with confidence &lt; 50 is listed under <strong>Leads</strong> instead. All findings<br>below carry confidence ≥ 75 (each was independently corroborated by 2+ agents<br>across the two hunting phases, or in one case independently verified against the<br>real external contract&#39;s deployed bytecode/source).</li>
+<li><strong>Verification performed beyond the standard pipeline</strong>: this audit independently<br>fetched and read the actual external YakStrategy contract&#39;s verified source<br>(<code>0x964555644E067c560A4C144360507E80c1104784</code>, <code>JoeLendingStrategyV1 is YakStrategyV2</code>) and its owner contract (<code>YakStrategyManagerV1</code> at<br><code>0x302404cb8F34713A8B8DBF9b4989A41252332068</code>) to convert what every single<br>hunting agent flagged as an <em>unverifiable</em> external trust assumption into a<br><em>concretely confirmed</em> mechanism — see Finding 1 below.</li>
+</ul>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[80] <strong>1. External YRT-supply-freeze precondition is a real, provable, non-timelocked, role-gated toggle — not enforced anywhere in this contract</strong></p>
+<p><code>ProRataDistributor.constructor</code> / <code>swap</code> (cross-contract with the external <code>YakStrategyV2.updateDepositsEnabled</code> / <code>YakStrategyManagerV1.enableDeposits</code>) · Confidence: 80 · <strong>Severity:</strong> <span class="pill medium">Medium</span></p>
+<p><strong>Description</strong><br>The contract&#39;s entire economic guarantee — that the sum of all payouts across every<br><code>swap()</code> call never exceeds <code>totalPayout</code> — depends on <code>yrt.totalSupply()</code> (read<br>once, at <code>constructor</code> L89, and baked into the immutable <code>rate</code> at L101) never<br>increasing for the life of the contract. The NatSpec (L21-29) documents this as a<br>required precondition (&quot;deposits are disabled and must never be re-enabled&quot;) that<br>is &quot;asserted by the deploy script&quot; — i.e., not enforced by any code in this file.</p>
+<p>This audit went further than treating that as a documentation-only trust<br>assumption and independently fetched the real, verified source of the external YRT<br>contract to test whether the precondition is actually structurally permanent. It<br>is not:</p>
+<pre><code class="language-solidity">// YakStrategyV2.sol (external contract, out of this audit&#39;s primary scope,
+// fetched independently for verification)
+function updateDepositsEnabled(bool newValue) public onlyOwner {
+    require(DEPOSITS_ENABLED != newValue);
+    DEPOSITS_ENABLED = newValue;
+    emit DepositsEnabled(newValue);
+}
+</code></pre>
+<pre><code class="language-solidity">// JoeLendingStrategyV1.sol constructor (external contract)
+...
+updateDepositsEnabled(true);
+transferOwnership(_timelock);   // NOT renounced
+</code></pre>
+<pre><code class="language-solidity">// YakStrategyManagerV1.sol (external contract — this is the strategy&#39;s owner)
+function enableDeposits(address strategy) external {
+    require(hasRole(STRATEGY_ENABLER_ROLE, msg.sender), &quot;enableDeposits::auth&quot;);
+    IStrategy(strategy).updateDepositsEnabled(true);
+    emit SetDepositsEnabled(strategy, true);
+}
+</code></pre>
+<p>No timelock, delay, or queue mechanism exists anywhere in <code>YakStrategyManagerV1</code><br>for this specific call — whoever currently holds <code>STRATEGY_ENABLER_ROLE</code> can<br>re-enable deposits on this exact YRT strategy in a single transaction, at any time,<br>with zero on-chain warning beforehand. Once re-enabled, <code>JoeLendingStrategyV1 ._deposit()</code> mints new YRT to any depositor (<code>require(DEPOSITS_ENABLED == true); ... _mint(account, shareTokenAmount);</code>), growing <code>totalSupply()</code> past the value<br><code>ProRataDistributor.rate</code> was computed from — with <code>ProRataDistributor</code> itself<br>having zero mechanism to detect or react to that growth.</p>
+<p><strong>Proof of Concept</strong><br>Live on-chain verification performed for this audit (block ~90,439,508):</p>
+<ul>
+<li><code>YRT.owner()</code> = <code>0x302404cb8F34713A8B8DBF9b4989A41252332068</code> — a live, 10,085-byte<br>contract (verified as <code>YakStrategyManagerV1</code>), <strong>not renounced, not <code>address(0)</code></strong>.</li>
+<li><code>YRT.DEPOSITS_ENABLED()</code> = <code>false</code> — currently disabled, matching the documented<br>precondition <strong>today</strong>.</li>
+<li><code>YRT.totalSupply()</code> = <code>9119526819</code> — unchanged since <code>ProRataDistributor</code>&#39;s<br>deployment (<strong>no dilution has occurred</strong>; this is not a live active exploit).</li>
+</ul>
+<p>Exploit chain (not currently triggered, but structurally live and provable):<br>whoever holds <code>STRATEGY_ENABLER_ROLE</code> on <code>YakStrategyManagerV1</code> calls<br><code>enableDeposits(0x964555644E067c560A4C144360507E80c1104784)</code> → <code>DEPOSITS_ENABLED</code><br>flips to <code>true</code> on the strategy → any depositor calls the strategy&#39;s <code>deposit()</code> →<br>new YRT is minted to them → they call <code>ProRataDistributor.swap(newAmount)</code> → paid<br>out at the stale <code>rate</code> computed for the smaller original supply, diluting or<br>draining the payout pool that <code>totalPayout</code> was sized for; later legitimate<br>holders of the <em>original</em> supply hit atomic reverts once the balance is exhausted<br>(no partial loss, but the documented pro-rata guarantee is silently violated).</p>
+<p><strong>Severity rationale</strong>: rated Medium rather than Critical/High because triggering<br>it requires action by a specific, named, currently-legitimate privileged role on a<br><em>different</em> contract than the one under audit — not an unprivileged attacker path<br>against <code>ProRataDistributor</code> itself. It is reported as a confirmed finding (not<br>merely a caveat) because this audit obtained and read the actual mechanism and<br>verified on-chain that it is live, un-renounced, and un-timelocked — a concrete,<br>provable trust dependency rather than a hypothetical.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    uint256 public cumulativeSwapped;
++    error ExceedsFrozenSupply();
++
+     function swap(uint256 yrtAmount) external {
+         if (block.timestamp &gt; deadline) revert SwapWindowOver();
++        if (cumulativeSwapped + yrtAmount &gt; totalSupplyAtDeploy) revert ExceedsFrozenSupply();
+         uint256 payoutAmount = quote(yrtAmount);
+         if (payoutAmount == 0) revert NothingToSwap();
++        cumulativeSwapped += yrtAmount;
+         _safeTransferFrom(yrt, msg.sender, address(this), yrtAmount);
+         _safeTransfer(token, msg.sender, payoutAmount);
+         emit Swapped(msg.sender, yrtAmount, payoutAmount);
+     }
+</code></pre>
+<p>(caps cumulative redemptions at the supply snapshot taken at deployment,<br>independent of what the external contract&#39;s <code>totalSupply()</code> grows to later).<br>Alternatively/additionally: before funding each round, the deploying team should<br>independently verify — not merely assume from NatSpec — that the specific YRT<br>strategy&#39;s deposit-enable role has been revoked or is otherwise permanently<br>disabled for that round.</p>
+<hr>
+<p>[78] <strong>2. Constructor never validates the derived <code>rate</code> — a plausible parameter choice silently bricks all swaps, or causes an undetectable permanent shortfall</strong></p>
+<p><code>ProRataDistributor.constructor</code> · Confidence: 78 · <strong>Severity:</strong> <span class="pill medium">Medium</span></p>
+<p><strong>Description</strong><br><code>rate = totalPayout_ * RATE_PRECISION / supply</code> (L101) is computed via floor<br>division and never checked for degeneracy. The constructor validates<br><code>totalPayout_ != 0</code> (L87) and <code>supply != 0</code> (L90) independently, but never<br>validates the <em>quotient</em> itself — a case the checks do not, and structurally<br>cannot, cover.</p>
+<p><strong>Proof of Concept</strong></p>
+<p><em>Case A — total, permanent brick.</em> <code>supply = 1e24</code> (1,000,000 YRT, 18-decimal),<br><code>totalPayout_ = 500000</code> (an easy decimal-scale mistake) →<br><code>rate = 500000*1e18 // 1e24 = 0</code>. Deployment succeeds silently. Every subsequent<br><code>swap()</code> computes <code>quote()==0</code> for any <code>yrtAmount</code>, reverting <code>NothingToSwap()</code><br>(L118) unconditionally, forever. After <code>deadline</code>, <code>sweep(token)</code> returns 100% of<br>the funded <code>totalPayout</code> to the owner having distributed nothing to anyone, with no<br>on-chain signal that anything went wrong.</p>
+<p><em>Case B — silent large shortfall, worse because nothing ever reverts.</em><br><code>supply = 1e24</code>, <code>totalPayout_ = 1500000</code> → <code>rate = floor(1.5e24/1e24) = 1</code>. A<br>holder redeeming the entire supply in one call receives<br><code>quote(1e24) = 1e24 * 1 / 1e18 = 1,000,000</code> — only 1,000,000 of the promised<br>1,500,000 (a 33% shortfall) is ever claimable in total, even though every<br>individual <code>swap()</code> succeeds and 100% of YRT is redeemed. This is strictly worse<br>than Case A operationally since nothing ever reverts or signals the problem — it<br>is silent value loss from the rate&#39;s coarse quantization (<code>1e18/supply</code> resolution<br>instead of the full <code>1/supply</code> resolution a direct<br><code>yrtAmount*totalPayout/supply</code> computation would give).</p>
+<p><strong>Does not affect the live deployment</strong> — independently verified:<br><code>rate=1186981452639335672</code>, <code>totalPayout=10824709191</code>, <code>supply=9119526819</code>;<br><code>quote(supply) = 10824709190</code>, within 1 raw unit of <code>totalPayout</code> (healthy,<br>expected floor-rounding dust only).</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     uint256 supply = yrt_.totalSupply();
+     if (supply == 0) revert ZeroSupply();
+     ...
+     rate = totalPayout_ * RATE_PRECISION / supply;
++    if (rate == 0) revert ZeroRate();
+</code></pre>
+<p>For Case B, consider computing each payout directly as<br><code>yrtAmount * totalPayout / supply</code> inside <code>quote()</code> instead of precomputing <code>rate</code>,<br>restoring full <code>1/supply</code> resolution and eliminating the double-floor composition.</p>
+<hr>
+<p>[75] <strong>3. No ownership transfer, renounce, or recovery mechanism — permanent owner-key loss would strand any unclaimed payout balance forever</strong></p>
+<p><code>ProRataDistributor.owner</code> / <code>sweep</code> · Confidence: 75 · <strong>Severity:</strong> <span class="pill medium">Medium</span></p>
+<p><strong>Description</strong><br><code>owner</code> (<code>address public immutable</code>, L62) is set once in the constructor (L95),<br>validated only for non-zero (L86). No <code>transferOwnership</code>, <code>Ownable2Step</code>,<br>renounce, or rotation path exists anywhere in the contract, and because it is<br><code>immutable</code> this is fixed in bytecode forever. <code>sweep()</code> (owner-gated, L128) is the<br>only function that can ever move the payout-token balance out of the contract<br>after <code>deadline</code>. Permanent loss of the owner key&#39;s signing capability — lost key,<br>destroyed hardware wallet, decommissioned multisig — leaves any unclaimed payout<br>balance permanently unreachable by any address, with no on-chain or off-chain<br>recovery path.</p>
+<p><strong>Proof of Concept</strong><br>(1) Contract is funded with <code>totalPayout</code>. (2) Only a fraction of YRT holders<br>redeem before <code>deadline</code> — normal, expected behavior, not every holder redeems.<br>(3) <code>deadline</code> passes; <code>sweep(token)</code> becomes callable. (4) Owner-key access is<br>lost before that call is made. (5) The remaining balance sits in the contract<br>forever — no code path can ever reassign <code>owner</code>.</p>
+<p><strong>Fix</strong>: not retrofittable on this already-deployed, fully immutable instance<br>(accepted residual risk — the current owner key should have robust custody/backup<br>procedures, since the contract provides no on-chain backstop). For future<br>deployments of this template, add a minimal two-step ownership-transfer mechanism<br>(<code>proposeOwner()</code> / <code>acceptOwnership()</code>, <code>Ownable2Step</code>-style) gated by the current<br>owner.</p>
+<hr>
+<p>[70] <strong>4. <code>swap()</code> trusts the caller-supplied <code>yrtAmount</code> as the amount actually received — no before/after balance check on the YRT leg</strong></p>
+<p><code>ProRataDistributor.swap</code> · Confidence: 70 · <strong>Severity:</strong> <span class="pill low">Low</span></p>
+<p><strong>Description</strong><br>NatSpec disclaims fee-on-transfer/rebasing support for the <em>payout</em> token<br>(L44-45) but is silent on the identical risk for YRT itself. <code>swap()</code> computes<br><code>payoutAmount = quote(yrtAmount)</code> (L115) from the requested amount, then pulls<br><code>yrtAmount</code> of YRT via <code>_safeTransferFrom</code> (L119) without ever measuring the<br>contract&#39;s actual YRT balance delta.</p>
+<p><strong>Proof of Concept</strong><br>Not exploitable against the live YRT (a standard, non-fee YakStrategy share<br>token, confirmed via its fetched source — plain balance-mapping transfers, no<br>fees, no hooks). Would only matter if this contract were redeployed against a<br>YRT token that behaved as fee-on-transfer or deflationary.</p>
+<p><strong>Fix</strong>: Document that YRT must also be non-fee-on-transfer/non-rebasing<br>(extending the existing payout-token disclaimer), or measure the actual balance<br>delta before/after the pull if this contract is ever redeployed against a<br>different share-token implementation.</p>
+<hr>
+<p>[65] <strong>5. No emergency pause / circuit breaker on <code>swap()</code></strong></p>
+<p><code>ProRataDistributor</code> (whole contract) · Confidence: 65 · <strong>Severity:</strong> <span class="pill low">Low</span></p>
+<p><strong>Description</strong><br>The fully immutable design (deliberate) means there is no way for the owner to<br>halt <code>swap()</code> early if a problem surfaces mid-window — e.g., the payout token<br>being paused/blacklisting the contract, or the external YRT-supply-freeze<br>precondition (Finding 1) turning out not to hold.</p>
+<p><strong>Fix</strong>: Accepted residual risk for the deployed instance (immutable, no retrofit<br>possible). Future redeployments of this template could add a scoped pause guard<br>on <code>swap()</code> only, structured so it cannot be used to touch the payout-token<br>balance before <code>deadline</code>.</p>
+<hr>
+<p>[60] <strong>6. <code>sweep()</code>&#39;s arbitrary-token low-level call has no returndata cap or code-existence check</strong></p>
+<p><code>ProRataDistributor.sweep</code> / <code>_safeTransfer</code> · Confidence: 60 · <strong>Severity:</strong> <span class="pill low">Low</span></p>
+<p><strong>Description</strong><br>A maliciously crafted &quot;bait&quot; token sent to the contract and later swept by the<br>owner could return an oversized <code>bytes</code> payload from <code>transfer()</code>, forcing<br>expensive memory copying before the <code>abi.decode</code> check at L141 runs. This path is<br>owner-gated (L128) — no unprivileged actor can trigger it; worst case the owner<br>burns gas on a failed sweep attempt of a bait token.</p>
+<p><strong>Fix</strong>: Cap processed returndata (e.g., a fixed 32-byte <code>returndatacopy</code>) and/or<br>add an explicit <code>extcodesize</code> check before the call.</p>
+<hr>
+<h2 id="findings-below-confidence-threshold-description-only">Findings below confidence threshold (description only)</h2>
+<p>[55] <strong>7. Centralized/blacklistable payout token (USDT.e) is a single point of total, unrecoverable freeze</strong></p>
+<p><code>ProRataDistributor.swap</code> / <code>sweep</code> · Confidence: 55</p>
+<p>Both the swap-payout path (L120) and the post-deadline owner-recovery path (L134)<br>route through the same <code>token.transfer</code> call. If the token issuer ever blacklists<br>this contract&#39;s address, both revert forever, permanently stranding YRT and any<br>remaining payout balance with no owner recourse. Requires the token issuer (not an<br>ordinary attacker) to act — a trust-model dependency inherent to using a<br>centralized, pausable/blacklistable ERC-20 as the payout asset.</p>
+<p>[50] <strong>8. <code>sweep</code>/constructor token-resolution use plain address equality with no defense against token aliasing (future-redeployment risk only)</strong></p>
+<p><code>ProRataDistributor.constructor</code> / <code>sweep</code> · Confidence: 50</p>
+<p>Six independent phase-2 attack agents converged on the same code smell: the<br>constructor never asserts <code>depositToken() != address(yrt_)</code> (L91-97), and<br><code>sweep</code>&#39;s carve-outs (L129-131) are plain <code>==</code> checks. If a future redeployment of<br>this reusable template (&quot;Deploy one instance per (YRT, payout) pair&quot;) were pointed<br>at a YakStrategy whose <code>depositToken()</code> returns its own address, <code>token == yrt</code><br>would hold, breaking the &quot;escrowed YRT is worthless and unrecoverable&quot; guarantee<br>and permanently blocking recovery of what should have been the payout token. Not<br>reachable today — live <code>token</code> (USDT.e) is confirmed structurally distinct from<br>live <code>yrt</code>. Recommend an explicit constructor check<br><code>if (depositToken == address(yrt_)) revert InvalidPayoutToken();</code> for future<br>redeployments.</p>
+<p>[45] <strong>9. Malformed non-boolean nonzero-length return data causes a raw decode panic instead of <code>TransferFailed()</code></strong></p>
+<p><code>_safeTransfer</code> / <code>_safeTransferFrom</code> (L138-148) · Confidence: 45</p>
+<p><code>abi.decode(data, (bool))</code> reverts with a generic panic for non-canonical-boolean<br>nonzero-length returndata instead of the contract&#39;s own error. Transaction still<br>reverts safely either way — no fund-safety impact, just error-clarity. Fix: guard<br>with a <code>data.length &gt;= 32</code> check before decoding.</p>
+<p>[40] <strong>10. <code>sweep()</code> may revert on a zero-balance token that disallows zero-amount transfers</strong></p>
+<p><code>ProRataDistributor.sweep</code> (L127-136) · Confidence: 40</p>
+<p>A minority of tokens revert on zero-value <code>transfer()</code>. No fund-loss impact —<br>owner gets a revert instead of a silent no-op. Fix: <code>if (balance == 0) return;</code><br>before the transfer.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[80]</td>
+<td>External YRT-supply-freeze precondition is a real, provable, non-timelocked, role-gated toggle</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[78]</td>
+<td>Constructor never validates the derived <code>rate</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>[75]</td>
+<td>No ownership transfer/renounce/recovery mechanism</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[70]</td>
+<td><code>swap()</code> trusts caller-supplied <code>yrtAmount</code>, no balance-delta check</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[65]</td>
+<td>No emergency pause on <code>swap()</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>[60]</td>
+<td><code>sweep()</code> arbitrary-token call has no returndata cap</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[55]</td>
+<td>Centralized/blacklistable payout token single point of freeze</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[50]</td>
+<td>Token-aliasing gap in <code>sweep</code>/constructor (future redeployments only)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[45]</td>
+<td>Malformed return data causes raw panic instead of custom error</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[40]</td>
+<td><code>sweep()</code> may revert on zero-balance token</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Trails with concrete code smells where the full exploit path could not be completed, or that were resolved sound during this audit — recorded for completeness, not scored.</em></p>
+<ul>
+<li><strong>Reentrancy surface on <code>swap()</code></strong> — <code>ProRataDistributor.swap</code> — Code smells: YRT<br>pulled in (L119) before payout pushed out (L120), no reentrancy guard. <strong>Resolved<br>sound</strong>: this audit independently fetched the real YRT contract&#39;s source and<br>confirmed its <code>_transferTokens</code> is a plain balance-mapping update with no<br>external calls or hooks; combined with zero mutable per-call state in<br><code>ProRataDistributor</code>, no exploit path exists. No action required.</li>
+<li><strong>Adversarial swap-splitting to exceed <code>totalPayout</code></strong> — <code>ProRataDistributor.swap</code><br>— <strong>Resolved sound</strong>: proven algebraically and via brute-force simulation<br>(independently by 6+ agents across both phases) that<br><code>Σfloor(aᵢ·rate/1e18) ≤ floor(Σaᵢ·rate/1e18) ≤ totalPayout</code> for any partition.<br>No action required.</li>
+<li><strong>WAVAX fallback constant correctness</strong> — <code>constructor</code> L60 — <strong>Resolved sound</strong>:<br>independently verified against external sources to be the correct, real<br>Avalanche WAVAX address. Not reachable by the live deployment regardless (its<br><code>depositToken()</code> returned non-zero). No action required.</li>
+<li><strong>Splitting swaps into many small calls yields ≤ payout of one large swap</strong> —<br><code>quote</code>/<code>swap</code> — Self-inflicted rounding loss to the swapper, not a protocol<br>risk. Optional documentation only.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Writes</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>constructor</code> (L85)</td>
+<td>none (deploy-time); validates <code>owner_≠0</code> (L86), <code>totalPayout_≠0</code> (L87), <code>deadline_&gt;now</code> (L88), <code>supply≠0</code> (L90)</td>
+<td>deployer</td>
+<td>all 6 immutables</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>quote(uint256)</code> (L106)</td>
+<td>none, <code>view</code></td>
+<td>anyone</td>
+<td>—</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>swap(uint256)</code> (L113)</td>
+<td>none (only <code>now≤deadline</code> L114, <code>payoutAmount≠0</code> L118)</td>
+<td><strong>anyone</strong></td>
+<td>none (no mutable storage)</td>
+<td>yes — pulls YRT in, pushes payout out</td>
+</tr>
+<tr>
+<td><code>sweep(IERC20)</code> (L127)</td>
+<td><code>msg.sender==owner</code> (L128); <code>token_≠yrt</code> (L129); <code>token_==token ⟹ now&gt;deadline</code> (L130-131)</td>
+<td><strong>owner only</strong></td>
+<td>none</td>
+<td>yes — sends full balance of <code>token_</code> to owner</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles</strong>: exactly one — <code>owner</code> (immutable, set once at construction, zero-address<br>checked only, <strong>no transfer/renounce/2-step mechanism of any kind</strong> — see Finding<br>3). Unlocks only <code>sweep()</code>. No other privileged address; <code>yrt</code>/<code>token</code> are fixed<br>immutable addresses, not roles.</p>
+<p><strong>Unguarded entrypoints</strong>: <code>swap()</code> is the only state-changing entrypoint<br>reachable by an arbitrary caller — by design, this is the contract&#39;s sole purpose.<br><code>quote()</code> is unguarded but view-only.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Invariant that must hold</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary YRT holder</td>
+<td><code>swap()</code></td>
+<td>Payout token at the fixed rate, any number of times until deadline</td>
+<td>Aggregate payouts ≤ <code>totalPayout</code>; requires YRT supply frozen — <strong>see Finding 1, addressed</strong></td>
+</tr>
+<tr>
+<td>YakStrategy&#39;s <code>STRATEGY_ENABLER_ROLE</code> holder (external, out of scope)</td>
+<td>Re-enabling deposits on the YRT strategy</td>
+<td>Could dilute/drain the payout pool sized for the original supply</td>
+<td>YRT <code>totalSupply()</code> permanently frozen post-deployment — <strong>Finding 1: confirmed NOT structurally enforced, currently holds by observed live state only</strong></td>
+</tr>
+<tr>
+<td><code>owner</code> (immutable, trusted)</td>
+<td><code>sweep()</code></td>
+<td>Recovery of mistaken sends anytime; payout-token balance only after deadline; never YRT</td>
+<td>Guard logic holds as coded — <strong>examined, no bypass found</strong>. Owner-key-loss risk — <strong>Finding 3, addressed</strong></td>
+</tr>
+<tr>
+<td>Payout token contract (external, live: USDT.e)</td>
+<td>Called via transfer/transferFrom/balanceOf</td>
+<td>Standard ERC-20 trust; no-bool-return explicitly handled</td>
+<td>Must not be fee-on-transfer/rebasing/blacklisting — <strong>Findings 7, 9 address the blacklisting/malformed-data angles</strong>; fee-on-transfer explicitly disclaimed and not the live case</td>
+</tr>
+<tr>
+<td>Anyone, pre-funding (current live state: 0 balance)</td>
+<td><code>swap()</code> while underfunded</td>
+<td>Nothing — atomic revert</td>
+<td><code>swap</code> must fail cleanly with no partial YRT loss when underfunded — <strong>examined, invariant holds</strong> (confirmed: <code>_safeTransfer</code> revert unwinds the prior <code>transferFrom</code> in the same transaction)</td>
+</tr>
+<tr>
+<td>Deployer (one-time, off-chain funding + parameter choice)</td>
+<td>Constructor args, funding step</td>
+<td>n/a</td>
+<td>Contract never verifies correct funding or a non-degenerate <code>rate</code> — <strong>Finding 2 addresses the <code>rate</code> half; funding itself remains an off-chain operational dependency, noted, not independently fixable in-contract</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage</strong>: 3 entrypoints in inventory (<code>constructor</code>, <code>swap</code>, <code>sweep</code>) + 1 view<br>(<code>quote</code>), all examined by both hunting phases. 6 threat-catalog rows, all<br>answered — either by a finding above or an explicit &quot;examined, no issue&quot; note.<br><strong>Coverage holes closed this pass: 0</strong> (both phases already covered everything<br>independently; the small, single-file scope was exhaustively hunted by 5 breadth<br>agents and 12 depth agents with no unexamined territory).</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-building + checklist breadth + attacker-mindset depth, cross-reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Independent human review, and if applicable a bug bounty program, are recommended before increasing funds custodied by this contract or before any future redeployment of this template.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreiey6kqrjgpawl44ulncqli2r4mcdda2ggofqbvdghsctsmxiqk5su.ipfs.community.bgipfs.com/"><code>https://bafkreiey6kqrjgpawl44ulncqli2r4mcdda2ggofqbvdghsctsmxiqk5su.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/407">#407</a> on Base. Rendered 2026-07-16.</p>
+  </footer>
+
+</div>
+</body>
+</html>

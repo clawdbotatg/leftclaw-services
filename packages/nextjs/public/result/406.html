@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AZZLE Protocol (Base Mainnet, Live Post-Deployment Audit) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #406">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">AZZLE Protocol (Base Mainnet, Live Post-Deployment Audit)</h1>
+    <p class="job-sub">Job #406 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/406"><b>Job page</b> #406</a>
+      <a class="chip" href="https://bafkreibwz2ui6svnxwfqmdpfzzpnzf4bemkvkh5pstslomq5kebp6dyehe.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-16</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">3</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">6</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#audit-target-explicit-addresses-per-job-description-treated-as-g">Audit Target — Explicit Addresses (per job description, treated as ground truth)</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#1-deployment-integrity">1. Deployment Integrity</a></li>
+      <li><a href="#2-live-protocol-wiring-read-directly-from-base-mainnet-at-block-">2. Live Protocol Wiring (read directly from Base mainnet at block 48714283)</a></li>
+      <li><a href="#3-ownership-migration-classification-per-job-descriptions-4-stat">3. Ownership Migration — Classification (per job description&#39;s 4-state rubric)</a></li>
+    </ol>
+    <ol start="6">
+      <li><a href="#4-unionstakingvault-pre-launch-state">4. UnionStakingVault Pre-Launch State</a></li>
+      <li><a href="#5-findings">5. Findings</a></li>
+      <li><a href="#findings-list">Findings List</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#6-coverage-methodology-notes">6. Coverage &amp; Methodology Notes</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — AZZLE Protocol (Base Mainnet, Live Post-Deployment Audit)</h1>
+<p><strong>Job:</strong> leftclaw.services job #406<br><strong>Network:</strong> Base mainnet (chain id 8453)<br><strong>Audit method:</strong> Independent, fresh three-phase audit (context map → ethskills breadth → pashov depth, blind → hybrid reconciliation), per this auditor&#39;s standard methodology. This is a from-scratch review; no findings were carried over from any prior report.<br><strong>Live-state snapshot block:</strong> 48714283 (observed at review time; re-verify before acting on any address/state claim if significant time has passed)<br><strong>Source provenance:</strong> No repository URL was provided in the job description (only a manifest path reference and explicit contract addresses). Source was obtained directly from BaseScan&#39;s verified-source pages for all 9 addresses (all &quot;Exact Match&quot;), cross-validated byte-for-byte against on-chain runtime bytecode independently (see §1). This is a stronger provenance guarantee than trusting a repo checkout, since it ties the audited source directly to what is actually deployed.</p>
+<hr>
+<h2 id="audit-target-explicit-addresses-per-job-description-treated-as-g">Audit Target — Explicit Addresses (per job description, treated as ground truth)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>EscrowVault</td>
+<td><code>0xbAb0f18C024F4d2C4110671f01d30a5beCD058A9</code></td>
+</tr>
+<tr>
+<td>TaskRegistry</td>
+<td><code>0xeeeaF151FB0c7EE2b35146922992Cdc6056DD78E</code></td>
+</tr>
+<tr>
+<td>ReputationRegistry</td>
+<td><code>0x505449C599A9dC91DA5FFF81abdE445020a886C2</code></td>
+</tr>
+<tr>
+<td>ArbitrationModule</td>
+<td><code>0x22976bC96D4131a8111c7B7CAe8333eeBFaeF893</code></td>
+</tr>
+<tr>
+<td>ArbitrationRecoveryCoordinator</td>
+<td><code>0x785C5d2de22Bb5E3D769d8f8963e273dcbaaAd85</code></td>
+</tr>
+<tr>
+<td>TreasuryRouter</td>
+<td><code>0xC03A4723b9B3A28efd6EAa149fEb622087D7da30</code></td>
+</tr>
+<tr>
+<td>AgentDepositVault</td>
+<td><code>0xe4F07E12672223EFD923B6462575661a1d9ED2f8</code></td>
+</tr>
+<tr>
+<td>UnionStakingVault</td>
+<td><code>0x15f90B20F0332949a8eAd3A307D7e05Fc7F036fC</code></td>
+</tr>
+<tr>
+<td>TaskScopeRegistry</td>
+<td><code>0x6F2C8f4E0FDe2Fe33E6D60Dede1765a9a2082AAd</code></td>
+</tr>
+</tbody></table></div>
+<p>External assets: native Base USDC <code>0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code> (6 decimals), AZL <code>0x931517E9502F9d52CDF6F5AC7fca7925e2A1BBA3</code> (18 decimals).</p>
+<p>No disagreement was found between these explicit addresses and the on-chain deployed contracts they resolve to; the candidate-manifest cross-check requested in the job description could not be performed (no repository was provided to read <code>contracts/deployments/base-8453.candidate.json</code> from), and this is called out explicitly as a coverage gap in §6 rather than silently skipped.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Live on-chain audit, all 9 explicit addresses</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>EscrowVault.sol</code> · <code>TaskRegistry.sol</code> · <code>ReputationRegistry.sol</code><br><code>ArbitrationModule.sol</code> · <code>ArbitrationRecoveryCoordinator.sol</code> · <code>TreasuryRouter.sol</code><br><code>AgentDepositVault.sol</code> · <code>UnionStakingVault.sol</code> · <code>TaskScopeRegistry.sol</code></td>
+</tr>
+<tr>
+<td><strong>Total in-scope LOC</strong></td>
+<td>3,607 (core contracts, excluding interfaces/OZ deps)</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>60</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="1-deployment-integrity">1. Deployment Integrity</h2>
+<p><strong>Compiler settings</strong> (identical across all 9 contracts, extracted from BaseScan&#39;s embedded <code>settings.json</code>, not just the summary UI): <code>solc 0.8.24+commit.e11b9ed9</code>, <code>optimizer.enabled=true</code>, <code>optimizer.runs=1</code>, <strong><code>viaIR=true</code></strong>, <strong><code>evmVersion=&quot;paris&quot;</code></strong>. The <code>runs=1</code> setting is unusual (optimizes for deployment size over runtime gas) but is applied consistently and is not itself a security defect — noted because it&#39;s relevant to reading gas-cost claims elsewhere in this report.</p>
+<p><strong>Bytecode verification methodology:</strong> rather than trusting BaseScan&#39;s &quot;Exact Match&quot; badge, we independently recompiled from the extracted verified source using Foundry with the exact settings above, then diffed the resulting <code>deployedBytecode</code> against live <code>eth_getCode</code> at block 48714283, masking out (a) the CBOR metadata trailer (expected to differ — it encodes a source-path-dependent IPFS hash, not code) and (b) immutable-variable placeholder bytes (per each artifact&#39;s <code>immutableReferences</code>, expected to be patched at deploy time with real constructor-derived values).</p>
+<p><strong>Result: all 9 contracts match byte-for-byte</strong> (post metadata/immutable masking) between the independently-recompiled source and the live deployed runtime bytecode. No unexplained bytecode discrepancy exists on any of the 9 contracts.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Runtime bytes</th>
+<th>EIP-170 margin (24,576 limit)</th>
+<th>Immutable slots</th>
+<th>Bytecode match</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>EscrowVault</td>
+<td>12,681</td>
+<td>11,895</td>
+<td>0</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td><strong>TaskRegistry</strong></td>
+<td><strong>21,766</strong></td>
+<td><strong>2,810</strong></td>
+<td>26</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td>ReputationRegistry</td>
+<td>7,919</td>
+<td>16,657</td>
+<td>0</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td>ArbitrationModule</td>
+<td>16,760</td>
+<td>7,816</td>
+<td>10</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td>ArbitrationRecoveryCoordinator</td>
+<td>5,170</td>
+<td>19,406</td>
+<td>20</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td>TreasuryRouter</td>
+<td>8,885</td>
+<td>15,691</td>
+<td>3</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td>AgentDepositVault</td>
+<td>11,973</td>
+<td>12,603</td>
+<td>7</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td>UnionStakingVault</td>
+<td>6,649</td>
+<td>17,927</td>
+<td>5</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+<tr>
+<td>TaskScopeRegistry</td>
+<td>2,154</td>
+<td>22,422</td>
+<td>3</td>
+<td>✅ exact (post-mask)</td>
+</tr>
+</tbody></table></div>
+<p>All 9 are well within the EIP-170 24,576-byte limit. TaskRegistry is the largest and has the least headroom (2,810 bytes, ~11.4% margin) — worth noting for future feature additions to that contract specifically, though not itself a finding.</p>
+<p><strong>No proxy, delegatecall, upgrade path, or initializer pattern</strong> exists anywhere in the 9 contracts (confirmed by direct grep across all files for <code>delegatecall|initializer|upgradeTo|proxy|Initializable|UUPS|selfdestruct</code> — zero hits). All 8 Ownable-derived contracts use standard constructor-time initialization; state lives directly in the deployed contract.</p>
+<p><strong>Constructor arguments:</strong> none of the 9 contracts take constructor arguments beyond immutable address wiring (e.g. <code>TaskRegistry(address _escrow)</code>, <code>ArbitrationRecoveryCoordinator(taskRegistry, escrow, agentDepositVault, reputationRegistry)</code>, <code>UnionStakingVault(azlToken, usdcToken)</code>). BaseScan&#39;s &quot;Constructor Arguments&quot; section was empty/absent for every contract we checked, consistent with each constructor either taking no arguments or having its arguments folded into immutables that were separately verified via bytecode diffing.</p>
+<p><strong>Deployment-generation isolation:</strong> every immutable and one-shot-set cross-reference among the 9 contracts (see §2 below) resolves to one of these same 9 addresses — no reference to any other/superseded address was found in any of the 9 contracts&#39; source. We could not check the candidate vs. canonical manifest, SDK manifest, indexer/API/MCP configs, or other off-chain consumers, since no repository was provided (see §6, coverage gap).</p>
+<hr>
+<h2 id="2-live-protocol-wiring-read-directly-from-base-mainnet-at-block-">2. Live Protocol Wiring (read directly from Base mainnet at block 48714283)</h2>
+<p>Every cross-reference the job description asked us to verify was read live via <code>cast call</code> and confirmed correct:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TaskRegistry.escrow → EscrowVault</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>EscrowVault.taskRegistry → TaskRegistry</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TaskRegistry.arbitration → ArbitrationModule</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>EscrowVault.arbitrationModule → ArbitrationModule</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>AgentDepositVault.arbitrationModule → ArbitrationModule</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>ReputationRegistry.arbitrationModule → ArbitrationModule</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TaskRegistry.agentVault → AgentDepositVault</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TaskRegistry.reputation → ReputationRegistry</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TaskRegistry.treasury → TreasuryRouter</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TaskRegistry.stakingVault → UnionStakingVault</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TreasuryRouter.agentDepositVault → AgentDepositVault</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TreasuryRouter.reputationRegistry → ReputationRegistry</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TreasuryRouter.stakingVault → UnionStakingVault</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>UnionStakingVault.taskRegistry → TaskRegistry</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>UnionStakingVault.treasury → TreasuryRouter</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>ArbitrationModule.taskRegistry → TaskRegistry</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>ArbitrationModule.escrow → EscrowVault</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>ArbitrationModule.agentDepositVault → AgentDepositVault</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>ArbitrationModule.reputationRegistry → ReputationRegistry</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>ArbitrationRecoveryCoordinator&#39;s 4-target graph (taskRegistry/escrow/agentDepositVault/reputationRegistry)</td>
+<td>✅ all 4 correct</td>
+</tr>
+<tr>
+<td>arbitrationRecoveryCoordinator reference on all 4 governed targets (Escrow/TaskRegistry/Reputation/AgentVault)</td>
+<td>✅ all point to <code>0x785C...aAd85</code></td>
+</tr>
+<tr>
+<td>TaskScopeRegistry.taskRegistry (immutable)</td>
+<td>✅ <code>0xeeeaF151...DD78E</code> exactly as required</td>
+</tr>
+<tr>
+<td>AgentDepositVault.usdcToken (immutable)</td>
+<td>✅ Base USDC</td>
+</tr>
+<tr>
+<td>UnionStakingVault azlToken / usdcToken</td>
+<td>✅ AZL / USDC correctly assigned, not swapped</td>
+</tr>
+<tr>
+<td>TreasuryRouter azlToken / usdc</td>
+<td>✅ AZL / USDC correctly assigned, not swapped</td>
+</tr>
+<tr>
+<td>Fee recipient</td>
+<td><code>0x41f35485Dea9e5e7C683d1C6CA650e8179c606ba</code> — matches expected</td>
+</tr>
+<tr>
+<td>Buyback executor / pending</td>
+<td><code>0xB459145b74Ca4B198f73C0d573a161e85CA76D27</code> (= governance multisig) / none pending</td>
+</tr>
+<tr>
+<td>Fallback resolver / pending</td>
+<td><code>0x185Eaa3565A5E16403Ae6883a55424BF05818a37</code> — matches expected / none pending</td>
+</tr>
+<tr>
+<td>Staking activation state</td>
+<td><code>stakingActive = false</code> — expected pre-launch, not a finding</td>
+</tr>
+<tr>
+<td>Dispute-opening pause state</td>
+<td><code>disputeOpeningPauseUntil = 0</code> — not currently paused</td>
+</tr>
+<tr>
+<td>Pending arbitration recovery</td>
+<td>none (<code>pendingArbitration/pendingOutgoingArbitration = 0</code>, <code>recoveryExecutableAt = 0</code>)</td>
+</tr>
+<tr>
+<td>Pending side effects</td>
+<td><code>pendingSideEffectCount = 0</code>, <code>activeDisputeCount = 0</code>, <code>disputeCount = 0</code>, <code>taskCount = 0</code> — protocol has not yet processed live traffic</td>
+</tr>
+<tr>
+<td>Deprecated direct arbitration-rotation paths</td>
+<td>Confirmed hard-disabled: <code>rotateArbitration</code>/<code>rotateArbitrationModule</code> on all 4 governed contracts revert unconditionally with <code>DirectArbitrationRotationDisabled()</code> after their <code>onlyOwner</code> check — no state write is reachable through them; only the Coordinator&#39;s <code>emergencySetArbitration(Module)</code> path (itself gated to <code>msg.sender==arbitrationRecoveryCoordinator</code>) can ever change arbitration authority post-launch.</td>
+</tr>
+</tbody></table></div>
+<p><strong>No authority was found to be unset or unexpectedly controlled by an EOA.</strong> Every privileged address resolved to either the governance multisig, the coordinator contract, or a documented single-purpose role (fee recipient, fallback resolver) matching the job description&#39;s expected values exactly.</p>
+<hr>
+<h2 id="3-ownership-migration-classification-per-job-descriptions-4-stat">3. Ownership Migration — Classification (per job description&#39;s 4-state rubric)</h2>
+<p>All 8 <code>Ownable2Step</code> contracts were queried directly (<code>owner()</code> / <code>pendingOwner()</code>) at block 48714283:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>owner()</th>
+<th>pendingOwner()</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>EscrowVault</td>
+<td><code>0xB459...76D27</code> (governance multisig)</td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+<tr>
+<td>TaskRegistry</td>
+<td><code>0xB459...76D27</code></td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+<tr>
+<td>ReputationRegistry</td>
+<td><code>0xB459...76D27</code></td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+<tr>
+<td>ArbitrationModule</td>
+<td><code>0xB459...76D27</code></td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+<tr>
+<td>ArbitrationRecoveryCoordinator</td>
+<td><code>0xB459...76D27</code></td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+<tr>
+<td>TreasuryRouter</td>
+<td><code>0xB459...76D27</code></td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+<tr>
+<td>AgentDepositVault</td>
+<td><code>0xB459...76D27</code></td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+<tr>
+<td>UnionStakingVault</td>
+<td><code>0xB459...76D27</code></td>
+<td><code>0x0</code></td>
+<td><strong>3 — migration complete</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>All 8 contracts are in State 3 (governance multisig is owner, pendingOwner is zero). Ownership migration is fully complete</strong> — the deployment account (<code>0xdD624146AF5548ffb31B53E609e003e873e20A0C</code>) holds no residual owner or pending-owner status on any contract. All 8 additionally override <code>renounceOwnership()</code> to unconditionally revert (<code>OwnershipRequired()</code>), so ownership can never be dropped/orphaned going forward, only two-step-transferred.</p>
+<p><strong>TaskScopeRegistry</strong> is confirmed not <code>Ownable</code> — it has exactly one immutable, constructor-set reference (<code>taskRegistry</code>) and no other privileged state. This is intentional and safe for its narrow purpose (a one-shot-per-task, poster-gated scope-hash publisher with no other mutable state); there is nothing for an owner to control.</p>
+<hr>
+<h2 id="4-unionstakingvault-pre-launch-state">4. UnionStakingVault Pre-Launch State</h2>
+<p><code>stakingActive = false</code>, confirmed as the expected, intentional pre-launch state (not a finding). We independently verified the activation and pre-activation-accounting invariants the job description asked us to check:</p>
+<ul>
+<li><strong>Activation is exactly one-shot and irreversible.</strong> <code>activateStaking()</code> is <code>onlyOwner</code>, guarded by <code>require(!stakingActive)</code>, and there is no function anywhere that sets <code>stakingActive</code> back to <code>false</code>. Confirmed by full-text search — no other writer of this variable exists.</li>
+<li><strong>Activation cannot retroactively grant rewards or Action Credits.</strong> <code>activateStaking()</code> resets <code>lastAccrualAt = block.timestamp</code> at the moment of activation, and the credit/reward accrual functions (<code>_accrue</code>, <code>_projectCreditAccrual</code>, <code>_updateRewardAcc</code>) only advance based on elapsed time <em>since</em> <code>lastAccrualAt</code> — there is no code path that back-dates accrual to before activation. <code>stake()</code> itself reverts pre-activation (<code>require(stakingActive)</code>), so <code>totalStaked</code> is provably zero before activation, which makes credit/reward math a no-op regardless.</li>
+<li><strong>Pre-activation access-fee and reward accounting is safe.</strong> Prior to activation, <code>TreasuryRouter.distributeRevenue</code>&#39;s staker-share branch correctly detects <code>!stakingVault.stakingActive()</code> and folds that share into the general reserve rather than into an unreachable <code>pendingStakerUsdc</code> bucket. Access-fee discounting via banked Action Credits (<code>TaskRegistry._chargeAccessFee</code> → <code>stakingVault.trySpendCredit</code>) is a no-op pre-activation since no credits can exist yet.</li>
+</ul>
+<p>No live transaction was sent and no state-changing action was taken during this review, per the job description&#39;s explicit instruction.</p>
+<hr>
+<h2 id="5-findings">5. Findings</h2>
+<p>Reporting floor: confidence ≥ 50 as findings; nothing fell below that threshold in this review (weaker items are listed as Leads, unscored, per the standard methodology). Sorted by severity, then confidence.</p>
+<hr>
+<p>[92] <strong>1. Arbitration-timeout settlement pays hour-block workers for time that has not elapsed, draining the poster&#39;s escrow</strong></p>
+<p><code>EscrowVault._settleAtDeadline</code> (HOUR_BLOCKS branch) · Confidence: 92</p>
+<p><strong>Description</strong><br>The HOUR_BLOCKS branch computes <code>accruedBlocks = (deadline - start) / 1 hours</code> using the raw (possibly far-future) task deadline, unlike the STREAMING branch two lines above it which correctly caps at <code>cutoff = min(block.timestamp, deadline)</code> — so when an unresolved dispute times out (<code>ArbitrationModule.resolveTimedOut</code>, permissionless after the 21-day <code>ABSOLUTE_RESOLUTION_TIMEOUT</code>) on an HOUR_BLOCKS task whose own deadline is still far in the future, the worker is credited for hours that have not actually elapsed, up to the full remaining escrow.</p>
+<p>Concrete trace: HOUR_BLOCKS task, <code>remaining=1000e6</code> USDC, <code>hourBlockSize=1e6</code>, <code>deadline=start+100 days</code>. A dispute opens on day 1 and times out on day 22 (21 days later). <code>accruedBlocks=(100 days)/1h=2400</code>; <code>maxPayableBlocks=remaining/hourBlockSize=1000</code>; <code>payableBlocks=min(2400,1000)=1000</code> → the worker receives the <strong>entire</strong> remaining $1000 escrow immediately, although only ~22 days (≈528 real hours, ≈$528) of work-time had actually elapsed. The poster loses the ~$472 difference outright.</p>
+<p>This is attacker-triggerable by design, not merely a theoretical edge case: any worker on an HOUR_BLOCKS task can open a dispute on themselves (or via the counterparty), decline to consent to any arbitrator, and simply wait 21 days to collect the full escrow regardless of actual elapsed work.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">             } else if (e.mode == EscrowMode.HOUR_BLOCKS) {
+                 uint256 start = activatedAt[taskId];
+                 if (start != 0 &amp;&amp; deadline &gt; start) {
+-                    uint256 accruedBlocks = (deadline - start) / 1 hours;
++                    uint256 cutoff = block.timestamp &lt; deadline ? block.timestamp : deadline;
++                    uint256 accruedBlocks = (cutoff - start) / 1 hours;
+                     uint256 unpaidBlocks = accruedBlocks &gt; e.hoursClaimed
+                         ? accruedBlocks - e.hoursClaimed
+                         : 0;
+</code></pre>
+<hr>
+<p>[90] <strong>2. Arbitration-timeout settlement has no milestone/upfront branch — proven-but-unaccepted work is discarded and 100% of escrow refunds to the poster</strong></p>
+<p><code>EscrowVault._settleAtDeadline</code> (missing MILESTONE/UPFRONT branch) · Confidence: 90</p>
+<p><strong>Description</strong><br><code>_settleAtDeadline</code>&#39;s worker-payout logic (lines 311-340) only has branches for <code>EscrowMode.STREAMING</code> and <code>EscrowMode.HOUR_BLOCKS</code>. For <code>MILESTONE</code> and the default/upfront mode, <code>workerAmount</code> is never set and stays <code>0</code>, so <code>posterAmount = remaining</code> refunds the poster 100% — even when the worker has already submitted on-chain-verified milestone proof (<code>pendingMilestoneLiability</code> set, task in <code>IN_REVIEW</code>) that would otherwise be paid out via the normal <code>resolveStaleReview</code>/<code>acceptMilestone</code> paths.</p>
+<p>This is reachable via the dispute-timeout path specifically: a poster who owes a worker for proven milestone work can call <code>openDispute</code> on the <code>IN_REVIEW</code> task (permitted) — which freezes the escrow and disables the worker&#39;s 3-day <code>resolveStaleReview</code> self-help — then simply withhold consent to any arbitrator in <code>proposeArbitrator</code> and wait. Once <code>ABSOLUTE_RESOLUTION_TIMEOUT</code> (21 days) elapses with no ruling, anyone can call <code>resolveTimedOut</code>, which routes through this code path: the worker receives $0 for delivered, proven work, and the poster&#39;s dispute bond is <em>also</em> refunded (the timeout branch never forfeits it). The only backstop is the permissionless <code>assignFallbackResolver</code>, which seats the single owner-configured neutral resolver during days 7–21 — the worker is only protected if that address is funded and someone invokes it in time.</p>
+<p>Independently identified by 3 of 12 phase-2 attack agents as a full finding and corroborated as a lead by 3 more, plus phase-1&#39;s access-control and economic-security passes — six-way convergence on the same root cause.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">         uint256 workerAmount;
+         if (remaining &gt; 0 &amp;&amp; e.worker != address(0)) {
+             if (e.mode == EscrowMode.STREAMING) {
+                 ...
+             } else if (e.mode == EscrowMode.HOUR_BLOCKS) {
+                 ...
++            } else if (e.mode == EscrowMode.MILESTONE) {
++                // pay out proven-but-unreleased milestone liability before
++                // refunding the remainder to the poster
++                workerAmount = pendingMilestoneLiabilityFor(taskId); // new: sum of proven, unreleased milestone amounts
+             }
+             if (workerAmount &gt; remaining) workerAmount = remaining;
+         }
+</code></pre>
+<p>(Exact implementation should mirror however <code>pendingMilestoneLiability</code> is already tracked in <code>TaskRegistry</code>/<code>EscrowVault</code> — the fix is architectural: give milestone mode an equivalent &quot;pay what was earned&quot; branch instead of defaulting to zero.)</p>
+<hr>
+<p>[85] <strong>3. <code>resolveStaleReview</code> ignores the arbitration-level dispute-opening pause, letting a worker&#39;s fraudulent milestone proof pay out while the poster is barred from disputing it</strong></p>
+<p><code>TaskRegistry.resolveStaleReview</code> × <code>ArbitrationModule.disputeOpeningPaused</code> · Confidence: 85</p>
+<p><strong>Description</strong><br><code>resolveStaleReview</code> (the permissionless, 3-day optimistic-milestone-release safety valve) checks only <code>taskLive</code>/<code>notPaused(taskId)</code> — a task-level pause state that no code path in scope ever sets — and has <strong>no</strong> check on <code>arbitration.disputeOpeningPaused()</code>. Meanwhile <code>TaskRegistry.openDispute</code>/<code>ArbitrationModule.openDispute</code> <strong>does</strong> check it and reverts while paused. The owner-controlled pause (used, for example, ahead of an <code>ArbitrationRecoveryCoordinator</code> rotation) lasts up to <code>MAX_PAUSE_DURATION</code> = 7 days and is freely renewable by the owner before it expires.</p>
+<p>Because <code>REVIEW_TIMEOUT</code> (3 days) always fits inside any pause window (minimum useful pause ≥ the 2-day <code>RECOVERY_DELAY</code> it&#39;s meant to cover, typically the full 7 days), a worker can submit bogus/low-quality proof for every funded milestone on a task while a pause is active; the poster&#39;s only defense — opening a dispute — reverts for the pause&#39;s duration, while the permissionless stale-review payout keeper remains fully live and pays the worker in full after 3 days regardless.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function resolveStaleReview(uint256 taskId) external taskLive(taskId) notPaused(taskId) {
++        require(!arbitration.disputeOpeningPaused(), &quot;TaskRegistry: disputes paused&quot;);
+         ...
+</code></pre>
+<p>(Alternatively, extend/freeze <code>reviewSince</code> for the duration of any active pause so the 3-day clock does not run down while the poster is unable to contest.)</p>
+<hr>
+<p>[88] <strong>4. <code>TreasuryRouter.feeRecipient</code> has no owner-controlled recovery path — a lost or bricked key permanently locks the entire protocol treasury</strong></p>
+<p><code>TreasuryRouter.feeRecipient</code> / <code>withdrawFees</code> / <code>withdrawNativeFees</code> · Confidence: 88</p>
+<p><strong>Description</strong><br><code>feeRecipient</code> is the sole address authorized to withdraw the protocol&#39;s entire accrued USDC reserve (<code>withdrawFees</code>) and all accrued native-ETH slash revenue (<code>withdrawNativeFees</code>). Its only rotation path is self-initiated: <code>proposeFeeRecipient</code> requires <code>msg.sender == feeRecipient</code>, and <code>acceptFeeRecipient</code> requires <code>msg.sender == pendingFeeRecipient</code>. There is <strong>no <code>onlyOwner</code> path anywhere</strong> that can set or override <code>feeRecipient</code> — unlike <code>buybackExecutor</code>, whose first assignment and every subsequent rotation both go through the owner (<code>setBuybackExecutor</code>/<code>proposeBuybackExecutor</code>). If the <code>feeRecipient</code> key is ever lost (not even compromised — merely lost or a signer set becoming unavailable), every dollar of accrued and future treasury revenue becomes permanently unwithdrawable, with no governance action able to recover it.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    function setFeeRecipientOverride(address newRecipient) external onlyOwner {
++        require(newRecipient != address(0), &quot;Treasury: zero&quot;);
++        feeRecipient = newRecipient;
++        pendingFeeRecipient = address(0);
++    }
+</code></pre>
+<p>(Consider gating this behind the same 2-day delay used for <code>buybackExecutor</code> rotation, so it can&#39;t be used to silently hijack fees, while still giving governance a genuine recovery path.)</p>
+<hr>
+<p>[78] <strong>5. Owner can indefinitely re-arm <code>disputeOpeningPaused</code>, defeating its documented 7-day auto-expiry liveness guarantee</strong></p>
+<p><code>ArbitrationModule.setDisputeOpeningPaused</code> · Confidence: 78</p>
+<p><strong>Description</strong><br>The pause is designed to auto-expire after <code>MAX_PAUSE_DURATION</code> (7 days) specifically to preserve dispute-opening liveness, per the contract&#39;s own comments. Nothing prevents the owner from calling <code>setDisputeOpeningPaused(true)</code> again before it expires, refreshing the window indefinitely — and Finding #3 above demonstrates a concrete, non-hypothetical consequence of an extended pause. Owner is the trusted governance multisig, which bounds this to a trust-model gap rather than a third-party exploit, but the &quot;liveness guarantee&quot; the code advertises is not actually enforced on-chain against the owner itself.</p>
+<p><strong>Fix</strong><br>Add a minimum unpaused cooldown between consecutive pauses, or a cap on cumulative paused time per rolling window, so the documented liveness property is actually enforced rather than merely advisory.</p>
+<hr>
+<p>[70] <strong>6. <code>feeRecipient</code> rotation carries no timelock, unlike the less-privileged <code>buybackExecutor</code> role</strong></p>
+<p><code>TreasuryRouter.proposeFeeRecipient</code>/<code>acceptFeeRecipient</code> vs. <code>proposeBuybackExecutor</code>/<code>acceptBuybackExecutor</code> · Confidence: 70</p>
+<p><strong>Description</strong><br><code>buybackExecutor</code> rotation is deliberately delayed 2 days &quot;to give monitoring systems time to detect an incorrect or malicious destination.&quot; <code>feeRecipient</code> — which controls strictly more value (the entire treasury reserve, not just the buyback share) — rotates instantly. This does not itself create new attacker capability (a compromised <code>feeRecipient</code> key can already withdraw everything immediately regardless of rotation delay), but it is a process inconsistency that removes the observation window the protocol&#39;s own design otherwise considers necessary for revenue-controlling roles.</p>
+<p><strong>Fix</strong><br>Apply the same 2-day staged-delay pattern to <code>feeRecipient</code> rotation as already used for <code>buybackExecutor</code>.</p>
+<hr>
+<p>[68] <strong>7. Staged role rotations (<code>buybackExecutor</code>, <code>feeRecipient</code>, <code>fallbackResolver</code>) have no cancel function and no expiry on the pending slot</strong></p>
+<p><code>TreasuryRouter.pendingBuybackExecutor</code>/<code>pendingFeeRecipient</code>, <code>ArbitrationModule.pendingFallbackResolver</code> · Confidence: 68</p>
+<p><strong>Description</strong><br>Unlike <code>ArbitrationRecoveryCoordinator</code> (which provides both <code>cancelRecovery</code> and full re-validation at execute time), none of these three staged rotations can be cancelled once proposed, and none of their accept functions checks an upper bound — only a lower-bound &quot;delay has passed&quot; check. A pending address that is safe today but is lost/compromised at some arbitrary later date can still unilaterally accept the role at that later date, since the pending slot never expires and the current holder must remember to overwrite it.</p>
+<p><strong>Fix</strong><br>Add explicit cancel functions (current holder or owner can reset the pending slot to zero) and an expiry window on each staged accept (e.g., reject if <code>block.timestamp &gt; proposedAt + delay + grace</code>).</p>
+<hr>
+<p>[65] <strong>8. Systemic trust concentration — a single multisig controls every privileged lever across all 8 contracts</strong></p>
+<p>Cross-cutting; concrete path via <code>ArbitrationRecoveryCoordinator.proposeRecovery</code>/<code>executeRecovery</code> · Confidence: 65</p>
+<p><strong>Description</strong><br>One governance multisig is <code>owner</code> on all 8 <code>Ownable2Step</code> contracts and simultaneously holds every one-shot wiring setter, the dispute-opening pause, bootstrap-arbitrator qualification, <code>activateStaking</code>, and the arbitration-recovery propose/cancel authority. Direct arbitration rotation is hard-disabled, which is the key mitigation, but a compromised multisig could still reach arbitration authority via the (by-design) 2-day-delayed Coordinator path by deploying a graph-consistent replacement module. Impact is bounded: <code>EscrowVault.split</code>/<code>refund</code> can only ever pay the real task&#39;s poster/worker, never an arbitrary address, so a malicious module could force unfair rulings and collect dispute-bond fees but could not redirect escrowed principal to an attacker-chosen address.</p>
+<p><strong>Fix</strong><br>No code defect — this is a documented, deliberate centralization tradeoff common to early-stage protocols. Recommend publishing the governance Safe&#39;s signer threshold/diversity (see Finding-adjacent Lead below) and considering a split between &quot;pause/propose&quot; authority and &quot;cancel&quot; authority so a single key compromise cannot both quiesce a live module and propose its replacement in the same breath.</p>
+<hr>
+<p>[62] <strong>9. <code>bootstrapQualified</code> arbitrator credential is permanent and non-revocable</strong></p>
+<p><code>ArbitrationModule.qualifyBootstrapArbitrator</code> · Confidence: 62</p>
+<p><strong>Description</strong><br>Once granted, <code>bootstrapQualified[arbitrator] = true</code> permanently bypasses the tier-1 reputation gate (<code>rep &gt;= 50</code>) for that address, with no function anywhere to revoke it. If a bootstrapped arbitrator later misbehaves, the owner cannot strip the credential — though both dispute parties must still independently consent to seat that arbitrator (see Finding #10&#39;s related analysis), which bounds the practical impact.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">+    function revokeBootstrapArbitrator(address arbitrator) external onlyOwner {
++        bootstrapQualified[arbitrator] = false;
++    }
+</code></pre>
+<hr>
+<p>[55] <strong>10. Native-ETH verifier-bond slashing is entirely unwired — the bond is not actually at risk</strong></p>
+<p><code>ReputationRegistry.slashVerifierBond</code> / <code>resetSubject</code> / <code>stakeVerifierBond</code> · Confidence: 82 (confirmed fact) / impact confidence 55</p>
+<p><strong>Description</strong><br><code>stakeVerifierBond</code> accepts native ETH into a per-address bond; <code>slashVerifierBond</code> and <code>resetSubject</code>&#39;s slash leg have caller-authority wired to <code>arbitrationModule</code>/<code>taskRegistry</code>, but <strong>no in-scope function anywhere actually calls them</strong> (confirmed by exhaustive grep across all 9 contracts — independently reached by 6 of our review&#39;s attack agents). <code>unstakeVerifierBond</code> returns the full bond after only a 7-day cooldown. Anyone relying on &quot;verifier bonds are slashable&quot; as a security assumption for this protocol is trusting a mechanism that does not currently do anything — the ETH is simply a time-locked, risk-free deposit.</p>
+<p><strong>Fix</strong><br>Either wire <code>slashVerifierBond</code>/<code>resetSubject</code> into the dispute-resolution flow they were evidently designed for, or remove the dead mechanism and stop advertising it (events, function names) as an active control if it is intentionally deferred to a future release.</p>
+<hr>
+<h2 id="findings-list">Findings List</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Severity</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[92]</td>
+<td><span class="pill high">High</span></td>
+<td>Arbitration-timeout hour-block settlement pays for unelapsed time</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[90]</td>
+<td><span class="pill high">High</span></td>
+<td>Arbitration-timeout has no milestone/upfront branch — proven work forfeited</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[85]</td>
+<td><span class="pill high">High</span></td>
+<td><code>resolveStaleReview</code> ignores the dispute-opening pause</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[88]</td>
+<td><span class="pill medium">Medium</span></td>
+<td><code>feeRecipient</code> has no owner recovery path</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[78]</td>
+<td><span class="pill low">Low</span></td>
+<td>Owner can indefinitely re-arm the dispute-opening pause</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[70]</td>
+<td><span class="pill low">Low</span></td>
+<td><code>feeRecipient</code> rotation has no timelock (vs. <code>buybackExecutor</code>)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>[68]</td>
+<td><span class="pill low">Low</span></td>
+<td>Staged rotations have no cancel/expiry</td>
+</tr>
+<tr>
+<td>8</td>
+<td>[65]</td>
+<td><span class="pill low">Low</span></td>
+<td>Systemic trust concentration in one multisig</td>
+</tr>
+<tr>
+<td>9</td>
+<td>[62]</td>
+<td><span class="pill low">Low</span></td>
+<td><code>bootstrapQualified</code> is permanent/non-revocable</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[55]</td>
+<td><span class="pill low">Low</span></td>
+<td>Verifier-bond slashing is unwired/inert</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be completed, or whose impact was assessed as informational — not scored, not counted as findings. Retained for completeness.</em></p>
+<ul>
+<li><strong>Dead bond-payout ledger</strong> — <code>ArbitrationModule.claimBondPayout</code>/<code>_payBondOrDefer</code>/<code>pendingBondPayouts</code> — Code smells: writer function is never called; real bond settlement routes through <code>AgentDepositVault</code> instead — an integrator calling the same-named function on the wrong contract finds nothing to claim. No fund loss (funds sit correctly in the vault).</li>
+<li><strong><code>_enforceBalanceHealth</code> is a no-op</strong> — <code>TaskRegistry._enforceBalanceHealth</code>, called ~10× — Code smells: empty <code>pure</code> function with no runtime assertion — the &quot;collateral cannot underflow&quot; guarantee rests entirely on reservation bookkeeping, which we verified holds today by manual reconciliation across every mutator, but there is zero defense-in-depth against a future change breaking it silently.</li>
+<li><strong>Bond economics invert the intended deterrent</strong> — <code>ArbitrationModule</code> dispute bond — Code smells: bond is forfeited to the arbitrator only on an actual ruling and fully refunded on timeout, so opening a dispute purely to freeze a counterparty&#39;s escrow and then stalling to the 21-day timeout is free — good-faith arbitration is taxed, freeze-griefing is not.</li>
+<li><strong><code>UnionStakingVault.claimableUsdc</code> view under-reports transiently</strong> — omits the carried <code>undistributedRewardsScaled</code> term that the state-mutating path includes — view-only inaccuracy in a narrow zero-stake-transition window, no on-chain consumer, no fund impact.</li>
+<li><strong><code>pendingStakerUsdc</code>/staking rewards can be temporarily stranded</strong> — <code>TreasuryRouter.distributeRevenue</code>/<code>flushStakerShare</code>, <code>UnionStakingVault</code> reward stream — if <code>stakingActive</code> but <code>totalStaked==0</code> at distribution/emission time, the staker share/reward is unreachable until someone stakes; self-healing, no permanent loss observed, no rescue function exists if staking is permanently abandoned.</li>
+<li><strong><code>_payOrDefer</code> outbound legs don&#39;t re-verify received amount</strong> (EscrowVault, AgentDepositVault) — inert under the pinned non-fee-on-transfer USDC; would silently over-credit under a hypothetical fee-on-transfer token.</li>
+<li><strong><code>_payOrDefer</code>&#39;s success decode can itself revert on a non-canonical 32-byte bool return</strong> — defeats the &quot;never blocks settlement&quot; intent for a token returning a dirty word (e.g. <code>2</code>); not reachable with pinned USDC (canonical 0/1 returns only).</li>
+<li><strong><code>liveTaskBindings</code>/<code>taskBinding</code> counters can drift</strong> if a post-dispute registry callback is deferred and never retried — cosmetic telemetry drift; underlying vault fund accounting is unaffected.</li>
+<li><strong>Reputation &quot;Sybil farming&quot; — investigated and rejected.</strong> Six of our independent attack agents flagged that an attacker could self-deal $1+ disputes across three self-controlled addresses to farm <code>arbitratorReputation</code>/<code>resolvedCount</code>. On direct verification against <code>ArbitrationModule.sol</code> (<code>proposeArbitrator</code>&#39;s tier gate, <code>_finalise</code>&#39;s <code>qualifiedResolution</code> condition, and <code>_tierForAmount</code>&#39;s tier boundaries), <strong>this path does not exist</strong>: any dispute large enough to grant reputation (≥ $1, which is tier ≥ 1) requires the arbitrator to already satisfy the tier-1 gate (<code>rep ≥ 50 OR bootstrapQualified</code>) before being seated — a chicken-and-egg an attacker starting from zero reputation cannot resolve without the owner first calling <code>qualifyBootstrapArbitrator</code>. The two seating paths that bypass the tier gate (<code>assignFallbackResolver</code>, <code>replaceTimedOutArbitrator</code>) always seat the single owner-configured fallback-resolver address, never an attacker&#39;s choice. We record this here specifically because it was flagged with unusual consistency across independent review passes, and want the client to know it was investigated to ground truth and disproven, not merely overlooked.</li>
+<li><strong>Sub-$1 (tier-0) disputes carry no reputation gate at all</strong> — confirmed true, but harmless per the analysis above (these disputes never grant reputation either way).</li>
+<li><strong><code>AgentDepositVault.topUp</code> is the one inbound transfer that credits net-received rather than requiring an exact match</strong> — inert under non-fee-on-transfer USDC; verified it does not desynchronize <code>totalDeposits</code> or reservation accounting even in principle.</li>
+</ul>
+<hr>
+<h2 id="6-coverage-methodology-notes">6. Coverage &amp; Methodology Notes</h2>
+<ul>
+<li><strong>Manifest cross-check not performed.</strong> The job description asked us to compare <code>contracts/deployments/base-8453.candidate.json</code> (and the canonical/SDK/indexer/API/MCP configs) for stale-address references, but no repository URL was provided in the job description or via client messages, and none was found through the explicit addresses alone. We instead performed the strongest available substitute: independent, ground-up bytecode verification (§1) plus full live cross-reference wiring checks (§2) directly against Base mainnet — which confirms the <em>deployed</em> system is internally consistent, even though we could not check off-chain manifests/SDKs for stale references to a prior generation. <strong>This is a genuine coverage gap</strong> we want flagged explicitly rather than silently absorbed — if a client-side manifest or indexer file exists with stale addresses, this audit would not catch it.</li>
+<li><strong>Reconciliation caught and rejected an incorrect finding.</strong> Six independently-run attack agents converged on a &quot;Sybil-farmable arbitrator reputation&quot; mechanism; direct source verification during reconciliation disproved it (see Leads). This is reported transparently as a demonstration that convergence across independent agents is a useful signal but not itself proof — every finding in the Findings section above was independently re-verified against the actual source lines cited, not merely accepted on agent consensus.</li>
+<li><strong>Coverage gate:</strong> every privileged/value-moving entrypoint enumerated in this audit&#39;s access-control inventory maps to at least one examined finding, lead, or an explicit &quot;examined, no issue&quot; note (escrow conservation, dispute-bond reservation lifecycle, treasury fee-bucket accounting, and the Coordinator&#39;s propose/execute re-validation were all independently traced and hold). Zero entrypoints were left unexamined.</li>
+<li><strong>No live transaction was sent.</strong> All findings above are based on static source analysis and read-only on-chain queries (<code>cast call</code>/<code>eth_getCode</code>) at block 48714283. Staking was not activated and no state-changing call was made, per the job&#39;s explicit instruction.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated multi-agent audit pipeline (context-mapping phase + 7 breadth checklist agents + 12 depth attack agents + human-equivalent reconciliation). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A team security review, bug bounty program, and on-chain monitoring are strongly recommended before or alongside mainnet launch, particularly given Findings #1–#3 above involve real fund-loss paths through the dispute/arbitration-timeout subsystem.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibwz2ui6svnxwfqmdpfzzpnzf4bemkvkh5pstslomq5kebp6dyehe.ipfs.community.bgipfs.com/"><code>https://bafkreibwz2ui6svnxwfqmdpfzzpnzf4bemkvkh5pstslomq5kebp6dyehe.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/406">#406</a> on Base. Rendered 2026-07-16.</p>
+  </footer>
+
+</div>
+</body>
+</html>

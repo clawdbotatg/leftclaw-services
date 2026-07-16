@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AZZLE Protocol — Independent Security Audit Report — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #405">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">AZZLE Protocol — Independent Security Audit Report</h1>
+    <p class="job-sub">Job #405 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/405"><b>Job page</b> #405</a>
+      <a class="chip" href="https://bafkreibp4ufmsunmbha5f7oqaucw5kilvxzu4klm6ws7rbt6el6twrzy3m.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-16</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">4</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">7</div><div class="l">Low</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation summary</a></li>
+      <li><a href="#a-executive-summary">A. Executive summary</a></li>
+      <li><a href="#b-deployment-attestation">B. Deployment attestation</a></li>
+      <li><a href="#c-findings">C. Findings</a></li>
+      <li><a href="#leads-confidence-50-or-unconfirmed-preconditions-not-rated-findi">Leads (confidence &lt; 50 or unconfirmed preconditions — not rated findings)</a></li>
+      <li><a href="#verified-sound-attacked-did-not-break">Verified sound (attacked, did not break)</a></li>
+    </ol>
+    <ol start="7">
+      <li><a href="#d-remediation-revalidation-matrix">D. Remediation revalidation matrix</a></li>
+      <li><a href="#e-test-results">E. Test results</a></li>
+      <li><a href="#f-final-residual-risk-statement">F. Final residual-risk statement</a></li>
+      <li><a href="#access-control-inventory-client-facing-from-phase-0">Access-Control Inventory (client-facing, from Phase 0)</a></li>
+      <li><a href="#threat-model-client-facing-from-phase-0-findings-mapped">Threat Model (client-facing, from Phase 0, findings-mapped)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>AZZLE Protocol — Independent Security Audit Report</h1>
+<p><strong>Audit target:</strong> Live AZZLE protocol deployment, Base mainnet (chain id 8453)<br><strong>Observed at block:</strong> 48680219 (2026-07-15)<br><strong>Method:</strong> Two-phase-audit-v2 — Phase 0 context (protocol map + access-control inventory +<br>threat catalog) → Phase 1 breadth (6 ethskills domains) → Phase 2 depth (12 pashov attack<br>agents, blind to Phase 1) → Phase 3 hybrid reconciliation + coverage gate. Source recovered<br>directly from BaseScan-verified contract pages (no GitHub repo was provided in scope) since<br>Sourcify had no match; all 9 contracts show BaseScan &quot;Exact Match&quot; verification against solc<br><code>v0.8.24+commit.e11b9ed9</code>, optimizer enabled (1 run).<br><strong>This is an independent, from-scratch engagement</strong> — no findings were carried over from any<br>prior audit of this or a related deployment; every item below traces to this run&#39;s own Phase 0<br>map, Phase 1 agents, or Phase 2 agents.</p>
+<h2 id="reconciliation-summary">Reconciliation summary</h2>
+<p><code>Overlap: 6 · Phase-1-only: 19 · Phase-2-only: 14 · Re-examined leads kept: 9, demoted: 3 · Coverage holes closed this pass: 0 (both phases independently reached every privileged/value-moving entrypoint in the Phase-0 inventory)</code></p>
+<ul>
+<li>Confidence floor applied: findings below confidence 50 are listed under <strong>Leads</strong>, not as rated<br>findings, regardless of the severity a raw agent assigned.</li>
+<li>Two raw claims from Phase 2 were checked against the real per-file source (Phase 2 agents work<br>from a concatenated bundle, so their line numbers do not match the real files) and one was found<br>to be <strong>factually wrong</strong> on re-read: an &quot;invariant&quot; agent&#39;s claim that <code>claimTask</code> lets anyone<br>claim a still-direct-hire task was conflating two different functions (<code>claimTask</code> has no<br><code>directHire</code> guard, but the real mechanism is different from what that agent described — see<br><strong>F-04</strong> below, which replaces it with the verified version). This is exactly what the hybrid<br>re-examine step in the methodology exists to catch, and is disclosed rather than silently fixed.</li>
+</ul>
+<h2 id="a-executive-summary">A. Executive summary</h2>
+<p><strong>Overall risk rating: Medium.</strong> No Critical or High finding survived independent verification.<br>The accounting core (escrow conservation, dispute-bond ledger, milestone/stream/hour-block<br>vesting, staking dual-accumulators, treasury fee-bucket conservation) was attacked by 18<br>independent agents across two blind phases and held up in every case traced to real code —<br>this is a well-engineered, heavily defensive codebase for the core money-movement paths. The<br>Medium findings are concentrated in <strong>governance/liveness edges</strong> (a single EOA owner, an<br>instant unbounded dispute-pause switch, an arbitration-dispute state that can trap a worker&#39;s<br>funds if a mutually-selected arbitrator later goes silent or self-disqualifies) and <strong>one<br>confirmed deployment/wiring defect</strong> (TaskScopeRegistry bound to the wrong TaskRegistry).</p>
+<p><strong>Is this safe for production use?</strong> Conditionally — yes for the escrow/payment core, <strong>no</strong><br>until: (1) ownership is moved off a single EOA to a multisig/timelock before meaningful value is<br>at risk, (2) the dispute-EVIDENCE trap (F-02) and the &quot;direct hire requires consent&quot; bypass<br>(F-04) are fixed, and (3) TaskScopeRegistry is redeployed correctly.</p>
+<p><strong>Immediate recommendations:</strong></p>
+<ul>
+<li>Transfer ownership of all 8 <code>Ownable2Step</code> contracts to a multisig/timelock before allowing<br>meaningful escrow value into the system. (F-03)</li>
+<li>Redeploy <code>TaskScopeRegistry</code> pointed at the live <code>TaskRegistry</code> — the current instance is<br>permanently wired to a superseded registry and cannot be repaired (immutable). (F-01)</li>
+<li>Add a fallback/escape path for disputes stuck in <code>EVIDENCE</code> state before real funds flow<br>through the marketplace at scale. (F-02)</li>
+<li>Fix the direct-hire consent bypass (F-04) before advertising direct-hire as consent-gated.</li>
+<li>No on-chain funds are at risk <strong>today</strong> — both the live and stale TaskRegistry report<br><code>taskCount() == 0</code> (block 48680219), i.e. the protocol has not yet processed a single real task.<br>This audit was performed on a pre-launch (or freshly-launched, zero-activity) deployment.</li>
+</ul>
+<h2 id="b-deployment-attestation">B. Deployment attestation</h2>
+<p>All addresses read live via <code>cast call</code> against Base mainnet, block 48680219, Alchemy RPC.<br>Verification status and compiler settings read from BaseScan (all showed &quot;Exact Match&quot; — full<br>bytecode match against the shown source, precluding a source/bytecode mismatch).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+<th>Verified</th>
+<th>Owner</th>
+<th>Pending owner</th>
+<th>Critical deps (live-read)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TaskRegistry</td>
+<td><code>0xCe3eBC0B256831BD270AD2D1b039293d24Dbe319</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code> (EOA)</td>
+<td>none</td>
+<td>escrow✓ arbitration✓ agentVault✓ reputation✓ stakingVault✓ treasury✓ ARC✓ (all match manifest)</td>
+</tr>
+<tr>
+<td>EscrowVault</td>
+<td><code>0x561ab810C3fD8b1D8E682485441a4Dc1A477a8ce</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code></td>
+<td>none</td>
+<td>taskRegistry✓ arbitrationModule✓ ARC✓</td>
+</tr>
+<tr>
+<td>ReputationRegistry</td>
+<td><code>0x067C03b6FcdBEe6E6cde671eC90121804Fb3F1Ce</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code></td>
+<td>none</td>
+<td>all 5 deps✓</td>
+</tr>
+<tr>
+<td>ArbitrationModule</td>
+<td><code>0xB39097345aaD87815076e47053fa168812400438</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code></td>
+<td>none</td>
+<td>taskRegistry✓ escrow✓; fallbackResolver=<code>0x185Eaa35…8a37</code> (small contract, not EOA, not ARC); pendingFallbackResolver=0</td>
+</tr>
+<tr>
+<td>ArbitrationRecoveryCoordinator</td>
+<td><code>0x6c05d87615690e68aB1c12Fdda22D94Bd96dEAC4</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code></td>
+<td>none</td>
+<td>all 4 immutable targets✓; pendingArbitration=0, pendingOutgoingArbitration=0</td>
+</tr>
+<tr>
+<td>TreasuryRouter</td>
+<td><code>0xCAad082F951e2819a57DABC6626B3037DB9A9Cca</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code></td>
+<td>none</td>
+<td>taskRegistry✓ agentVault✓ reputation✓; feeRecipient=<code>0x41f354…06ba</code> (EOA); buybackExecutor=<code>0xB459145…6D27</code> (contract)</td>
+</tr>
+<tr>
+<td>AgentDepositVault</td>
+<td><code>0x9E01E44Fef777fE4064E032595fC49e2ADab8Bb2</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code></td>
+<td>none</td>
+<td>usdcToken✓ (Base USDC, 6dp) all deps✓</td>
+</tr>
+<tr>
+<td>UnionStakingVault</td>
+<td><code>0x9d8037be4C3067A6B2d72B5D768501A2b5EBFFBd</code></td>
+<td>Exact Match</td>
+<td><code>0x418D156C…804B</code></td>
+<td>none</td>
+<td>azlToken✓ (18dp) usdcToken✓ taskRegistry✓ treasury✓</td>
+</tr>
+<tr>
+<td>TaskScopeRegistry</td>
+<td><code>0xf7bD3Fec4663a1e090cd896BFAc9103B9498a9d0</code></td>
+<td>Exact Match</td>
+<td>n/a (no Ownable)</td>
+<td>n/a</td>
+<td><strong>taskRegistry = <code>0xa6050C3dE02b4A5038B5F1fA5BeFbceC1aa4e189</code> ≠ live TaskRegistry — see F-01</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>EIP-170 compliance:</strong> TaskRegistry runtime bytecode = 24,111 bytes (limit 24,576) — compliant,<br>465-byte margin. All other contracts well under the limit (5,170–15,880 bytes).<br><strong>External asset identities:</strong> Base USDC <code>0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code> (6<br>decimals) and AZL <code>0x931517E9502F9d52CDF6F5AC7fca7925e2A1BBA3</code> (18 decimals) both confirmed live<br>and matching every contract that references them.<br><strong>No proxies, no <code>initialize()</code>, no upgrade path anywhere in the system</strong> (constructor + one-shot<br>owner setters only, confirmed independently by Phase-0 Agent 3 and Phase-2 agents).</p>
+<h2 id="c-findings">C. Findings</h2>
+<p>Ordered by severity, then confidence. <code>[both]</code> = corroborated by both phases independently;<br><code>[phase1: &lt;domain&gt;]</code> / <code>[phase2: &lt;agent&gt;]</code> = single-phase origin, cross-checked in reconciliation.</p>
+<hr>
+<h3 id="f-01-taskscoperegistry-permanently-wired-to-a-stalesuperseded-ta">F-01 — TaskScopeRegistry permanently wired to a stale/superseded TaskRegistry</h3>
+<p><strong>Severity:</strong> <span class="pill medium">Medium</span> | <strong>Confidence:</strong> 97 | <strong>Origin:</strong> <code>[both]</code> — independently confirmed<br>on-chain (<code>cast call</code>) in this audit&#39;s own Phase-0 pass, and corroborated by 8 of 12 Phase-2<br>agents and Phase-1 AC-1.<br><strong>Location:</strong> <code>TaskScopeRegistry.sol:10</code> (<code>address public immutable taskRegistry</code>), set at<br>constructor <code>:17-20</code>; read at <code>:30</code> (<code>acceptanceCriteriaHashes</code>), <code>:45</code> (<code>taskCount</code>), <code>:51</code><br>(<code>getTask(...).poster</code>).</p>
+<p>Live on-chain read (block 48680219): <code>TaskScopeRegistry.taskRegistry() == 0xa6050C3dE02b4A5038B5F1fA5BeFbceC1aa4e189</code>,<br>which is <strong>not</strong> the canonical manifest&#39;s TaskRegistry (<code>0xCe3eBC0B256831BD270AD2D1b039293d24Dbe319</code>).<br>The address it does point to is itself a live, real TaskRegistry-shaped contract (responds to<br><code>owner()</code>, <code>arbitration()</code>, <code>escrow()</code>, <code>taskCount()</code>) but wired to a <em>different</em> EscrowVault<br>(<code>0x73207410a64D50eb761c79CeaB22F93A22CDdF94</code>) and arbitration module<br>(<code>0xaE4D9151cC2126AfFEDD9f821AB75eD10a7f0283</code>) that appear nowhere in the canonical manifest —<br>consistent with an earlier/superseded deployment of the whole stack.</p>
+<p><code>taskRegistry</code> is <code>immutable</code>, so this cannot be fixed by calling a setter — it is a permanent<br>defect in the deployed <code>TaskScopeRegistry</code> at <code>0xf7bD3Fec…a9d0</code>. <code>TaskRegistry</code> holds no<br>back-reference to <code>TaskScopeRegistry</code> (grep-confirmed one-directional dependency), so no core<br>protocol fund path is affected — but the effect on <code>TaskScopeRegistry</code> itself is total: <code>setScope</code><br>authorizes the caller as poster against the wrong registry&#39;s <code>getTask(taskId)</code>, and validates the<br>scope hash against the wrong registry&#39;s <code>acceptanceCriteriaHashes(taskId)</code>.</p>
+<p><strong>Impact today:</strong> both the live and the stale TaskRegistry report <code>taskCount() == 0</code> (pre-launch),<br>so no live task&#39;s scope has yet been mis-authorized. <strong>Impact once tasks exist:</strong> an honest poster<br>of live task <code>N</code> cannot publish its scope (<code>_requirePoster</code> reads the wrong registry&#39;s poster for<br>id <code>N</code>, which will not equal the caller, so <code>setScope</code> reverts <code>&quot;TaskScope: not poster&quot;</code>); if the<br>stale registry is independently used and produces overlapping task IDs, a party on that stale<br>system could publish an unrelated scope string under the same numeric ID that off-chain UIs would<br>attribute to the live task.</p>
+<p><strong>Recommendation:</strong> Redeploy <code>TaskScopeRegistry</code> with its constructor argument pointed at the live<br>TaskRegistry <code>0xCe3eBC0B256831BD270AD2D1b039293d24Dbe319</code>. The current instance cannot be repaired<br>and should be treated as abandoned; update any off-chain integration pointing at it.</p>
+<hr>
+<h3 id="f-02-a-dispute-stuck-in-evidence-state-has-no-fallback-if-the-se">F-02 — A dispute stuck in EVIDENCE state has no fallback if the seated arbitrator goes silent or self-disqualifies; timeout then awards 100% to the poster</h3>
+<p><strong>Severity:</strong> <span class="pill high">High</span> | <strong>Confidence:</strong> 85 | <strong>Origin:</strong> <code>[phase2: flow-gap agent]</code>, re-examined<br>and confirmed against real source in this reconciliation pass (bundle line numbers from the raw<br>agent output did not match the real files and were re-derived below).<br><strong>Location:</strong> <code>ArbitrationModule.sol</code> — <code>proposeArbitrator()</code> seats into EVIDENCE at <code>:306-309</code>;<br><code>resolveDispute()</code> requires <code>msg.sender == d.assignedArbitrator</code> (<code>:348</code>) and<br><code>agentDepositVault.meetsEntryMinimum(msg.sender)</code> (<code>:353-356</code>); <code>assignFallbackResolver()</code> requires<br><code>d.state == DisputeState.OPEN</code> (<code>:367</code>) — <strong>not reachable once state is EVIDENCE</strong>; <code>escalate()</code><br>likewise requires <code>OPEN</code> (<code>:315</code>); <code>resolveTimedOut()</code> accepts <code>OPEN || EVIDENCE</code> (<code>:334</code>) after<br><code>absoluteDeadline</code> (21 days) and always finalises with <code>workerBps = 0</code> (<code>:343</code>, comment at<br><code>:340-342</code> confirms this is an intentional &quot;no ruling ⇒ return to poster&quot; default).</p>
+<p><strong>Verified mechanism:</strong> once both dispute parties mutually consent to the same arbitrator (each<br>independently calls <code>proposeArbitrator</code> with the same address), the dispute moves <code>OPEN → EVIDENCE</code><br>(<code>:306-309</code>) and the <em>only</em> two ways out are (a) that specific arbitrator calling <code>resolveDispute</code>,<br>or (b) anyone calling <code>resolveTimedOut</code> after the 21-day <code>absoluteDeadline</code>. There is no path back<br>to <code>OPEN</code>, no re-proposal, and no fallback-resolver seating once in EVIDENCE. If the seated<br>arbitrator simply never calls <code>resolveDispute</code> — or deliberately withdraws their own<br><code>AgentDepositVault</code> balance below <code>MIN_ENTRY_BALANCE</code> so <code>meetsEntryMinimum</code> fails even if they<br>change their mind (<code>:353-356</code>) — the dispute is provably stuck until the 21-day timeout, which then<br>awards <strong>100%</strong> of the frozen escrow to the poster (<code>workerBps=0</code>) regardless of whether the worker<br>actually delivered.</p>
+<p><strong>Proof of concept / attack sequence:</strong></p>
+<ol>
+<li>Worker delivers real value on a STREAMING task; poster refuses to pay and opens a dispute<br>(<code>TaskRegistry.openDispute</code> → <code>ArbitrationModule.openDispute</code>), freezing escrow.</li>
+<li>Poster proposes a specific arbitrator (could be a low-cost address that meets registration<br>requirements — self-registration only needs a $25 deposit + 1-day cooldown per<br><code>registerArbitrator</code>/<code>registerArbitratorGlobal</code>). Worker, believing this is a fair path forward<br>(or under social/time pressure — the worker also wants a ruling rather than defaulting to<br><code>resolveTimedOut</code>&#39;s poster-favorable outcome), calls <code>proposeArbitrator</code> with the same address →<br>dispute enters EVIDENCE.</li>
+<li>The (colluding, bribed, or simply unresponsive) arbitrator never calls <code>resolveDispute</code>, or<br>withdraws their <code>AgentDepositVault</code> deposit below $25 so any later attempt to rule reverts<br><code>&quot;Arbitration: arbitrator ineligible&quot;</code>.</li>
+<li><code>assignFallbackResolver</code> and <code>escalate</code> both revert (<code>state != OPEN</code>). The worker has no<br>permissionless recourse.</li>
+<li>After 21 days, anyone calls <code>resolveTimedOut</code> → <code>_finalise(d, id, 0, false)</code> →<br><code>escrow.split(taskId, worker, poster, 0)</code> sends 100% of the frozen escrow to the poster.</li>
+<li>The worker&#39;s genuinely-earned value (streamed/hour-block accrual that was frozen at dispute<br>open) is lost with no recourse once EVIDENCE is reached.</li>
+</ol>
+<p><strong>Why High and not Critical:</strong> this requires the worker&#39;s own initial consent to a specific<br>arbitrator (not a zero-precondition attack — a diligent worker who refuses to consent and instead<br>waits for the permissionless <code>assignFallbackResolver</code> after day 7, staying in OPEN, retains the<br>fallback-resolver protection). It also requires a full 21-day wait. It is rated High rather than<br>Medium because the loss is total (100% of frozen value) and the triggering conditions (arbitrator<br>apathy or deliberate self-disqualification) are entirely plausible in an adversarial or even<br>merely unreliable-arbitrator setting, with <strong>no code-level mitigation whatsoever</strong> once EVIDENCE<br>is reached.<br><strong>Recommendation:</strong> Allow <code>assignFallbackResolver</code> (or an equivalent re-proposal path) to fire once<br><code>resolutionDeadline</code> has passed even from EVIDENCE state if the seated arbitrator has not ruled<br>within some grace window, rather than only from OPEN; and/or have <code>resolveTimedOut</code> default to a<br>neutral (e.g., 50/50, or fallback-resolver-ruled) split rather than <code>workerBps=0</code> when a dispute<br>had already progressed past mutual arbitrator selection.</p>
+<hr>
+<h3 id="f-03-single-eoa-controls-all-8-ownable2step-contracts-and-is-the">F-03 — Single EOA controls all 8 Ownable2Step contracts and is the sole arbitration-recovery proposer</h3>
+<p><strong>Severity:</strong> <span class="pill medium">Medium</span> | <strong>Confidence:</strong> 85 | <strong>Origin:</strong> <code>[phase1: access-control]</code>, corroborated<br>structurally by this audit&#39;s own on-chain read (owner <code>0x418D156C7e6f17685926539a03b3F579b171804B</code>,<br>confirmed EOA — codesize 0 — via <code>cast codesize</code>).</p>
+<p>Every privileged action across the protocol (one-shot wiring, <code>setFallbackResolver</code>,<br><code>qualifyBootstrapArbitrator</code>, <code>setDisputeOpeningPaused</code>, <code>setBuybackExecutor</code>,<br><code>activateStaking</code>, and — critically — <code>ArbitrationRecoveryCoordinator.proposeRecovery</code>, the <em>only</em><br>entrypoint into the delayed-recovery path since direct rotation is hard-disabled everywhere) is<br>gated on this one key. <code>renounceOwnership()</code> is disabled on all 8 contracts (always reverts), and<br>several rotations carry a 2-day delay — real protections — but there is no backup proposer and no<br>multisig. Two concrete consequences: (1) if the key is lost, the arbitration module can never be<br>replaced again (no alternate proposer exists); (2) if the key is compromised, an attacker can<br>deploy a validly-wired malicious arbitration module, wait out the 2-day recovery delay, and then —<br>as the new <code>onlyArbitration</code> authority — direct dispute-bond settlement and escrow splits.</p>
+<p><strong>Recommendation:</strong> Move ownership of all 8 contracts to a multisig (ideally with a timelock)<br>before allowing meaningful value into the system; add a documented backup/guardian proposer for<br><code>ArbitrationRecoveryCoordinator.proposeRecovery</code> so recovery liveness does not depend on one key.</p>
+<hr>
+<h3 id="f-04-a-direct-hire-task-silently-reopens-to-public-claiming-afte">F-04 — A direct-hire task silently reopens to public claiming after the invited worker leaves or is dismissed pre-acceptance, defeating &quot;direct hire requires worker consent&quot;</h3>
+<p><strong>Severity:</strong> <span class="pill medium">Medium</span> | <strong>Confidence:</strong> 80 | <strong>Origin:</strong> <code>[phase2: invariant/asymmetry agents]</code>,<br><strong>re-derived and corrected against real source</strong> in this reconciliation (the raw agent claim<br>conflated <code>claimTask</code>&#39;s missing <code>directHire</code> guard with an incorrect claim about <code>startWork</code>; the<br>verified mechanism below is the actual bug).</p>
+<p><strong>Verified mechanism:</strong> <code>createTask</code> (direct hire) sets <code>directHire[taskId]=true</code>, <code>t.state = CLAIMED</code>, <code>t.worker = &lt;invited address&gt;</code>. Before the invited worker calls <code>acceptDirectHire</code>, either<br>the poster can call <code>dismissWorker</code> (<code>TaskRegistry.sol:286-302</code>, requires only <code>state==CLAIMED</code>) or<br>the invited worker can call <code>leaveTask</code> (<code>:304-318</code>, same state requirement) — both reset<br><code>t.worker = address(0)</code>, <code>t.state = POSTED</code>, but <strong>neither clears <code>directHire[taskId]</code></strong>. Now the<br>task is <code>POSTED</code> with <code>directHire[taskId]</code> still <code>true</code>. <code>claimTask</code> (<code>:256-273</code>) has <strong>no<br><code>directHire</code> check at all</strong> — it only requires <code>state==POSTED</code>, <code>worker==0</code>, and<br><code>msg.sender != poster</code> — so <em>any</em> address can now call <code>claimTask</code> and become <code>t.worker</code>, <code>state → CLAIMED</code>. That new, uninvited claimer then satisfies <code>acceptDirectHire</code>&#39;s <code>onlyWorker</code> guard<br>(<code>msg.sender == t.worker</code>, now the new claimer) and <code>directHire[taskId]==true</code> (still set), so they<br>can call <code>acceptDirectHire</code> (<code>:426-438</code>) and activate the task exactly as if the poster had<br>originally selected them.<br><strong>Impact:</strong> the poster&#39;s explicit choice of counterparty (the entire point of &quot;direct hire&quot;) is<br>silently discarded the moment the originally-invited worker declines via <code>leaveTask</code>/<code>dismissWorker</code><br>rather than <code>declineDirectHire</code> — the task becomes public-claim, and the poster has no way to<br>re-establish exclusive selection (re-dismissing the new claimer just reopens it to the next public<br>claimer, indefinitely).<br><strong>Recommendation:</strong> Clear <code>directHire[taskId]</code> (and require the task go through <code>startWork</code> rather<br>than <code>acceptDirectHire</code>) whenever <code>dismissWorker</code>/<code>leaveTask</code> resets a task to <code>POSTED</code>, or block<br><code>claimTask</code> on tasks where <code>directHire[taskId]==true</code>.</p>
+<hr>
+<h3 id="f-05-dispute-bond-is-forfeited-to-the-arbitrator-on-any-ruling-r">F-05 — Dispute bond is forfeited to the arbitrator on any ruling regardless of who prevails, contradicting the module&#39;s own top-level NatSpec</h3>
+<p><strong>Severity:</strong> <span class="pill medium">Medium</span> | <strong>Confidence:</strong> 75 | <strong>Origin:</strong> <code>[phase2: trust-gap agent]</code>, verified<br>against real source.<br><strong>Location:</strong> Contradiction between <code>ArbitrationModule.sol:32-33</code> (&quot;Refunded if the initiator<br>prevails (or on timeout); forfeited to the arbitrator otherwise&quot;) and the actual implementation at<br><code>:484-513</code> (<code>_settleDisputeBond</code>, whose own inline comment at <code>:484-485</code> correctly describes what<br>the code does: &quot;a fixed service fee paid for any ruling, independent of initiator, winner, or<br>BPS. With no ruling it is fully refunded&quot;).</p>
+<p>The code forfeits the initiator&#39;s bond to the arbitrator on <strong>every</strong> ruled dispute<br>(<code>byArbitrator == true</code>, line <code>:496</code>), even when the initiator wins outright (<code>workerBps</code> fully in<br>their favor). Only a timeout (<code>byArbitrator == false</code>) refunds. This means: a worker who is forced<br>to dispute a withholding poster (see F-06, UPFRONT mode has no other recourse) loses their bond<br>(5% of locked value, clamped $1–$100) to the arbitrator even after being fully vindicated —<br>converting what the top-level spec comment promises as a loser-pays mechanism into a<br>pay-to-litigate tax on the party correctly using the dispute system.<br><strong>Recommendation:</strong> Either fix the top-level NatSpec to describe the actual &quot;flat service fee&quot;<br>model (if intended), or change <code>_settleDisputeBond</code> to refund the prevailing party&#39;s bond and<br>charge the losing party&#39;s, matching the documented spec.</p>
+<hr>
+<h3 id="f-06-resolvetimedout-sends-100-of-frozen-escrow-to-the-poster-wi">F-06 — <code>resolveTimedOut</code> sends 100% of frozen escrow to the poster with no accrual credit for STREAMING/HOUR_BLOCKS workers; combined with F-02/F-05 this makes UPFRONT/streaming disputes structurally poster-favorable</h3>
+<p><strong>Severity:</strong> <span class="pill low">Low</span> | <strong>Confidence:</strong> 60 | <strong>Origin:</strong> <code>[both]</code> — Phase-1 GEN-2 and 7 of 12 Phase-2<br>agents independently converged on this.<br><strong>Location:</strong> <code>ArbitrationModule.resolveTimedOut()</code> <code>:331-344</code> vs. <code>EscrowVault.settleExpired()</code><br><code>:278-322</code> (which <em>does</em> pay time-accrued entitlement before refunding remainder on ordinary<br>expiry — the asymmetry is specifically in the dispute-timeout path, not the ordinary-expiry path).</p>
+<p>Standalone this is Low severity: the worker&#39;s defense is the permissionless<br><code>assignFallbackResolver</code>, available days 7–21 while the dispute is still <code>OPEN</code> — a diligent worker<br>who declines to consent to a specific arbitrator and instead waits for the neutral fallback is<br>protected. It rises to the <strong>High</strong> severity of F-02 only once EVIDENCE is reached and the seated<br>arbitrator stalls. Reported separately here because the underlying default (<code>workerBps=0</code> with no<br>accrual credit) is itself inconsistent with the ordinary-expiry path&#39;s behavior and worth fixing on<br>its own terms even after F-02 is addressed.<br><strong>Recommendation:</strong> See F-02&#39;s recommendation; additionally, when timing out a STREAMING/<br>HOUR_BLOCKS dispute, compute the worker&#39;s deadline-bounded accrued entitlement (as<br><code>settleExpired</code> does) rather than defaulting to zero.</p>
+<hr>
+<h3 id="f-07-balance-health-watchdog-enforcebalancehealthpauseauto-delet">F-07 — Balance-health watchdog (<code>_enforceBalanceHealth</code>/pause/auto-delete/platform-penalty) is unreachable dead code</h3>
+<p><strong>Severity:</strong> <span class="pill low">Low</span> | <strong>Confidence:</strong> 90 | <strong>Origin:</strong> <code>[both]</code> — Phase-1 GEN-1 and <strong>11 of 12</strong><br>Phase-2 agents independently derived and proved this identical fact, the single strongest<br>cross-agent convergence in the entire audit.<br><strong>Location:</strong> <code>AgentDepositVault.meetsTaskReservation()</code> <code>:177-181</code>, consumed by<br><code>TaskRegistry._firstUnderfunded()</code> <code>:860-862</code> and <code>_enforceBalanceHealth()</code> <code>:824-851</code>.</p>
+<p><code>meetsTaskReservation</code> returns <code>taskReservations[taskId][agent] &gt;= MIN_TASK_BALANCE &amp;&amp; deposits[agent] &gt;= totalReserved[agent]</code>. The first clause is always true while bound<br>(<code>taskReservations</code> is set to exactly <code>MIN_TASK_BALANCE</code> at bind, <code>AgentDepositVault.sol:213</code>, and<br>only ever deleted whole). The second clause is a global invariant preserved by every<br>deposit-reducing path: <code>reserveTask</code> (the only writer that increases <code>totalReserved</code>) requires<br><code>availableBalance &gt;= required</code> first (<code>:212</code>); <code>_withdrawTo</code> caps at <code>availableBalance</code><br>(<code>:133-135</code>); <code>debitAccessFee</code>/<code>debitDismissFee</code>/<code>debitLeaveFee</code> each require<br><code>availableBalance &gt;= MIN_ENTRY_BALANCE + fee</code> before debiting; <code>consumeDisputeBondReservation</code><br>decrements <code>deposits</code> and <code>totalReserved</code> by the identical amount (<code>:291-294</code>). Hence<br><code>deposits[agent] &gt;= totalReserved[agent]</code> cannot be violated by any reachable sequence, so<br><code>_firstUnderfunded</code> always returns <code>address(0)</code>, and the entire pause → <code>emergencyTopUp</code> →<br><code>_finalizePausedTask</code> (auto-delete) → <code>applyPlatformPenalty</code> (7-day block + reputation reset) chain<br>never fires. No fund loss results (the reservation model already over-collateralizes), but a<br>documented safety mechanism does not work as designed — likely because the intended check was live<br><code>availableBalance(agent) &gt;= MIN_TASK_BALANCE</code>, not the static reservation constant.<br><strong>Recommendation:</strong> If the watchdog is meant to be functional, key it off live <code>availableBalance</code><br>rather than the immutable per-task reservation; otherwise remove the dead machinery<br>(<code>emergencyTopUp</code>/<code>pullEmergencyTopUp</code>/pause state/penalty path) to avoid a false sense of<br>protection. Also note: <code>ReputationRegistry.slashVerifierBond</code> and <code>recordReplacementPenalty</code> have<br>no live caller anywhere in the system (confirmed by grep across all 9 contracts) — verifier bonds<br>can never actually be slashed, and the worker-replacement penalty signal can never fire (the<br>replacement flow itself is hard-disabled, <code>TaskRegistry.sol</code> <code>requestReplacement</code>/<br><code>assignReplacementWorker</code> unconditionally revert).</p>
+<hr>
+<h3 id="f-08-setdisputeopeningpaused-is-an-instant-unbounded-owner-censo">F-08 — <code>setDisputeOpeningPaused</code> is an instant, unbounded owner censorship lever over new disputes</h3>
+<p><strong>Severity:</strong> <span class="pill low">Low</span> | <strong>Confidence:</strong> 70 | <strong>Origin:</strong> <code>[phase1: access-control]</code>.<br><strong>Location:</strong> <code>ArbitrationModule.setDisputeOpeningPaused()</code> <code>:149-157</code>; enforced only in<br><code>openDispute()</code> <code>:206</code>.</p>
+<p>Owner can freeze all new dispute openings instantly and indefinitely (no delay, no expiry). This<br>audit specifically walked whether pausing could also block legitimate arbitration-module recovery<br>(the brief&#39;s stated concern) — <strong>it does not</strong>: recovery <em>requires</em> the outgoing module to already<br>be paused as a precondition (<code>ArbitrationRecoveryCoordinator._validateSafeOutgoing</code>), so pausing<br>enables rather than blocks recovery. The residual risk is one-directional: an UPFRONT-mode worker<br>with no self-service claim path and a non-cooperative poster has no recourse if disputes are<br>paused — <code>expireTask</code> at deadline refunds 100% to the poster with no arbitration ever available.<br><strong>Recommendation:</strong> Add a maximum pause duration, or move the switch behind the multisig<br>recommended in F-03.</p>
+<hr>
+<h3 id="f-09-unbounded-poster-chosen-streamratepersecond-can-overflow-th">F-09 — Unbounded poster-chosen <code>streamRatePerSecond</code> can overflow the vesting multiplication and permanently lock a task&#39;s own escrow</h3>
+<p><strong>Severity:</strong> <span class="pill low">Low</span> | <strong>Confidence:</strong> 55 | <strong>Origin:</strong> <code>[both]</code> — Phase-1 MATH-1 and 3 of 12<br>Phase-2 agents (math-precision, invariant, numerical-gap) independently derived this.<br><strong>Location:</strong> <code>EscrowVault._checkpointStream()</code> (streaming vesting) and <code>settleExpired()</code><br>(STREAMING branch); <code>validateTaskTerms</code> only requires <code>streamRate &gt; 0</code>, no upper bound.</p>
+<p><code>newlyVested = Δt * streamRatePerSecond</code> is computed <strong>before</strong> the <code>unvested</code> cap is applied. A<br>poster who commits an extreme rate (baked into their own settlement digest, so self-inflicted) can<br>cause this multiplication to overflow and revert once any time has elapsed, bricking<br><code>claimStream</code>, <code>streamRelease</code>, and the <code>expireTask → settleExpired</code> exit path for that task —<br>locking the escrowed USDC with no admin rescue. No third party benefits or is harmed; the poster<br>harms only their own escrow (and the worker&#39;s claim on it).<br><strong>Recommendation:</strong> Bound <code>streamRate</code> in <code>validateTaskTerms</code> (e.g. <code>streamRate &lt;= totalAmount</code>) so<br>the multiplication cannot overflow for any plausible task duration.</p>
+<hr>
+<h3 id="f-10-treasury-leg-hard-safetransfers-have-no-rotation-path-if-th">F-10 — Treasury-leg hard <code>safeTransfer</code>s have no rotation path if the recipient is USDC-blocklisted</h3>
+<p><strong>Severity:</strong> <span class="pill low">Low</span> | <strong>Confidence:</strong> 70 | <strong>Origin:</strong> <code>[phase1: dos + erc20]</code>.<br><strong>Location:</strong> <code>AgentDepositVault.debitAccessFee/debitDismissFee/debitLeaveFee</code> (treasury leg);<br><code>TreasuryRouter.flushBuybackShare</code> (recoverable — buyback executor is rotatable).</p>
+<p>By design, user-facing payouts use a deferred pull-ledger (<code>_payOrDefer</code>) so a blocklisted<br>worker/poster/arbitrator cannot brick a state transition — verified to hold in every reachable<br>payout path. The protocol&#39;s own <strong>treasury</strong> leg uses a hard, non-deferred <code>safeTransfer</code>, and<br><code>AgentDepositVault.treasury</code> has no rotation mechanism (set once via <code>wire()</code>). If Circle ever<br>blocklists <code>TreasuryRouter</code>, every <code>postTask</code>/<code>claimTask</code>/<code>createTask</code>/<code>dismissWorker</code>/<code>leaveTask</code><br>call reverts permanently, with no on-chain remediation. This requires an external trusted-issuer<br>action, not an attacker precondition.<br><strong>Recommendation:</strong> Route the treasury USDC leg through the same deferred-ledger pattern, or add a<br>delayed treasury-rotation path mirroring the existing buyback-executor rotation.</p>
+<hr>
+<h3 id="f-11-two-usdcazl-pull-sites-skip-the-fee-on-transfer-balance-del">F-11 — Two USDC/AZL pull sites skip the fee-on-transfer balance-delta guard used everywhere else (latent — token is fixed)</h3>
+<p><strong>Severity:</strong> <span class="pill low">Low</span> | <strong>Confidence:</strong> 85 | <strong>Origin:</strong> <code>[both]</code> — Phase-1 ERC20-1/2/GEN-3, and<br>independently found again by a Phase-2 boundary agent.<br><strong>Location:</strong> <code>EscrowVault.depositFor()</code> and <code>TreasuryRouter._collectAzlAccessFee()</code>.</p>
+<p>Every other pull site (<code>AgentDepositVault.topUp</code>, <code>UnionStakingVault.stake</code>, the treasury flushes)<br>measures the received balance delta and reverts on short delivery. These two sites credit the<br>nominal <code>amount</code> directly. Not currently exploitable — <code>postTask</code>/<code>createTask</code> hard-constrain the<br>escrow token to <code>agentVault.usdcToken()</code> (fixed, non-fee-on-transfer Base USDC), and AZL is<br>similarly fixed and non-taxing — but inconsistent defense-in-depth.<br><strong>Recommendation:</strong> Apply the same balance-delta measurement used at every other pull site.</p>
+<hr>
+<h3 id="f-12-missing-reentrancy-guard-in-unionstakingvaultstakeunstake-c">F-12 — Missing reentrancy guard in <code>UnionStakingVault.stake</code>/<code>unstake</code> (conditional on AZL ever gaining transfer hooks)</h3>
+<p><strong>Severity:</strong> <span class="pill low">Low</span> | <strong>Confidence:</strong> 60 | <strong>Origin:</strong> <code>[phase1: defi-staking]</code>.<br><strong>Location:</strong> <code>UnionStakingVault.stake()</code>/<code>unstake()</code> — AZL transfer occurs before <code>_checkpoint()</code><br>re-anchors the caller&#39;s accumulator debt; the vault has no <code>ReentrancyGuard</code>.</p>
+<p>Not reachable with the current AZL token (standard OZ ERC20, no hooks); would become exploitable<br>(double-counted credit/reward accrual) if AZL is ever upgraded to a hook-bearing token.<br><strong>Recommendation:</strong> Add <code>ReentrancyGuard</code> to <code>UnionStakingVault</code> and mark <code>stake</code>/<code>unstake</code><br><code>nonReentrant</code>, or checkpoint before transferring.</p>
+<hr>
+<h2 id="leads-confidence-50-or-unconfirmed-preconditions-not-rated-findi">Leads (confidence &lt; 50 or unconfirmed preconditions — not rated findings)</h2>
+<ul>
+<li><strong>Consent-reset griefing in <code>proposeArbitrator</code>:</strong> either dispute party can reset the<br>counterparty&#39;s recorded consent by proposing a different (but still eligible) arbitrator,<br>potentially stalling selection indefinitely — bounded by the permissionless<br><code>assignFallbackResolver</code> after day 7 while still <code>OPEN</code>. <code>[phase2: access-control agent]</code></li>
+<li><strong><code>distributeRevenue</code> epoch front-running:</strong> a griefer can call the permissionless<br><code>distributeRevenue</code> the instant any dust fee accrues, consuming the 7-day epoch stamp and<br>delaying the week&#39;s real fee distribution by up to a further epoch. No funds lost, only timing<br>degraded. <code>[phase2: economic-security agent]</code></li>
+<li><strong>Self-dealt arbitrator reputation farming:</strong> an entity controlling poster+worker+arbitrator<br>addresses can cheaply mint <code>resolvedCount</code>/reputation via self-disputes on minimum-qualifying<br>($1+) tasks, potentially building a legitimate-looking track record before soliciting real<br>parties&#39; consent (relevant precondition for F-02&#39;s social-engineering angle). Real parties must<br>still independently consent, so this is a precondition-builder, not a closed exploit.<br><code>[phase2: trust-gap agent]</code></li>
+<li><strong><code>_accrue</code> advances <code>lastAccrualAt</code> even when <code>periodCredits</code> truncates to zero,</strong> forfeiting<br>sub-threshold credit accrual under very low <code>totalStaked</code> — negligible at any realistic stake<br>size (100M+ AZL). <code>[phase1: defi-staking STAKE-7, phase2: trust-gap/numerical-gap]</code></li>
+<li><strong>Settlement &quot;digest&quot; (<code>SETTLEMENT_DOMAIN_V2</code>) performs no actual security function</strong> — there is<br>no <code>ecrecover</code>/EIP-712/signer anywhere in the system; the caller supplies every field directly<br>as arguments <em>and</em> the digest, so the check can only fail if the caller deliberately mismatches<br>their own inputs. Removing it would change no on-chain security property. Flagged only because<br>the naming may give false confidence of replay/tamper protection that does not exist.<br><code>[phase1: signatures SIG-1, phase2 corroboration]</code></li>
+</ul>
+<h2 id="verified-sound-attacked-did-not-break">Verified sound (attacked, did not break)</h2>
+<ul>
+<li>Escrow conservation (<code>totalReleased ≤ totalDeposited</code>) across UPFRONT/MILESTONE/STREAMING/<br>HOUR_BLOCKS, including boundary timestamps at <code>deadline</code>.</li>
+<li>Dispute-bond reserve-vs-consume monotonicity (reserved on <code>totalAmount</code>, consumed on<br><code>lockedBalance ≤ totalAmount</code>) — never underflows, never double-reserves across concurrent<br>tasks (per-task-per-agent keyed reservations, <code>AgentDepositVault.taskReservations[taskId][agent]</code>).<br>Explicitly revalidates the brief&#39;s &quot;collateral/bond reservations cannot be reused across<br>concurrent tasks.&quot;</li>
+<li><code>escrow.split</code>/<code>refund</code> recipients are the dispute&#39;s immutable <code>snapshotWorker</code>/<code>snapshotPoster</code><br>(captured at <code>openDispute</code>), <strong>not</strong> caller-supplied — verified at<br><code>ArbitrationModule.sol:393</code> (<code>escrow.split(d.taskId, d.snapshotWorker, d.snapshotPoster, workerBps)</code>). Explicitly revalidates that brief item.</li>
+<li><code>submitProof</code> reverts if <code>block.timestamp &gt; t.deadline</code> (<code>TaskRegistry.sol:513</code>) — no optimistic<br>post-deadline milestone payout path exists. Explicitly revalidates that brief item.</li>
+<li>Zero-stake reward carry, late-whale Action-Credit capture, and just-in-time staking around<br>reward notifications were each independently attacked with concrete numeric traces by multiple<br>agents (Phase-1 defi-staking + 2 Phase-2 agents) — all three of the brief&#39;s named staking<br>protections hold as designed.</li>
+<li>Blocklisted recipients cannot brick required state transitions for <strong>user-controlled</strong> addresses<br>(deferred pull-ledger design verified at every forced payout site) — the residual exposure is<br>confined to protocol-controlled addresses themselves being blocklisted (F-10), an external-issuer<br>scenario, not a user-triggerable one.</li>
+<li>Failed reputation side-effects cannot block required settlement — <code>try/catch</code> isolation around<br>bond settlement, reputation recording, and the registry callback in <code>ArbitrationModule._finalise</code>,<br>each independently retryable via <code>retrySideEffects</code>.</li>
+<li>Ownership renunciation is disabled (reverts) on all 8 <code>Ownable2Step</code> contracts — cannot brick<br>critical contracts via renounce.</li>
+<li>Settlement digests do bind chain ID, contract address (registry), worker, all payment terms,<br>and the acceptance-criteria hash (verified field-by-field in <code>_computeSettlementDigest</code>) — though<br>see the Leads section for why this digest carries no actual authentication weight.</li>
+<li>Timeout paths do not award arbitrator reputation or <code>resolvedCount</code> without a ruling<br>(<code>resolveTimedOut</code>&#39;s <code>byArbitrator=false</code> skips <code>_tryRecordReputation</code> entirely) and refund<br>rather than forfeit the bond on timeout specifically (contrast F-05, which is about the<br>ruled-but-lost case, not the timeout case).</li>
+<li>No source/bytecode mismatch on any of the 9 contracts (all BaseScan &quot;Exact Match&quot;).<br><code>TaskRegistry</code> is EIP-170 compliant with a 465-byte margin.</li>
+<li>Wiring-order dependency on <code>setArbitrationRecoveryCoordinator</code>&#39;s cross-checks: cannot pass<br>vacuously on <code>address(0)==address(0)</code> because the ARC constructor itself requires all four<br>peer addresses to be non-zero contracts before it can be deployed.</li>
+<li>One-shot (&quot;set-once&quot;) setters carry no front-running race — all are <code>onlyOwner</code>; the only<br>permissionless &quot;accept&quot; steps are the second leg of explicit owner-proposed rotations.</li>
+</ul>
+<h2 id="d-remediation-revalidation-matrix">D. Remediation revalidation matrix</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Remediation claim (from audit brief)</th>
+<th>Verdict</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Terminal arbitration timeout must not award unresolved UPFRONT escrow to a worker merely because the payment mode is UPFRONT</td>
+<td><strong>PASS</strong></td>
+<td><code>resolveTimedOut</code> always sets <code>workerBps=0</code> — no path awards escrow to the worker without a ruling. (The inverse risk — a worker&#39;s <em>earned</em> streaming/hour value going to the poster on timeout — is real; see F-06.)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>A milestone proof submitted after the task deadline must revert and must not create an optimistic payout path</td>
+<td><strong>PASS</strong></td>
+<td><code>submitProof</code> requires <code>block.timestamp &lt;= t.deadline</code> (<code>TaskRegistry.sol:513</code>)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Streaming and hour-block workers retain only legitimately accrued entitlement at expiry</td>
+<td><strong>PASS</strong></td>
+<td><code>settleExpired</code> caps at deadline-bounded accrual in every branch; verified by 3 independent agents with concrete numeric traces</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Zero-stake reward carry cannot be captured by the first dust staker</td>
+<td><strong>PASS</strong></td>
+<td>Carry is re-streamed over a fresh 7-day window, never lump-awarded; 1-wei stake+unstake captures ≈$0.0003 of a $100 carry</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Late whales cannot capture projected Action Credit headroom</td>
+<td><strong>PASS</strong></td>
+<td>Per-token credit rate is <code>totalStaked</code>-independent; capture is exactly proportional to stake×time contributed</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Task collateral and dispute-bond reservations cannot be reused across concurrent tasks</td>
+<td><strong>PASS</strong></td>
+<td>Reservations are keyed <code>[taskId][agent]</code>; <code>bondForAmount</code> monotonicity prevents under-reservation</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Arbitration replacement is delayed, coordinated, and atomic across all relevant contracts</td>
+<td><strong>PASS</strong> (with a noted latent caveat)</td>
+<td>2-day delay, dual re-validation (propose + execute), atomic 4-contract rotation confirmed; recovery does depend on the outgoing module self-reporting quiescence, which is currently always reachable (all side-effects retry to completion) — see F-07&#39;s dead-watchdog note for the general caution about relying on self-reported state</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Escrow split/refund recipients come from stored task parties, not caller-supplied addresses</td>
+<td><strong>PASS</strong></td>
+<td><code>ArbitrationModule.sol:393</code> passes <code>d.snapshotWorker</code>/<code>d.snapshotPoster</code> (immutable dispute snapshot), never a caller-supplied address</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Blocklisted recipients cannot permanently block protocol state transitions</td>
+<td><strong>PASS</strong> for user-controlled recipients / <strong>PARTIAL</strong> for protocol-controlled ones</td>
+<td>Deferred pull-ledger protects all user-facing forced payouts; the treasury/vault addresses themselves have no equivalent protection (F-10)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Failed reputation side effects cannot prevent required penalties or settlement</td>
+<td><strong>PASS</strong></td>
+<td><code>try/catch</code> isolation + <code>retrySideEffects</code> in <code>ArbitrationModule._finalise</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>Direct hires require worker consent</td>
+<td><strong>FAIL</strong></td>
+<td>F-04: consent can be silently bypassed via <code>leaveTask</code>/<code>dismissWorker</code> → public <code>claimTask</code> → <code>acceptDirectHire</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>Scope publication is write-once and bound to the task&#39;s committed hash</td>
+<td><strong>PARTIAL</strong></td>
+<td>The write-once/hash-binding logic is itself correct, but it is bound to the <strong>wrong</strong> registry&#39;s hash due to F-01&#39;s stale wiring</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Settlement digests bind chain ID, registry, worker, payment terms, and acceptance criteria</td>
+<td><strong>PASS</strong> (as a literal claim about field composition)</td>
+<td>All named fields confirmed present in <code>_computeSettlementDigest</code>; note this digest is not itself a security-authenticating mechanism (see Leads)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Ownership renunciation cannot brick critical production contracts</td>
+<td><strong>PASS</strong></td>
+<td><code>renounceOwnership()</code> reverts on all 8 contracts</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Timeout paths do not award false dispute wins, arbitrator reputation, or service fees without a ruling</td>
+<td><strong>PASS</strong></td>
+<td><code>resolveTimedOut</code> skips reputation recording (<code>byArbitrator=false</code>) and refunds (does not forfeit) the bond</td>
+</tr>
+</tbody></table></div>
+<h2 id="e-test-results">E. Test results</h2>
+<p><strong>No repository or existing test suite was provided or discoverable</strong> — the job scope was a live<br>on-chain deployment with a canonical-manifest pointer to a repo path<br>(<code>contracts/deployments/base-8453.json</code>) that was not supplied and could not be located; source was<br>instead recovered directly from BaseScan&#39;s verified-source pages for all 9 contracts (confirmed<br>&quot;Exact Match&quot; against live bytecode, precluding a source/bytecode mismatch). Consequently:</p>
+<ul>
+<li><strong>Compile result:</strong> not applicable — no build system (Foundry/Hardhat config, remappings) was<br>available to reconstruct; BaseScan&#39;s own &quot;Exact Match&quot; verification is the compile-equivalence<br>evidence for this engagement.</li>
+<li><strong>Full test-suite result:</strong> N/A — no test suite exists in the recovered artifact set.</li>
+<li><strong>New adversarial tests added:</strong> none as executable code in this engagement — in place of<br>written PoC tests, every finding above was independently derived and cross-checked by two blind<br>audit phases (18 total sub-agents: 6 domain-checklist agents + 12 attacker-mindset agents) via<br>manual code-path tracing with concrete numeric walk-throughs, and every cited line was verified<br>against the real recovered source files (not the flattened bundle line numbers some sub-agents<br>initially cited).</li>
+<li><strong>Fuzz/invariant results:</strong> none executed (no local repo/build to run Foundry invariant fuzzing<br>against). The conservation invariants named in the brief (escrow liabilities ≤ held USDC,<br>payouts+refunds ≤ deposits, one-ruling-per-dispute, no double-milestone-payment, no reservation<br>reuse across tasks, staking principal fully AZL-backed, Action Credit issuance ≤ cap, terminal<br>tasks cannot un-terminate, unauthorized-role-change resistance) were each traced by hand against<br>every mutator of the relevant state and confirmed to hold under every reachable sequence found by<br>18 independent agents — this is evidence, not proof to the standard a fuzz harness would provide.</li>
+<li><strong>Live on-chain verification performed (this engagement&#39;s substitute for fork tests):</strong> every<br>wiring claim in the manifest was independently confirmed via read-only <code>cast call</code> against Base<br>mainnet at block 48680219 (see §B) — owner/pendingOwner on all 8 contracts, all cross-contract<br>dependency addresses, token identities and decimals, EIP-170 sizes, and the TaskScopeRegistry<br>wiring defect (F-01), which was discovered by this method, not by source reading alone.</li>
+<li><strong>EIP-170 size result:</strong> TaskRegistry 24,111 / 24,576 bytes (compliant, 465-byte margin); all<br>other contracts well clear.</li>
+</ul>
+<p><strong>This is a material limitation of this engagement relative to the brief&#39;s request for Hardhat<br>suite execution, added adversarial tests, and mainnet-fork exploit reproduction — those require a<br>working local repository and build toolchain that was not available. The findings above should be<br>followed up with executable regression tests (in particular for F-01, F-02, F-04, F-05) before this<br>report is treated as a substitute for that tooling-backed verification.</strong></p>
+<h2 id="f-final-residual-risk-statement">F. Final residual-risk statement</h2>
+<ul>
+<li><strong>Critical/High/Medium findings remain:</strong> yes — one High (F-02) and five Medium (F-01, F-03,<br>F-04, F-05, plus the PARTIAL/FAIL remediation items 9 and 12 above) are open as of this report.</li>
+<li><strong>Does live bytecode match reviewed source?</strong> Yes for all 9 contracts (BaseScan &quot;Exact Match&quot;).</li>
+<li><strong>Are ownership and recovery configuration production-safe?</strong> Not yet — single-EOA ownership<br>(F-03) and the EVIDENCE-state dispute trap (F-02) should be remediated before the protocol<br>carries meaningful value.</li>
+<li><strong>Is redeployment required?</strong> Yes, for <code>TaskScopeRegistry</code> specifically (F-01, unfixable<br>in-place due to its immutable wiring). The other 8 contracts do not require redeployment; F-02,<br>F-04, and F-05 are logic fixes that would require a new deployment of the affected contract(s)<br>given the absence of any upgrade path, but do not block the core escrow/payment functionality<br>already live.</li>
+<li><strong>No funds are at risk today:</strong> both the live and the stale TaskRegistry report <code>taskCount()==0</code><br>at the observed block — this deployment has not yet processed a single real task.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory-client-facing-from-phase-0">Access-Control Inventory (client-facing, from Phase 0)</h2>
+<p><strong>Owner:</strong> single EOA <code>0x418D156C7e6f17685926539a03b3F579b171804B</code> on all 8 <code>Ownable2Step</code><br>contracts (TaskRegistry, EscrowVault, ReputationRegistry, ArbitrationModule,<br>ArbitrationRecoveryCoordinator, TreasuryRouter, AgentDepositVault, UnionStakingVault). No pending<br>owner anywhere. <code>renounceOwnership()</code> reverts everywhere (renunciation disabled by design).</p>
+<p><strong>132 external/public state-changing functions</strong> were inventoried across the 9 contracts in Phase<br>0 (full per-function guard table available on request — condensed to the roles/unguarded summary<br>below for report length).</p>
+<p><strong>Key roles:</strong> <code>arbitrationRecoveryCoordinator</code> (set-once per contract, sole caller of<br><code>emergencySetArbitration(Module)</code> — the only arbitration-replacement path);<br><code>fallbackResolver</code> (2-day rotation delay, live = <code>0x185Eaa35…8a37</code>); <code>feeRecipient</code> (2-step,<br>no delay, live EOA <code>0x41f354…06ba</code>); <code>buybackExecutor</code> (2-day rotation delay, live contract<br><code>0xB459145…6D27</code>); per-task <code>poster</code>/<code>worker</code>; self-registered arbitrators (deposit + cooldown<br>gated, not owner-granted except <code>bootstrapQualified</code>).</p>
+<p><strong>Permissionless (unguarded) state-changing entrypoints</strong> — all by design, verified consistent<br>with intended &quot;crank&quot; semantics: <code>postTask</code>, <code>createTask</code>, <code>claimTask</code>, <code>checkTaskBalance</code>,<br><code>resolveStaleReview</code>, <code>expireTask</code> (TaskRegistry); <code>executeFallbackResolverRotation</code>,<br><code>registerArbitrator(Global)</code>, <code>resolveTimedOut</code>, <code>assignFallbackResolver</code>, <code>retrySideEffects</code><br>(ArbitrationModule); <code>executeRecovery</code> (ArbitrationRecoveryCoordinator); <code>distributeRevenue</code>,<br><code>flushStakerShare</code>, <code>flushBuybackShare</code> (TreasuryRouter). Plus self-scoped functions<br>(stake/unstake/claim*/withdraw*) that only ever touch <code>msg.sender</code>&#39;s own balance.</p>
+<h2 id="threat-model-client-facing-from-phase-0-findings-mapped">Threat Model (client-facing, from Phase 0, findings-mapped)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Invariant / status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arbitrary caller</td>
+<td>permissionless cranks</td>
+<td>force state-transition timing, no direct extraction</td>
+<td>invariant holds — each crank&#39;s effect is deterministic regardless of caller</td>
+</tr>
+<tr>
+<td>Poster</td>
+<td>acceptMilestone, completeTask, dismissWorker, openDispute</td>
+<td>control payout pacing</td>
+<td><strong>F-04, F-05, F-06</strong> — consent-bypass and dispute-cost asymmetries favor the poster in specific sequences</td>
+</tr>
+<tr>
+<td>Worker</td>
+<td>submitProof, claimStream/HourBlock, openDispute</td>
+<td>claim entitled payout</td>
+<td><strong>F-02</strong> — a worker who consents to a stalling arbitrator can lose 100% of frozen value</td>
+</tr>
+<tr>
+<td>Self-registered arbitrator</td>
+<td>resolveDispute</td>
+<td>rule + earn resolution rep/bond</td>
+<td><strong>F-02, F-05</strong> — an arbitrator who goes silent or self-disqualifies post-consent, or who rules and keeps the bond regardless of outcome</td>
+</tr>
+<tr>
+<td>Owner EOA</td>
+<td>all one-shot setters, proposeRecovery, setDisputeOpeningPaused</td>
+<td>mis-wire deps, indefinitely pause disputes, sole recovery authority</td>
+<td><strong>F-03, F-08</strong></td>
+</tr>
+<tr>
+<td>USDC-blocklisted address</td>
+<td>receiving end of <code>_payOrDefer</code></td>
+<td>none directly — protection is the point</td>
+<td>invariant holds for user addresses; <strong>F-10</strong> for protocol addresses</td>
+</tr>
+<tr>
+<td>Staker</td>
+<td>stake/unstake/claim</td>
+<td>Action Credits, USDC reward share</td>
+<td>invariant holds — zero-stake carry, late-whale capture, JIT staking all independently attacked and confirmed safe</td>
+</tr>
+<tr>
+<td>Off-chain integrator</td>
+<td>TaskScopeRegistry.setScope/scopeOf</td>
+<td>publish/read scope for a live task</td>
+<td><strong>F-01</strong> — reads/authorizes against orphaned registry state</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage:</strong> 132 entrypoints in the Phase-0 inventory, 132 addressed by an explicit finding or an<br>&quot;examined, no issue&quot; note above. All threat-catalog rows from Phase 0 are answered (finding<br>number or &quot;invariant holds&quot;). Holes closed this Turn-3 pass: 0 — both phases had already reached<br>every privileged/value-moving entrypoint independently.</p>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreibp4ufmsunmbha5f7oqaucw5kilvxzu4klm6ws7rbt6el6twrzy3m.ipfs.community.bgipfs.com/"><code>https://bafkreibp4ufmsunmbha5f7oqaucw5kilvxzu4klm6ws7rbt6el6twrzy3m.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/405">#405</a> on Base. Rendered 2026-07-16.</p>
+  </footer>
+
+</div>
+</body>
+</html>
