@@ -60,6 +60,10 @@ and read every progress note. For services sold with a privacy expectation
 - [ ] For new job-scoped KV, prefer unguessable ids (the Tier-3 `x402_<nanoid>` model) over sequential jobId + per-route checks.
 
 > Contract/flow change — not a quick patch. Needs a design decision first.
+> **Design proposal now written up:** [`PLAN-PRIVATE-JOBS.md`](PLAN-PRIVATE-JOBS.md) —
+> a private/VIP job tier that generalizes the consult placeholder pattern
+> (off-chain description + gated deliverable pointer + discreet work logs),
+> which resolves F9 for jobs that opt in.
 
 ---
 
