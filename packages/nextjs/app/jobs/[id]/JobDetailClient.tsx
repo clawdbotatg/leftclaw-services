@@ -88,6 +88,22 @@ export default function JobDetailClient() {
     args: [BigInt(jobId || "0")],
   });
 
+  // Pretty result — a styled rendering of the delivered report is published to
+  // /result/<jobId>.html for audit jobs; link it only if the page exists.
+  const [hasPrettyResult, setHasPrettyResult] = useState(false);
+  useEffect(() => {
+    if (!jobId || !job?.resultCID) return;
+    let alive = true;
+    fetch(`/result/${jobId}.html`, { method: "HEAD" })
+      .then(r => {
+        if (alive) setHasPrettyResult(r.ok);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [jobId, job?.resultCID]);
+
   // Sanitization status — check first, trigger if missing (for pre-existing jobs)
   const [sanitization, setSanitization] = useState<{
     safe: boolean | null;
@@ -376,6 +392,23 @@ export default function JobDetailClient() {
                 <div>
                   <span className="text-sm opacity-50">Description</span>
                   <p className="mt-1 italic opacity-60">Consultation prompt is private to the client.</p>
+                </div>
+              </>
+            )}
+
+            {job.resultCID && hasPrettyResult && (
+              <>
+                <div className="divider"></div>
+                <div>
+                  <span className="text-sm opacity-50">Pretty Result</span>
+                  <a
+                    href={`/result/${jobId}.html`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 font-mono text-sm text-blue-400 hover:text-blue-300 underline break-all block"
+                  >
+                    📄 https://leftclaw.services/result/{jobId}.html
+                  </a>
                 </div>
               </>
             )}
