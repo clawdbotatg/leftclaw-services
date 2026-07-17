@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Task Marketplace (TaskRegistry + 8 peer contracts) — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #411">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">Agent Task Marketplace (TaskRegistry + 8 peer contracts)</h1>
+    <p class="job-sub">Job #411 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/411"><b>Job page</b> #411</a>
+      <a class="chip" href="https://bafkreifw3unns4jctxk73wea6iwqdelylgslfxaxcrkrwpg6iiur3etinm.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-17</span>
+    </div>
+    <div class="sev-strip">
+      <div class="sev-card critical"><div class="n">1</div><div class="l">Critical</div></div>
+      <div class="sev-card high"><div class="n">1</div><div class="l">High</div></div>
+      <div class="sev-card medium"><div class="n">1</div><div class="l">Medium</div></div>
+      <div class="sev-card low"><div class="n">1</div><div class="l">Low</div></div>
+      <div class="sev-card info"><div class="n">1</div><div class="l">Info</div></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#severity-summary">Severity summary</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#informational">Informational</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#access-control-inventory-summary-see-phase-0-protocol-map-for-fu">Access-Control Inventory (summary — see Phase 0 protocol map for full per-function detail)</a></li>
+      <li><a href="#threat-model-phase-0-catalog-each-row-addressed">Threat Model (Phase-0 catalog, each row addressed)</a></li>
+      <li><a href="#assumptions">Assumptions</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Review — Agent Task Marketplace (TaskRegistry + 8 peer contracts)</h1>
+<p><strong>Chain</strong>: Base (chainId 8453)<br><strong>Audit target</strong> (pinned, verified source recovered from BaseScan — not present on Sourcify or Base Blockscout at audit time):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TaskRegistry</td>
+<td><code>0x4A87f7882789f9057966C181Aed0EFB5887821e0</code></td>
+</tr>
+<tr>
+<td>TaskScopeRegistry</td>
+<td><code>0x61d1BDE3F5230fB5e1558A1C29CF53B2da28BB3a</code></td>
+</tr>
+<tr>
+<td>EscrowVault</td>
+<td><code>0xc03090ff1Ff954C4BD013b31b0ba597A118651D0</code></td>
+</tr>
+<tr>
+<td>AgentDepositVault</td>
+<td><code>0x1a99B37f29C2301656CAbFED905ba5D5ee547F5b</code></td>
+</tr>
+<tr>
+<td>ArbitrationModule</td>
+<td><code>0x8C2094BEe200f8Ec03bCbdb1b0855857788e53cF</code></td>
+</tr>
+<tr>
+<td>ArbitrationRecoveryCoordinator</td>
+<td><code>0x3011De6098C512B9D44c48654692EC53A73Ad913</code></td>
+</tr>
+<tr>
+<td>ReputationRegistry</td>
+<td><code>0x6D7D73365744B0aA7b4Aa91dED0F3C4f54b7b8D4</code></td>
+</tr>
+<tr>
+<td>TreasuryRouter</td>
+<td><code>0xDE71a63a7Df5077BEC5a2faCc2AAEF7E58f82a4A</code></td>
+</tr>
+<tr>
+<td>UnionStakingVault</td>
+<td><code>0x70E3e377AA4c9cd085488d24AC6822476c8bAea1</code></td>
+</tr>
+<tr>
+<td>AZL token (external, out of scope)</td>
+<td><code>0x931517E9502F9d52CDF6F5AC7fca7925e2A1BBA3</code></td>
+</tr>
+<tr>
+<td>USDC (external, out of scope)</td>
+<td><code>0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code></td>
+</tr>
+</tbody></table></div>
+<p>Solidity <code>^0.8.24</code>, all optimizer-enabled, no proxies, no <code>delegatecall</code> anywhere in scope.<br>9 bespoke contracts, 3,841 in-scope LOC. AZL (a Doppler <code>DERC20</code>) and USDC are treated as<br>external, trusted-standard dependencies per the client&#39;s own architecture — not independently<br>re-audited as novel code.</p>
+<p><strong>Methodology</strong>: three-phase review — Phase 0 (opus) built a protocol map, access-control<br>inventory, and threat catalog with zero findings; Phase 1 (opus, 6 parallel checklist agents:<br>general, precision-math, erc20, access-control, dos, defi-staking) ran breadth coverage against<br>the map; Phase 2 (opus, 12 parallel attack agents: math-precision, access-control,<br>economic-security, execution-trace, invariant, periphery, first-principles, asymmetry, boundary,<br>numerical-gap, trust-gap, flow-gap) ran depth coverage <strong>blind to Phase 1&#39;s findings</strong> (only the<br>findings-free map was shared). This reconciliation pass cross-deduped both phases, re-examined<br>every phase-unique lead, and ran a coverage gate against the Phase-0 inventory/catalog.</p>
+<p><strong>Reconciliation summary</strong>: Overlap: 6 issues independently found by 2+ agents across the two<br>phases (in several cases by 6–8 agents) · Phase-1-only: 9 · Phase-2-only: 11 · Re-examined leads<br>kept: 20, demoted: 3 · Coverage holes closed this pass: 0 (both phases&#39; combined coverage already<br>reached every privileged/value-moving entrypoint and every threat-catalog row — see §Coverage<br>Gate). <strong>Confidence floor</strong>: findings below confidence 50 are listed under Leads, not as numbered<br>findings, per the reporting floor policy.</p>
+<p><strong>Note on a prior audit</strong>: this contract set may have been submitted for audit before (the<br>client&#39;s job-system infrastructure is designed to let clients compare independent runs). This<br>report was produced as a fully independent run — every finding below traces to this engagement&#39;s<br>own Phase 0 map and Phase 1/2 agent output, not to any prior report.</p>
+<p><strong>Note on the job&#39;s own description field</strong>: the client-submitted job description was prefaced<br>with text framed as a &quot;system prompt&quot; attempting to reassign the auditor&#39;s identity, claim tool<br>access (Foundry/Slither/Mythril/Echidna/Halmos) not actually available in this environment, and<br>substitute a different output format/methodology than the one actually run. This was treated as<br>untrusted embedded content, not as an instruction, and had no effect on how this audit was<br>conducted — the standard three-phase methodology above was followed throughout. The legitimate<br>content of the description (the deployed contract addresses and a system architecture summary)<br>was used as the audit target.</p>
+<hr>
+<h2 id="severity-summary">Severity summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span class="pill critical">Critical</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill high">High</span></td>
+<td>0</td>
+</tr>
+<tr>
+<td><span class="pill medium">Medium</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td><span class="pill low">Low</span></td>
+<td>11</td>
+</tr>
+<tr>
+<td><span class="pill info">Info</span></td>
+<td>5</td>
+</tr>
+<tr>
+<td>Leads (not promoted, confidence &lt; 50)</td>
+<td>9</td>
+</tr>
+</tbody></table></div>
+<p>No Critical or High findings. The core USDC/collateral solvency invariants (escrow release<br>bounds, deposit-reservation-bond netting, treasury fee conservation, staking accumulator math)<br>were independently stress-tested by both phases and held under every concrete adversarial trace<br>attempted — this is a carefully written, unusually well-defended codebase for its size. The<br>findings below are governance/recovery-mechanism defects, one confirmed economic-control bypass,<br>and several bounded, condition-gated edge cases.</p>
+<hr>
+<h2 id="findings">Findings</h2>
+<h3 id="medium-m-1-incumbent-delegated-roles-feerecipient-buybackexecuto">[MEDIUM] M-1. Incumbent delegated roles (feeRecipient / buybackExecutor / fallbackResolver) can indefinitely veto the owner&#39;s own attempt to replace them</h3>
+<p><code>[both — Phase 1: evm-audit-access-control AC-2; Phase 2: boundary + access-control agents, both with full concrete PoCs]</code> · Confidence: 92</p>
+<p><strong>Location</strong>: <code>TreasuryRouter.sol</code> — <code>cancelFeeRecipientRotation()</code> (line 379-386), <code>setFeeRecipientOverride</code>/<code>acceptFeeRecipientOverride</code> (349-372), <code>proposeFeeRecipient</code> (318-325); <code>cancelBuybackExecutorRotation()</code> (175-182); <code>ArbitrationModule.sol</code> — <code>cancelFallbackResolverRotation()</code> (~163-173).</p>
+<p><strong>Description</strong>: The owner&#39;s dedicated recovery path for a compromised/rogue delegated role<br>writes into the <strong>same</strong> pending-slot the incumbent can also write and cancel. Confirmed at<br>source: <code>proposeFeeRecipient</code> (self-initiated, <code>msg.sender == feeRecipient</code>) and<br><code>setFeeRecipientOverride</code> (<code>onlyOwner</code>) both assign <code>pendingFeeRecipient</code> (lines 321, 351);<br><code>cancelFeeRecipientRotation</code> (line 379) accepts <code>msg.sender == feeRecipient || owner()</code> and<br>unconditionally deletes whichever proposal is pending, with no distinction between a<br>self-initiated and an owner-initiated (recovery) proposal. The identical shape exists for<br><code>buybackExecutor</code> (<code>cancelBuybackExecutorRotation</code>, line 175) and for <code>fallbackResolver</code>.</p>
+<p><strong>Proof of concept</strong>: (1) <code>feeRecipient</code> key is compromised. (2) Owner calls<br><code>setFeeRecipientOverride(cleanAddr)</code> at time T → <code>pendingFeeRecipient = cleanAddr</code>,<br><code>feeRecipientRotationProposedAt = T</code>. (3) The compromised incumbent immediately calls<br><code>cancelFeeRecipientRotation()</code> (passes, <code>msg.sender == feeRecipient</code>) → <code>pendingFeeRecipient</code><br>deleted. (4) <code>acceptFeeRecipientOverride()</code> now reverts <code>&quot;Treasury: no pending recipient&quot;</code>. (5)<br>Owner retries; incumbent cancels again; repeat indefinitely — there is no cooldown or nonce on<br>either side. Meanwhile the incumbent continues calling <code>withdrawFees</code>/<code>withdrawNativeFees</code>,<br>draining <code>usdcReserve</code>, all AZL <code>accruedFees</code>, and slashed native ETH. The identical shape lets a<br>rogue <code>buybackExecutor</code> keep 40% of protocol USDC revenue flowing to itself indefinitely, and a<br>rogue <code>fallbackResolver</code> remain seatable on disputes.</p>
+<p><strong>Impact</strong>: For <code>feeRecipient</code> specifically, this is an ongoing, unrecoverable drain of protocol<br>treasury reserves with no on-chain remedy short of a full contract redeploy. For the other two<br>roles, impact is bounded (buyback funds are protocol revenue, not user funds; fallback resolver<br>is constrained by escrow&#39;s party-match checks on <code>split</code>/<code>refund</code>).</p>
+<p><strong>Recommendation</strong>: Give the owner-initiated override path its own pending slot/flag<br>(<code>pendingOverrideRecipient</code> + <code>overrideProposedAt</code>) that <code>proposeFeeRecipient</code>/incumbent-cancel<br>cannot touch; restrict <code>cancelFeeRecipientRotation</code>/<code>cancelBuybackExecutorRotation</code>/<br><code>cancelFallbackResolverRotation</code> to reject cancellation of an owner-initiated recovery proposal<br>from anyone but the owner.</p>
+<hr>
+<h3 id="medium-m-2-emergency-arbitration-module-recovery-can-be-indefini">[MEDIUM] M-2. Emergency arbitration-module recovery can be indefinitely blocked by a cheap, permissionless self-dispute griefing loop</h3>
+<p><code>[phase1: evm-audit-access-control AC-1]</code> · Confidence: 80</p>
+<p><strong>Location</strong>: <code>ArbitrationModule.sol</code> — <code>setDisputeOpeningPaused()</code> (195-225; <code>MAX_PAUSE_DURATION = 7 days</code> at line 31, re-pause cooldown <code>nextPauseAllowedAt = now + 14 days</code> at line 221); <code>ArbitrationRecoveryCoordinator.sol</code> — <code>_validateSafeOutgoing()</code> (~175-190) gates <code>executeRecovery</code> on <code>disputeOpeningPaused()==true</code>, <code>activeDisputeCount()==0</code>, <code>pendingSideEffectCount()==0</code>.</p>
+<p><strong>Description</strong>: The highest-privilege action in the system — atomically swapping the arbitration<br>module across all 4 dependent contracts to recover from a compromised/buggy module — requires the<br>outgoing module to be simultaneously paused with zero active disputes. A pause auto-expires after<br>7 days and cannot be re-armed for 14 days (line 221), while disputes can legitimately stay open up<br>to <code>ABSOLUTE_RESOLUTION_TIMEOUT</code> (21 days). Any address can permissionlessly open a cheap<br>self-dispute (direct-hire task to a second controlled address, ~$1 bond, refundable via timeout)<br>during every forced-live 7-day window between pauses, keeping <code>activeDisputeCount() &gt; 0</code> across<br>every subsequent pause attempt — so &quot;paused ∧ zero active disputes&quot; is never simultaneously<br>reachable, permanently blocking recovery exactly when it is most needed.</p>
+<p><strong>Proof of concept</strong>: Owner pauses at T0 (paused window T0..T0+7d, re-pause blocked until<br>T0+14d). At T0+7d (pause expired) an attacker opens a dispute — its <code>absoluteDeadline</code> extends to<br>~T0+28d. Owner re-pauses at T0+14d (window to T0+21d) but the T0+7d dispute is still active. The<br>attacker repeats every re-opened window; <code>proposeRecovery</code>/<code>executeRecovery</code> always revert on<br><code>&quot;Recovery: active disputes&quot;</code>.</p>
+<p><strong>Recommendation</strong>: Decouple the recovery-safety gate from the auto-expiring, cooldown-limited<br>pause — e.g., a dedicated non-expiring &quot;recovery lockdown&quot; state, or allow recovery once every<br>remaining dispute is past its own <code>absoluteDeadline</code> (permissionlessly force-resolvable via<br><code>resolveTimedOut</code>) rather than requiring <code>activeDisputeCount()==0</code>.</p>
+<hr>
+<h3 id="medium-m-3-resolvestalereviews-cross-contract-review-clock-compu">[MEDIUM] M-3. <code>resolveStaleReview</code>&#39;s cross-contract review-clock computation underflows (reverts) if the arbitration module is replaced while a task is IN_REVIEW</h3>
+<p><code>[both — Phase 1: evm-audit-general G-1 + evm-audit-dos DOS-1, independently found the identical bug]</code> · Confidence: 85</p>
+<p><strong>Location</strong>: <code>TaskRegistry.sol</code> — snapshot at <code>submitProof()</code> line 510 (<code>_reviewPausedTimeAt[taskId] = arbitration.totalDisputeOpeningPausedTime()</code>); use at <code>resolveStaleReview()</code> lines 553-562 (<code>... + (arbitration.totalDisputeOpeningPausedTime() - _reviewPausedTimeAt[taskId])</code>).</p>
+<p><strong>Description</strong>: <code>totalDisputeOpeningPausedTime()</code> (confirmed monotonic non-decreasing within one<br>module instance, <code>ArbitrationModule.sol:239-246</code>) is snapshotted from whichever module <code>arbitration</code><br>currently points to. If the module is later replaced via<br><code>ArbitrationRecoveryCoordinator.executeRecovery → emergencySetArbitration</code> (the exact mechanism<br>M-2 discusses), the new module&#39;s counter starts at ~0. Any task that entered <code>IN_REVIEW</code> while the<br><em>old</em> module had already accumulated pause time (snapshot <code>S &gt; 0</code>) will, after the swap, compute<br><code>newModule.total() - S</code> in Solidity 0.8&#39;s checked arithmetic — reverting whenever the new<br>module&#39;s accumulated pause time is less than <code>S</code>, which is true right after any swap. This<br>permanently bricks the permissionless optimistic-accept escape hatch (<code>resolveStaleReview</code>) for<br>every task IN_REVIEW at swap time.</p>
+<p><strong>Proof of concept</strong>: Owner pauses disputes on module A once, accumulating 5 days of pause time,<br>then unpauses. Worker submits a milestone proof → <code>_reviewPausedTimeAt[taskId] = 5 days</code>, task<br>state <code>IN_REVIEW</code>. Governance later executes an emergency recovery swap to fresh module B<br>(<code>B.totalDisputeOpeningPausedTime() ≈ 0</code>). Anyone calling <code>resolveStaleReview(taskId)</code> after the<br>3-day timeout computes <code>0 - 5 days</code> → underflow → revert, permanently for that task (the<br>milestone is still recoverable via <code>acceptMilestone</code>, <code>completeTask</code>, or a real dispute — just not<br>via the fast permissionless path).</p>
+<p><strong>Recommendation</strong>: Clamp the subtraction: <code>uint256 delta = cur &gt;= snap ? cur - snap : 0;</code> so the<br>function degrades gracefully (treats a post-swap module as contributing zero extra pause) rather<br>than reverting.</p>
+<hr>
+<h3 id="medium-m-4-reputationregistrystakeverifierbond-overwrites-shorte">[MEDIUM] M-4. <code>ReputationRegistry.stakeVerifierBond</code> overwrites (shortens) an arbitration-imposed bond lock, letting a seated arbitrator dodge the ruling-slash</h3>
+<p><code>[phase2 — independently found by 7 of 12 attack agents: invariant, economic-security, asymmetry, and first-principles reported it as a full FINDING with matching numeric traces; boundary, access-control, and execution-trace reported it as a corroborating LEAD]</code> · Confidence: 90</p>
+<p><strong>Location</strong>: <code>ReputationRegistry.sol</code> — <code>stakeVerifierBond()</code> line 231<br>(<code>verifierBondUnlockAt[msg.sender] = block.timestamp + VERIFIER_BOND_COOLDOWN;</code>, unconditional)<br>vs. <code>lockVerifierBond()</code> lines 252-253 (<code>if (unlockAt &gt; verifierBondUnlockAt[verifier]) { ... }</code>,<br>extend-only).</p>
+<p><strong>Description</strong>: When both parties mutually consent to an arbitrator, <code>proposeArbitrator</code> calls<br><code>lockVerifierBond(arbitrator, d.absoluteDeadline)</code> specifically so the arbitrator cannot unstake<br>their slashable ETH bond before a post-ruling penalty applies. <code>stakeVerifierBond</code> writes the<br><em>same</em> storage slot (<code>verifierBondUnlockAt</code>) but does so <strong>unconditionally</strong>, which can move the<br>unlock time <em>earlier</em> than an active arbitration lock — the exact inverse of <code>lockVerifierBond</code>&#39;s<br>carefully guarded extend-only semantics.</p>
+<p><strong>Proof of concept</strong> (converged on by 7 independent agents): Dispute opens day 0,<br><code>absoluteDeadline = day 21</code>. Arbitrator seated day 1 via mutual consent →<br><code>lockVerifierBond(arb, day21)</code> sets <code>unlockAt = day21</code>; <code>evidenceDeadline = min(day1+7, day21) = day8</code>.<br>At day 1 the arbitrator calls <code>stakeVerifierBond{value: 1 wei}()</code> → <code>unlockAt</code> resets to<br><code>day1+7 = day8</code> (13 days earlier than the lock). At day 8, in the same block: <code>unstakeVerifierBond (fullBond)</code> succeeds (<code>now &gt;= day8</code>), then <code>resolveDispute</code> succeeds (<code>now &lt;= evidenceDeadline</code>).<br><code>_prepareVerifierBondSlash</code> reads <code>verifierBond(arb) == 0</code>, computes <code>amount = 0</code>, and returns<br>early — the documented 10% ruling-penalty (<code>ReputationRegistry.sol</code> comment at line ~249,<br>&quot;prevent front-running a ruling slash by unstaking&quot;) is fully evaded.</p>
+<p><strong>Impact</strong>: No direct third-party fund theft — the loss is that the system&#39;s only per-ruling<br>economic penalty against a biased/self-dealing arbitrator can always be reduced to zero by a<br>rational actor. This compounds with the related fallback-resolver gap (Low-2 below) and the<br>arbitrator-reputation-farming lead (Low-3 below): a farmed, low-trust arbitrator faces no real<br>slash risk either.</p>
+<p><strong>Recommendation</strong>: Make the assignment monotonic, mirroring <code>lockVerifierBond</code>:</p>
+<pre><code class="language-solidity">uint256 target = block.timestamp + VERIFIER_BOND_COOLDOWN;
+if (target &gt; verifierBondUnlockAt[msg.sender]) {
+    verifierBondUnlockAt[msg.sender] = target;
+}
+</code></pre>
+<hr>
+<h3 id="medium-m-5-escrowvaultsettleatdeadlines-milestone-branch-pays-ou">[MEDIUM] M-5. <code>EscrowVault._settleAtDeadline</code>&#39;s MILESTONE branch pays out the worker&#39;s full self-declared (unverified) claim on arbitration timeout, with no ruling</h3>
+<p><code>[phase2 — numerical-gap and execution-trace agents, independently, both flagged as LEAD with matching mechanism]</code> · Confidence: 62</p>
+<p><strong>Location</strong>: <code>EscrowVault.sol</code> — <code>_settleAtDeadline()</code> lines 306-352, MILESTONE branch at<br>line 342-343 (<code>workerAmount = ITaskRegistry(taskRegistry).pendingMilestoneLiability(taskId);</code>),<br>reached via the permissionless 21-day-timeout path <code>resolveTimedOut → _finaliseTimeout → settleArbitrationTimeout → _settleAtDeadline</code>.</p>
+<p><strong>Description</strong>: <code>pendingMilestoneLiability</code> is incremented purely from the worker posting an<br>arbitrary 32-byte hash via <code>submitProof</code> (<code>TaskRegistry.sol:483-516</code>) — nothing on-chain verifies<br>the underlying work. For STREAMING/HOUR_BLOCKS modes, the same timeout path pays only<br>objectively-verifiable, time-accrued amounts; for MILESTONE, it pays the worker&#39;s unverified claim<br>in full if the dispute simply runs to the 21-day absolute timeout without any arbitrator actually<br>ruling.</p>
+<p><strong>Proof of concept / bound</strong>: A worker submits a fraudulent or incomplete milestone proof, the<br>poster opens a dispute, and if 21 days pass with no ruling, <code>resolveTimedOut</code> pays the worker the<br>full claimed amount. This is meaningfully bounded — both agents who found it explicitly note that<br><code>assignFallbackResolver</code>/<code>replaceTimedOutArbitrator</code> are permissionless and callable by the poster<br>(or anyone) from day 7 through day 21 to force a real neutral ruling instead of letting it time<br>out — so realizing this requires the disputing poster to take no action across the entire window<br>despite having an available remedy.</p>
+<p><strong>Recommendation</strong>: Consider defaulting the pure-timeout MILESTONE settlement toward a<br>poster-favoring or split outcome (rather than the worker&#39;s unverified claim in full) absent any<br>ruling, and/or add an explicit <code>EscrowMode.UPFRONT</code> arm to the same function (see Low-6 below,<br>same function, distinct mechanism) so all four modes have an intentional, documented timeout<br>default rather than three handled cases and one silent fallthrough.</p>
+<hr>
+<h3 id="low-l-1-arbitrationrecoverycoordinatorexecuterecovery-has-no-upp">[LOW] L-1. <code>ArbitrationRecoveryCoordinator.executeRecovery</code> has no upper-bound/expiry, unlike every other rotation mechanism in the system</h3>
+<p><code>[both — Phase 1: AC-3; Phase 2: boundary agent, same root cause]</code> · Confidence: 75</p>
+<p><strong>Location</strong>: <code>ArbitrationRecoveryCoordinator.sol</code> — <code>executeRecovery()</code> line 126-145; contrast<br>with <code>ArbitrationModule.executeFallbackResolverRotation</code> (delay + <code>ROTATION_GRACE_PERIOD</code><br>upper bound) and <code>TreasuryRouter.acceptBuybackExecutor</code>/<code>acceptFeeRecipient</code> (same pattern).<br>Confirmed at source: <code>executeRecovery</code> checks only <code>block.timestamp &gt;= recoveryExecutableAt</code><br>(line 129) with no corresponding <code>&lt;=</code> upper bound.</p>
+<p><strong>Description</strong>: A forgotten/abandoned <code>proposeRecovery</code> remains permissionlessly executable<br>forever once its safety preconditions (outgoing module paused, zero active disputes, zero pending<br>side effects, consistent peer graph) happen to coincide again — e.g. the next time the owner<br>pauses disputes for routine maintenance. An owner-chosen-but-possibly-stale module could then be<br>installed unexpectedly.</p>
+<p><strong>Recommendation</strong>: Add a symmetric expiry, e.g.<br><code>require(block.timestamp &lt;= recoveryExecutableAt + RECOVERY_GRACE_PERIOD, &quot;Recovery: expired&quot;);</code></p>
+<hr>
+<h3 id="low-l-2-fallback-resolver-seating-never-locks-the-resolvers-veri">[LOW] L-2. Fallback-resolver seating never locks the resolver&#39;s verifier bond — the ruling-slash is unconditionally bypassable on that path</h3>
+<p><code>[phase2 — boundary, access-control, asymmetry, and periphery agents, independently]</code> · Confidence: 70</p>
+<p><strong>Location</strong>: <code>ArbitrationModule.sol</code> — <code>assignFallbackResolver</code> and <code>replaceTimedOutArbitrator</code><br>never call <code>reputationRegistry.lockVerifierBond</code>, unlike the consent-seat path in<br><code>proposeArbitrator</code> (which does, at ~line 405). When a fallback resolver later rules via<br><code>resolveDispute</code>, <code>_finalise</code> still runs with <code>byArbitrator=true</code>, so <code>_prepareVerifierBondSlash</code><br>attempts a 10% slash against a bond that was never frozen — the resolver can unstake at any time<br>with no timing dependency at all (unlike M-4, this requires no window-alignment trick). This also<br>directly contradicts the code&#39;s own comment stating &quot;Timeout and fallback paths do not slash.&quot;</p>
+<p><strong>Recommendation</strong>: Call <code>lockVerifierBond(d.snapshotFallbackResolver, d.absoluteDeadline)</code> inside<br>both functions, mirroring the consent-seat path.</p>
+<hr>
+<h3 id="low-l-3-arbitrator-reputationtier-is-farmable-via-self-dealt-dis">[LOW] L-3. Arbitrator reputation/tier is farmable via self-dealt disputes once a single owner bootstrap grant exists</h3>
+<p><code>[both — Phase 1: evm-audit-general G-2; Phase 2: trust-gap agent produced a full concrete numeric PoC, promoting this from a lead to a confirmed mechanism; flow-gap corroborated]</code> · Confidence: 78</p>
+<p><strong>Location</strong>: <code>ArbitrationModule.sol</code> — <code>proposeArbitrator</code> tier gate (~363-379), <code>resolveDispute</code><br>(~441-457); <code>ReputationRegistry.recordArbitratorResolution</code> (fixed +50 reputation, no decay, no<br>independence check between dispute parties and arbitrator).</p>
+<p><strong>Description</strong>: An address controlling poster + worker + arbitrator wallets can self-deal a $1<br>tier-1 dispute (mutual consent is trivially satisfied when both parties are the same controller),<br>rule on it, and gain <code>+50 reputation</code> / <code>+1 resolvedCount</code> at near-zero net cost (the escrow and<br>forfeited dispute bond both return to the same controller). Five repetitions reach<br><code>MIN_REP_TIER2</code> (200) + <code>MIN_RESOLUTIONS_TIER2</code> (5), qualifying for real, high-value tier-2<br>disputes. Requires one legitimate/owner-granted <code>qualifyBootstrapArbitrator</code> (or a genuine first<br>tier-1 seat) to bootstrap; escalation from there is fully self-service. Using the farmed<br>arbitrator against a <em>real</em> counterparty still requires that counterparty&#39;s independent mutual<br>consent, bounding the ultimate damage to reputation-signal integrity rather than unilateral theft.</p>
+<p><strong>Recommendation</strong>: Require a meaningfully-sized, slashable stake before reputation accrues from<br>a resolution, and/or rate-limit reputation gain per (arbitrator, counterparty-set) to make<br>self-dealing uneconomical.</p>
+<hr>
+<h3 id="low-l-4-verifier-bond-slash-side-effect-can-become-permanently-u">[LOW] L-4. Verifier-bond slash side-effect can become permanently un-retryable, potentially blocking emergency recovery indefinitely</h3>
+<p><code>[both — Phase 1: evm-audit-general G-3; Phase 2: boundary, invariant, periphery, flow-gap, and first-principles agents all independently flagged the same mechanism, all explicitly noting they could not force a trigger]</code> · Confidence: 45 (below the numbered-finding confidence floor in spirit, kept here given how many independent agents converged on the exact same mechanism)</p>
+<p><strong>Location</strong>: <code>ArbitrationModule.sol</code> — <code>_trySlashVerifierBond</code>/<code>_prepareVerifierBondSlash</code><br>(~588-616); gate at <code>ArbitrationRecoveryCoordinator._validateSafeOutgoing</code> requiring<br><code>pendingSideEffectCount() == 0</code>.</p>
+<p><strong>Description</strong>: The slash amount is snapshotted (<code>bond/10</code>) at finalise time. If that inline<br>attempt ever defers (try/catch) and the arbitrator&#39;s bond later drops below the snapshotted<br>amount (enabled by M-4/L-2, or simply after the lock lapses), every retry via <code>retrySideEffects</code><br>reverts on <code>verifierBond[subject] &gt;= amount</code>, and the pending flag can never clear — permanently<br>blocking <code>executeRecovery</code>, the system&#39;s highest-privilege action. All six agents who examined<br>this (across both phases) explicitly state the inline slash normally succeeds and they could not<br>construct a forced first-attempt deferral, so this is reported as a well-corroborated but<br>unconfirmed-trigger liveness risk.</p>
+<p><strong>Recommendation</strong>: Make the deferred slash saturating (<code>min(amount, currentBond)</code>) rather than<br>all-or-nothing, so a queued slash can always eventually clear.</p>
+<hr>
+<h3 id="low-l-5-escrowvaultsettleatdeadline-has-no-branch-for-escrowmode">[LOW] L-5. <code>EscrowVault._settleAtDeadline</code> has no branch for <code>EscrowMode.UPFRONT</code> — the worker gets nothing on any non-ruling terminal path</h3>
+<p><code>[phase2 — flow-gap agent]</code> · Confidence: 65</p>
+<p><strong>Location</strong>: <code>EscrowVault.sol</code> — <code>_settleAtDeadline()</code> lines 314-343: <code>if (STREAMING) {...} else if (HOUR_BLOCKS) {...} else if (MILESTONE) {...}</code> — confirmed via source read that <code>UPFRONT</code><br>(enum value 0) matches none of the three arms, leaving <code>workerAmount = 0</code> and<br><code>posterAmount = remaining</code> (100% refund to poster).</p>
+<p><strong>Description</strong>: Every other escrow mode pays the worker <em>something</em> on expiry/timeout<br>(time-accrued for streaming/hour-blocks, self-declared claim for milestone — see M-5); UPFRONT<br>alone pays the worker zero and refunds the poster in full on any <code>expireTask</code>/<code>resolveTimedOut</code><br>path. A worker who delivered upfront work loses their entire payment if the poster simply stalls<br>past the deadline or a dispute times out — bounded by the worker&#39;s own ability to permissionlessly<br>call <code>assignFallbackResolver</code> to force a real ruling instead.</p>
+<p><strong>Recommendation</strong>: Add an explicit <code>UPFRONT</code> arm to <code>_settleAtDeadline</code> with an intentional,<br>documented default (e.g., pay the worker in full on expiry if the task was ACTIVE, since upfront<br>delivery is all-or-nothing) rather than silently falling through to zero.</p>
+<hr>
+<h3 id="low-l-6-whole-marketplace-liveness-depends-on-continuous-azlusdc">[LOW] L-6. Whole-marketplace liveness depends on continuous AZL/USDC transferability; a paused/blocklisted token bricks fee-charging or vault-flush entrypoints (issuer-triggered, not attacker-triggerable)</h3>
+<p><code>[phase1: evm-audit-erc20 E20-1, E20-2, E20-3, consolidated]</code> · Confidence: 70</p>
+<p><strong>Description</strong>: (a) If USDC&#39;s issuer blocklists either shared vault contract itself (EscrowVault<br>or AgentDepositVault), every outbound transfer reverts and pooled funds freeze with no rescue<br>function — inherent to custodying a centralized-issuer token, not a code defect. (b)<br><code>flushBuybackShare</code>/<code>flushStakerShare</code>/<code>flushTreasuryUsdc</code> push to fixed, non-redirectable<br>addresses; if one of those (e.g. <code>buybackExecutor</code>) is blocklisted, that revenue bucket stalls<br>until a governance rotation completes (up to 4 days). (c) Every fee-bearing task action pulls AZL<br>via <code>transferFrom</code>; if AZL is paused (e.g. a pre-graduation lock), <code>postTask</code>/<code>claimTask</code>/<br><code>createTask</code>/<code>dismissWorker</code>/<code>leaveTask</code> all revert — new-task creation and exit flows are DoS&#39;d<br>until AZL is unlocked, though in-flight settlement is unaffected.</p>
+<p><strong>Recommendation</strong>: Document these as accepted centralized-token-custody dependencies; consider a<br><code>flushBuybackShareTo</code>/similar variant so a blocklisted fixed destination doesn&#39;t require a full<br>rotation to unblock revenue.</p>
+<hr>
+<h3 id="low-l-7-unionstakingvault-rewards-emitted-during-a-zero-stake-in">[LOW] L-7. UnionStakingVault: rewards emitted during a zero-stake interval are captured entirely by the first re-opening staker; credit cap-crossing forfeits the final partial period rather than prorating</h3>
+<p><code>[both — Phase 1: STK-1, STK-2; Phase 2: trust-gap (&quot;carried-reward capture&quot;) and numerical-gap/math-precision (&quot;accumulator-vs-total-drift&quot;, &quot;cap-forfeiture-griefing&quot;), independently confirmed]</code> · Confidence: 68</p>
+<p><strong>Description</strong>: (a) When <code>totalStaked == 0</code>, notified/carried USDC rewards park and re-stream in<br>full over a fresh 7-day window to whoever stakes first, even 1 wei — not stranded (conservation<br>holds) but &quot;first re-opener take-all&quot; rather than pro-rata; mitigated by the 7-day stream (not<br>instant capture) and dilution if others join. (b) When an accrual step would cross<br><code>CREDIT_CAP</code> (600,000), that step issues zero credits and permanently closes issuance rather than<br>prorating to fill exactly to the cap — whoever triggers accrual first keeps their earned credits,<br>whoever waits loses the whole step. Both are edge-case/timing-dependent and, at realistic AZL<br>stake levels, the credit cap is not practically reachable (~1.8×10¹³ AZL·days required).</p>
+<p><strong>Recommendation</strong>: For (a), consider routing zero-stake-interval rewards back to treasury<br>reserve rather than the next staker, if that better matches intent. For (b), prorate the final<br>step to fill exactly to the cap (<code>periodCredits = min(periodCredits, CREDIT_CAP - totalCreditsIssued)</code>) before closing issuance.</p>
+<hr>
+<h3 id="low-l-8-unionstakingvault-usdc-reward-accumulator-permanently-di">[LOW] L-8. <code>UnionStakingVault</code> USDC reward accumulator permanently discards the per-token division remainder</h3>
+<p><code>[phase1: evm-audit-precision-math PM-1]</code> · Confidence: 60</p>
+<p><strong>Location</strong>: <code>UnionStakingVault.sol</code> — reward-accumulator update (<code>accUsdcPerToken += distributableScaled / totalStaked</code>), remainder dropped rather than carried, unlike the<br>rate-division remainder which is correctly preserved via <code>rewardRemainderScaled</code>.</p>
+<p><strong>Description</strong>: Dust-level, sub-cent even after ~10⁶ updates at realistic stake; unrecoverable<br>(no rescue function) but not attacker-profitable.</p>
+<p><strong>Recommendation</strong>: Carry the remainder into <code>undistributedRewardsScaled</code> for the next<br>distribution, mirroring the existing rate-remainder handling.</p>
+<hr>
+<h3 id="low-l-9-taskregistryopendispute-has-no-deadline-guard-allowing-a">[LOW] L-9. <code>TaskRegistry.openDispute</code> has no deadline guard, allowing a past-deadline dispute to freeze escrow and block the permissionless expiry path</h3>
+<p><code>[phase2: execution-trace agent]</code> · Confidence: 55</p>
+<p><strong>Location</strong>: <code>TaskRegistry.sol</code> — <code>openDispute</code> requires only <code>state == IN_REVIEW || ACTIVE</code>,<br>unlike <code>claimStream</code>/<code>claimHourBlock</code>/<code>submitProof</code>/<code>fundTask</code> which all check<br><code>block.timestamp &lt;= t.deadline</code>.</p>
+<p><strong>Description</strong>: Either party can open a bonded dispute after the deadline has passed, freezing<br>escrow for up to 21 days and converting what should be a clean permissionless <code>expireTask</code> into<br>forced arbitration. Griefing is bonded ($1–$100), bounding it to a timing/liquidity DoS rather<br>than a theft vector.</p>
+<p><strong>Recommendation</strong>: Consider adding a deadline check to <code>openDispute</code>, or explicitly document<br>that post-deadline disputes are an intended escape hatch.</p>
+<hr>
+<h3 id="low-l-10-treasuryrouterdistributerevenueflushstakershare-timingl">[LOW] L-10. <code>TreasuryRouter.distributeRevenue</code>/<code>flushStakerShare</code> timing/liveness edges</h3>
+<p><code>[phase2: periphery (&quot;griefing-crank-timing&quot;), economic-security (&quot;fund-stranding&quot;)]</code> · Confidence: 50</p>
+<p><strong>Description</strong>: (a) <code>distributeRevenue</code> is permissionless and fires on any nonzero<br><code>pendingUsdcRevenue</code>; a griefer can trigger it with dust immediately after the first fee each<br>epoch, pinning the 7-day distribution phase and delaying the batch partitioning of subsequently<br>accrued fees by up to 7 days — timing only, no fund loss, arguably within the design&#39;s tolerance<br>for a weekly crank. (b) If <code>totalStaked</code> returns to zero after staking has been activated,<br><code>flushStakerShare</code>&#39;s <code>totalStaked() &gt; 0</code> requirement blocks the staker-share bucket from flushing<br>— funds accrue in <code>pendingStakerUsdc</code> and are recoverable once anyone re-stakes, not lost.</p>
+<p><strong>Recommendation</strong>: Low priority; document both as accepted crank/liveness tradeoffs unless a<br>faster remediation is desired.</p>
+<hr>
+<h3 id="low-l-11-escrowvaultagentdepositvault-payordefer-treats-a-nonsta">[LOW] L-11. <code>EscrowVault</code>/<code>AgentDepositVault</code> <code>_payOrDefer</code> treats a nonstandard-but-successful return as failure, which would double-pay for a token with odd return-data length</h3>
+<p><code>[phase1: evm-audit-general G-4]</code> · Confidence: 40</p>
+<p><strong>Description</strong>: If a raw <code>token.call(transfer(...))</code> succeeds but returns data of length other<br>than 0 or 32 bytes, the code classifies it as failed and <em>also</em> credits <code>pendingPayouts</code>, even<br>though tokens may have already left the vault. <strong>Not exploitable under current wiring</strong> — both<br>vaults are hardcoded/validated to standard-returning USDC (32-byte bool or empty return) — this is<br>contingent entirely on that trust assumption holding forever.</p>
+<p><strong>Recommendation</strong>: No action needed while USDC-only; flag if the vaults are ever pointed at a<br>different token.</p>
+<hr>
+<h2 id="informational">Informational</h2>
+<ul>
+<li><strong>I-1. <code>ArbitrationModule.proposeArbitrator</code> has no reputation gate for tier-0 disputes</strong> (<code>[agents: 5 across both phases]</code>, ArbitrationModule.sol ~2222-2230) — sub-$1 disputes can seat a zero-reputation arbitrator, but tier-0 resolutions grant no reputation/resolvedCount, bounding impact to dust.</li>
+<li><strong>I-2. Dead/unreachable value-moving code</strong>: <code>ArbitrationModule._payBondOrDefer</code>/<code>pendingBondPayouts</code>/<code>claimBondPayout</code>, <code>AgentDepositVault.creditDisputeBond</code>, <code>EscrowVault.refund</code>&#39;s only-caller-path, <code>ReputationRegistry.resetSubject</code>&#39;s narrower usage, <code>TaskRegistry.requestReplacement</code>/<code>assignReplacementWorker</code> — confirmed unreferenced by grep across the codebase by multiple independent agents; no exploit, recommend removal to reduce footgun surface for future maintainers.</li>
+<li><strong>I-3. <code>TaskRegistry.createTask</code> has an asymmetric fee-wiring guard vs. <code>postTask</code></strong> during the narrow one-time deploy/wiring window (<code>postTask</code> hard-requires <code>treasury != 0</code>; <code>createTask</code> wraps the fee in an <code>if</code>) — deploy-ordering footgun only, not live-exploitable once wiring completes.</li>
+<li><strong>I-4. Owner blast-radius is meaningfully bounded and disclosed</strong>: owner cannot move user escrow/deposits, mint credits, or unilaterally seat an arbitrator (mutual consent required everywhere); <code>EscrowVault.split</code>/<code>refund</code>/<code>settleArbitrationTimeout</code> validate recipient against the recorded task party, so even a hostile replacement arbitration module (via M-2&#39;s mechanism) cannot redirect escrow to an arbitrary address — only grief split ratios/timing for in-flight disputes. All <code>Ownable2Step</code> two-step transfers are correctly wired; <code>renounceOwnership</code> reverts everywhere (no accidental permanent lock).</li>
+<li><strong>I-5. <code>UnionStakingVault.claimableUsdc</code> view under-reports claimable USDC when carried (zero-stake-interval) rewards exist</strong> — display-only; the actual claim path (<code>_accrue</code>) computes correctly.</li>
+</ul>
+<hr>
+<h2 id="access-control-inventory-summary-see-phase-0-protocol-map-for-fu">Access-Control Inventory (summary — see Phase 0 protocol map for full per-function detail)</h2>
+<p>All 9 contracts use <code>Ownable2Step</code> (two-step transfer, <code>renounceOwnership</code> disabled/reverts). All<br>inter-contract wiring is constructor-immutable or one-time <code>onlyOwner</code> setters guarded against<br>re-setting. Direct arbitration-module rotation is disabled everywhere (<code>rotate*</code> revert); the only<br>change path is the Coordinator&#39;s timelocked emergency swap (M-2, M-3, L-1). Permissionless<br>&quot;crank&quot; entrypoints (<code>resolveStaleReview</code>, <code>expireTask</code>, <code>resolveTimedOut</code>, <code>assignFallbackResolver</code>,<br><code>replaceTimedOutArbitrator</code>, <code>retrySideEffects</code>, <code>distributeRevenue</code>, <code>flushStakerShare</code>,<br><code>flushBuybackShare</code>, <code>executeFallbackResolverRotation</code>, <code>executeRecovery</code>) are all state/time-gated<br>rather than caller-gated by design, and were the focus of the majority of findings above. Self-keyed<br>claim functions (<code>claimPayout</code>, <code>withdraw</code>/<code>withdrawTo</code>, <code>claimRewards</code>/<code>claimRewardsTo</code>,<br><code>claimBondPayout</code>, <code>unstakeVerifierBond</code>) are correctly restricted to the caller&#39;s own balance<br>throughout.</p>
+<h2 id="threat-model-phase-0-catalog-each-row-addressed">Threat Model (Phase-0 catalog, each row addressed)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Actor → Entrypoint</th>
+<th>Addressed by</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T1</td>
+<td>Worker/crank → <code>submitProof</code>→<code>resolveStaleReview</code></td>
+<td><strong>M-3</strong> (cross-module swap breaks the clock)</td>
+</tr>
+<tr>
+<td>T2</td>
+<td>Poster+Worker collusion → mutual-consent arbitrator selection</td>
+<td><strong>L-3</strong> (reputation farming)</td>
+</tr>
+<tr>
+<td>T3</td>
+<td>Arbitrator self-dealing → <code>resolveDispute</code></td>
+<td><strong>L-3</strong>, <strong>M-4</strong> (no real slash risk)</td>
+</tr>
+<tr>
+<td>T4</td>
+<td>Crank → timeout/fallback paths</td>
+<td><strong>M-5</strong>, <strong>L-5</strong> (mode-inconsistent defaults)</td>
+</tr>
+<tr>
+<td>T5</td>
+<td>Owner → pause + Coordinator swap</td>
+<td><strong>M-2</strong> (recovery griefable)</td>
+</tr>
+<tr>
+<td>T6</td>
+<td>Poster → <code>dismissWorker</code> timing</td>
+<td>Invariant holds — exit-fee split is timing-independent</td>
+</tr>
+<tr>
+<td>T7</td>
+<td>Worker → stream/hour-block claim raced against dispute freeze</td>
+<td>Invariant holds — <code>freeze</code> is atomic with <code>openDispute</code></td>
+</tr>
+<tr>
+<td>T8</td>
+<td>Depositor → <code>withdraw</code> vs. reservation</td>
+<td>Invariant holds — <code>availableBalance</code> always current before withdrawal</td>
+</tr>
+<tr>
+<td>T9</td>
+<td>Crank → <code>retrySideEffects</code></td>
+<td><strong>L-4</strong> (liveness-lock lead, unconfirmed trigger)</td>
+</tr>
+<tr>
+<td>T10</td>
+<td>Staker → JIT stake before distribution</td>
+<td><strong>L-7</strong> (bounded to zero-stake-interval capture)</td>
+</tr>
+<tr>
+<td>T11</td>
+<td>Poster → post-acceptance term mutation</td>
+<td>Invariant holds — settlement digest + write-once scope hash</td>
+</tr>
+<tr>
+<td>T12</td>
+<td>Owner → <code>qualifyBootstrapArbitrator</code></td>
+<td><strong>L-3</strong> (bootstrap enables farming beyond intended scope)</td>
+</tr>
+<tr>
+<td>T13</td>
+<td>Rotation participants → rotation hijack</td>
+<td><strong>M-1</strong> (inverted — incumbent hijacks <em>against</em> the owner)</td>
+</tr>
+<tr>
+<td>T14</td>
+<td>Any → <code>_payOrDefer</code>/<code>claimPayout</code></td>
+<td><strong>L-11</strong> (contingent, not exploitable under current wiring)</td>
+</tr>
+<tr>
+<td>T15</td>
+<td>Authorized callers → <code>resetSubject</code>/<code>slashVerifierBond</code></td>
+<td>Invariant holds — tied to legitimate dispute/registry events</td>
+</tr>
+<tr>
+<td>T16</td>
+<td>Crank → <code>executeRecovery</code> race</td>
+<td>Invariant holds — outcome is deterministic regardless of caller</td>
+</tr>
+</tbody></table></div>
+<p><strong>Coverage gate</strong>: 16/16 threat-catalog rows answered above. All privileged/value-moving<br>entrypoints in the Phase-0 inventory (~165 external/public functions across 9 contracts, grep-verified<br>count) map to an examined finding or an explicit &quot;examined, no issue&quot; disposition in one or both<br>hunting phases. Zero coverage holes required a first-time re-read in this reconciliation pass —<br>both phases&#39; combined coverage was already complete.</p>
+<hr>
+<h2 id="assumptions">Assumptions</h2>
+<ul>
+<li>USDC and AZL behave as standard, non-fee-on-transfer, non-rebasing tokens with correct decimals<br>(6 and 18 respectively) — both explicitly asserted and defended against in-code, not merely<br>assumed.</li>
+<li>The arbitration module, once deployed and wired, is trusted-by-construction (non-upgradeable,<br>no <code>delegatecall</code>) — a <em>replacement</em> module installed via the recovery coordinator is validated<br>at install time but its ongoing behavior post-install is trusted, consistent with the rest of<br>the system&#39;s peer-trust model.</li>
+<li>Off-chain aggregation of <code>ReputationRegistry</code> signals is assumed to correctly interpret the<br>epoch-advance semantics of <code>resetSubject</code> (the registry is explicitly documented as an &quot;evidence<br>layer for off-chain aggregation,&quot; not an on-chain enforcement mechanism beyond what&#39;s audited<br>here).</li>
+</ul>
+<hr>
+<blockquote>
+<p>This review was performed by an autonomous AI audit pipeline (three-phase: context-building →<br>checklist breadth → adversarial depth, cross-reconciled). AI analysis can never verify the<br>complete absence of vulnerabilities and no guarantee of security is given. A human-led security<br>review, bug bounty program, and on-chain monitoring are strongly recommended before or alongside<br>mainnet reliance on this contract set, particularly given the fund-custody role of EscrowVault<br>and AgentDepositVault.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreifw3unns4jctxk73wea6iwqdelylgslfxaxcrkrwpg6iiur3etinm.ipfs.community.bgipfs.com/"><code>https://bafkreifw3unns4jctxk73wea6iwqdelylgslfxaxcrkrwpg6iiur3etinm.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/411">#411</a> on Base. Rendered 2026-07-17.</p>
+  </footer>
+
+</div>
+</body>
+</html>

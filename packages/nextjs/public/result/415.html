@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EnsDiamondsEscrow — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #415">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">EnsDiamondsEscrow</h1>
+    <p class="job-sub">Job #415 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/415"><b>Job page</b> #415</a>
+      <a class="chip" href="https://bafkreihsuxv6rfs73fwttndewetpvhczgsgs7zfc6exjnkfrrlc2a2cose.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-17</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#findings">Findings</a></li>
+    </ol>
+    <ol start="5">
+      <li><a href="#below-threshold-findings-description-only">Below-threshold findings (description only)</a></li>
+      <li><a href="#leads">Leads</a></li>
+      <li><a href="#coverage-gate">Coverage Gate</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>Security Review — EnsDiamondsEscrow</h1>
+<p><strong>Job:</strong> leftclaw.services job #415<br><strong>Target:</strong> <code>0x0bb0C8C12dd86cBE478C416fa51071e51ee1a729</code> (Ethereum mainnet, chain id 1)<br><strong>Verification:</strong> Sourcify exact match, verified 2026-07-17, compiler <code>0.8.24+commit.e11b9ed9</code>, optimizer 200 runs, EVM target <code>cancun</code><br><strong>Deployment:</strong> tx <code>0xf20e911b60329ebb39e9b9aa84a7abc8b8ad4c2f6dbab2b035ea66d6fc57b9c1</code>, block <code>25537830</code><br><strong>Files reviewed:</strong> <code>src/EnsDiamondsEscrow.sol</code> (303 lines, in-scope) · <code>src/interfaces/ISafeProxyFactory.sol</code>, <code>src/interfaces/ISafe.sol</code> (11 + 16 lines, out-of-scope context — Gnosis Safe v1.4.1 interfaces)<br><strong>Methodology:</strong> three-phase audit — Phase 0 context (protocol map + access-control inventory + threat catalog, opus) → Phase 1 breadth (5 ethskills domain checklists: general, precision-math, assembly/CREATE2, dos, access-control, sonnet) → Phase 2 depth (12 pashov attack-specialty agents, blind to Phase 1, sonnet) → Phase 3 hybrid reconciliation.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><strong>Overlap:</strong> 2 · <strong>Phase-1-only:</strong> 5 · <strong>Phase-2-only:</strong> 0 · <strong>Re-examined leads kept:</strong> 0, demoted: 5 · <strong>Coverage holes closed:</strong> 0</p>
+<p>The headline finding (zero-amount deposit) was independently rediscovered by <strong>all 12 of 12</strong> blind Phase 2 attack agents plus the Phase 1 precision-math and dos checklist agents — the single strongest convergence signal possible under this methodology. The Sybil/headcount-majority-control finding was independently confirmed by Phase 1&#39;s access-control and general checklist agents and Phase 2&#39;s economic-security and trust-gap agents. All CREATE2 address-squatting concerns raised by the protocol map were independently investigated and ruled out as not exploitable by four separate agents across both phases (Phase 1 assembly agent, Phase 2 invariant/periphery/flow-gap agents), each re-deriving the real Gnosis Safe v1.4.1 CREATE2 formula by hand and confirming it matches <code>_computeSafeAddress()</code>.</p>
+<p><strong>Confidence floor:</strong> findings below confidence 50 are listed under Leads, not as scored findings. All findings below Low severity and above are reported.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Guard</th>
+<th>Caller</th>
+<th>Moves value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>createPool</code> (L131)</td>
+<td>Input validation only (<code>targetAmount!=0</code>, deadline future, label≥3 bytes, <code>invitees.length+1≤MAX_OWNERS</code>) — no caller restriction</td>
+<td>Anyone</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>deposit</code> (L162)</td>
+<td><code>nonReentrant</code>; <code>invited[poolId][msg.sender]</code>; <code>status==Funding</code>; <code>msg.value!=0</code>; not same-block-as-own-withdraw</td>
+<td>Any invited address</td>
+<td>Yes (accepts + refunds excess)</td>
+</tr>
+<tr>
+<td><code>withdraw</code> (L202)</td>
+<td><code>nonReentrant</code>; <code>status∈{Funding,Expired}</code>; <code>deposits[poolId][msg.sender]!=0</code></td>
+<td>Any address with a nonzero deposit</td>
+<td>Yes (returns own stake)</td>
+</tr>
+<tr>
+<td><code>finalize</code> (L226)</td>
+<td><code>nonReentrant</code>; <code>status==Funded</code>; caller must be a contributor</td>
+<td>Any contributor</td>
+<td>Yes (deploys Safe, forwards <code>targetAmount</code>)</td>
+</tr>
+<tr>
+<td><code>status</code>, <code>getContributors</code>, <code>ownershipBps</code></td>
+<td>None (view)</td>
+<td>Anyone</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>constructor</code> (L95)</td>
+<td>Callable once at deploy; validates <code>_factory</code>/<code>_singleton</code>/<code>_fallbackHandler</code> have nonzero code</td>
+<td>Deployer</td>
+<td>No</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles:</strong> No owner, admin, or governance role exists anywhere in the contract — confirmed by full-source review, no <code>Ownable</code>/<code>AccessControl</code> import, no privileged modifier beyond the reentrancy lock. <code>Pool.creator</code> (set once at L145) is never read by any function besides emitting it in <code>PoolCreated</code> — it confers no ongoing on-chain privilege beyond choosing the initial pool parameters and invitee list at creation time. <code>invited[poolId][*]</code> is granted only at <code>createPool</code> and is <strong>never revocable or extensible</strong> afterward.</p>
+<p><strong>Unguarded list:</strong> <code>createPool</code> is fully open by design (no admin exists to gate it). <code>deposit</code>/<code>withdraw</code>/<code>finalize</code> are each open to a defined but non-privileged set (invited members / self-deposit-holders / any-contributor respectively) — this is the intended permissionless-among-participants trust model, not a missing guard.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Addressed by</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Any invited address (contributor or not)</td>
+<td><code>deposit()</code> on a fully-funded pool whose 1-day execution window has lapsed</td>
+<td>Free Safe-ownership seat, indefinite withdraw-lock, and/or permanent finalize()-bricking of the entire pool</td>
+<td><strong>Finding 1</strong></td>
+</tr>
+<tr>
+<td>Malicious pool creator (optionally colluding with self-controlled &quot;invitee&quot; addresses)</td>
+<td><code>createPool()</code> + cheap deposits from self-controlled addresses</td>
+<td>Majority signing control over a Safe funded almost entirely by an honest co-buyer</td>
+<td><strong>Finding 2</strong></td>
+</tr>
+<tr>
+<td>Any address (pre-finalize)</td>
+<td>Pre-deploying a contract at the CREATE2-predicted Safe address</td>
+<td>—</td>
+<td><strong>Invariant holds</strong> — CREATE2 salt cryptographically binds the exact owners/threshold/handler; re-derived independently and confirmed not exploitable (see Finding 4 discussion)</td>
+</tr>
+<tr>
+<td>Arbitrary outsider</td>
+<td><code>deposit()</code>/<code>finalize()</code> (blocked)</td>
+<td>—</td>
+<td><strong>Invariant holds</strong> — <code>invited[]</code>/<code>deposits[]!=0</code> gates confirmed airtight</td>
+</tr>
+<tr>
+<td>Contributor</td>
+<td>Front-run a gap-closing deposit with their own <code>withdraw()</code> before target is hit</td>
+<td>Indefinitely prevent a pool from ever reaching <code>Funded</code></td>
+<td><strong>Finding 3</strong></td>
+</tr>
+<tr>
+<td>Deployer (config-time, not a runtime attacker)</td>
+<td>Constructor args for the Safe factory/singleton/handler</td>
+<td>If misconfigured, every pool&#39;s <code>finalize()</code> sends funds to the wrong target</td>
+<td><strong>Finding 5</strong></td>
+</tr>
+<tr>
+<td>Any contributor</td>
+<td>Non-ETH-receiving contract as <code>msg.sender</code></td>
+<td>Self-only lock of own stake</td>
+<td><strong>Finding 6</strong></td>
+</tr>
+<tr>
+<td>Any pool vs. another pool&#39;s funds</td>
+<td>Shared/commingled contract ETH balance across all <code>poolId</code>s</td>
+<td>—</td>
+<td><strong>Invariant holds</strong> — every send is derived from that <code>poolId</code>&#39;s own <code>deposits</code>/<code>targetAmount</code> accounting, never <code>address(this).balance</code>; confirmed structurally by 3 independent agents</td>
+</tr>
+<tr>
+<td>Any contributor</td>
+<td>Owner-array ordering shift via <code>_removeContributor</code>&#39;s swap-and-pop feeding <code>finalize()</code>&#39;s Safe <code>owners</code> argument</td>
+<td>—</td>
+<td><strong>Invariant holds</strong> — Safe authorization is threshold-based and order-independent; no on-chain consequence found</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[95] <strong>1. Zero-amount deposit on a lapsed-but-still-full pool permanently corrupts the Safe owner list and can freeze all pooled ETH</strong></p>
+<p><code>EnsDiamondsEscrow.deposit</code> · Confidence: 95</p>
+<p><strong>Description</strong><br>When a pool sits at <code>totalDeposited == targetAmount</code> with its 1-day <code>EXECUTION_WINDOW</code> lapsed, <code>status()</code> reports <code>Funding</code> again (L116) even though <code>remaining = targetAmount - totalDeposited</code> is exactly 0; <code>deposit()</code> never checks <code>amount &gt; 0</code> before executing its &quot;new contributor&quot; and &quot;just reached target&quot; state writes, so any invited address can call <code>deposit(poolId){value: 1 wei}</code> — fully refunded — and still get pushed into <code>contributors[]</code> with a permanent zero balance while <code>fundedAt</code> is unconditionally reset.</p>
+<p><strong>Impact — three compounding effects from one root cause:</strong></p>
+<ol>
+<li><strong>Governance dilution / theft enabler:</strong> the free-riding address becomes a full, equal-weight owner of the eventual Gnosis Safe (<code>threshold = owners.length/2+1</code>, L235), diluting genuine contributors&#39; collective control and — combined with Finding 2&#39;s mechanics — enabling outright fund theft by a colluding minority.</li>
+<li><strong>Indefinite <code>withdraw()</code> denial:</strong> since the re-armed <code>fundedAt</code> keeps <code>status()</code> reporting <code>Funded</code>, and <code>withdraw()</code> requires <code>status∈{Funding,Expired}</code> (L205), any single invited address can repeat the 1-wei call roughly once per day to keep every genuine contributor locked out of their own funds indefinitely, at near-zero cost.</li>
+<li><strong>Permanent <code>finalize()</code> brick:</strong> because the free-riding address&#39;s <code>deposits[]</code> balance never leaves 0, <code>isTopUp</code> (L178) stays <code>false</code> forever for that address, so it can be pushed into <code>contributors[]</code> a <strong>second</strong> time on a later cycle. The real Gnosis Safe v1.4.1 <code>setupOwners()</code> reverts on any duplicate owner address, so <code>createProxyWithNonce</code> — and therefore <code>finalize()</code> — reverts permanently for that pool, with no removal path (<code>_removeContributor</code> only fires from <code>withdraw()</code>, which requires <code>deposits!=0</code>, which a ghost entry never has).</li>
+</ol>
+<p>Reachability requires no privileged action — only that a pool&#39;s 24-hour finalize window lapses without anyone calling <code>finalize()</code>, which is an explicitly documented, normal operating state of the contract (&quot;If the window lapses unused, the pool reverts to withdrawable Funding status&quot;) and a very plausible real-world occurrence given human coordination delays around an ENS purchase decision.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Pool created, <code>targetAmount = 1 ether</code>, invitees <code>[Bob]</code> (creator Alice auto-invited).</li>
+<li>Alice and Bob together deposit exactly 1 ether → <code>totalDeposited == targetAmount</code>, <code>fundedAt = T0</code>, <code>status = Funded</code>, <code>contributors = [Alice, Bob]</code>.</li>
+<li>Nobody calls <code>finalize()</code> within <code>EXECUTION_WINDOW</code> (1 day). At <code>T0 + 86401</code>, <code>status(poolId)</code> re-evaluates: <code>totalDeposited == targetAmount</code> is still true (L112), but <code>block.timestamp &gt; fundedAt + EXECUTION_WINDOW</code> (L113), so it falls to <code>return PoolStatus.Funding</code> (L116) — even though the pool is still completely full.</li>
+<li>Mallory, merely <code>invited[poolId][Mallory] == true</code> and never having deposited, calls <code>deposit(poolId){value: 1}</code>: <code>invited</code> check passes (L164), <code>status==Funding</code> passes (L165), <code>msg.value != 0</code> passes (L166). <code>remaining = 1e18 - 1e18 = 0</code> (L174); <code>amount = (1 &gt; 0) ? 0 : uint96(1) = 0</code> (L175); <code>refund = 1</code> (L176). <code>isTopUp = deposits[poolId][Mallory](0) &gt; 0 = false</code> (L178); <code>isExactGap = (0==0) = true</code> (L179), so the <code>BelowMinimum</code> guard at L180 short-circuits to false and does not revert despite <code>amount(0) &lt; MIN_CONTRIBUTION</code>. Since <code>!isTopUp</code>, <code>contributors[poolId].push(Mallory)</code> executes (L182-183) — <code>contributors = [Alice, Bob, Mallory]</code> while <code>deposits[poolId][Mallory]</code> stays 0. <code>p.totalDeposited += 0</code> unchanged, still <code>== targetAmount</code> (L186), so L188&#39;s check re-fires: <code>p.fundedAt = block.timestamp</code> (L189), re-arming the window for another full day, <code>PoolFunded</code> re-emitted. Mallory&#39;s 1 wei is refunded in full at L196-198 — her net cost is gas only.</li>
+<li>Any subsequent <code>finalize()</code> call now uses <code>owners = [Alice, Bob, Mallory]</code> (L231), <code>threshold = uint8(3/2+1) = 2</code> (L235) — Mallory holds a full, equal-weight veto seat over the pooled 1 ETH despite contributing $0.</li>
+<li>Mallory repeats step 4 on the next lapse cycle. Since <code>deposits[poolId][Mallory]</code> never left 0, <code>isTopUp</code> is <code>false</code> again, so she is pushed a <strong>second</strong> time: <code>contributors = [Alice, Bob, Mallory, Mallory]</code>. Any future <code>finalize()</code> call now passes a duplicate-owner array to the real Safe factory, which reverts inside <code>setupOwners()</code> — <code>finalize()</code> is permanently broken for this pool. Alice and Bob&#39;s only recourse is to catch a brief withdraw-eligible window before Mallory&#39;s next griefing transaction lands.</li>
+</ol>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function deposit(uint256 poolId) external payable nonReentrant {
+         Pool storage p = pools[poolId];
+         if (!invited[poolId][msg.sender]) revert NotInvited();
+         if (status(poolId) != PoolStatus.Funding) revert WrongStatus();
+         if (msg.value == 0) revert ZeroValue();
+         if (withdrawBlock[poolId][msg.sender] == block.number) revert SameBlock();
+
+         uint96 remaining = p.targetAmount - p.totalDeposited;
+         uint96 amount = msg.value &gt; remaining ? remaining : uint96(msg.value);
+         uint256 refund = msg.value - amount;
++        if (amount == 0) revert ZeroValue();
+
+         bool isTopUp = deposits[poolId][msg.sender] &gt; 0;
+</code></pre>
+<hr>
+<p>[88] <strong>2. Safe ownership/control is allocated by contributor headcount, not contribution size — a pool creator can Sybil their way to majority control</strong></p>
+<p><code>EnsDiamondsEscrow.finalize</code> · Confidence: 88</p>
+<p><strong>Description</strong><br><code>finalize()</code> derives the deployed Safe&#39;s owner set and signature threshold purely from <code>contributors[poolId].length</code> (<code>threshold = owners.length/2+1</code>, L235) — never from how much each address actually deposited. <code>invited[poolId][*]</code> is populated entirely and unilaterally by the pool creator at <code>createPool()</code> (L131-160) with no identity or Sybil-resistance check, and up to <code>MAX_OWNERS = 10</code> total addresses can be invited (L140). Because a first-time deposit only needs to clear <code>MIN_CONTRIBUTION = 0.01 ether</code> (or even less, via the <code>isExactGap</code> bypass at L179-180 for whoever happens to close the exact remaining gap), a malicious creator can invite one real victim alongside several self-controlled addresses, fund the self-controlled addresses with dust, let the victim fund the bulk of <code>targetAmount</code>, and end up controlling a signing majority of the resulting Safe despite contributing a negligible fraction of the pooled capital.</p>
+<p>A cheaper single-actor variant exists: a lone address doesn&#39;t need to be a &quot;Sybil cluster&quot; at all — simply timing a 1-wei deposit to land as the exact final gap-filler exploits the <code>isExactGap</code> bypass (L179-180) to become a full equal-weight owner without ever meeting <code>MIN_CONTRIBUTION</code>, for the cost of a single deposit.</p>
+<p><strong>Proof of Concept</strong></p>
+<ol>
+<li>Attacker (creator) calls <code>createPool(label, targetAmount=10 ether, deadline, invitees=[Victim, Sybil2, Sybil3, Sybil4, Sybil5])</code> — 7 total invited addresses (attacker + 4 sybils + victim), within <code>MAX_OWNERS=10</code>.</li>
+<li>Attacker deposits <code>0.01 ether</code> from themselves and each of <code>Sybil2</code>–<code>Sybil5</code> (5 addresses, ≈0.05 ether total).</li>
+<li>Victim deposits the remaining ≈9.95 ether via the gap-filling logic (L174-176), completing <code>targetAmount</code> exactly.</li>
+<li><code>owners.length == 7</code> → <code>threshold = uint8(7/2+1) = 4</code> (L235). Attacker controls 5 of 7 owner keys (self + 4 sybils) — above the 4-signature threshold.</li>
+<li>Any contributor calls <code>finalize()</code>; the Safe deploys with the attacker holding a supermajority of signing keys, funded with the full 10 ether (L272).</li>
+<li>Attacker executes a Safe transaction using 4 of their own 5 keys, sweeping the entire 10 ether to an address they control. Victim&#39;s ≈9.95 ether — over 99% of the pool — is unrecoverable; the victim never held blocking power despite funding nearly the entire purchase.</li>
+</ol>
+<p><strong>Fix (Option A — capital-weighted control)</strong><br>Weight Safe signing authority (or a minimum-diversity requirement) by contribution size rather than raw address count — e.g., cap any single depositor&#39;s share of <code>targetAmount</code>, or require the majority-threshold computation to reference <code>deposits[]</code> amounts rather than <code>owners.length</code> alone.</p>
+<p><strong>Fix (Option B — close the dust-owner path)</strong></p>
+<pre><code class="language-diff">         bool isTopUp = deposits[poolId][msg.sender] &gt; 0;
+         bool isExactGap = amount == remaining;
+-        if (!isTopUp &amp;&amp; !isExactGap &amp;&amp; amount &lt; MIN_CONTRIBUTION) revert BelowMinimum();
++        if (!isTopUp &amp;&amp; amount &lt; MIN_CONTRIBUTION) revert BelowMinimum();
+</code></pre>
+<p>This closes the cheap single-actor variant but does not by itself prevent the multi-Sybil-at-MIN_CONTRIBUTION variant — Option A is the structural fix; Option B raises the cost floor.</p>
+<hr>
+<p>[70] <strong>3. Front-running <code>withdraw()</code> can permanently prevent a pool from ever reaching <code>Funded</code></strong></p>
+<p><code>EnsDiamondsEscrow.withdraw</code> / <code>EnsDiamondsEscrow.deposit</code> · Confidence: 70</p>
+<p><strong>Description</strong><br><code>withdraw()</code> is unrestricted while a pool&#39;s status is <code>Funding</code> (L205) — any contributor, including one holding only a <code>MIN_CONTRIBUTION</code>-sized dust deposit, can withdraw at will before the pool reaches target. A malicious invitee can front-run the transaction that would close the final funding gap with their own <code>withdraw()</code> call, pulling their stake and enlarging <code>remaining</code> at the exact moment someone else&#39;s deposit was about to close it, so the gap-closing deposit lands short of <code>targetAmount</code> and the pool never transitions to <code>Funded</code>. The griefer can redeposit the minimum later and repeat indefinitely, at gas cost only — <code>invited[]</code> is never revocable, so other contributors have no on-chain remedy short of abandoning the pool. Note: withdrawal <em>after</em> <code>Funded</code> is correctly blocked (<code>WithdrawLocked</code>), so this vector is confined to the pre-funding race, not an already-funded window.</p>
+<p><strong>Proof of Concept</strong><br>Pool at <code>targetAmount = 3 ETH</code>; Alice/Bob at 0.99 ETH each, Mallory (malicious) at 0.01 ETH (<code>totalDeposited = 1.99 ETH</code>, gap <code>1.01 ETH</code>). Alice submits a <code>1.01 ETH</code> gap-closing deposit; Mallory front-runs with <code>withdraw()</code>, pulling her 0.01 ETH and reopening the gap to <code>1.02 ETH</code> (L211-212). Alice&#39;s deposit lands but is capped short of target (L175). Mallory redeposits <code>0.01 ETH</code> and repeats whenever the pool nears completion — <code>Funded</code> (and therefore <code>finalize()</code>) is permanently unreachable while Mallory participates.</p>
+<p><strong>Fix</strong><br>No diff provided — structural options: allow the creator or a majority of current contributors to revoke an individual&#39;s <code>invited</code> status (with a forced withdrawal) before <code>Funded</code>, or add a cooldown between an address&#39;s <code>withdraw()</code> and its ability to re-deposit to raise the cost of repeated cycling.</p>
+<hr>
+<p>[55] <strong>4. CREATE2 Safe-adoption branch has no runtime read-back verification, and deploy-time trust of the Safe factory/singleton is unverified beyond code presence</strong></p>
+<p><code>EnsDiamondsEscrow.finalize</code> / <code>_computeSafeAddress</code> / <code>constructor</code> · Confidence: 55</p>
+<p><strong>Description</strong><br>Two related gaps in the same trust chain:</p>
+<ul>
+<li><strong>Deploy-time (constructor, L95-104):</strong> <code>safeProxyFactory</code>/<code>safeSingleton</code>/<code>safeFallbackHandler</code> are validated only via <code>code.length != 0</code> (L98) — not checked against known canonical Safe v1.4.1 bytecode/<code>extcodehash</code>. If a deployer ever misconfigures these immutables to a non-canonical contract (still passing the weak check), every downstream CREATE2-trust argument collapses.</li>
+<li><strong>Runtime (<code>finalize()</code>, L256-262):</strong> the <strong>deploy</strong> branch self-verifies (<code>if (safe != predicted) revert SafeDeployFailed()</code>, L259), so any latent divergence between <code>_computeSafeAddress</code>&#39;s local re-derivation and the real factory&#39;s formula degrades to a safe revert. The <strong>adopt</strong> branch (<code>else { safe = predicted; }</code>, L260-261) has no equivalent check — it trusts <code>predicted.code.length != 0</code> alone, with no static-call read-back (e.g. <code>getOwners()</code>/<code>getThreshold()</code>) before <code>p.targetAmount</code> wei is sent to it at L272.</li>
+</ul>
+<p><strong>Independently re-confirmed NOT currently exploitable</strong> by four separate agents (Phase 1 assembly agent; Phase 2 invariant, periphery, and flow-gap agents), each hand-deriving the real Gnosis Safe v1.4.1 <code>createProxyWithNonce</code> CREATE2 formula and confirming <code>_computeSafeAddress()</code> matches it exactly. Since the CREATE2 salt binds <code>keccak256(initializer)</code> (the exact <code>owners</code>/<code>threshold</code>/<code>fallbackHandler</code>), landing different bytecode at the predicted address without controlling the genuine <code>safeProxyFactory</code> itself would require a keccak256 second-preimage break (~2^256 work) — infeasible. This is a defense-in-depth gap contingent entirely on the deploy-time configuration being honest, not a live third-party attack path.</p>
+<p><strong>Fix</strong><br>No diff provided — pin <code>extcodehash</code> of the expected canonical factory/singleton in the constructor and revert on mismatch; add a cheap static-call owner/threshold comparison before the adoption branch trusts <code>predicted</code>.</p>
+<hr>
+<h2 id="below-threshold-findings-description-only">Below-threshold findings (description only)</h2>
+<p>[45] <strong>5. Deploy-time misconfiguration of Safe factory/singleton/handler addresses is a single point of failure</strong> — <code>constructor</code>. If the deployer supplies wrong-but-code-bearing addresses, every pool&#39;s <code>finalize()</code> silently sends pooled funds to the wrong or malicious target. Not attacker-exploitable against an honestly-configured instance; a deployment-process risk, not a runtime bug.</p>
+<p>[35] <strong>6. Self-only revert-based DoS via a non-payable <code>msg.sender</code></strong> — <code>deposit</code> (L196-198) / <code>withdraw</code> (L221-223). A contract address with no payable <code>receive()</code>/<code>fallback()</code> cannot complete an over-paying deposit or ever withdraw its own stake (CEI rollback on send failure). Scoped entirely to the caller&#39;s own funds — no effect on other contributors&#39; <code>deposit</code>/<code>withdraw</code>/<code>finalize</code> paths.</p>
+<p>[30] <strong>7. <code>saltNonce = poolId</code> is not unique across multiple deployments of this contract</strong> — <code>finalize</code> / <code>_computeSafeAddress</code>. If this contract is redeployed for a future campaign pointed at the same canonical Safe infrastructure, and a same-numbered pool in the new instance happens to have an identical owner array to an earlier instance&#39;s pool, <code>finalize()</code> would silently adopt the pre-existing Safe rather than deploy a fresh one. Not attacker-forceable against unwilling victims — a coincidence/self-inflicted edge case.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[95]</td>
+<td>Zero-amount deposit on a lapsed-but-still-full pool permanently corrupts the Safe owner list and can freeze all pooled ETH</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[88]</td>
+<td>Safe ownership/control is allocated by contributor headcount, not contribution size</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[70]</td>
+<td>Front-running <code>withdraw()</code> can permanently prevent a pool from ever reaching <code>Funded</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>[55]</td>
+<td>CREATE2 adoption branch has no runtime read-back verification; deploy-time Safe-address trust unverified</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[45]</td>
+<td>Deploy-time misconfiguration of Safe factory/singleton/handler addresses is a single point of failure</td>
+</tr>
+<tr>
+<td>6</td>
+<td>[35]</td>
+<td>Self-only revert-based DoS via a non-payable <code>msg.sender</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>[30]</td>
+<td><code>saltNonce = poolId</code> is not unique across multiple deployments of this contract</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="leads">Leads</h2>
+<p><em>Vulnerability trails with concrete code smells where the full exploit path could not be independently confirmed. Not false positives — high-signal leads for manual review. Not scored.</em></p>
+<ul>
+<li><strong><code>uint8</code> threshold overflow via unbounded <code>contributors[]</code> growth</strong> — <code>finalize</code> — Code smells: repeated same-address zero-value pushes (Finding 1&#39;s mechanism) could in principle grow <code>contributors[].length</code> past 255, wrapping <code>uint8(owners.length/2+1)</code>. Investigated and demoted: the Safe&#39;s duplicate-owner revert fires long before any such length is reachable via single-address spam, and distinct-address ghosts are hard-capped by <code>MAX_OWNERS=10</code> at the invite stage.</li>
+<li><strong>Same-block re-arm guard bypass via multi-address control</strong> — <code>deposit</code>/<code>withdraw</code> — Code smells: an actor controlling 2+ invited addresses could withdraw with one and redeposit with another in the same block, bypassing the <code>SameBlock</code> anti-re-arm marker. No net value extraction — real money must be resupplied — and honest contributors retain <code>finalize()</code> as an escape hatch throughout.</li>
+<li><strong><code>status()</code> conflates &quot;actively collecting&quot; and &quot;fully-funded-but-lapsed&quot; under one <code>Funding</code> label</strong> — <code>status</code> — Code smells: this ambiguity is the structural enabler of Finding 1. Even after Finding 1&#39;s fix, any future code path that branches on <code>status()==Funding</code> should be re-audited for the same implicit &quot;remaining&gt;0&quot; assumption.</li>
+<li><strong>Funded/Funding cycle timing asymmetry</strong> — <code>deposit</code>/<code>withdraw</code> — Code smells: investigated whether a majority bloc could strategically time <code>finalize()</code> across re-arm cycles for a worse minority outcome than Finding 2&#39;s single-shot case; the invite list is frozen post-creation (capping the damage), and no worse scenario was constructed.</li>
+<li><strong>Comment inaccuracy: &quot;no single owner can act alone&quot; does not hold for 1-contributor pools</strong> — <code>finalize</code> (L232-235) — Code smells: for <code>owners.length==1</code>, <code>threshold=1/2+1=1</code>, contradicting the inline comment. No security impact — a solo-funded pool&#39;s sole owner only ever controls funds they personally contributed.</li>
+</ul>
+<hr>
+<h2 id="coverage-gate">Coverage Gate</h2>
+<p>Entrypoints: 8 external/public state-changing or value-moving functions + 3 views + constructor in source, 12 in inventory (all present). Every privileged/value-moving function (<code>deposit</code>, <code>withdraw</code>, <code>finalize</code>) maps to ≥1 finding above. Every threat-catalog row is addressed by a finding or an explicit &quot;invariant holds&quot; note. Coverage holes closed this pass: <strong>0</strong> (both phases independently covered every entrypoint and catalog row; no first-time re-reads were required in reconciliation).</p>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI assistant. AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. Team security reviews, bug bounty programs, and on-chain monitoring are strongly recommended.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreihsuxv6rfs73fwttndewetpvhczgsgs7zfc6exjnkfrrlc2a2cose.ipfs.community.bgipfs.com/"><code>https://bafkreihsuxv6rfs73fwttndewetpvhczgsgs7zfc6exjnkfrrlc2a2cose.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/415">#415</a> on Base. Rendered 2026-07-17.</p>
+  </footer>
+
+</div>
+</body>
+</html>

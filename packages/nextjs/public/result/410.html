@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CgStaking.sol — LeftClaw Services</title>
+<meta name="description" content="Smart contract audit report for leftclaw.services job #410">
+<style>
+  :root {
+    --bg: #fffdf9;
+    --bg-soft: #fdf3e8;
+    --bg-softer: #f9e2c8;
+    --ink: #2c1408;
+    --ink-soft: #6b5648;
+    --primary: #c93a1e;
+    --rule: #ecd9c0;
+    --code-bg: #faf2e6;
+    --code-ink: #4a2c14;
+    --pill-critical-bg: #7a1010; --pill-critical-ink: #ffe3e3;
+    --pill-high-bg: #e03030;     --pill-high-ink: #ffffff;
+    --pill-medium-bg: #e8a020;   --pill-medium-ink: #2c1408;
+    --pill-low-bg: #4a90d9;      --pill-low-ink: #ffffff;
+    --pill-info-bg: #d8cbb8;     --pill-info-ink: #2c1408;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1410;
+      --bg-soft: #150e0a;
+      --bg-softer: #2a1c12;
+      --ink: #ffe8d8;
+      --ink-soft: #b89a86;
+      --primary: #e8431f;
+      --rule: #3d2a1c;
+      --code-bg: #150e0a;
+      --code-ink: #f4d9c2;
+      --pill-info-bg: #4a382a; --pill-info-ink: #ffe8d8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .band { height: 6px; background: var(--primary); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 36px 0 24px; border-bottom: 2px solid var(--rule); }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .brand .claw { font-size: 20px; }
+  .brand a { color: inherit; }
+  header.masthead h1.doc-title {
+    margin: 14px 0 4px; font-size: 34px; line-height: 1.2; letter-spacing: -.01em;
+  }
+  .job-sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg-soft); border: 1px solid var(--rule); color: var(--ink);
+    white-space: nowrap;
+  }
+  .chip b { font-weight: 600; }
+  a.chip:hover { text-decoration: none; border-color: var(--primary); }
+
+  /* ---------- severity strip ---------- */
+  .sev-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .sev-card {
+    flex: 1 1 90px; min-width: 90px; text-align: center;
+    border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px 8px;
+    background: var(--bg-soft);
+  }
+  .sev-card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .sev-card .l { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .sev-card.critical .n { color: var(--pill-critical-bg); }
+  .sev-card.high .n { color: var(--pill-high-bg); }
+  .sev-card.medium .n { color: var(--pill-medium-bg); }
+  .sev-card.low .n { color: var(--pill-low-bg); }
+  .sev-card.info .n { color: var(--ink-soft); }
+  @media (prefers-color-scheme: dark) {
+    .sev-card.critical .n { color: #ff8a8a; }
+  }
+
+  /* ---------- severity pills ---------- */
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 700; line-height: 1;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    text-transform: uppercase; vertical-align: baseline;
+  }
+  .pill.critical { background: var(--pill-critical-bg); color: var(--pill-critical-ink); }
+  .pill.high     { background: var(--pill-high-bg);     color: var(--pill-high-ink); }
+  .pill.medium   { background: var(--pill-medium-bg);   color: var(--pill-medium-ink); }
+  .pill.low      { background: var(--pill-low-bg);      color: var(--pill-low-ink); }
+  .pill.info     { background: var(--pill-info-bg);     color: var(--pill-info-ink); }
+
+  /* ---------- table of contents ---------- */
+  nav.toc {
+    margin: 28px 0 8px; padding: 18px 22px;
+    background: var(--bg-soft); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc .toc-cols { display: flex; gap: 36px; }
+  nav.toc ol { margin: 0; padding-left: 20px; flex: 1 1 0; }
+  nav.toc li { font-size: 14px; margin: 3px 0; }
+  @media (max-width: 640px) { nav.toc .toc-cols { flex-direction: column; gap: 0; } }
+
+  /* ---------- report body ---------- */
+  main.report { padding-top: 8px; }
+  main.report h1 { display: none; } /* masthead already shows the title */
+  main.report h2 {
+    font-size: 24px; line-height: 1.3; margin: 44px 0 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--rule);
+    letter-spacing: -.01em;
+  }
+  main.report h3 { font-size: 19px; margin: 30px 0 10px; }
+  main.report h4 { font-size: 16px; margin: 24px 0 8px; }
+  main.report p { margin: 12px 0; }
+  main.report li { margin: 5px 0; }
+  main.report hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  main.report strong { font-weight: 650; }
+  main.report blockquote {
+    margin: 16px 0; padding: 10px 18px; border-left: 4px solid var(--primary);
+    background: var(--bg-soft); border-radius: 0 8px 8px 0; color: var(--ink-soft);
+  }
+
+  main.report code {
+    font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--rule);
+  }
+  main.report pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+  }
+  main.report pre code { background: none; border: none; padding: 0; color: var(--code-ink); }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  main.report table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  main.report th, main.report td {
+    text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  main.report thead th {
+    background: var(--bg-soft); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--rule);
+  }
+  main.report tbody tr:last-child td { border-bottom: none; }
+  main.report tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-soft) 45%, transparent); }
+
+  /* ---------- footer ---------- */
+  footer.colophon {
+    margin-top: 64px; padding-top: 20px; border-top: 2px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  footer.colophon p { margin: 6px 0; }
+  footer.colophon code { font-size: 12px; word-break: break-all; }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root { --bg: #ffffff; --bg-soft: #f6f6f6; --rule: #dddddd; }
+    .band { display: none; }
+    .page { max-width: none; padding: 0; }
+    nav.toc ol { columns: 2; }
+    main.report pre, main.report .table-wrap { break-inside: avoid; }
+    main.report h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="claw">🦞</span>
+      <a href="https://leftclaw.services">LeftClaw Services</a>
+      <span>·</span>
+      <span>Smart Contract Audit</span>
+    </div>
+    <h1 class="doc-title">CgStaking.sol</h1>
+    <p class="job-sub">Job #410 · completed on-chain · report pinned to IPFS</p>
+    <div class="meta-chips">
+      <a class="chip" href="https://leftclaw.services/jobs/410"><b>Job page</b> #410</a>
+      <a class="chip" href="https://bafkreidc72hiwnp2skgxp4zdlsvyiubzh6sizh7ke3fxxiwf6wwjop34fu.ipfs.community.bgipfs.com/"><b>Canonical report</b> IPFS</a>
+      <span class="chip"><b>Generated</b> 2026-07-17</span>
+    </div>
+    
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-cols">
+    <ol>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#reconciliation-summary">Reconciliation Summary</a></li>
+      <li><a href="#access-control-inventory">Access-Control Inventory</a></li>
+    </ol>
+    <ol start="4">
+      <li><a href="#threat-model">Threat Model</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#informational-below-reporting-threshold-for-a-fix-recorded-for-c">Informational (below reporting threshold for a fix, recorded for completeness)</a></li>
+    </ol>
+    </div>
+  </nav>
+
+  <main class="report">
+<h1>🔐 Security Review — CgStaking.sol</h1>
+<hr>
+<h2 id="scope">Scope</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mode</strong></td>
+<td>Single file (contract pasted inline in job description)</td>
+</tr>
+<tr>
+<td><strong>Files reviewed</strong></td>
+<td><code>CgStaking.sol</code> (143 lines)</td>
+</tr>
+<tr>
+<td><strong>Target pin</strong></td>
+<td>SHA-256 <code>4b1cddf2da95643fd0cc001f74d18c6aa882873fde247045ed53ee0f8612ac5a</code></td>
+</tr>
+<tr>
+<td><strong>Compiler</strong></td>
+<td>Solidity 0.8.28</td>
+</tr>
+<tr>
+<td><strong>Confidence threshold (1-100)</strong></td>
+<td>50</td>
+</tr>
+<tr>
+<td><strong>Methodology</strong></td>
+<td>Three-phase: context (opus) → ethskills breadth, 6 domains (sonnet) → pashov depth, 12 agents (sonnet), blind → hybrid reconciliation</td>
+</tr>
+</tbody></table></div>
+<p>No prior audit of this exact contract was referenced or reused — every finding below comes from this job&#39;s own phase 0 map, phase 1 checklists, and phase 2 attack agents.</p>
+<hr>
+<h2 id="reconciliation-summary">Reconciliation Summary</h2>
+<p><code>Overlap (found by both phases): 6 · Phase-1-only: 2 · Phase-2-only: 0 · Re-examined leads kept: 1 (severity confirmed High via 4-gate walk), demoted: 0 · Coverage holes closed: 0 (K=0 — both phases already covered every entrypoint and threat-catalog row)</code></p>
+<p>Confidence floor used: report all findings Low severity and above; nothing below confidence 50 survived as a standalone item (all Info-level items reflect high-confidence structural facts, not unresolved exploit trails), so no separate Leads section is needed this round.</p>
+<hr>
+<h2 id="access-control-inventory">Access-Control Inventory</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Contract.function</th>
+<th>guard</th>
+<th>who can call</th>
+<th>state written</th>
+<th>moves value?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>stake(uint256,uint64)</code> L75</td>
+<td><code>nonReentrant</code> (L78); input checks L79-83, L89-91</td>
+<td>any address</td>
+<td><code>positions[msg.sender]</code> (push, L94-101)</td>
+<td>yes — pulls <code>amount</code> (L88)</td>
+</tr>
+<tr>
+<td><code>unstake(uint256)</code> L107</td>
+<td><code>nonReentrant</code> (L107); <code>UnknownPosition</code> L109, <code>PositionAlreadyUnstaked</code> L113, <code>PositionStillLocked</code> L114-116; ownership via <code>positions[msg.sender]</code> indexing (L108)</td>
+<td>any address, scoped to own positions</td>
+<td><code>position.amount = 0</code> (L118)</td>
+<td>yes — sends <code>amount</code> (L119)</td>
+</tr>
+<tr>
+<td><code>positionsOf(address)</code> L125</td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>positionCountOf(address)</code> L130</td>
+<td>none (view)</td>
+<td>anyone</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>positionOf(address,uint256)</code> L135</td>
+<td>none (view); <code>UnknownPosition</code> L140</td>
+<td>anyone</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>constructor(...)</code> L59</td>
+<td>one-time; <code>InvalidConstruction</code> L60-66</td>
+<td>deployer, once</td>
+<td>immutables <code>token</code>/<code>minLockSeconds</code>/<code>maxLockSeconds</code> (L67-69)</td>
+<td>no</td>
+</tr>
+</tbody></table></div>
+<p><strong>Roles</strong>: none. No <code>Ownable</code>/<code>AccessControl</code>, no privileged address, no pause, no upgrade path — confirmed by full-source read. Deployer retains zero authority after construction.</p>
+<p><strong>Unguarded list</strong>: <code>stake</code> and <code>unstake</code> are both permissionless, each structurally scoped to the caller&#39;s own <code>positions[msg.sender]</code> array — no function accepts an arbitrary <code>owner</code> for a state-changing operation.</p>
+<hr>
+<h2 id="threat-model">Threat Model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Reaches</th>
+<th>Could gain</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Any staker</td>
+<td><code>stake()</code> with fee-on-transfer/rebasing token</td>
+<td>force accounting desync</td>
+<td><strong>Invariant holds</strong> — L89-91 exact-delta check rejects any transfer-time deviation</td>
+</tr>
+<tr>
+<td>Any staker</td>
+<td><code>unstake()</code> before maturity</td>
+<td>early withdrawal</td>
+<td><strong>Invariant holds</strong> — <code>PositionStillLocked</code> (L114-116)</td>
+</tr>
+<tr>
+<td>Any staker</td>
+<td><code>unstake()</code> twice on same position</td>
+<td>double payout</td>
+<td><strong>Invariant holds</strong> — <code>amount==0</code> guard (L113) + zero-before-transfer (L118)</td>
+</tr>
+<tr>
+<td>Any staker</td>
+<td>pass another owner&#39;s-looking id</td>
+<td>drain another owner</td>
+<td><strong>Invariant holds</strong> — structural <code>positions[msg.sender]</code> indexing (L108), no cross-owner path exists</td>
+</tr>
+<tr>
+<td>Malicious/compromised token</td>
+<td>reentrant callback during transfer</td>
+<td>double-stake / reentrant drain</td>
+<td><strong>Invariant holds</strong> — shared <code>nonReentrant</code> lock (L78, L107)</td>
+</tr>
+<tr>
+<td>Passive token-side event (rebase/fee-toggle/admin action) post-stake</td>
+<td>balance drifts below <code>Σ position.amount</code></td>
+<td>whichever staker unstakes first is paid in full; later stakers permanently stranded</td>
+<td><strong>Addressed by Finding 1</strong></td>
+</tr>
+<tr>
+<td>Any third party</td>
+<td>direct token donation to contract</td>
+<td>none (surplus, unrecoverable)</td>
+<td><strong>Addressed by Finding 2</strong></td>
+</tr>
+<tr>
+<td>Deployer (one-time, construction)</td>
+<td>unbounded <code>maxLockSeconds</code></td>
+<td>self-DoS on extreme lock choices</td>
+<td><strong>Addressed by Finding 3</strong></td>
+</tr>
+<tr>
+<td>Any staker (self only)</td>
+<td>grow own <code>positions[]</code> unbounded</td>
+<td>self-inflicted gas griefing on own <code>positionsOf()</code></td>
+<td><strong>Addressed by Finding 4</strong></td>
+</tr>
+<tr>
+<td>Token issuer (third party)</td>
+<td>blacklist/pause the contract or a staker&#39;s address</td>
+<td>strand matured funds, no recourse</td>
+<td><strong>Addressed by Finding 5</strong></td>
+</tr>
+</tbody></table></div>
+<p><code>Coverage: 6 entrypoints/invariant-rows in inventory+catalog, 6 addressed. 10 threat-catalog rows, 10 answered. Holes closed this pass: 0.</code></p>
+<hr>
+<h2 id="findings">Findings</h2>
+<p>[90] <strong>1. Stake-time-only solvency check has no unstake-time mirror — post-stake token behavior change turns withdrawal into a first-come-first-served race that permanently strands losers</strong></p>
+<p><code>CgStaking.unstake</code> · Confidence: 90 · <code>[both phases — 9 of 12 phase-2 agents converged independently; phase-1 erc20 + general domains raised it separately]</code></p>
+<p><strong>Description</strong><br><code>stake()</code> verifies solvency only at the instant of its own transfer (<code>token.balanceOf(this) - balanceBefore != amount</code> at L89-91); <code>unstake()</code> (L107-122) never re-derives that guarantee before paying out the static <code>Position.amount</code> at L119, so any token-side balance change that isn&#39;t itself a <code>stake</code>/<code>unstake</code> transfer (rebase, admin-toggled fee, elastic-supply contraction) can silently drop the real balance below <code>Σ position.amount</code> — the NatSpec&#39;s claim that &quot;accounting can never drift from the actual balance&quot; (L18-20) holds only for that one instant, never for the interval between stake and unstake.</p>
+<p><strong>Proof of Concept</strong><br>Alice stakes 1,000 tokens at t=0; Bob stakes 1,000 at t=1 — both pass the L89-91 check exactly (contract balance 2,000 == <code>Σ amount</code>). At t=15 days the token undergoes a balance-affecting event outside any transfer this contract initiates (e.g. a negative rebase), cutting the real balance to 1,000 while both <code>Position.amount</code> fields remain 1,000 each (static storage, immune to the token&#39;s own mechanics). Both positions mature. Alice calls <code>unstake()</code> first: contract has 1,000 ≥ 1,000, <code>safeTransfer</code> (L119) succeeds, balance → 0. Bob calls <code>unstake()</code>: needs 1,000, contract holds 0 — <code>safeTransfer</code> reverts, and because <code>position.amount = 0</code> (L118) executes <em>before</em> the transfer within the same transaction, the revert rolls back that write too — Bob&#39;s position remains a valid-looking, forever-unpayable claim with no partial withdrawal, sweep, or rescue path anywhere in the contract to recover it. Who is stranded depends on transaction order at the moment insolvency occurs, not on stake order.</p>
+<p>Rated High rather than Critical because it requires a precondition (the immutable <code>token</code>, chosen once by the deployer, must exhibit balance-affecting behavior outside ordinary transfers) rather than firing unconditionally — but that precondition is a plausible, in-scope class of token behavior for any contract that custodies an arbitrary ERC20, not a contrived edge case, and no attacker privilege is needed to trigger or benefit from it.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     function unstake(uint256 positionId) external nonReentrant {
+         Position[] storage owned = positions[msg.sender];
+         if (positionId &gt;= owned.length) revert UnknownPosition(positionId);
+         Position storage position = owned[positionId];
+
+         uint256 amount = position.amount;
+         if (amount == 0) revert PositionAlreadyUnstaked(positionId);
+         if (block.timestamp &lt; position.unlockAt) {
+             revert PositionStillLocked(positionId, position.unlockAt);
+         }
+
+         position.amount = 0;
+-        token.safeTransfer(msg.sender, amount);
++        uint256 available = token.balanceOf(address(this));
++        if (available &lt; amount) revert UnsupportedTokenBehavior();
++        token.safeTransfer(msg.sender, amount);
+
+         emit Unstaked(msg.sender, positionId, amount);
+     }
+</code></pre>
+<p>This converts a silent FIFO race into a clean, predictable revert — it does not by itself make an already-insolvent pool whole (there is nothing to pay a stranded staker with once the shortfall exists). The only complete fix is either restricting deployment to tokens verified never to alter this contract&#39;s balance outside of <code>stake</code>/<code>unstake</code> transfers, or moving to pro-rata share accounting (<code>payout = position.amount * token.balanceOf(this) / totalRecordedLiability</code>) so a shortfall is borne proportionally rather than by transaction order. Recommend also softening the NatSpec&#39;s absolute claim (L18-20) to state the guarantee is stake-time-only.</p>
+<hr>
+<p>[85] <strong>2. No sweep/rescue path for tokens sent directly to the contract</strong></p>
+<p><code>CgStaking</code> (contract-wide) · Confidence: 85 · <code>[both phases]</code></p>
+<p><strong>Description</strong><br>Any token sent directly to the contract (bypassing <code>stake()</code>) becomes permanently unrecoverable — there is no owner, admin, or sweep function anywhere in the 143-line source. This contradicts the literal &quot;hold exactly what was staked&quot; wording (L16-17) since real balance can end up strictly greater than <code>Σ position.amount</code> with no reconciliation path. Not exploitable for profit (no partial withdrawal exists to siphon surplus) — it only harms whoever mis-sends tokens, and is a disclosed consequence of the contract&#39;s stated &quot;no admin, ever&quot; design.</p>
+<p><strong>Fix</strong></p>
+<p>Accept as documented design tradeoff (consistent with the stated minimalism), or correct the docstring from &quot;exactly&quot; to &quot;at least&quot; what was staked. If recovery is desired, scope any sweep function strictly to non-tracked surplus, never touching live <code>Position.amount</code> principal — this would reintroduce admin surface the design deliberately avoids, so weigh carefully against the &quot;no admin&quot; goal.</p>
+<hr>
+<p>[80] <strong>3. Unbounded <code>maxLockSeconds</code> at construction — no upper bound, can self-DoS extreme-duration stakes</strong></p>
+<p><code>CgStaking.constructor</code> / <code>CgStaking.stake</code> · Confidence: 80 · <code>[both phases]</code></p>
+<p><strong>Description</strong><br>The constructor (L59-70) validates only <code>minLockSeconds_ &gt; 0</code> and <code>minLockSeconds_ &lt;= maxLockSeconds_</code> — no upper bound on <code>maxLockSeconds_</code>. If set near <code>type(uint64).max</code>, a staker choosing <code>lockSeconds</code> near that ceiling causes the checked <code>uint64</code> addition at L93 (<code>uint64(block.timestamp) + lockSeconds</code>) to revert with a generic arithmetic panic rather than a custom error. Self-scoped (only that caller&#39;s own transaction reverts), no fund loss, entirely a one-time deployer discretion rather than a runtime privilege.</p>
+<p><strong>Fix</strong></p>
+<pre><code class="language-diff">     constructor(IERC20 token_, uint64 minLockSeconds_, uint64 maxLockSeconds_) {
+         if (
+             address(token_) == address(0) ||
+             minLockSeconds_ == 0 ||
+-            minLockSeconds_ &gt; maxLockSeconds_
++            minLockSeconds_ &gt; maxLockSeconds_ ||
++            maxLockSeconds_ &gt; 100 * 365 days
+         ) {
+             revert InvalidConstruction();
+         }
+</code></pre>
+<hr>
+<p>[80] <strong>4. Unbounded per-owner <code>positions</code> array — self-scoped gas griefing on <code>positionsOf()</code></strong></p>
+<p><code>CgStaking.stake</code> / <code>CgStaking.positionsOf</code> · Confidence: 80 · <code>[phase-1 only]</code></p>
+<p><strong>Description</strong><br>No cap exists on how many positions a single address may create (L94-101, append-only push). <code>positionsOf(owner)</code> (L125-127) copies the full array to memory in one call, whose cost grows with array length. Confirmed no other function iterates this array — <code>stake</code>/<code>unstake</code> remain O(1) regardless of length, and each address can only ever grow its own array; effect is strictly self-scoped (reaching a gas-prohibitive length requires on the order of 100,000+ transactions from the same address, far beyond any plausible griefing incentive).</p>
+<p><strong>Fix</strong></p>
+<p>Optional: document the unbounded-growth behavior, or add a paginated getter (<code>positionsOf(owner, offset, limit)</code>) alongside the full-array one for integrators/UIs that may call it on-chain.</p>
+<hr>
+<p>[75] <strong>5. Token-issuer-side blacklist/pause can permanently strand matured funds with no recovery path</strong></p>
+<p><code>CgStaking.unstake</code> · Confidence: 75 · <code>[both phases]</code></p>
+<p><strong>Description</strong><br>If the token issuer (a third party, not the CgStaking deployer) blacklists the contract&#39;s own address or globally pauses the token, every <code>stake()</code>/<code>unstake()</code> reverts for all users for as long as the block/pause lasts, with no admin override (by design). If only an individual staker&#39;s own address is blacklisted, only that staker&#39;s matured position is stranded — <code>unstake()</code> hardcodes <code>msg.sender</code> as the sole payout recipient (L119) with no alternate-recipient path. Requires the deployer&#39;s one-time choice of a censorship-capable token and third-party issuer action; no CgStaking-level attacker privilege is involved.</p>
+<p><strong>Fix</strong></p>
+<p>Document the risk if a censorship-capable token is expected as <code>token</code>; no code fix is compatible with the contract&#39;s explicit &quot;no admin, ever&quot; design goal beyond accepting this as a disclosed risk of arbitrary-token custody.</p>
+<hr>
+<p>Findings List</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Confidence</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[90]</td>
+<td>Stake-time-only solvency check has no unstake-time mirror — FIFO race strands later unstakers</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[85]</td>
+<td>No sweep/rescue path for tokens sent directly to the contract</td>
+</tr>
+<tr>
+<td>3</td>
+<td>[80]</td>
+<td>Unbounded <code>maxLockSeconds</code> at construction</td>
+</tr>
+<tr>
+<td>4</td>
+<td>[80]</td>
+<td>Unbounded per-owner <code>positions</code> array — self-scoped gas griefing</td>
+</tr>
+<tr>
+<td>5</td>
+<td>[75]</td>
+<td>Token-issuer-side blacklist/pause can strand matured funds</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="informational-below-reporting-threshold-for-a-fix-recorded-for-c">Informational (below reporting threshold for a fix, recorded for completeness)</h2>
+<ul>
+<li><strong><code>stakedAt</code> sentinel documented but never checked on-chain</strong> (<code>[both phases]</code>) — the struct comment (L27) claims <code>0</code> marks &quot;a never-created position,&quot; but existence is decided purely by array bounds and <code>amount != 0</code>; no branch reads <code>stakedAt</code>. Dead, harmless, but potentially misleading to a maintainer or the offchain indexer.</li>
+<li><strong><code>uint64(block.timestamp)</code> narrowing cast is unchecked but structurally unreachable</strong> (<code>[both phases]</code>, 5 of 12 phase-2 agents independently raised and independently dismissed this) — would only matter ~584 billion years from the Unix epoch. Optional: <code>SafeCast.toUint64</code>.</li>
+<li><strong>Balance-delta subtraction reverts with a generic Panic instead of the custom error on a negative-delta token</strong> (<code>[phase-1 only]</code>) — cosmetic; still reverts safely either way under Solidity 0.8 checked arithmetic.</li>
+<li><strong>Fee-on-transfer enabled after stake (but before unstake) shorts only that unstaker, not the pool</strong> (<code>[phase-1 only]</code>) — distinct from Finding 1: the shortfall here is borne only by the affected unstaker (fee deducted from their own payout), not by other stakers.</li>
+<li><strong>Offchain &quot;Spark&quot; reward-formula gaming</strong> — checked whether onchain events can be fabricated to mislead the offchain indexer; confirmed <strong>not exploitable</strong> (emitted <code>amount</code> only follows a verified real transfer, timestamps derive from <code>block.timestamp</code> not user input, positions remain genuinely illiquid until real time reaches <code>unlockAt</code>). The reward <em>formula</em> itself is out of scope (offchain, not provided).</li>
+<li><strong><code>pragma solidity 0.8.28</code> emits <code>PUSH0</code> by default</strong> — confirm the target deployment chain supports it, or pin an explicit <code>evmVersion</code>.</li>
+<li><strong>Access control, reentrancy, and boundary arithmetic</strong> — every one of the 18 sub-agents across both phases that touched these independently confirmed no cross-owner access path, no reentrancy bypass (shared <code>nonReentrant</code> lock across both mutators, textbook CEI in <code>unstake</code>), and no off-by-one in any boundary comparison.</li>
+</ul>
+<hr>
+<blockquote>
+<p>⚠️ This review was performed by an AI-orchestrated, multi-agent audit pipeline (context-building + ethskills checklist breadth + pashov-style attacker-mindset depth, cross-reconciled). AI analysis can never verify the complete absence of vulnerabilities and no guarantee of security is given. A team security review, bug bounty program, and on-chain monitoring are strongly recommended before mainnet deployment with significant value at stake.</p>
+</blockquote>
+
+  </main>
+
+  <footer class="colophon">
+    <p><strong>Canonical copy:</strong> this is a styled rendering of the immutable report delivered on IPFS —
+       <a href="https://bafkreidc72hiwnp2skgxp4zdlsvyiubzh6sizh7ke3fxxiwf6wwjop34fu.ipfs.community.bgipfs.com/"><code>https://bafkreidc72hiwnp2skgxp4zdlsvyiubzh6sizh7ke3fxxiwf6wwjop34fu.ipfs.community.bgipfs.com/</code></a>.
+       If the two ever differ, the IPFS copy is authoritative.</p>
+    <p>Audited by <a href="https://leftclaw.services">LeftClaw Services</a> 🦞 — job
+       <a href="https://leftclaw.services/jobs/410">#410</a> on Base. Rendered 2026-07-17.</p>
+  </footer>
+
+</div>
+</body>
+</html>
