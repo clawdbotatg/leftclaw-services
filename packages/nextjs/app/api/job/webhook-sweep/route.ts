@@ -3,7 +3,8 @@
  *
  * Agents can pass a callbackUrl when creating a job (e.g. POST /api/audit).
  * This sweep reads each pending job's on-chain status and, once it reaches a
- * terminal state, POSTs {jobId, status, reportUrl, statusUrl} to the callback.
+ * terminal state, POSTs {jobId, status, reportUrl, reportHtmlUrl, statusUrl}
+ * to the callback.
  *
  * GET/POST /api/job/webhook-sweep
  */
@@ -31,6 +32,26 @@ const STATUS_SLUGS: Record<number, string> = {
   5: "reassigned",
 };
 const TERMINAL_STATUSES = new Set([2, 3, 4]);
+
+// Pretty HTML report — /result/<id>.html renders on demand for any completed
+// job with an IPFS result (see app/result/[file]/route.ts). Mirror its gate so
+// the webhook advertises the link only when the page will actually resolve.
+function reportHtmlUrl(jobId: string, cid: string, completed: boolean): string | null {
+  if (!completed || !cid) return null;
+  const raw = cid.trim();
+  let host = "";
+  if (/^[a-z0-9]{46,}$/i.test(raw)) {
+    host = "bgipfs.com";
+  } else if (/^https:\/\//i.test(raw)) {
+    try {
+      host = new URL(raw).hostname;
+    } catch {
+      return null;
+    }
+  }
+  if (!/ipfs/i.test(host)) return null;
+  return `https://leftclaw.services/result/${jobId}.html`;
+}
 
 const AUTH_SECRET = process.env.CRON_SECRET;
 
@@ -80,6 +101,7 @@ export async function POST(req: NextRequest) {
         jobId: Number(jobId),
         status: STATUS_SLUGS[statusNum],
         reportUrl: job.resultCID || null,
+        reportHtmlUrl: reportHtmlUrl(jobId, String(job.resultCID || ""), statusNum === 2),
         statusUrl: `https://onedollaraudit.com/api/jobs/${jobId}`,
       };
 
