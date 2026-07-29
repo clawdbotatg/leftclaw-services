@@ -31,9 +31,15 @@ export async function getContractPriceUsd(serviceTypeId: number): Promise<string
   const cached = priceCache.get(serviceTypeId);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.price;
 
+  const rpcUrl =
+    process.env.BASE_RPC_URL?.trim() ||
+    (process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+      ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+      : "https://mainnet.base.org");
+
   const client = createPublicClient({
     chain: base,
-    transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
+    transport: http(rpcUrl),
   });
 
   let result;
