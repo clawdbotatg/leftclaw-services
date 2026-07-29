@@ -2,7 +2,9 @@ import { createPublicClient, createWalletClient, http, parseAbi } from "viem";
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import deployedContracts from "~~/contracts/deployedContracts";
+import { getMinClawdOut } from "./clawdPrice";
 import { ON_CHAIN_PLACEHOLDER, saveConsultPrompt } from "./consultPrompt";
+import { getContractPriceUsd } from "./x402";
 
 const CONTRACT_ADDRESS = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
@@ -90,11 +92,15 @@ export async function postJobForOnChain(
 
   const onChainDescription = isPrivatePrompt ? ON_CHAIN_PLACEHOLDER : description;
 
+  // Slippage floor for the contract's USDC→CLAWD swap (was 0n = fully sandwichable)
+  const priceUsd = parseFloat((await getContractPriceUsd(serviceTypeId)).replace("$", ""));
+  const minClawdOut = await getMinClawdOut(priceUsd);
+
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: "postJobFor",
-    args: [account.address, BigInt(serviceTypeId), onChainDescription, 0n],
+    args: [account.address, BigInt(serviceTypeId), onChainDescription, minClawdOut],
     chain: base,
     account: account,
   });

@@ -130,6 +130,9 @@ export function UnifiedPaymentFlow({
   const priceWei = BigInt(Math.ceil(clawdNeeded)) * BigInt(10) ** BigInt(18);
   const usdcAmount = parseUnits(priceUsd.toString(), 6);
   const ethNeeded = ethPrice && priceUsd ? priceUsd / ethPrice : 0;
+  // Slippage floor for the contract's swap into CLAWD: 95% of the quoted output
+  // (falls back to 1 wei — the old no-protection behavior — if the price is unavailable)
+  const minClawdOut = clawdPrice && priceUsd ? parseUnits(((priceUsd / clawdPrice) * 0.95).toFixed(18), 18) : BigInt(1);
 
   const needsApproval = paymentMethod === "clawd" && !!address && priceWei > BigInt(0)
     && (clawdAllowance === undefined || clawdAllowance < priceWei);
@@ -384,7 +387,7 @@ export function UnifiedPaymentFlow({
         const ethWei = parseEther((ethNeeded * 1.05).toFixed(18));
         const txHash = await writeAndOpen(() => writeContractAsync({
           address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithETH", args: [svcId, chainDesc, BigInt(1)],
+          functionName: "postJobWithETH", args: [svcId, chainDesc, minClawdOut],
           value: ethWei,
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
@@ -418,7 +421,7 @@ export function UnifiedPaymentFlow({
         setStep("posting");
         const txHash = await writeAndOpen(() => writeContractAsync({
           address: CONTRACT_ADDRESS, abi: CONTRACT_ABI as any,
-          functionName: "postJobWithUsdc", args: [svcId, chainDesc, BigInt(1)],
+          functionName: "postJobWithUsdc", args: [svcId, chainDesc, minClawdOut],
         }));
         if (!txHash) { setTxError("Transaction failed"); setStep("idle"); return; }
         if (isConsult) {
@@ -602,12 +605,12 @@ export function UnifiedPaymentFlow({
 
       <p className="text-center text-xs opacity-40 mt-6">
         {paymentMethod === "clawd"
-          ? "CLAWD escrowed in contract. Sent to treasury on accept, returned to you on decline."
+          ? "CLAWD escrowed in contract. Burned 🔥 on accept, returned to you on decline."
           : paymentMethod === "cv"
           ? "ClawdViction earned by staking CLAWD. Job tracked on-chain."
           : paymentMethod === "usdc"
-          ? "USDC swapped to CLAWD via Uniswap and escrowed in contract."
-          : "ETH swapped to CLAWD via Uniswap and escrowed in contract."}
+          ? "USDC swapped to CLAWD via Uniswap, escrowed in contract, burned 🔥 on accept."
+          : "ETH swapped to CLAWD via Uniswap, escrowed in contract, burned 🔥 on accept."}
       </p>
     </div>
   );

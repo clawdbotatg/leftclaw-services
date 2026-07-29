@@ -5,11 +5,13 @@
     "app/api/pfp/generate/route.ts": { "maxDuration": 60 },
     "app/api/pfp/generate-cv/route.ts": { "maxDuration": 60 },
     "app/api/job/pfp-sweep/route.ts": { "maxDuration": 300 },
-    "app/api/chat/route.ts": { "maxDuration": 300 }
+    "app/api/chat/route.ts": { "maxDuration": 300 },
+    "app/api/cron/burn/route.ts": { "maxDuration": 120 }
   },
   "crons": [
     { "path": "/api/job/pfp-sweep", "schedule": "0 */3 * * *" },
     { "path": "/api/job/consult-timeout", "schedule": "0 * * * *" },
-    { "path": "/api/job/webhook-sweep", "schedule": "*/5 * * * *" }
+    { "path": "/api/job/webhook-sweep", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/burn", "schedule": "30 */6 * * *" }
   ]
 }

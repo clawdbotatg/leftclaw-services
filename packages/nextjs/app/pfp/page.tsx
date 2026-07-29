@@ -16,7 +16,8 @@ const CONTRACT_ABI = deployedContracts[8453]?.LeftClawServicesV2?.abi;
 
 const CLAWD_ADDRESS = "0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07" as const;
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
-const TREASURY_ADDRESS = "0x90eF2A9211A3E7CE788561E5af54C76B0Fa3aEd0" as const;
+// Burn sink (SwapAndBurn, pay.clawdbotatg.eth) — CLAWD sent here is swept to 0xdEaD
+const TREASURY_ADDRESS = "0x0C1a3DB07304D2E4E551AB4A7b083382a33f25ad" as const;
 const BASE_CHAIN_ID = 8453;
 const PFP_SERVICE_TYPE_ID = 3;
 const CV_SIGN_MESSAGE = "larv.ai CV Spend";
@@ -202,7 +203,7 @@ export default function PfpPage() {
         setStep("done");
 
       } else if (paymentMethod === "clawd") {
-        // CLAWD payment — direct transfer to treasury (PFP is instant, no escrow needed)
+        // CLAWD payment — direct transfer to the burn sink (PFP is instant, no escrow needed)
         if (!publicClient || priceWei === BigInt(0)) throw new Error("Price not loaded");
         setStep("paying");
         const txHash = await writeContractAsync({
@@ -409,7 +410,7 @@ export default function PfpPage() {
                   </>
                 ) : (
                   <>
-                    Paid with {paymentInfo.amount} 🔥 → treasury{" "}
+                    Paid with {paymentInfo.amount} 🔥 → burned{" "}
                     {paymentInfo.txHash && (
                       <a href={`https://basescan.org/tx/${paymentInfo.txHash}`} target="_blank" rel="noopener" className="underline">View tx →</a>
                     )}
@@ -455,7 +456,7 @@ export default function PfpPage() {
                       <p className="text-sm opacity-50">You have {Number(clawdBalance / BigInt(10) ** BigInt(18)).toLocaleString()} CLAWD</p>
                     )}
                   </div>
-                  <div className="text-right text-sm opacity-60"><p>🔥 CLAWD</p><p>Sent to treasury</p></div>
+                  <div className="text-right text-sm opacity-60"><p>🔥 CLAWD</p><p>Burned</p></div>
                 </>
               ) : paymentMethod === "cv" ? (
                 <>
