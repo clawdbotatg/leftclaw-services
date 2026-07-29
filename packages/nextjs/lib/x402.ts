@@ -1,6 +1,10 @@
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { bazaarResourceServerExtension } from "@x402/extensions/bazaar";
+// Dynamic price resolution from contract
+import { createPublicClient, http, parseAbi } from "viem";
+import { base } from "viem/chains";
+import deployedContracts from "~~/contracts/deployedContracts";
 import { x402ResourceServer } from "~~/lib/x402-next-adapter";
 
 // Sanitizer wallet — receives x402 USDC and calls postJobFor on-chain
@@ -14,15 +18,10 @@ export const x402Server = new x402ResourceServer(facilitatorClient)
   .register(BASE_NETWORK, new ExactEvmScheme())
   .registerExtension(bazaarResourceServerExtension);
 
-// Dynamic price resolution from contract
-import { createPublicClient, http, parseAbi } from "viem";
-import { base } from "viem/chains";
-
 const SERVICE_TYPE_ABI = parseAbi([
   "function getServiceType(uint256 id) view returns ((uint256 id, string name, string slug, uint256 priceUsd, uint256 cvDivisor, string status))",
 ]);
 
-import deployedContracts from "~~/contracts/deployedContracts";
 const SERVICE_TYPE_CONTRACT = deployedContracts[8453]?.LeftClawServicesV2?.address as `0x${string}`;
 
 const priceCache = new Map<number, { price: string; ts: number }>();
@@ -32,17 +31,31 @@ export async function getContractPriceUsd(serviceTypeId: number): Promise<string
   const cached = priceCache.get(serviceTypeId);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.price;
 
+  const rpcUrl =
+    process.env.BASE_RPC_URL?.trim() ||
+    (process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+      ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+      : "https://mainnet.base.org");
+
   const client = createPublicClient({
     chain: base,
-    transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
+    transport: http(rpcUrl),
   });
 
-  const result = await client.readContract({
-    address: SERVICE_TYPE_CONTRACT,
-    abi: SERVICE_TYPE_ABI,
-    functionName: "getServiceType",
-    args: [BigInt(serviceTypeId)],
-  });
+  let result;
+  try {
+    result = await client.readContract({
+      address: SERVICE_TYPE_CONTRACT,
+      abi: SERVICE_TYPE_ABI,
+      functionName: "getServiceType",
+      args: [BigInt(serviceTypeId)],
+    });
+  } catch (e) {
+    // Serve a stale price over failing the request — the public RPC 429s under
+    // bursts, and a slightly old price beats a 5xx on every payable route.
+    if (cached) return cached.price;
+    throw e;
+  }
 
   const rawPrice = Number(result.priceUsd) / 1_000_000;
   const price = `$${rawPrice.toFixed(2)}`;
