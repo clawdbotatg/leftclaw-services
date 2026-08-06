@@ -37,15 +37,43 @@ export function renderAuditReport(opts: { jobId: string; md: string; ipfsUrl: st
     .replace(new RegExp(`^(?:${AUDIT_WORDS.source})\\s*[—–:-]\\s*`, "i"), "")
     .replace(new RegExp(`\\s*[—–:-]\\s*(?:${AUDIT_WORDS.source})$`, "i"), "");
 
-  // Severity counts: one per "**Severity**: X" finding line. Formats vary:
-  // "**Severity**: X", "**Severity:** X", and "**Severity: X**".
   const counts: Record<Sev, number> = { Critical: 0, High: 0, Medium: 0, Low: 0, Info: 0 };
+  const norm = (raw: string) =>
+    (/^info/i.test(raw) ? "Info" : raw[0].toUpperCase() + raw.slice(1).toLowerCase()) as Sev;
+
+  // Preferred signal: the report's own tally line, e.g.
+  //   **Severity counts:** 1 Critical · 3 High · 11 Medium · 14 Low · 12 Informational
+  // The host auditor writes "tally" rather than "counts", and the colon sits
+  // inside or outside the bold depending on the writer. Authoritative when
+  // present, and immune to the per-finding prose drift below. A trailing
+  // non-severity bucket ("9 Leads") simply doesn't match.
+  const tally = md.match(
+    /\*\*Severity (?:counts|tally)\b:?\*\*:?\s*([^\n]+)|\*\*Severity (?:counts|tally)\b:?\s*([^*\n]+)\*\*/i,
+  );
+  if (tally) {
+    for (const m of (tally[1] || tally[2] || "").matchAll(
+      /(\d+)\s*(Critical|High|Medium|Low|Informational|Info)\b/gi,
+    )) {
+      counts[norm(m[2])] += Number(m[1]);
+    }
+  }
+
+  // Per-finding lines. Formats vary: "**Severity**: X", "**Severity:** X",
+  // "**Severity: X**", "**Severity.** X rather than Y" (period, value outside
+  // the bold), and "Severity: **X**" (plain label, bolded value).
   const SEV_RE =
-    /\*\*Severity:?\*\*:?\s*(Critical|High|Medium|Low|Informational|Info)\b|\*\*Severity:\s*(Critical|High|Medium|Low|Informational|Info)\*\*/gi;
-  for (const m of md.matchAll(SEV_RE)) {
-    const raw = m[1] || m[2];
-    const s = (/^info/i.test(raw) ? "Info" : raw[0].toUpperCase() + raw.slice(1).toLowerCase()) as Sev;
-    counts[s]++;
+    /\*\*Severity[:.]?\*\*[:.]?\s*(Critical|High|Medium|Low|Informational|Info)\b|\*\*Severity:\s*(Critical|High|Medium|Low|Informational|Info)\*\*|(?:^|[^*])Severity:\s*\*\*(Critical|High|Medium|Low|Informational|Info)\*\*/gi;
+  if (Object.values(counts).every(n => n === 0)) {
+    for (const m of md.matchAll(SEV_RE)) counts[norm(m[1] || m[2] || m[3])]++;
+  }
+
+  // Structural fallback: findings whose heading tags severity in the id, e.g.
+  // "### [C-1] …". More reliable than prose when a report writes
+  // "**Severity rationale.** Rated High rather than Critical" — which names two
+  // severities and belongs to neither counter above.
+  if (Object.values(counts).every(n => n === 0)) {
+    const BY_ID: Record<string, Sev> = { C: "Critical", H: "High", M: "Medium", L: "Low", I: "Info" };
+    for (const m of md.matchAll(/^#{2,4}\s*\[([CHMLI])-\d+\]/gm)) counts[BY_ID[m[1]]]++;
   }
 
   // breaks:true — the reports use single newlines for metadata line blocks.
@@ -105,7 +133,7 @@ export function renderAuditReport(opts: { jobId: string; md: string; ipfsUrl: st
     (_, s) => `<td>${pill(s)}</td>`,
   );
   body = body.replace(
-    /(<strong>Severity:?<\/strong>:?\s*)(Critical|High|Medium|Low|Informational|Info)\b/gi,
+    /(<strong>Severity[:.]?<\/strong>[:.]?\s*)(Critical|High|Medium|Low|Informational|Info)\b/gi,
     (_, pre, s) => `${pre}${pill(s)}`,
   );
   body = body.replace(
