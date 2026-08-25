@@ -30,6 +30,24 @@ const acceptedJobs = new Set<string>();
 // Consultation service type IDs (Quick Consultation = 1, Deep Consultation = 2)
 const CONSULTATION_TYPE_IDS = [1, 2];
 
+// SSRF / exfil guard for the `fetch_url` tool. An injected job description drives
+// the model to call fetch_url ~88% of the time (measured); the model's textual
+// "I won't do that" is unreliable — the tool call fires regardless. So the fetch
+// is gated deterministically here: HTTPS only, host must be on the allowlist.
+// Fail-closed — anything unparseable or off-list is refused, not fetched.
+const ALLOWED_FETCH_HOSTS = ["github.com", "raw.githubusercontent.com", "gist.githubusercontent.com", "ethskills.com"];
+function isFetchAllowed(rawUrl: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "https:") return false;
+  const host = u.hostname.toLowerCase();
+  return ALLOWED_FETCH_HOSTS.some(h => host === h || host.endsWith("." + h));
+}
+
 /**
  * Get a wallet client using the deployer key from the macOS keychain + foundry keystore.
  * Returns null if running in an environment where the keychain/cast is not available.
@@ -526,6 +544,12 @@ You can use your tools to read additional repo files, answer escalations, or req
         });
         result = `Rollback to ${input.stage} requested. The bot will honor this when it resumes.`;
       } else if (tu.name === "fetch_url") {
+        if (!isFetchAllowed(input.url)) {
+          console.warn(`[chat] blocked fetch_url to disallowed host for job ${jobId}: ${input.url}`);
+          result = `Blocked: "${input.url}" is not an allowed destination. External fetches are restricted to github.com and ethskills.com. If you need this content, ask the client to put it in a GitHub repo or gist.`;
+          toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: result });
+          continue;
+        }
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 5000);
