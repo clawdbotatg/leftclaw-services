@@ -103,8 +103,10 @@ export async function GET(req: NextRequest) {
     const { getSanitization, deleteSanitization } = await import("~~/lib/sanitize");
     const result = await getSanitization(jobId);
     if (result) {
-      // If cached result is a stale error (fail-open artifacts from old code), clear it
-      if (!result.safe && result.reason && /error|fail open|skipped|failed/i.test(result.reason)) {
+      // If cached result is a stale error (fail-open artifacts from old code), clear it.
+      // Tight match: the old broad /error|failed/ also matched the default real-unsafe
+      // reason "Failed security review", deleting genuine verdicts on first read.
+      if (!result.safe && result.reason && /check skipped|fail open/i.test(result.reason)) {
         await deleteSanitization(jobId);
         return Response.json({ error: "Pending recheck", safe: null, pending: true }, { status: 404 });
       }
@@ -118,8 +120,8 @@ export async function GET(req: NextRequest) {
     const { getSanitization, deleteSanitization } = await import("~~/lib/sanitize");
     const cached = await getSanitization(jobId);
     if (cached) {
-      // Clean stale error artifacts
-      if (!cached.safe && cached.reason && /error|fail open|skipped|failed/i.test(cached.reason)) {
+      // Clean stale error artifacts (tight match — see cv branch above)
+      if (!cached.safe && cached.reason && /check skipped|fail open/i.test(cached.reason)) {
         await deleteSanitization(jobId);
         return Response.json({ jobId, safe: null, pending: true, onChain: false });
       }
