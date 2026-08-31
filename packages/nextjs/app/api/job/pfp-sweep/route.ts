@@ -31,8 +31,10 @@ function isAuthorized(req: NextRequest): boolean {
   const authHeader = req.headers.get("authorization");
   if (consultSecret && authHeader === `Bearer ${consultSecret}`) return true;
   if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true;
-  // If no auth is configured, allow (local dev).
-  if (!consultSecret && !cronSecret) return true;
+  // If no auth is configured, allow ONLY in local dev. In production a missing
+  // secret must fail closed — this route generates paid images and signs on-chain
+  // txs, so an open endpoint (e.g. secret forgotten in Vercel env) is exploitable.
+  if (!consultSecret && !cronSecret && process.env.NODE_ENV !== "production") return true;
   return false;
 }
 
