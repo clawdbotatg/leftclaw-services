@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "@coinbase/x402": "2.1.0",
     "@heroicons/react": "~2.1.5",
     "@rainbow-me/rainbowkit": "2.2.9",
     "@react-native-async-storage/async-storage": "~2.2.0",

@@ -1,3 +1,4 @@
+import { createFacilitatorConfig } from "@coinbase/x402";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { bazaarResourceServerExtension } from "@x402/extensions/bazaar";
@@ -11,8 +12,26 @@ import { x402ResourceServer } from "~~/lib/x402-next-adapter";
 export const PAYMENT_ADDRESS = "0xCfB32a7d01Ca2B4B538C83B2b38656D3502D76EA";
 export const BASE_NETWORK = "eip155:8453";
 
-// Self-hosted facilitator — Base mainnet (eip155:8453)
-const facilitatorClient = new HTTPFacilitatorClient({ url: "https://clawd-facilitator.vercel.app/api" });
+// Coinbase CDP facilitator when CDP_API_KEY_ID/SECRET are set — only CDP-settled
+// routes get indexed in the x402 Bazaar (and Agentic.Market, OpenSea Tools).
+// Without the key we fall back to the self-hosted facilitator — Base mainnet (eip155:8453).
+const facilitatorClient = new HTTPFacilitatorClient(
+  cdpFacilitatorConfig() ?? { url: "https://clawd-facilitator.vercel.app/api" },
+);
+
+function cdpFacilitatorConfig() {
+  const { CDP_API_KEY_ID: id, CDP_API_KEY_SECRET: secret } = process.env;
+  if (!id || !secret) return undefined;
+  const cdp = createFacilitatorConfig(id, secret);
+  return {
+    url: cdp.url,
+    // @coinbase/x402 types its headers as optional; @x402/core wants all three.
+    createAuthHeaders: async () => {
+      const h = (await cdp.createAuthHeaders?.()) ?? {};
+      return { verify: h.verify ?? {}, settle: h.settle ?? {}, supported: h.supported ?? {} };
+    },
+  };
+}
 
 export const x402Server = new x402ResourceServer(facilitatorClient)
   .register(BASE_NETWORK, new ExactEvmScheme())
