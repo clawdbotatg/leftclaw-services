@@ -7,6 +7,8 @@ import type { NextRequest } from "next/server";
 import { x402HTTPResourceServer, x402ResourceServer } from "@x402/core/server";
 import type { PaywallConfig, RouteConfig } from "@x402/core/server";
 
+const RESOURCE_ORIGINS = new Set(["https://onedollaraudit.com", "https://www.onedollaraudit.com"]);
+
 class NextAdapter {
   constructor(private req: NextRequest) {}
 
@@ -20,6 +22,10 @@ class NextAdapter {
     return this.req.nextUrl.pathname;
   }
   getUrl() {
+    // onedollaraudit.com proxies /api/audit here and names itself, so the 402 (and
+    // the x402 Bazaar listing) shows the onedollaraudit.com URL. Allowlisted only.
+    const origin = this.req.headers.get("x-x402-resource-origin");
+    if (origin && RESOURCE_ORIGINS.has(origin)) return origin + this.req.nextUrl.pathname;
     return this.req.url;
   }
   getAcceptHeader() {
