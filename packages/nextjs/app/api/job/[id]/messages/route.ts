@@ -75,6 +75,49 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return Response.json({ error: "Job ID required" }, { status: 400 });
   }
 
+  // A message posted here is shown to the client as coming from the worker bot
+  // and is read by the worker itself, so only a worker may post one. Until
+  // 2026-11-18 this handler checked nothing: anyone could post "from bot" on
+  // any job, and someone did (fake "authorized security test" escalations on
+  // jobs 1247-1252 asking the worker to send out its keys).
+  //   - job has an assigned worker  -> caller must BE that worker
+  //   - job is still open           -> caller must be a registered worker
+  //     (workers message the client before accepting, e.g. to ask for a repo)
+  const callerAddress = req.nextUrl.searchParams.get("address");
+  const sig = req.nextUrl.searchParams.get("sig");
+  if (!callerAddress || !sig) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await verifyAuthSignature(callerAddress, sig))) {
+    return Response.json({ error: "Invalid signature" }, { status: 401 });
+  }
+  try {
+    const numericId = jobId.startsWith("cv-") ? BigInt(jobId.slice(3)) : BigInt(jobId);
+    const job = (await viemClient.readContract({
+      address: contractAddress,
+      abi,
+      functionName: "getJob",
+      args: [numericId],
+    })) as any;
+    const caller = callerAddress.toLowerCase();
+    const jobWorker = String(job.worker || "").toLowerCase();
+    const hasWorker = !!jobWorker && !/^0x0{40}$/.test(jobWorker);
+    let allowed = hasWorker && caller === jobWorker;
+    if (!hasWorker) {
+      allowed = (await viemClient.readContract({
+        address: contractAddress,
+        abi,
+        functionName: "isWorker",
+        args: [callerAddress as `0x${string}`],
+      })) as boolean;
+    }
+    if (!allowed) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+  } catch {
+    return Response.json({ error: "Job not found" }, { status: 404 });
+  }
+
   try {
     const body = await req.json();
     const { type, from, question, details, stage } = body;
